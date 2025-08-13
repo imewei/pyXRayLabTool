@@ -69,7 +69,8 @@ clean:
 
 # Documentation
 docs:
-	@echo "Documentation build not configured yet"
+	sphinx-build -b html docs/source docs/build/html
+	@echo "Documentation built successfully in docs/build/html/"
 
 # CI simulation
 ci-test:
