@@ -164,7 +164,7 @@ materials = {
     "SiO2": 2.2,      # Fused silica
     "Si": 2.33,       # Silicon
     "Al2O3": 3.95,    # Sapphire
-    "Diamond": 3.52,  # Diamond
+    "C": 3.52,  # Diamond
 }
 
 formulas = list(materials.keys())
