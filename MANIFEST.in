@@ -1,0 +1,28 @@
+# Include the README and LICENSE files
+include README.md
+include LICENSE
+
+# Include changelog and documentation
+include docs/source/changelog.rst
+recursive-include docs/source *.rst
+recursive-include docs/source *.md
+
+# Include the package data (atomic scattering factor files)
+recursive-include xraylabtool/data *.nff
+
+# Include test files for development installations
+recursive-include tests *.py
+include tests/README.md
+
+# Include configuration files
+include pyproject.toml
+include Makefile
+
+# Exclude unnecessary files
+exclude .gitignore
+exclude .DS_Store
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude venv *
+recursive-exclude .git *
+recursive-exclude docs/build *
