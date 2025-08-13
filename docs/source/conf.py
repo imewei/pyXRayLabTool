@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.abspath('../../'))
 project = 'XRayLabTool'
 copyright = '2025, XRayLabTool Developers'
 author = 'XRayLabTool Developers'
-release = '0.1.0'
-version = '0.1.0'
+release = '0.1.3'
+version = '0.1.3'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

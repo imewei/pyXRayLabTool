@@ -219,54 +219,6 @@ plt.show()
 
 ---
 
-## 🔄 Recent Updates
-
-### Version 0.1.2 (Latest)
-
-**Major Performance Optimizations:**
-- 🚀 **31x speedup** with warm cache vs cold cache for repeated calculations  
-- 🚀 **2-5x typical performance improvement** for most operations
-- 🚀 **File I/O optimization** - Pre-computed element file paths eliminate repeated filesystem checks
-- 🚀 **Advanced caching system** - LRU caching for interpolators and bulk atomic data loading
-- 🚀 **Vectorized calculations** - Optimized mathematical operations with better NumPy usage
-- 🚀 **High-performance data smoothing** - Replaced pandas rolling with NumPy convolution (3-5x faster)
-- 🚀 **Smart thread pool management** - Dynamic worker allocation based on system capabilities
-
-**Performance Results:**
-- ✅ **0.04ms average** for single material calculations
-- ✅ **0.272ms per material** for multi-material processing
-- ✅ **Memory efficiency** improvements through optimized array handling
-- ✅ **Full backward compatibility** maintained with all existing APIs
-- ✅ **124/130 test suite compatibility** - all core functionality preserved
-
-### Version 0.1.1
-
-**Enhanced Robustness & Compatibility:**
-- ✅ Fixed complex number handling in energy conversion functions
-- ✅ Improved type safety with comprehensive type hints and checking
-- ✅ Updated pandas method calls for modern compatibility (`fillna` → `bfill`/`ffill`)
-- ✅ Enhanced atomic data handling with robust type conversions
-- ✅ Fixed numpy deprecation warnings (`trapz` → `trapezoid`)
-
-**New Features:**
-- ✅ PCHIP interpolation for atomic scattering factors
-- ✅ Enhanced caching system for scattering factor data
-- ✅ Comprehensive error handling and validation
-- ✅ Improved smooth data function with edge case handling
-
-**Testing & Quality:**
-- ✅ 100% test suite coverage with 13/13 test suites passing
-- ✅ Robust integration tests matching Julia implementation
-- ✅ Performance benchmarks and regression testing
-- ✅ Enhanced error message clarity and debugging
-
-**Developer Experience:**
-- ✅ Improved type annotations for better IDE support
-- ✅ Enhanced test utilities and robustness testing
-- ✅ Better documentation and examples
-- ✅ Cross-platform compatibility verified
-
----
 
 ## 🧪 License
 
