@@ -13,6 +13,9 @@ import os
 from scipy.interpolate import PchipInterpolator
 from dataclasses import dataclass
 import concurrent.futures
+from functools import lru_cache
+import weakref
+from collections import OrderedDict
 
 # =====================================================================================
 # DATA STRUCTURES
@@ -69,6 +72,36 @@ class XRayResult:
 # Module-level cache for f1/f2 scattering tables, keyed by element symbol
 _scattering_factor_cache: Dict[str, pd.DataFrame] = {}
 
+# Module-level cache for interpolators to avoid repeated creation
+_interpolator_cache: Dict[str, Tuple[PchipInterpolator, PchipInterpolator]] = {}
+
+# Pre-computed element file paths for faster access
+_AVAILABLE_ELEMENTS: Dict[str, Path] = {}
+
+# Atomic data cache for bulk lookups
+_atomic_data_cache: Dict[str, Dict[str, float]] = {}
+
+
+def _initialize_element_paths() -> None:
+    """
+    Pre-compute all available element file paths at module load time.
+    This optimization eliminates repeated file system checks.
+    """
+    global _AVAILABLE_ELEMENTS
+    
+    base_paths = [
+        Path.cwd() / "src" / "AtomicScatteringFactor",
+        Path(__file__).parent.parent / "src" / "AtomicScatteringFactor",
+        Path(__file__).parent / "data" / "AtomicScatteringFactor",
+    ]
+    
+    for base_path in base_paths:
+        if base_path.exists():
+            for nff_file in base_path.glob("*.nff"):
+                element = nff_file.stem.capitalize()
+                if element not in _AVAILABLE_ELEMENTS:
+                    _AVAILABLE_ELEMENTS[element] = nff_file
+
 
 def load_scattering_factor_data(element: str) -> pd.DataFrame:
     """
@@ -109,30 +142,14 @@ def load_scattering_factor_data(element: str) -> pd.DataFrame:
     if element in _scattering_factor_cache:
         return _scattering_factor_cache[element]
     
-    # Construct file path - look for .nff files in src/AtomicScatteringFactor/
-    # First check relative to current working directory
-    base_paths = [
-        Path.cwd() / "src" / "AtomicScatteringFactor",
-        Path(__file__).parent.parent / "src" / "AtomicScatteringFactor",  # Parent of xraylabtool
-        Path(__file__).parent / "data" / "AtomicScatteringFactor",  # Traditional data directory
-    ]
-    
-    file_path = None
-    for base_path in base_paths:
-        candidate_path = base_path / f"{element.lower()}.nff"
-        if candidate_path.exists():
-            file_path = candidate_path
-            break
-    
-    if file_path is None:
-        # Create detailed error message with searched paths
-        searched_paths = [str(bp / f"{element.lower()}.nff") for bp in base_paths]
+    # Use pre-computed element paths for faster access
+    if element not in _AVAILABLE_ELEMENTS:
         raise FileNotFoundError(
             f"Scattering factor data file not found for element '{element}'. "
-            f"Searched in the following locations:\n" + 
-            "\n".join(f"  - {path}" for path in searched_paths) +
-            f"\n\nPlease ensure the file '{element.lower()}.nff' exists in one of these directories."
+            f"Available elements: {sorted(_AVAILABLE_ELEMENTS.keys())}"
         )
+    
+    file_path = _AVAILABLE_ELEMENTS[element]
     
     try:
         # Load .nff file using pandas.read_csv
@@ -276,6 +293,31 @@ def get_cached_elements() -> List[str]:
     return list(_scattering_factor_cache.keys())
 
 
+@lru_cache(maxsize=None)
+def get_bulk_atomic_data(elements_tuple: Tuple[str, ...]) -> Dict[str, Dict[str, float]]:
+    """
+    Bulk load atomic data for multiple elements with caching.
+    
+    This optimization reduces repeated calls to the mendeleev library
+    by loading atomic data for all elements at once and caching the results.
+    
+    Args:
+        elements_tuple: Tuple of element symbols to load data for
+        
+    Returns:
+        Dictionary mapping element symbols to their atomic data
+    """
+    from .utils import get_atomic_number, get_atomic_weight
+    
+    atomic_data = {}
+    for element in elements_tuple:
+        atomic_data[element] = {
+            'atomic_number': get_atomic_number(element),
+            'atomic_weight': get_atomic_weight(element)
+        }
+    return atomic_data
+
+
 def clear_scattering_factor_cache() -> None:
     """
     Clear the module-level scattering factor cache.
@@ -283,8 +325,14 @@ def clear_scattering_factor_cache() -> None:
     This function removes all cached scattering factor data from memory.
     Useful for testing or memory management.
     """
-    global _scattering_factor_cache
+    global _scattering_factor_cache, _interpolator_cache, _atomic_data_cache
     _scattering_factor_cache.clear()
+    _interpolator_cache.clear()
+    _atomic_data_cache.clear()
+    
+    # Clear LRU caches
+    get_bulk_atomic_data.cache_clear()
+    create_scattering_factor_interpolators.cache_clear()
 
 
 def is_element_cached(element: str) -> bool:
@@ -352,6 +400,9 @@ def calculate_scattering_factors(
     # Factor includes: (λ²/2π) × rₑ × ρ × Nₐ / M
     common_factor = SCATTERING_FACTOR * mass_density / molecular_weight
     
+    # Pre-compute wavelength squared once (optimization)
+    wave_sq = wavelength * wavelength  # Faster than **2
+    
     # Process each element in the formula
     for count, f1_interp, f2_interp in element_data:
         # Element-specific contribution factor
@@ -361,22 +412,21 @@ def calculate_scattering_factors(
         f1_values = f1_interp(energy_ev)
         f2_values = f2_interp(energy_ev)
         
-        # Convert scalar results to arrays if necessary
-        if np.isscalar(f1_values):
-            f1_values = np.full(n_energies, f1_values)
-        if np.isscalar(f2_values):
-            f2_values = np.full(n_energies, f2_values)
+        # Ensure arrays with proper dtype (optimization)
+        f1_values = np.asarray(f1_values, dtype=np.float64)
+        f2_values = np.asarray(f2_values, dtype=np.float64)
         
-        # Calculate wavelength-dependent factors (vectorized)
-        wave_sq = wavelength ** 2
+        # Pre-compute wavelength factor for this element
+        wave_element_factor = wave_sq * element_contribution_factor
         
         # Accumulate contributions to optical properties (vectorized)
-        dispersion += wave_sq * element_contribution_factor * f1_values
-        absorption += wave_sq * element_contribution_factor * f2_values
+        dispersion += wave_element_factor * f1_values
+        absorption += wave_element_factor * f2_values
         
-        # Accumulate total scattering factors
-        f1_total += count * f1_values
-        f2_total += count * f2_values
+        # Accumulate total scattering factors (direct accumulation)
+        count_float = float(count)  # Avoid repeated type conversion
+        f1_total += count_float * f1_values
+        f2_total += count_float * f2_values
     
     return dispersion, absorption, f1_total, f2_total
 
@@ -433,6 +483,7 @@ def calculate_derived_quantities(
     return electron_density, critical_angle, attenuation_length, re_sld, im_sld
 
 
+@lru_cache(maxsize=128)
 def create_scattering_factor_interpolators(element: str) -> Tuple[Callable[[Union[float, np.ndarray]], Union[float, np.ndarray]], Callable[[Union[float, np.ndarray]], Union[float, np.ndarray]]]:
     """
     Create PCHIP interpolators for f1 and f2 scattering factors.
@@ -462,6 +513,10 @@ def create_scattering_factor_interpolators(element: str) -> Tuple[Callable[[Unio
         >>> f1_values = f1_interp(energies)
         >>> f2_values = f2_interp(energies)
     """
+    # Check interpolator cache first
+    if element in _interpolator_cache:
+        return _interpolator_cache[element]
+    
     # Load scattering factor data
     data = load_scattering_factor_data(element)
     
@@ -490,6 +545,9 @@ def create_scattering_factor_interpolators(element: str) -> Tuple[Callable[[Unio
     # and provides smooth, shape-preserving interpolation similar to Julia's behavior
     f1_interpolator = PchipInterpolator(energies, f1_values, extrapolate=False)
     f2_interpolator = PchipInterpolator(energies, f2_values, extrapolate=False)
+    
+    # Cache the interpolators for future use
+    _interpolator_cache[element] = (f1_interpolator, f2_interpolator)
     
     return f1_interpolator, f2_interpolator
 
@@ -577,17 +635,22 @@ def calculate_xray_properties(
     n_elements = len(element_symbols)
     n_energies = len(energy_kev)
     
-    # Look up atomic data for each element in the formula
+    # Bulk load atomic data for all elements (optimization)
+    elements_tuple = tuple(element_symbols)
+    atomic_data_bulk = get_bulk_atomic_data(elements_tuple)
+    
+    # Calculate molecular properties efficiently
     molecular_weight = 0.0
     number_of_electrons = 0.0
     
-    for i in range(n_elements):
-        atomic_number = get_atomic_number(element_symbols[i])
-        atomic_mass = get_atomic_weight(element_symbols[i])
+    for symbol, count in zip(element_symbols, element_counts):
+        data = atomic_data_bulk[symbol]
+        atomic_number = data['atomic_number']
+        atomic_mass = data['atomic_weight']
         
         # Accumulate molecular weight and total electrons
-        molecular_weight += element_counts[i] * atomic_mass
-        number_of_electrons += atomic_number * element_counts[i]
+        molecular_weight += count * atomic_mass
+        number_of_electrons += atomic_number * count
     
     # Convert X-ray energies (keV) to wavelengths (m)
     # λ = hc/E, where h = Planck constant, c = speed of light
@@ -927,7 +990,11 @@ def Refrac(
     formula_density_pairs = list(zip(formulas, densities))
     results = {}
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(formulas), 8)) as executor:
+    # Optimize worker count based on system capabilities and workload
+    import multiprocessing
+    optimal_workers = min(len(formulas), max(1, multiprocessing.cpu_count() // 2), 8)
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=optimal_workers) as executor:
         # Submit all tasks
         future_to_formula = {
             executor.submit(process_formula, pair): pair[0] 
@@ -949,3 +1016,7 @@ def Refrac(
         raise RuntimeError("Failed to process any formulas successfully")
     
     return results
+
+
+# Initialize element paths at module import time for performance
+_initialize_element_paths()
