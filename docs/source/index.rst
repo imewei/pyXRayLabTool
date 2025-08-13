@@ -53,8 +53,8 @@ Or for development:
 
 .. code-block:: bash
 
-   git clone https://github.com/yourusername/xraylabtool.git
-   cd xraylabtool
+   git clone https://github.com/imewei/pyXRayLabTool.git
+   cd pyXRayLabTool
    pip install -e .
 
 

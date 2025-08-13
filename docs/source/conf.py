@@ -76,8 +76,8 @@ html_theme_options = {
 
 html_context = {
     "display_github": True,
-    "github_user": "yourusername",
-    "github_repo": "xraylabtool",
+    "github_user": "imewei",
+    "github_repo": "pyXRayLabTool",
     "github_version": "main",
     "conf_py_path": "/docs/source/",
 }
