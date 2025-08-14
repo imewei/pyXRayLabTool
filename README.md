@@ -29,7 +29,7 @@ pip install -e .
 
 ### Requirements
 
-- **Python** ≥ 3.8
+- **Python** ≥ 3.12
 - **NumPy** ≥ 1.20.0
 - **SciPy** ≥ 1.7.0
 - **Pandas** ≥ 1.3.0
