@@ -13,7 +13,7 @@ The test suite is designed to ensure 100% compatibility between the Julia and Py
 - **`test_integration.py`** - Main integration tests (translation of `test/runtests.jl`)
   - Basic setup and initialization tests
   - SiO2 and H2O property validation
-  - SubRefrac Silicon properties
+  - calculate_sub_refraction Silicon properties
   - Edge cases and error handling
   - Input validation
   - Performance benchmarks using `pytest-benchmark`
@@ -71,7 +71,7 @@ The test suite is designed to ensure 100% compatibility between the Julia and Py
 ## Test Categories
 
 ### 1. Integration Tests
-Complete end-to-end testing of the main `Refrac` and `SubRefrac` functions with expected values from the Julia implementation.
+Complete end-to-end testing of the main `calculate_refraction` and `calculate_sub_refraction` functions with expected values from the Julia implementation.
 
 ### 2. Unit Tests
 Individual function and class testing with comprehensive edge case coverage.
@@ -104,7 +104,7 @@ The test suite includes exact expected values from the Julia implementation for 
 - **f1 values**: `[0] = 10.110775776847062`, `[2] = 10.065881494924541`, `[4] = 10.04313810715771`
 - **reSLD values**: `[2] = 9.482008260671003e-6`, `[4] = 9.460584107129207e-6`
 
-### Silicon Properties (SubRefrac)
+### Silicon Properties (calculate_sub_refraction)
 - **Dispersion**: `1.20966554922812e-06`
 - **f1**: `14.048053047106292`
 - **f2**: `0.053331074920700626`
@@ -200,8 +200,8 @@ For complete test coverage, the following data files should be available:
 ## Performance Benchmarks
 
 The benchmark suite measures:
-- **Single calculations**: SubRefrac with energy arrays
-- **Multi-material calculations**: Refrac with multiple formulas
+- **Single calculations**: calculate_sub_refraction with energy arrays
+- **Multi-material calculations**: calculate_refraction with multiple formulas
 - **Energy sweeps**: Large energy range calculations
 - **Formula complexity**: Complex chemical formulas
 

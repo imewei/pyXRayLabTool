@@ -154,11 +154,11 @@ def load_scattering_factor_data(element: str) -> pd.DataFrame:
     try:
         # Load .nff file using pandas.read_csv
         # .nff files are CSV format with header: E,f1,f2
-        df = pd.read_csv(file_path)
+        scattering_data = pd.read_csv(file_path)
         
         # Verify expected columns exist
         expected_columns = {'E', 'f1', 'f2'}
-        actual_columns = set(df.columns)
+        actual_columns = set(scattering_data.columns)
         
         if not expected_columns.issubset(actual_columns):
             missing_cols = expected_columns - actual_columns
@@ -169,13 +169,13 @@ def load_scattering_factor_data(element: str) -> pd.DataFrame:
             )
         
         # Verify data is not empty
-        if df.empty:
+        if scattering_data.empty:
             raise ValueError(f"Empty scattering factor data file for element '{element}': {file_path}")
         
         # Cache the data
-        _scattering_factor_cache[element] = df
+        _scattering_factor_cache[element] = scattering_data
         
-        return df
+        return scattering_data
         
     except pd.errors.EmptyDataError as e:
         raise pd.errors.EmptyDataError(
@@ -518,33 +518,33 @@ def create_scattering_factor_interpolators(element: str) -> Tuple[Callable[[Unio
         return _interpolator_cache[element]
     
     # Load scattering factor data
-    data = load_scattering_factor_data(element)
+    scattering_factor_data = load_scattering_factor_data(element)
     
     # Verify we have sufficient data points for PCHIP interpolation
-    if len(data) < 2:
+    if len(scattering_factor_data) < 2:
         raise ValueError(
             f"Insufficient data points for element '{element}'. "
-            f"PCHIP interpolation requires at least 2 points, found {len(data)}."
+            f"PCHIP interpolation requires at least 2 points, found {len(scattering_factor_data)}."
         )
     
     # Extract energy, f1, and f2 data
-    energies = np.asarray(data['E'].values)
-    f1_values = np.asarray(data['f1'].values)
-    f2_values = np.asarray(data['f2'].values)
+    energy_values = np.asarray(scattering_factor_data['E'].values)
+    f1_values = np.asarray(scattering_factor_data['f1'].values)
+    f2_values = np.asarray(scattering_factor_data['f2'].values)
     
     # Verify energy values are sorted (PCHIP requires sorted x values)
-    if not np.all(energies[:-1] <= energies[1:]):
+    if not np.all(energy_values[:-1] <= energy_values[1:]):
         # Sort the data if it's not already sorted
-        sort_indices = np.argsort(energies)
-        energies = energies[sort_indices]
+        sort_indices = np.argsort(energy_values)
+        energy_values = energy_values[sort_indices]
         f1_values = f1_values[sort_indices]
         f2_values = f2_values[sort_indices]
     
     # Create PCHIP interpolators
     # PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) preserves monotonicity
     # and provides smooth, shape-preserving interpolation similar to Julia's behavior
-    f1_interpolator = PchipInterpolator(energies, f1_values, extrapolate=False)
-    f2_interpolator = PchipInterpolator(energies, f2_values, extrapolate=False)
+    f1_interpolator = PchipInterpolator(energy_values, f1_values, extrapolate=False)
+    f2_interpolator = PchipInterpolator(energy_values, f2_values, extrapolate=False)
     
     # Cache the interpolators for future use
     _interpolator_cache[element] = (f1_interpolator, f2_interpolator)
@@ -781,7 +781,7 @@ def load_data_file(filename: str) -> pd.DataFrame:
 # PUBLIC API FUNCTIONS
 # =====================================================================================
 
-def SubRefrac(
+def calculate_sub_refraction(
     formula: str,
     energy_keV: Union[float, List[float], np.ndarray],
     density: float
@@ -821,17 +821,17 @@ def SubRefrac(
         FileNotFoundError: If atomic scattering factor data is not available
         
     Examples:
-        >>> result = SubRefrac("SiO2", 8.0, 2.2)
+        >>> result = calculate_sub_refraction("SiO2", 8.0, 2.2)
         >>> print(f"Molecular weight: {result.MW:.2f} g/mol")
         Molecular weight: 60.08 g/mol
         
         >>> # Multiple energies
-        >>> result = SubRefrac("Al2O3", [8.0, 10.0, 12.0], 3.95)
+        >>> result = calculate_sub_refraction("Al2O3", [8.0, 10.0, 12.0], 3.95)
         >>> print(f"Critical angles: {result.Critical_Angle}")
         
         >>> # Array input
         >>> energies = np.linspace(5.0, 15.0, 11)
-        >>> result = SubRefrac("Fe2O3", energies, 5.24)
+        >>> result = calculate_sub_refraction("Fe2O3", energies, 5.24)
         >>> print(f"Energy range: {result.Energy[0]:.1f} - {result.Energy[-1]:.1f} keV")
     """
     # Calculate properties using the existing function
@@ -857,7 +857,7 @@ def SubRefrac(
     )
 
 
-def Refrac(
+def calculate_refraction(
     formulas: List[str],
     energies: Union[float, List[float], np.ndarray],
     densities: List[float]
@@ -886,19 +886,19 @@ def Refrac(
         >>> formulas = ["SiO2", "Al2O3", "Fe2O3"]
         >>> energies = [8.0, 10.0, 12.0]
         >>> densities = [2.2, 3.95, 5.24]
-        >>> results = Refrac(formulas, energies, densities)
+        >>> results = calculate_refraction(formulas, energies, densities)
         >>> sio2_result = results["SiO2"]
         >>> print(f"SiO2 MW: {sio2_result.MW:.2f} g/mol")
         SiO2 MW: 60.08 g/mol
         
         >>> # Single energy for all materials
-        >>> results = Refrac(["SiO2", "Al2O3"], 10.0, [2.2, 3.95])
+        >>> results = calculate_refraction(["SiO2", "Al2O3"], 10.0, [2.2, 3.95])
         >>> for formula, result in results.items():
         ...     print(f"{formula}: {result.Critical_Angle[0]:.3f}°")
         
         >>> # Array of energies
         >>> energy_array = np.linspace(5.0, 15.0, 21)
-        >>> results = Refrac(["SiO2"], energy_array, [2.2])
+        >>> results = calculate_refraction(["SiO2"], energy_array, [2.2])
         >>> print(f"Energy points: {len(results['SiO2'].Energy)}")
     """
     # Input validation
@@ -955,7 +955,7 @@ def Refrac(
     def process_formula(formula_density_pair: Tuple[str, float]) -> Tuple[str, XRayResult]:
         formula, density = formula_density_pair
         try:
-            result = SubRefrac(formula, sorted_energies, density)
+            result = calculate_sub_refraction(formula, sorted_energies, density)
             
             # If energies were sorted, we need to restore original order in results
             if not np.array_equal(sort_indices, np.arange(len(sort_indices))):

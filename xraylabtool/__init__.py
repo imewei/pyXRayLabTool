@@ -5,7 +5,7 @@ This package provides tools and utilities for X-ray crystallography
 and related laboratory analysis tasks.
 """
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"
 
@@ -26,8 +26,8 @@ from .core import (
     calculate_derived_quantities,
     calculate_xray_properties,
     calculate_multiple_xray_properties,
-    SubRefrac,
-    Refrac
+    calculate_sub_refraction,
+    calculate_refraction
 )
 
 # Import useful utility functions
@@ -61,8 +61,8 @@ __all__ = [
     
     # Core functionality - Main API
     'XRayResult',
-    'SubRefrac',
-    'Refrac',
+    'calculate_sub_refraction',
+    'calculate_refraction',
     
     # Core functionality - Advanced/Internal
     'load_scattering_factor_data',

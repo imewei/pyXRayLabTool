@@ -202,7 +202,7 @@ class TestEnhancedCacheManagement:
         """Test that cache clearing clears all optimization caches."""
         try:
             # Load some data to populate caches
-            xlt.SubRefrac("SiO2", 10.0, 2.2)
+            xlt.calculate_sub_refraction("SiO2", 10.0, 2.2)
             
             # Verify caches are populated
             assert len(get_cached_elements()) > 0
@@ -255,7 +255,7 @@ class TestPerformanceRegression:
             
             results = []
             for _ in range(3):
-                result = xlt.SubRefrac(formula, energy, density)
+                result = xlt.calculate_sub_refraction(formula, energy, density)
                 results.append((result.Dispersion[0], result.Absorption[0]))
             
             # All results should be identical
@@ -276,12 +276,12 @@ class TestPerformanceRegression:
             # Cold cache timing
             clear_scattering_factor_cache()
             start_time = time.perf_counter()
-            result1 = xlt.SubRefrac(formula, energy, density)
+            result1 = xlt.calculate_sub_refraction(formula, energy, density)
             cold_time = time.perf_counter() - start_time
             
             # Warm cache timing
             start_time = time.perf_counter()
-            result2 = xlt.SubRefrac(formula, energy, density)
+            result2 = xlt.calculate_sub_refraction(formula, energy, density)
             warm_time = time.perf_counter() - start_time
             
             # Results should be identical

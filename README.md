@@ -63,7 +63,7 @@ pip install -e .
 import xraylabtool as xlt
 
 # Calculate properties for quartz at multiple X-ray energies
-result = xlt.SubRefrac("SiO2", [8.0, 10.0, 12.0], 2.2)
+result = xlt.calculate_sub_refraction("SiO2", [8.0, 10.0, 12.0], 2.2)
 print(f"Molecular weight: {result.MW:.2f} g/mol")
 print(f"Critical angles: {result.Critical_Angle} degrees")
 ```
@@ -78,7 +78,7 @@ formulas = ["SiO2", "Al2O3", "Fe2O3"]
 densities = [2.2, 3.95, 5.24]
 energies = [8.0, 10.0, 12.0]
 
-results = xlt.Refrac(formulas, energies, densities)
+results = xlt.calculate_refraction(formulas, energies, densities)
 for formula, result in results.items():
     print(f"{formula}: MW = {result.MW:.2f} g/mol")
 ```
@@ -87,7 +87,7 @@ for formula, result in results.items():
 
 ```python
 # Access individual properties
-result = xlt.SubRefrac("SiO2", 10.0, 2.2)
+result = xlt.calculate_sub_refraction("SiO2", 10.0, 2.2)
 print(f"Formula: {result.Formula}")
 print(f"Molecular Weight: {result.MW:.2f} g/mol")
 print(f"Electron Density: {result.Electron_Density:.4f} electrons/Å³")
@@ -138,7 +138,7 @@ import xraylabtool as xlt
 import numpy as np
 
 # Single energy calculation
-result = xlt.SubRefrac("SiO2", 10.0, 2.33)
+result = xlt.calculate_sub_refraction("SiO2", 10.0, 2.33)
 print(f"Formula: {result.Formula}")                    # "SiO2"
 print(f"Molecular weight: {result.MW:.2f} g/mol")     # 60.08 g/mol
 print(f"Dispersion: {result.Dispersion[0]:.2e}")       # δ value
@@ -150,7 +150,7 @@ print(f"Critical angle: {result.Critical_Angle[0]:.3f}°")  # θc
 ```python
 # Energy range with numpy
 energies = np.linspace(8.0, 12.0, 21)  # 21 points from 8-12 keV
-result = xlt.SubRefrac("SiO2", energies, 2.33)
+result = xlt.calculate_sub_refraction("SiO2", energies, 2.33)
 
 print(f"Energy range: {result.Energy[0]:.1f} - {result.Energy[-1]:.1f} keV")
 print(f"Number of points: {len(result.Energy)}")
@@ -171,7 +171,7 @@ formulas = list(materials.keys())
 densities = list(materials.values())
 energy = 10.0  # keV (Cu Kα)
 
-results = xlt.Refrac(formulas, energy, densities)
+results = xlt.calculate_refraction(formulas, energy, densities)
 
 # Compare critical angles
 for formula, result in results.items():
@@ -186,7 +186,7 @@ import matplotlib.pyplot as plt
 
 # Energy-dependent properties
 energies = np.logspace(np.log10(1), np.log10(20), 100)
-result = xlt.SubRefrac("Si", energies, 2.33)
+result = xlt.calculate_sub_refraction("Si", energies, 2.33)
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 

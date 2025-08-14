@@ -72,16 +72,16 @@ import numpy as np
 
 print("🧪 Testing basic functionality...")
 
-# Test SubRefrac
-print("Testing SubRefrac...")
-result = xlt.SubRefrac("SiO2", 10.0, 2.2)
+# Test calculate_sub_refraction
+print("Testing calculate_sub_refraction...")
+result = xlt.calculate_sub_refraction("SiO2", 10.0, 2.2)
 print(f"Formula: {result.Formula}")
 print(f"MW: {result.MW:.2f} g/mol")
 print(f"Critical angle: {result.Critical_Angle[0]:.3f}°")
 
-# Test Refrac
-print("\\nTesting Refrac...")
-results = xlt.Refrac(["SiO2", "Al2O3"], [8.0, 10.0], [2.2, 3.95])
+# Test calculate_refraction
+print("\\nTesting calculate_refraction...")
+results = xlt.calculate_refraction(["SiO2", "Al2O3"], [8.0, 10.0], [2.2, 3.95])
 print(f"Number of materials: {len(results)}")
 for material, data in results.items():
     print(f"{material}: MW = {data.MW:.2f} g/mol")
