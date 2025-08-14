@@ -9,16 +9,6 @@
 
 XRayLabTool is a comprehensive Python package for calculating X-ray optical properties of materials based on their chemical formulas and densities. Designed for synchrotron scientists, materials researchers, and X-ray optics developers, it provides fast, accurate calculations using CXRO/NIST atomic scattering factor data.
 
-## ✨ Key Features
-
-- 🚀 **High Performance**: Vectorized NumPy calculations with intelligent caching
-- 🎯 **Accurate**: Based on CXRO/NIST atomic scattering factor databases
-- 🔧 **Easy to Use**: Simple API with dataclass-based results
-- 📊 **Comprehensive**: Calculate refractive indices, critical angles, attenuation lengths, and more
-- 🧪 **Materials Focus**: Support for both single materials and multi-material analysis
-- 🔄 **Robust**: Enhanced error handling and type safety
-- 📈 **Scalable**: Efficient parallel processing for multiple materials
-
 ---
 
 ## 📦 Installation
@@ -420,21 +410,6 @@ Calculate X-ray properties for multiple materials.
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-```bash
-git clone https://github.com/imewei/pyXRayLabTool.git
-cd pyXRayLabTool
-pip install -e ".[dev]"
-pytest tests/
-```
-
----
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -446,7 +421,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **CXRO**: Atomic scattering factor databases
 - **NIST**: Reference data and validation
 - **NumPy/SciPy**: Scientific computing foundation
-- **Contributors**: See [CONTRIBUTORS.md](CONTRIBUTORS.md)
 
 ---
 
