@@ -552,7 +552,7 @@ def create_scattering_factor_interpolators(element: str) -> Tuple[Callable[[Unio
     return f1_interpolator, f2_interpolator
 
 
-def calculate_xray_properties(
+def _calculate_single_material_xray_properties(
     formula_str: str,
     energy_kev: Union[float, List[float], np.ndarray],
     mass_density: float
@@ -590,14 +590,9 @@ def calculate_xray_properties(
         ValueError: If formula or energy inputs are invalid
         FileNotFoundError: If atomic scattering data is not available
         
-    Examples:
-        >>> result = calculate_xray_properties("SiO2", [8.0, 10.0, 12.0], 2.2)
-        >>> print(f"Molecular weight: {result['molecular_weight']:.2f} g/mol")
-        >>> print(f"Critical angles: {result['critical_angle']}")
-        
-        >>> # Single energy
-        >>> result = calculate_xray_properties("Al2O3", 10.0, 3.95)
-        >>> print(f"Attenuation length: {result['attenuation_length'][0]:.2f} cm")
+    Note:
+        This is an internal function. Use calculate_single_material_properties() 
+        for the public API that returns XRayResult objects.
     """
     from .utils import parse_formula, get_atomic_number, get_atomic_weight
     from .constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM
@@ -742,8 +737,27 @@ def calculate_multiple_xray_properties(
     for i, (formula, mass_density) in enumerate(zip(formula_list, mass_density_list)):
         try:
             # Calculate properties for this formula
-            result = calculate_xray_properties(formula, energy_kev, mass_density)
-            results[formula] = result
+            result = calculate_single_material_properties(formula, energy_kev, mass_density)
+            
+            # Convert XRayResult to dictionary format for backward compatibility
+            result_dict = {
+                'formula': result.Formula,
+                'molecular_weight': result.MW,
+                'number_of_electrons': result.Number_Of_Electrons,
+                'mass_density': result.Density,
+                'electron_density': result.Electron_Density,
+                'energy': result.Energy,
+                'wavelength': result.Wavelength,
+                'dispersion': result.Dispersion,
+                'absorption': result.Absorption,
+                'f1_total': result.f1,
+                'f2_total': result.f2,
+                'critical_angle': result.Critical_Angle,
+                'attenuation_length': result.Attenuation_Length,
+                're_sld': result.reSLD,
+                'im_sld': result.imSLD
+            }
+            results[formula] = result_dict
         except Exception as e:
             # Log warning but continue processing other formulas
             print(f"Warning: Failed to process formula {formula}: {e}")
@@ -781,7 +795,7 @@ def load_data_file(filename: str) -> pd.DataFrame:
 # PUBLIC API FUNCTIONS
 # =====================================================================================
 
-def calculate_sub_refraction(
+def calculate_single_material_properties(
     formula: str,
     energy_keV: Union[float, List[float], np.ndarray],
     density: float
@@ -821,21 +835,21 @@ def calculate_sub_refraction(
         FileNotFoundError: If atomic scattering factor data is not available
         
     Examples:
-        >>> result = calculate_sub_refraction("SiO2", 8.0, 2.2)
+        >>> result = calculate_single_material_properties("SiO2", 8.0, 2.2)
         >>> print(f"Molecular weight: {result.MW:.2f} g/mol")
         Molecular weight: 60.08 g/mol
         
         >>> # Multiple energies
-        >>> result = calculate_sub_refraction("Al2O3", [8.0, 10.0, 12.0], 3.95)
+        >>> result = calculate_single_material_properties("Al2O3", [8.0, 10.0, 12.0], 3.95)
         >>> print(f"Critical angles: {result.Critical_Angle}")
         
         >>> # Array input
         >>> energies = np.linspace(5.0, 15.0, 11)
-        >>> result = calculate_sub_refraction("Fe2O3", energies, 5.24)
+        >>> result = calculate_single_material_properties("Fe2O3", energies, 5.24)
         >>> print(f"Energy range: {result.Energy[0]:.1f} - {result.Energy[-1]:.1f} keV")
     """
     # Calculate properties using the existing function
-    properties = calculate_xray_properties(formula, energy_keV, density)
+    properties = _calculate_single_material_xray_properties(formula, energy_keV, density)
     
     # Create and return XRayResult dataclass
     return XRayResult(
@@ -857,7 +871,7 @@ def calculate_sub_refraction(
     )
 
 
-def calculate_refraction(
+def calculate_xray_properties(
     formulas: List[str],
     energies: Union[float, List[float], np.ndarray],
     densities: List[float]
@@ -886,19 +900,19 @@ def calculate_refraction(
         >>> formulas = ["SiO2", "Al2O3", "Fe2O3"]
         >>> energies = [8.0, 10.0, 12.0]
         >>> densities = [2.2, 3.95, 5.24]
-        >>> results = calculate_refraction(formulas, energies, densities)
+        >>> results = calculate_xray_properties(formulas, energies, densities)
         >>> sio2_result = results["SiO2"]
         >>> print(f"SiO2 MW: {sio2_result.MW:.2f} g/mol")
         SiO2 MW: 60.08 g/mol
         
         >>> # Single energy for all materials
-        >>> results = calculate_refraction(["SiO2", "Al2O3"], 10.0, [2.2, 3.95])
+        >>> results = calculate_xray_properties(["SiO2", "Al2O3"], 10.0, [2.2, 3.95])
         >>> for formula, result in results.items():
         ...     print(f"{formula}: {result.Critical_Angle[0]:.3f}°")
         
         >>> # Array of energies
         >>> energy_array = np.linspace(5.0, 15.0, 21)
-        >>> results = calculate_refraction(["SiO2"], energy_array, [2.2])
+        >>> results = calculate_xray_properties(["SiO2"], energy_array, [2.2])
         >>> print(f"Energy points: {len(results['SiO2'].Energy)}")
     """
     # Input validation
@@ -955,7 +969,7 @@ def calculate_refraction(
     def process_formula(formula_density_pair: Tuple[str, float]) -> Tuple[str, XRayResult]:
         formula, density = formula_density_pair
         try:
-            result = calculate_sub_refraction(formula, sorted_energies, density)
+            result = calculate_single_material_properties(formula, sorted_energies, density)
             
             # If energies were sorted, we need to restore original order in results
             if not np.array_equal(sort_indices, np.arange(len(sort_indices))):

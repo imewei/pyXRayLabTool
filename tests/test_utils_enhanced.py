@@ -18,8 +18,8 @@ from xraylabtool.utils import (
     d_spacing_cubic, q_from_angle, angle_from_q, smooth_data,
     normalize_intensity, parse_formula
 )
-from xraylabtool import clear_scattering_factor_cache, calculate_sub_refraction
-from xraylabtool.core import calculate_xray_properties
+from xraylabtool import clear_scattering_factor_cache, calculate_single_material_properties
+# calculate_xray_properties is now imported from main module
 
 # =====================================================================================
 # VECTOR COMPARISON UTILITIES (mirroring Julia utils.jl)
@@ -85,7 +85,7 @@ def with_cleared_caches(f):
         
         >>> # Or using function reference
         >>> def some_test_function():
-        ...     return calculate_sub_refraction("SiO2", [8.0], 2.2)
+        ...     return calculate_single_material_properties("SiO2", [8.0], 2.2)
         >>> result = with_cleared_caches(some_test_function)
     """
     # Clear all caches before executing the function

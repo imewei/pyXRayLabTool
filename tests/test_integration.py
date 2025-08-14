@@ -14,7 +14,7 @@ import os
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from xraylabtool import calculate_refraction, calculate_sub_refraction
+from xraylabtool import calculate_xray_properties, calculate_single_material_properties
 
 # Test constants (matching Julia test constants)
 DEFAULT_TOL = 1e-6
@@ -28,7 +28,7 @@ class TestBasicSetupAndInitialization:
     
     def test_basic_setup_and_initialization(self):
         """Test that materials are properly initialized."""
-        data = calculate_refraction(MATERIALS, ENERGIES, DENSITIES)
+        data = calculate_xray_properties(MATERIALS, ENERGIES, DENSITIES)
         
         # Test that materials are properly initialized
         assert "SiO2" in data
@@ -44,7 +44,7 @@ class TestSiO2Properties:
     
     def test_sio2_dispersion(self):
         """Test SiO2 dispersion values."""
-        data = calculate_refraction(MATERIALS, ENERGIES, DENSITIES)
+        data = calculate_xray_properties(MATERIALS, ENERGIES, DENSITIES)
         sio2 = data["SiO2"]
         
         # Expected values for SiO2 dispersion (index-1 based for Python)
@@ -60,7 +60,7 @@ class TestSiO2Properties:
     
     def test_sio2_f1_values(self):
         """Test SiO2 f1 values."""
-        data = calculate_refraction(MATERIALS, ENERGIES, DENSITIES)
+        data = calculate_xray_properties(MATERIALS, ENERGIES, DENSITIES)
         sio2 = data["SiO2"]
         
         # Expected values for SiO2 f1 (index-1 based for Python)
@@ -77,7 +77,7 @@ class TestSiO2Properties:
     
     def test_sio2_resld_values(self):
         """Test SiO2 reSLD values."""
-        data = calculate_refraction(MATERIALS, ENERGIES, DENSITIES)
+        data = calculate_xray_properties(MATERIALS, ENERGIES, DENSITIES)
         sio2 = data["SiO2"]
         
         # Expected values for SiO2 reSLD (index-1 based for Python)
@@ -97,7 +97,7 @@ class TestH2OProperties:
     
     def test_h2o_dispersion(self):
         """Test H2O dispersion values."""
-        data = calculate_refraction(MATERIALS, ENERGIES, DENSITIES)
+        data = calculate_xray_properties(MATERIALS, ENERGIES, DENSITIES)
         h2o = data["H2O"]
         
         # Expected values for H2O dispersion (index-1 based for Python)
@@ -113,7 +113,7 @@ class TestH2OProperties:
     
     def test_h2o_f1_values(self):
         """Test H2O f1 values."""
-        data = calculate_refraction(MATERIALS, ENERGIES, DENSITIES)
+        data = calculate_xray_properties(MATERIALS, ENERGIES, DENSITIES)
         h2o = data["H2O"]
         
         # Expected values for H2O f1 (index-1 based for Python)
@@ -130,7 +130,7 @@ class TestH2OProperties:
     
     def test_h2o_resld_values(self):
         """Test H2O reSLD values."""
-        data = calculate_refraction(MATERIALS, ENERGIES, DENSITIES)
+        data = calculate_xray_properties(MATERIALS, ENERGIES, DENSITIES)
         h2o = data["H2O"]
         
         # Expected values for H2O reSLD (index-1 based for Python)
@@ -150,7 +150,7 @@ class TestSubRefracSiliconProperties:
     
     def test_silicon_properties(self):
         """Test Silicon property values from SubRefrac."""
-        si = calculate_sub_refraction("Si", [20.0], 2.33)
+        si = calculate_single_material_properties("Si", [20.0], 2.33)
         
         # Expected values for Silicon (index-1 based for Python)
         expected_values = [
@@ -173,16 +173,16 @@ class TestEdgeCasesAndErrorHandling:
     def test_empty_materials(self):
         """Test with empty materials."""
         with pytest.raises(ValueError, match=r".*empty.*"):
-            calculate_refraction([], ENERGIES, [])
+            calculate_xray_properties([], ENERGIES, [])
     
     def test_mismatched_array_lengths(self):
         """Test with mismatched array lengths."""
         with pytest.raises(ValueError, match=r".*Number of formulas.*must match.*number of densities.*"):
-            calculate_refraction(MATERIALS, ENERGIES, [1.0])  # Wrong density count
+            calculate_xray_properties(MATERIALS, ENERGIES, [1.0])  # Wrong density count
     
     def test_non_existent_material_access(self):
         """Test accessing non-existent material."""
-        data = calculate_refraction(MATERIALS, ENERGIES, DENSITIES)
+        data = calculate_xray_properties(MATERIALS, ENERGIES, DENSITIES)
         assert "NonExistentMaterial" not in data
 
 
@@ -191,7 +191,7 @@ class TestPropertyConsistency:
     
     def test_property_consistency(self):
         """Test that all materials have the same energy array length."""
-        data = calculate_refraction(MATERIALS, ENERGIES, DENSITIES)
+        data = calculate_xray_properties(MATERIALS, ENERGIES, DENSITIES)
         
         for material in MATERIALS:
             material_data = data[material]
@@ -206,32 +206,32 @@ class TestInputValidationAndErrorHandling:
     def test_refrac_energy_below_minimum(self):
         """Test energy below 0.03 keV."""
         with pytest.raises(ValueError, match=r".*Energy values must be in range 0\.03-30 keV.*"):
-            calculate_refraction(["SiO2"], [0.02, 5.0], [2.2])
+            calculate_xray_properties(["SiO2"], [0.02, 5.0], [2.2])
     
     def test_refrac_energy_above_maximum(self):
         """Test energy above 30 keV."""
         with pytest.raises(ValueError, match=r".*Energy values must be in range 0\.03-30 keV.*"):
-            calculate_refraction(["SiO2"], [5.0, 35.0], [2.2])
+            calculate_xray_properties(["SiO2"], [5.0, 35.0], [2.2])
     
     def test_mismatched_list_lengths(self):
         """Test mismatched formulaList & massDensityList lengths."""
         with pytest.raises(ValueError, match=r".*Number of formulas.*must match.*number of densities.*"):
-            calculate_refraction(["SiO2", "Al2O3"], [8.0, 10.0], [2.2])
+            calculate_xray_properties(["SiO2", "Al2O3"], [8.0, 10.0], [2.2])
     
     def test_non_vector_formula_input(self):
         """Test non-vector formula input."""
         with pytest.raises((TypeError, ValueError)):
-            calculate_refraction("SiO2", [8.0, 10.0], [2.2])  # type: ignore
+            calculate_xray_properties("SiO2", [8.0, 10.0], [2.2])  # type: ignore
     
     def test_empty_formula_list(self):
         """Test empty formula list."""
         with pytest.raises(ValueError, match=r".*empty.*"):
-            calculate_refraction([], [8.0, 10.0], [])
+            calculate_xray_properties([], [8.0, 10.0], [])
     
     def test_empty_energy_vector(self):
         """Test empty energy vector."""
         with pytest.raises(ValueError, match=r".*empty.*"):
-            calculate_refraction(["SiO2"], [], [2.2])
+            calculate_xray_properties(["SiO2"], [], [2.2])
 
 
 class TestSubRefracErrorHandling:
@@ -241,12 +241,12 @@ class TestSubRefracErrorHandling:
     def test_invalid_chemical_formula(self):
         """Test invalid chemical formula."""
         with pytest.raises(ValueError, match=r".*Element.*not found.*"):
-            calculate_sub_refraction("InvalidElement123", [8.0], 2.2)
+            calculate_single_material_properties("InvalidElement123", [8.0], 2.2)
     
     def test_empty_formula_string(self):
         """Test empty formula string."""
         with pytest.raises(ValueError, match=r".*Formula must be a non-empty string.*"):
-            calculate_sub_refraction("", [8.0], 2.2)
+            calculate_single_material_properties("", [8.0], 2.2)
 
 
 class TestDuplicatedFormulasIndependence:
@@ -258,7 +258,7 @@ class TestDuplicatedFormulasIndependence:
         energies = [8.0, 10.0, 12.0]
         densities = [2.2, 2.2, 3.95]
         
-        results = calculate_refraction(formulas, energies, densities)
+        results = calculate_xray_properties(formulas, energies, densities)
         
         # Both SiO2 entries should be present and identical
         assert "SiO2" in results
@@ -277,22 +277,22 @@ class TestEdgeCaseInputValues:
     def test_boundary_energy_values(self):
         """Test exactly at boundary energy values."""
         # Test exactly at boundaries (should work)
-        result_min = calculate_refraction(["SiO2"], [0.03], [2.2])
+        result_min = calculate_xray_properties(["SiO2"], [0.03], [2.2])
         assert "SiO2" in result_min
         
-        result_max = calculate_refraction(["SiO2"], [30.0], [2.2])
+        result_max = calculate_xray_properties(["SiO2"], [30.0], [2.2])
         assert "SiO2" in result_max
     
     def test_very_small_density(self):
         """Test with very small density."""
-        result = calculate_sub_refraction("H2O", [8.0], 0.001)
+        result = calculate_single_material_properties("H2O", [8.0], 0.001)
         assert result.Density == 0.001
         assert result.Formula == "H2O"
     
     @pytest.mark.skip(reason="Requires Au atomic data files")
     def test_very_large_density(self):
         """Test with very large density."""
-        result = calculate_sub_refraction("Au", [8.0], 19.3)  # Gold density
+        result = calculate_single_material_properties("Au", [8.0], 19.3)  # Gold density
         assert result.Density == 19.3
         assert result.Formula == "Au"
 
@@ -307,7 +307,7 @@ class TestPerformanceBenchmarks:
     def test_benchmark_single_calculation(self, benchmark):
         """Benchmark single SubRefrac calculation."""
         def single_calculation():
-            return calculate_sub_refraction("SiO2", np.arange(1.0, 20.1, 0.1), 2.2)
+            return calculate_single_material_properties("SiO2", np.arange(1.0, 20.1, 0.1), 2.2)
         
         result = benchmark(single_calculation)
         assert result.Formula == "SiO2"
@@ -320,7 +320,7 @@ class TestPerformanceBenchmarks:
         energies = np.arange(1.0, 20.1, 0.1)
         
         def multi_calculation():
-            return calculate_refraction(formulas, energies, densities)
+            return calculate_xray_properties(formulas, energies, densities)
         
         result = benchmark(multi_calculation)
         assert len(result) == 5
@@ -332,7 +332,7 @@ class TestPerformanceBenchmarks:
         """Benchmark calculation with large energy sweep."""
         def energy_sweep():
             energies = np.linspace(0.1, 25.0, 1000)
-            return calculate_sub_refraction("SiO2", energies, 2.2)
+            return calculate_single_material_properties("SiO2", energies, 2.2)
         
         result = benchmark(energy_sweep)
         assert len(result.Energy) == 1000
@@ -341,7 +341,7 @@ class TestPerformanceBenchmarks:
         """Benchmark calculation with complex formula."""
         def complex_formula():
             # Use a complex mineral formula if available
-            return calculate_sub_refraction("SiO2", [5.0, 8.0, 10.0, 15.0, 20.0], 2.65)
+            return calculate_single_material_properties("SiO2", [5.0, 8.0, 10.0, 15.0, 20.0], 2.65)
         
         result = benchmark(complex_formula)
         assert len(result.Energy) == 5

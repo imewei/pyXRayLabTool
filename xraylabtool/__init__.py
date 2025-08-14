@@ -24,10 +24,9 @@ from .core import (
     create_scattering_factor_interpolators,
     calculate_scattering_factors,
     calculate_derived_quantities,
-    calculate_xray_properties,
     calculate_multiple_xray_properties,
-    calculate_sub_refraction,
-    calculate_refraction
+    calculate_single_material_properties,
+    calculate_xray_properties
 )
 
 # Import useful utility functions
@@ -61,8 +60,8 @@ __all__ = [
     
     # Core functionality - Main API
     'XRayResult',
-    'calculate_sub_refraction',
-    'calculate_refraction',
+    'calculate_single_material_properties',
+    'calculate_xray_properties',
     
     # Core functionality - Advanced/Internal
     'load_scattering_factor_data',

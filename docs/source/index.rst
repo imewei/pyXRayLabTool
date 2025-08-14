@@ -28,13 +28,13 @@ Quick Start
    import xraylabtool as xlt
    
    # Calculate properties for quartz at 10 keV
-   result = xlt.calculate_sub_refraction("SiO2", 10.0, 2.2)
+   result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
    print(f"Critical angle: {result.Critical_Angle[0]:.3f}°")
    
    # Multiple materials comparison
    formulas = ["SiO2", "Al2O3", "Fe2O3"]
    densities = [2.2, 3.95, 5.24]
-   results = xlt.calculate_refraction(formulas, 10.0, densities)
+   results = xlt.calculate_xray_properties(formulas, 10.0, densities)
 
 
 Installation

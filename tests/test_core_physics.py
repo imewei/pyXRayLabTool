@@ -19,8 +19,10 @@ from xraylabtool.core import (
     calculate_derived_quantities,
     create_scattering_factor_interpolators,
     calculate_xray_properties,
+    calculate_single_material_properties,
     calculate_multiple_xray_properties,
-    clear_scattering_factor_cache
+    clear_scattering_factor_cache,
+    XRayResult
 )
 from xraylabtool.constants import (
     SCATTERING_FACTOR,
@@ -216,40 +218,35 @@ class TestCalculateXrayProperties:
     def test_calculate_xray_properties_single_energy(self):
         """Test calculation for single energy."""
         try:
-            result = calculate_xray_properties("SiO2", 10.0, 2.2)
+            result = calculate_single_material_properties("SiO2", 10.0, 2.2)
             
-            # Verify result structure
-            expected_keys = {
-                'formula', 'molecular_weight', 'number_of_electrons', 'mass_density',
-                'electron_density', 'energy', 'wavelength', 'dispersion', 'absorption',
-                'f1_total', 'f2_total', 'critical_angle', 'attenuation_length', 're_sld', 'im_sld'
-            }
-            assert set(result.keys()) == expected_keys
+            # Verify result is XRayResult object
+            assert isinstance(result, XRayResult)
             
-            # Verify types and values
-            assert result['formula'] == "SiO2"
-            assert isinstance(result['molecular_weight'], (float, np.floating))
-            assert isinstance(result['number_of_electrons'], (float, np.floating))
-            assert result['mass_density'] == 2.2
+            # Verify basic attributes
+            assert result.Formula == "SiO2"
+            assert isinstance(result.MW, (float, np.floating))
+            assert isinstance(result.Number_Of_Electrons, (float, np.floating))
+            assert result.Density == 2.2
             
             # Arrays should have length 1 for single energy
-            assert len(result['energy']) == 1  # type: ignore
-            assert len(result['wavelength']) == 1  # type: ignore
-            assert len(result['dispersion']) == 1  # type: ignore
-            assert len(result['absorption']) == 1  # type: ignore
-            assert len(result['f1_total']) == 1  # type: ignore
-            assert len(result['f2_total']) == 1  # type: ignore
-            assert len(result['critical_angle']) == 1  # type: ignore
-            assert len(result['attenuation_length']) == 1  # type: ignore
-            assert len(result['re_sld']) == 1  # type: ignore
-            assert len(result['im_sld']) == 1  # type: ignore
+            assert len(result.Energy) == 1
+            assert len(result.Wavelength) == 1
+            assert len(result.Dispersion) == 1
+            assert len(result.Absorption) == 1
+            assert len(result.f1) == 1
+            assert len(result.f2) == 1
+            assert len(result.Critical_Angle) == 1
+            assert len(result.Attenuation_Length) == 1
+            assert len(result.reSLD) == 1
+            assert len(result.imSLD) == 1
             
             # Check physical reasonableness
-            assert result['molecular_weight'] > 0
-            assert result['number_of_electrons'] > 0
-            assert result['electron_density'] > 0  # type: ignore
-            assert result['energy'][0] == 10.0  # type: ignore
-            assert result['wavelength'][0] > 0  # type: ignore
+            assert result.MW > 0
+            assert result.Number_Of_Electrons > 0
+            assert result.Electron_Density > 0
+            assert result.Energy[0] == 10.0
+            assert result.Wavelength[0] > 0
             
         except FileNotFoundError:
             pytest.skip("Required .nff files not available for testing")
@@ -258,30 +255,30 @@ class TestCalculateXrayProperties:
         """Test calculation for multiple energies."""
         try:
             energies = [8.0, 10.0, 12.0, 15.0]
-            result = calculate_xray_properties("Al2O3", energies, 3.95)
+            result = calculate_single_material_properties("Al2O3", energies, 3.95)
             
             # Arrays should have correct length
             n_energies = len(energies)
-            assert len(result['energy']) == n_energies  # type: ignore
-            assert len(result['wavelength']) == n_energies  # type: ignore
-            assert len(result['dispersion']) == n_energies  # type: ignore
-            assert len(result['absorption']) == n_energies  # type: ignore
-            assert len(result['f1_total']) == n_energies  # type: ignore
-            assert len(result['f2_total']) == n_energies  # type: ignore
-            assert len(result['critical_angle']) == n_energies  # type: ignore
-            assert len(result['attenuation_length']) == n_energies  # type: ignore
-            assert len(result['re_sld']) == n_energies  # type: ignore
-            assert len(result['im_sld']) == n_energies  # type: ignore
+            assert len(result.Energy) == n_energies
+            assert len(result.Wavelength) == n_energies
+            assert len(result.Dispersion) == n_energies
+            assert len(result.Absorption) == n_energies
+            assert len(result.f1) == n_energies
+            assert len(result.f2) == n_energies
+            assert len(result.Critical_Angle) == n_energies
+            assert len(result.Attenuation_Length) == n_energies
+            assert len(result.reSLD) == n_energies
+            assert len(result.imSLD) == n_energies
             
             # All values should be finite
-            assert np.all(np.isfinite(result['dispersion']))
-            assert np.all(np.isfinite(result['absorption']))
-            assert np.all(np.isfinite(result['f1_total']))
-            assert np.all(np.isfinite(result['f2_total']))
-            assert np.all(np.isfinite(result['critical_angle']))
-            assert np.all(np.isfinite(result['attenuation_length']))
-            assert np.all(np.isfinite(result['re_sld']))
-            assert np.all(np.isfinite(result['im_sld']))
+            assert np.all(np.isfinite(result.Dispersion))
+            assert np.all(np.isfinite(result.Absorption))
+            assert np.all(np.isfinite(result.f1))
+            assert np.all(np.isfinite(result.f2))
+            assert np.all(np.isfinite(result.Critical_Angle))
+            assert np.all(np.isfinite(result.Attenuation_Length))
+            assert np.all(np.isfinite(result.reSLD))
+            assert np.all(np.isfinite(result.imSLD))
             
         except FileNotFoundError:
             pytest.skip("Required .nff files not available for testing")
@@ -290,22 +287,22 @@ class TestCalculateXrayProperties:
         """Test input validation."""
         # Empty formula
         with pytest.raises(ValueError, match="Formula must be a non-empty string"):
-            calculate_xray_properties("", 10.0, 2.2)
+            calculate_single_material_properties("", 10.0, 2.2)
         
         # Negative density
         with pytest.raises(ValueError, match="Mass density must be positive"):
-            calculate_xray_properties("SiO2", 10.0, -1.0)
+            calculate_single_material_properties("SiO2", 10.0, -1.0)
         
         # Zero energy
         with pytest.raises(ValueError, match="All energies must be positive"):
-            calculate_xray_properties("SiO2", 0.0, 2.2)
+            calculate_single_material_properties("SiO2", 0.0, 2.2)
         
         # Energy out of range
         with pytest.raises(ValueError, match="Energy is out of range"):
-            calculate_xray_properties("SiO2", 0.01, 2.2)  # Too low
+            calculate_single_material_properties("SiO2", 0.01, 2.2)  # Too low
         
         with pytest.raises(ValueError, match="Energy is out of range"):
-            calculate_xray_properties("SiO2", 50.0, 2.2)  # Too high
+            calculate_single_material_properties("SiO2", 50.0, 2.2)  # Too high
 
 
 class TestCalculateMultipleXrayProperties:
@@ -358,11 +355,11 @@ class TestPhysicsConsistency:
     def test_energy_wavelength_consistency(self):
         """Test energy-wavelength conversion consistency."""
         try:
-            result = calculate_xray_properties("SiO2", 10.0, 2.2)
+            result = calculate_single_material_properties("SiO2", 10.0, 2.2)
             
             # Check E = hc/λ relationship
-            energy_kev = result['energy'][0]  # type: ignore
-            wavelength_angstrom = result['wavelength'][0]  # type: ignore
+            energy_kev = result.Energy[0]
+            wavelength_angstrom = result.Wavelength[0]
             
             # Convert back to energy
             calculated_energy = ENERGY_TO_WAVELENGTH_FACTOR / (wavelength_angstrom * 1e-10)  # type: ignore 
@@ -376,14 +373,14 @@ class TestPhysicsConsistency:
         """Test that dispersion and absorption scale with density."""
         try:
             # Same material, different densities
-            result1 = calculate_xray_properties("SiO2", 10.0, 2.2)
-            result2 = calculate_xray_properties("SiO2", 10.0, 4.4)  # Double density
+            result1 = calculate_single_material_properties("SiO2", 10.0, 2.2)
+            result2 = calculate_single_material_properties("SiO2", 10.0, 4.4)  # Double density
             
             # Dispersion and absorption should scale with density
-            ratio = result2['dispersion'][0] / result1['dispersion'][0]  # type: ignore
+            ratio = result2.Dispersion[0] / result1.Dispersion[0]
             assert abs(ratio - 2.0) < 0.1  # Should be approximately 2
             
-            ratio = result2['absorption'][0] / result1['absorption'][0]  # type: ignore
+            ratio = result2.Absorption[0] / result1.Absorption[0]
             assert abs(ratio - 2.0) < 0.1  # Should be approximately 2
             
         except FileNotFoundError:

@@ -13,7 +13,7 @@ import os
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from xraylabtool.core import calculate_sub_refraction
+from xraylabtool.core import calculate_single_material_properties
 from xraylabtool.utils import get_atomic_number, get_atomic_weight
 
 
@@ -25,7 +25,7 @@ class TestComplexNumberHandling:
         # Test with complex energy - should use the real part
         complex_energy = 8.0 + 2.0j
         try:
-            result = calculate_sub_refraction("Si", complex_energy, 2.33)  # type: ignore
+            result = calculate_single_material_properties("Si", complex_energy, 2.33)  # type: ignore
             # Should succeed and use real part (8.0)
             assert result.Energy[0] == 8.0
         except ValueError as e:
@@ -43,7 +43,7 @@ class TestComplexNumberHandling:
         ]
         
         for energy in energies_to_test:
-            result = calculate_sub_refraction("Si", energy, 2.33)
+            result = calculate_single_material_properties("Si", energy, 2.33)
             assert len(result.Energy) == 1
             assert np.isclose(result.Energy[0], 8.0)
 
@@ -110,14 +110,14 @@ class TestArrayTypeHandling:
         ]
         
         for energies in energy_arrays:
-            result = calculate_sub_refraction("Si", energies, 2.33)
+            result = calculate_single_material_properties("Si", energies, 2.33)
             assert len(result.Energy) == 3
             assert isinstance(result.Energy, np.ndarray)
             assert np.allclose(result.Energy, [8.0, 10.0, 12.0])
     
     def test_dataclass_field_types(self):
         """Test that XRayResult dataclass fields have correct types."""
-        result = calculate_sub_refraction("SiO2", [8.0, 10.0], 2.2)
+        result = calculate_single_material_properties("SiO2", [8.0, 10.0], 2.2)
         
         # Check string fields
         assert isinstance(result.Formula, str)
@@ -148,14 +148,14 @@ class TestErrorMessages:
     def test_invalid_formula_error(self):
         """Test error message for invalid formula."""
         with pytest.raises(ValueError) as exc_info:
-            calculate_sub_refraction("", [8.0], 2.2)
+            calculate_single_material_properties("", [8.0], 2.2)
         
         assert "Formula must be a non-empty string" in str(exc_info.value)
     
     def test_negative_density_error(self):
         """Test error message for negative density."""
         with pytest.raises(ValueError) as exc_info:
-            calculate_sub_refraction("Si", [8.0], -2.33)
+            calculate_single_material_properties("Si", [8.0], -2.33)
         
         assert "Mass density must be positive" in str(exc_info.value)
     
@@ -163,13 +163,13 @@ class TestErrorMessages:
         """Test error message for out-of-range energies."""
         # Test energy too low
         with pytest.raises(ValueError) as exc_info:
-            calculate_sub_refraction("Si", [0.01], 2.33)
+            calculate_single_material_properties("Si", [0.01], 2.33)
         
         assert "Energy is out of range" in str(exc_info.value)
         
         # Test energy too high
         with pytest.raises(ValueError) as exc_info:
-            calculate_sub_refraction("Si", [35.0], 2.33)
+            calculate_single_material_properties("Si", [35.0], 2.33)
         
         assert "Energy is out of range" in str(exc_info.value)
 
