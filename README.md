@@ -59,10 +59,10 @@ import numpy as np
 
 # Calculate properties for quartz at 10 keV
 result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
-print(f"Formula: {result.Formula}")
-print(f"Molecular Weight: {result.MW:.2f} g/mol")
-print(f"Critical Angle: {result.Critical_Angle[0]:.3f}°")
-print(f"Attenuation Length: {result.Attenuation_Length[0]:.2f} cm")
+print(f"Formula: {result.formula}")
+print(f"Molecular Weight: {result.molecular_weight_g_mol:.2f} g/mol")
+print(f"Critical Angle: {result.critical_angle_degrees[0]:.3f}°")
+print(f"Attenuation Length: {result.attenuation_length_cm[0]:.2f} cm")
 ```
 
 ### Multiple Materials Comparison
@@ -82,10 +82,10 @@ energy = 10.0  # keV (Cu Kα)
 
 results = xlt.calculate_xray_properties(formulas, energy, densities)
 
-# Display results
+# Display results (using new field names)
 for formula, result in results.items():
-    print(f"{formula:6}: θc = {result.Critical_Angle[0]:.3f}°, "
-          f"δ = {result.Dispersion[0]:.2e}")
+    print(f"{formula:6}: θc = {result.critical_angle_degrees[0]:.3f}°, "
+          f"δ = {result.dispersion_delta[0]:.2e}")
 ```
 
 ### Energy Range Analysis
@@ -95,8 +95,8 @@ for formula, result in results.items():
 energies = np.logspace(np.log10(1), np.log10(30), 100)  # 1-30 keV
 result = xlt.calculate_single_material_properties("Si", energies, 2.33)
 
-print(f"Energy range: {result.Energy[0]:.1f} - {result.Energy[-1]:.1f} keV")
-print(f"Data points: {len(result.Energy)}")
+print(f"Energy range: {result.energy_kev[0]:.1f} - {result.energy_kev[-1]:.1f} keV")
+print(f"Data points: {len(result.energy_kev)}")
 ```
 
 ---
@@ -113,59 +113,76 @@ print(f"Data points: {len(result.Energy)}")
 
 ## 📤 Output: `XRayResult` Dataclass
 
-The `XRayResult` dataclass contains all computed X-ray optical properties:
+The `XRayResult` dataclass contains all computed X-ray optical properties with clear, descriptive field names:
 
 ### Material Properties
-- **`Formula: str`** – Chemical formula
-- **`MW: float`** – Molecular weight (g/mol)
-- **`Number_Of_Electrons: float`** – Total electrons per molecule
-- **`Density: float`** – Mass density (g/cm³)
-- **`Electron_Density: float`** – Electron density (electrons/Å³)
+- **`formula: str`** – Chemical formula
+- **`molecular_weight_g_mol: float`** – Molecular weight (g/mol)
+- **`total_electrons: float`** – Total electrons per molecule
+- **`density_g_cm3: float`** – Mass density (g/cm³)
+- **`electron_density_per_ang3: float`** – Electron density (electrons/Å³)
 
 ### X-ray Properties (Arrays)
-- **`Energy: np.ndarray`** – X-ray energies (keV)
-- **`Wavelength: np.ndarray`** – X-ray wavelengths (Å)
-- **`Dispersion: np.ndarray`** – Dispersion coefficient δ
-- **`Absorption: np.ndarray`** – Absorption coefficient β
-- **`f1: np.ndarray`** – Real part of atomic scattering factor
-- **`f2: np.ndarray`** – Imaginary part of atomic scattering factor
+- **`energy_kev: np.ndarray`** – X-ray energies (keV)
+- **`wavelength_angstrom: np.ndarray`** – X-ray wavelengths (Å)
+- **`dispersion_delta: np.ndarray`** – Dispersion coefficient δ
+- **`absorption_beta: np.ndarray`** – Absorption coefficient β
+- **`scattering_factor_f1: np.ndarray`** – Real part of atomic scattering factor
+- **`scattering_factor_f2: np.ndarray`** – Imaginary part of atomic scattering factor
 
 ### Derived Quantities (Arrays)
-- **`Critical_Angle: np.ndarray`** – Critical angles (degrees)
-- **`Attenuation_Length: np.ndarray`** – Attenuation lengths (cm)
-- **`reSLD: np.ndarray`** – Real scattering length density (Å⁻²)
-- **`imSLD: np.ndarray`** – Imaginary scattering length density (Å⁻²)
+- **`critical_angle_degrees: np.ndarray`** – Critical angles (degrees)
+- **`attenuation_length_cm: np.ndarray`** – Attenuation lengths (cm)
+- **`real_sld_per_ang2: np.ndarray`** – Real scattering length density (Å⁻²)
+- **`imaginary_sld_per_ang2: np.ndarray`** – Imaginary scattering length density (Å⁻²)
+
+> **📝 Note**: Legacy field names (e.g., `Formula`, `MW`, `Critical_Angle`) are still supported for backward compatibility but will emit deprecation warnings. Use the new descriptive field names for clearer, more maintainable code.
 
 ---
 
 ## 💡 Usage Examples
 
-### Single Energy Calculation
+### Recommended: Using New Field Names
 
 ```python
 # Calculate properties for silicon dioxide at 10 keV
 result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.33)
-print(f"Formula: {result.Formula}")                    # "SiO2"
-print(f"Molecular weight: {result.MW:.2f} g/mol")     # 60.08 g/mol
-print(f"Dispersion: {result.Dispersion[0]:.2e}")       # δ value
-print(f"Critical angle: {result.Critical_Angle[0]:.3f}°")  # θc
+
+# Use new descriptive field names (recommended)
+print(f"Formula: {result.formula}")                                      # "SiO2"
+print(f"Molecular weight: {result.molecular_weight_g_mol:.2f} g/mol")     # 60.08 g/mol
+print(f"Dispersion: {result.dispersion_delta[0]:.2e}")                   # δ value
+print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")        # θc
+print(f"Attenuation: {result.attenuation_length_cm[0]:.1f} cm")          # Attenuation length
 ```
 
-### Energy Range Scan
+### Legacy Field Names (Still Supported)
 
 ```python
-# Energy range with numpy
+# Legacy field names still work but emit deprecation warnings
+print(f"Formula: {result.Formula}")                    # ⚠️ DeprecationWarning
+print(f"Molecular weight: {result.MW:.2f} g/mol")     # ⚠️ DeprecationWarning  
+print(f"Dispersion: {result.Dispersion[0]:.2e}")       # ⚠️ DeprecationWarning
+print(f"Critical angle: {result.Critical_Angle[0]:.3f}°")  # ⚠️ DeprecationWarning
+```
+
+### Energy Range Analysis
+
+```python
+# Energy sweep for material characterization
 energies = np.linspace(8.0, 12.0, 21)  # 21 points from 8-12 keV
 result = xlt.calculate_single_material_properties("SiO2", energies, 2.33)
 
-print(f"Energy range: {result.Energy[0]:.1f} - {result.Energy[-1]:.1f} keV")
-print(f"Number of points: {len(result.Energy)}")
+# Using new field names
+print(f"Energy range: {result.energy_kev[0]:.1f} - {result.energy_kev[-1]:.1f} keV")
+print(f"Number of points: {len(result.energy_kev)}")
+print(f"Dispersion range: {result.dispersion_delta.min():.2e} to {result.dispersion_delta.max():.2e}")
 ```
 
-### Multiple Materials Analysis
+### Multiple Materials Comparison
 
 ```python
-# Common X-ray optics materials
+# Compare common X-ray optics materials
 materials = {
     "SiO2": 2.2,      # Fused silica
     "Si": 2.33,       # Silicon
@@ -179,40 +196,107 @@ energy = 10.0  # keV (Cu Kα)
 
 results = xlt.calculate_xray_properties(formulas, energy, densities)
 
-# Compare critical angles
+# Compare using new field names
 for formula, result in results.items():
-    print(f"{formula:8}: θc = {result.Critical_Angle[0]:.3f}°, "
-          f"δ = {result.Dispersion[0]:.2e}")
+    print(f"{formula:8}: θc = {result.critical_angle_degrees[0]:.3f}°, "
+          f"δ = {result.dispersion_delta[0]:.2e}, "
+          f"μ = {result.attenuation_length_cm[0]:.1f} cm")
 ```
 
-### Plotting Results
+### Enhanced Plotting Example
 
 ```python
 import matplotlib.pyplot as plt
 
-# Energy-dependent properties
+# Energy-dependent properties with new field names
 energies = np.logspace(np.log10(1), np.log10(20), 100)
 result = xlt.calculate_single_material_properties("Si", energies, 2.33)
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-# Plot dispersion and absorption
-ax1.loglog(result.Energy, result.Dispersion, 'b-', label='δ (dispersion)')
-ax1.loglog(result.Energy, result.Absorption, 'r-', label='β (absorption)')
+# Plot using new descriptive field names
+ax1.loglog(result.energy_kev, result.dispersion_delta, 'b-', 
+           label='δ (dispersion)', linewidth=2)
+ax1.loglog(result.energy_kev, result.absorption_beta, 'r-', 
+           label='β (absorption)', linewidth=2)
 ax1.set_xlabel('Energy (keV)')
 ax1.set_ylabel('Optical constants')
+ax1.set_title('Silicon: Dispersion & Absorption')
 ax1.legend()
-ax1.grid(True)
+ax1.grid(True, alpha=0.3)
 
-# Plot critical angle
-ax2.semilogx(result.Energy, result.Critical_Angle, 'g-')
+# Plot critical angle with new field name
+ax2.semilogx(result.energy_kev, result.critical_angle_degrees, 'g-', linewidth=2)
 ax2.set_xlabel('Energy (keV)')
 ax2.set_ylabel('Critical angle (°)')
-ax2.grid(True)
+ax2.set_title('Silicon: Critical Angle')
+ax2.grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
 ```
+
+---
+
+## 🔄 Migration Guide: Legacy to New Field Names
+
+To help users transition from legacy CamelCase field names to the new descriptive snake_case names, here's a comprehensive mapping:
+
+### Field Name Migration Table
+
+| **Legacy Name**                    | **New Name**                       | **Description**                                   |
+| ---------------------------------- | ---------------------------------- | ------------------------------------------------- |
+| `result.Formula`                   | `result.formula`                   | Chemical formula string                          |
+| `result.MW`                        | `result.molecular_weight_g_mol`    | Molecular weight (g/mol)                         |
+| `result.Number_Of_Electrons`       | `result.total_electrons`           | Total electrons per molecule                     |
+| `result.Density`                   | `result.density_g_cm3`             | Mass density (g/cm³)                             |
+| `result.Electron_Density`          | `result.electron_density_per_ang3` | Electron density (electrons/Å³)                  |
+| `result.Energy`                    | `result.energy_kev`                | X-ray energies (keV)                             |
+| `result.Wavelength`                | `result.wavelength_angstrom`       | X-ray wavelengths (Å)                            |
+| `result.Dispersion`                | `result.dispersion_delta`          | Dispersion coefficient δ                         |
+| `result.Absorption`                | `result.absorption_beta`           | Absorption coefficient β                         |
+| `result.f1`                        | `result.scattering_factor_f1`      | Real part of atomic scattering factor            |
+| `result.f2`                        | `result.scattering_factor_f2`      | Imaginary part of atomic scattering factor       |
+| `result.Critical_Angle`            | `result.critical_angle_degrees`    | Critical angles (degrees)                        |
+| `result.Attenuation_Length`        | `result.attenuation_length_cm`     | Attenuation lengths (cm)                         |
+| `result.reSLD`                     | `result.real_sld_per_ang2`         | Real scattering length density (Å⁻²)             |
+| `result.imSLD`                     | `result.imaginary_sld_per_ang2`    | Imaginary scattering length density (Å⁻²)        |
+
+### Quick Migration Examples
+
+```python
+# ❌ OLD (deprecated, but still works)
+print(f"Critical angle: {result.Critical_Angle[0]:.3f}°")     # Emits warning
+print(f"Attenuation: {result.Attenuation_Length[0]:.1f} cm")  # Emits warning
+print(f"MW: {result.MW:.2f} g/mol")                           # Emits warning
+
+# ✅ NEW (recommended)
+print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
+print(f"Attenuation: {result.attenuation_length_cm[0]:.1f} cm")
+print(f"MW: {result.molecular_weight_g_mol:.2f} g/mol")
+```
+
+### Suppressing Deprecation Warnings (Temporary)
+
+If you need to temporarily suppress deprecation warnings during migration:
+
+```python
+import warnings
+
+# Suppress only XRayLabTool deprecation warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning, 
+                          message=".*deprecated.*")
+    # Your legacy code here
+    print(f"Result: {result.Critical_Angle[0]}")
+```
+
+### Migration Strategy
+
+1. **Identify Usage**: Search your codebase for the legacy field names
+2. **Update Gradually**: Replace legacy names with new ones section by section  
+3. **Test**: Ensure your code works with new field names
+4. **Clean Up**: Remove any deprecation warning suppressions
 
 ---
 
@@ -384,7 +468,7 @@ If you use XRayLabTool in your research, please cite:
   author = {Wei Chen},
   url = {https://github.com/imewei/pyXRayLabTool},
   year = {2024},
-  version = {0.1.4}
+  version = {0.1.5}
 }
 ```
 

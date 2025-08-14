@@ -29,41 +29,201 @@ class XRayResult:
     Contains all computed properties including scattering factors, optical constants,
     and derived quantities like critical angles and attenuation lengths.
     
-    Fields are ordered to match the Julia XRayResult struct exactly.
-    All vector fields use numpy.ndarray as specified in the requirements.
+    All field names follow Python naming conventions (snake_case) with clear units.
+    Legacy CamelCase field names are supported via deprecated property aliases.
     
     Fields:
-        Formula: Chemical formula string
-        MW: Molecular weight (g/mol)
-        Number_Of_Electrons: Total electrons per molecule  
-        Density: Mass density (g/cm³)
-        Electron_Density: Electron density (electrons/Å³)
-        Energy: X-ray energies in keV (numpy.ndarray)
-        Wavelength: X-ray wavelengths in Å (numpy.ndarray)
-        Dispersion: Dispersion coefficients δ (numpy.ndarray)
-        Absorption: Absorption coefficients β (numpy.ndarray)
-        f1: Real part of atomic scattering factor (numpy.ndarray)
-        f2: Imaginary part of atomic scattering factor (numpy.ndarray)
-        Critical_Angle: Critical angles in degrees (numpy.ndarray)
-        Attenuation_Length: Attenuation lengths in cm (numpy.ndarray)
-        reSLD: Real part of scattering length density in Å⁻² (numpy.ndarray)
-        imSLD: Imaginary part of scattering length density in Å⁻² (numpy.ndarray)
+        formula: Chemical formula string
+        molecular_weight_g_mol: Molecular weight (g/mol)
+        total_electrons: Total electrons per molecule  
+        density_g_cm3: Mass density (g/cm³)
+        electron_density_per_ang3: Electron density (electrons/Å³)
+        energy_kev: X-ray energies in keV (numpy.ndarray)
+        wavelength_angstrom: X-ray wavelengths in Å (numpy.ndarray)
+        dispersion_delta: Dispersion coefficients δ (numpy.ndarray)
+        absorption_beta: Absorption coefficients β (numpy.ndarray)
+        scattering_factor_f1: Real part of atomic scattering factor (numpy.ndarray)
+        scattering_factor_f2: Imaginary part of atomic scattering factor (numpy.ndarray)
+        critical_angle_degrees: Critical angles in degrees (numpy.ndarray)
+        attenuation_length_cm: Attenuation lengths in cm (numpy.ndarray)
+        real_sld_per_ang2: Real part of scattering length density in Å⁻² (numpy.ndarray)
+        imaginary_sld_per_ang2: Imaginary part of scattering length density in Å⁻² (numpy.ndarray)
     """
-    Formula: str                              # Chemical formula
-    MW: float                                 # Molecular weight (g/mol)
-    Number_Of_Electrons: float                # Electrons per molecule
-    Density: float                            # Mass density (g/cm³)
-    Electron_Density: float                   # Electron density (1/Å³)
-    Energy: np.ndarray                        # X-ray energy (KeV)
-    Wavelength: np.ndarray                    # X-ray wavelength (Å)
-    Dispersion: np.ndarray                    # Dispersion coefficient
-    Absorption: np.ndarray                    # Absorption coefficient
-    f1: np.ndarray                            # Real part of atomic scattering factor
-    f2: np.ndarray                            # Imaginary part of atomic scattering factor
-    Critical_Angle: np.ndarray                # Critical angle (degrees)
-    Attenuation_Length: np.ndarray            # Attenuation length (cm)
-    reSLD: np.ndarray                         # Real part of SLD (Å⁻²)
-    imSLD: np.ndarray                         # Imaginary part of SLD (Å⁻²)
+    # New snake_case field names
+    formula: str                              # Chemical formula
+    molecular_weight_g_mol: float             # Molecular weight (g/mol)
+    total_electrons: float                    # Electrons per molecule
+    density_g_cm3: float                      # Mass density (g/cm³)
+    electron_density_per_ang3: float          # Electron density (electrons/Å³)
+    energy_kev: np.ndarray                    # X-ray energy (keV)
+    wavelength_angstrom: np.ndarray           # X-ray wavelength (Å)
+    dispersion_delta: np.ndarray              # Dispersion coefficient δ
+    absorption_beta: np.ndarray               # Absorption coefficient β
+    scattering_factor_f1: np.ndarray          # Real part of atomic scattering factor
+    scattering_factor_f2: np.ndarray          # Imaginary part of atomic scattering factor
+    critical_angle_degrees: np.ndarray        # Critical angle (degrees)
+    attenuation_length_cm: np.ndarray         # Attenuation length (cm)
+    real_sld_per_ang2: np.ndarray            # Real part of SLD (Å⁻²)
+    imaginary_sld_per_ang2: np.ndarray       # Imaginary part of SLD (Å⁻²)
+    
+    def __post_init__(self):
+        """Post-initialization to handle any setup after object creation."""
+        # Ensure all arrays are numpy arrays
+        self.energy_kev = np.asarray(self.energy_kev)
+        self.wavelength_angstrom = np.asarray(self.wavelength_angstrom)
+        self.dispersion_delta = np.asarray(self.dispersion_delta)
+        self.absorption_beta = np.asarray(self.absorption_beta)
+        self.scattering_factor_f1 = np.asarray(self.scattering_factor_f1)
+        self.scattering_factor_f2 = np.asarray(self.scattering_factor_f2)
+        self.critical_angle_degrees = np.asarray(self.critical_angle_degrees)
+        self.attenuation_length_cm = np.asarray(self.attenuation_length_cm)
+        self.real_sld_per_ang2 = np.asarray(self.real_sld_per_ang2)
+        self.imaginary_sld_per_ang2 = np.asarray(self.imaginary_sld_per_ang2)
+    
+    # Legacy property aliases (deprecated) - emit warnings when accessed
+    @property
+    def Formula(self) -> str:
+        """Deprecated: Use 'formula' instead."""
+        import warnings
+        warnings.warn("Formula is deprecated, use 'formula' instead", DeprecationWarning, stacklevel=2)
+        return self.formula
+    
+    @property
+    def MW(self) -> float:
+        """Deprecated: Use 'molecular_weight_g_mol' instead."""
+        import warnings
+        warnings.warn("MW is deprecated, use 'molecular_weight_g_mol' instead", DeprecationWarning, stacklevel=2)
+        return self.molecular_weight_g_mol
+    
+    @property
+    def Number_Of_Electrons(self) -> float:
+        """Deprecated: Use 'total_electrons' instead."""
+        import warnings
+        warnings.warn("Number_Of_Electrons is deprecated, use 'total_electrons' instead", DeprecationWarning, stacklevel=2)
+        return self.total_electrons
+    
+    @property
+    def Density(self) -> float:
+        """Deprecated: Use 'density_g_cm3' instead."""
+        import warnings
+        warnings.warn("Density is deprecated, use 'density_g_cm3' instead", DeprecationWarning, stacklevel=2)
+        return self.density_g_cm3
+    
+    @property
+    def Electron_Density(self) -> float:
+        """Deprecated: Use 'electron_density_per_ang3' instead."""
+        import warnings
+        warnings.warn("Electron_Density is deprecated, use 'electron_density_per_ang3' instead", DeprecationWarning, stacklevel=2)
+        return self.electron_density_per_ang3
+    
+    @property
+    def Energy(self) -> np.ndarray:
+        """Deprecated: Use 'energy_kev' instead."""
+        import warnings
+        warnings.warn("Energy is deprecated, use 'energy_kev' instead", DeprecationWarning, stacklevel=2)
+        return self.energy_kev
+    
+    @property
+    def Wavelength(self) -> np.ndarray:
+        """Deprecated: Use 'wavelength_angstrom' instead."""
+        import warnings
+        warnings.warn("Wavelength is deprecated, use 'wavelength_angstrom' instead", DeprecationWarning, stacklevel=2)
+        return self.wavelength_angstrom
+    
+    @property
+    def Dispersion(self) -> np.ndarray:
+        """Deprecated: Use 'dispersion_delta' instead."""
+        import warnings
+        warnings.warn("Dispersion is deprecated, use 'dispersion_delta' instead", DeprecationWarning, stacklevel=2)
+        return self.dispersion_delta
+    
+    @property
+    def Absorption(self) -> np.ndarray:
+        """Deprecated: Use 'absorption_beta' instead."""
+        import warnings
+        warnings.warn("Absorption is deprecated, use 'absorption_beta' instead", DeprecationWarning, stacklevel=2)
+        return self.absorption_beta
+    
+    @property
+    def f1(self) -> np.ndarray:
+        """Deprecated: Use 'scattering_factor_f1' instead."""
+        import warnings
+        warnings.warn("f1 is deprecated, use 'scattering_factor_f1' instead", DeprecationWarning, stacklevel=2)
+        return self.scattering_factor_f1
+    
+    @property
+    def f2(self) -> np.ndarray:
+        """Deprecated: Use 'scattering_factor_f2' instead."""
+        import warnings
+        warnings.warn("f2 is deprecated, use 'scattering_factor_f2' instead", DeprecationWarning, stacklevel=2)
+        return self.scattering_factor_f2
+    
+    @property
+    def Critical_Angle(self) -> np.ndarray:
+        """Deprecated: Use 'critical_angle_degrees' instead."""
+        import warnings
+        warnings.warn("Critical_Angle is deprecated, use 'critical_angle_degrees' instead", DeprecationWarning, stacklevel=2)
+        return self.critical_angle_degrees
+    
+    @property
+    def Attenuation_Length(self) -> np.ndarray:
+        """Deprecated: Use 'attenuation_length_cm' instead."""
+        import warnings
+        warnings.warn("Attenuation_Length is deprecated, use 'attenuation_length_cm' instead", DeprecationWarning, stacklevel=2)
+        return self.attenuation_length_cm
+    
+    @property
+    def reSLD(self) -> np.ndarray:
+        """Deprecated: Use 'real_sld_per_ang2' instead."""
+        import warnings
+        warnings.warn("reSLD is deprecated, use 'real_sld_per_ang2' instead", DeprecationWarning, stacklevel=2)
+        return self.real_sld_per_ang2
+    
+    @property
+    def imSLD(self) -> np.ndarray:
+        """Deprecated: Use 'imaginary_sld_per_ang2' instead."""
+        import warnings
+        warnings.warn("imSLD is deprecated, use 'imaginary_sld_per_ang2' instead", DeprecationWarning, stacklevel=2)
+        return self.imaginary_sld_per_ang2
+    
+    @classmethod
+    def from_legacy(
+        cls,
+        Formula: str = None,
+        MW: float = None,
+        Number_Of_Electrons: float = None,
+        Density: float = None,
+        Electron_Density: float = None,
+        Energy: np.ndarray = None,
+        Wavelength: np.ndarray = None,
+        Dispersion: np.ndarray = None,
+        Absorption: np.ndarray = None,
+        f1: np.ndarray = None,
+        f2: np.ndarray = None,
+        Critical_Angle: np.ndarray = None,
+        Attenuation_Length: np.ndarray = None,
+        reSLD: np.ndarray = None,
+        imSLD: np.ndarray = None,
+        **kwargs
+    ) -> 'XRayResult':
+        """Create XRayResult from legacy field names (for internal use)."""
+        return cls(
+            formula=Formula or kwargs.get('formula', ''),
+            molecular_weight_g_mol=MW or kwargs.get('molecular_weight_g_mol', 0.0),
+            total_electrons=Number_Of_Electrons or kwargs.get('total_electrons', 0.0),
+            density_g_cm3=Density or kwargs.get('density_g_cm3', 0.0),
+            electron_density_per_ang3=Electron_Density or kwargs.get('electron_density_per_ang3', 0.0),
+            energy_kev=Energy if Energy is not None else kwargs.get('energy_kev', np.array([])),
+            wavelength_angstrom=Wavelength if Wavelength is not None else kwargs.get('wavelength_angstrom', np.array([])),
+            dispersion_delta=Dispersion if Dispersion is not None else kwargs.get('dispersion_delta', np.array([])),
+            absorption_beta=Absorption if Absorption is not None else kwargs.get('absorption_beta', np.array([])),
+            scattering_factor_f1=f1 if f1 is not None else kwargs.get('scattering_factor_f1', np.array([])),
+            scattering_factor_f2=f2 if f2 is not None else kwargs.get('scattering_factor_f2', np.array([])),
+            critical_angle_degrees=Critical_Angle if Critical_Angle is not None else kwargs.get('critical_angle_degrees', np.array([])),
+            attenuation_length_cm=Attenuation_Length if Attenuation_Length is not None else kwargs.get('attenuation_length_cm', np.array([])),
+            real_sld_per_ang2=reSLD if reSLD is not None else kwargs.get('real_sld_per_ang2', np.array([])),
+            imaginary_sld_per_ang2=imSLD if imSLD is not None else kwargs.get('imaginary_sld_per_ang2', np.array([]))
+        )
 
 # =====================================================================================
 # CACHING SYSTEM
@@ -851,23 +1011,23 @@ def calculate_single_material_properties(
     # Calculate properties using the existing function
     properties = _calculate_single_material_xray_properties(formula, energy_keV, density)
     
-    # Create and return XRayResult dataclass
+    # Create and return XRayResult dataclass using new field names
     return XRayResult(
-        Formula=str(properties['formula']),
-        MW=float(properties['molecular_weight']),
-        Number_Of_Electrons=float(properties['number_of_electrons']),
-        Density=float(properties['mass_density']),
-        Electron_Density=float(properties['electron_density']),
-        Energy=np.asarray(properties['energy']),
-        Wavelength=np.asarray(properties['wavelength']),
-        Dispersion=np.asarray(properties['dispersion']),
-        Absorption=np.asarray(properties['absorption']),
-        f1=np.asarray(properties['f1_total']),
-        f2=np.asarray(properties['f2_total']),
-        Critical_Angle=np.asarray(properties['critical_angle']),
-        Attenuation_Length=np.asarray(properties['attenuation_length']),
-        reSLD=np.asarray(properties['re_sld']),
-        imSLD=np.asarray(properties['im_sld'])
+        formula=str(properties['formula']),
+        molecular_weight_g_mol=float(properties['molecular_weight']),
+        total_electrons=float(properties['number_of_electrons']),
+        density_g_cm3=float(properties['mass_density']),
+        electron_density_per_ang3=float(properties['electron_density']),
+        energy_kev=np.asarray(properties['energy']),
+        wavelength_angstrom=np.asarray(properties['wavelength']),
+        dispersion_delta=np.asarray(properties['dispersion']),
+        absorption_beta=np.asarray(properties['absorption']),
+        scattering_factor_f1=np.asarray(properties['f1_total']),
+        scattering_factor_f2=np.asarray(properties['f2_total']),
+        critical_angle_degrees=np.asarray(properties['critical_angle']),
+        attenuation_length_cm=np.asarray(properties['attenuation_length']),
+        real_sld_per_ang2=np.asarray(properties['re_sld']),
+        imaginary_sld_per_ang2=np.asarray(properties['im_sld'])
     )
 
 
@@ -976,23 +1136,23 @@ def calculate_xray_properties(
                 # Create reverse mapping to restore original order
                 reverse_indices = np.argsort(sort_indices)
                 
-                # Restore original order in all array fields
+                # Restore original order in all array fields using new field names
                 result = XRayResult(
-                    Formula=result.Formula,
-                    MW=result.MW,
-                    Number_Of_Electrons=result.Number_Of_Electrons,
-                    Density=result.Density,
-                    Electron_Density=result.Electron_Density,
-                    Energy=result.Energy[reverse_indices],
-                    Wavelength=result.Wavelength[reverse_indices],
-                    Dispersion=result.Dispersion[reverse_indices],
-                    Absorption=result.Absorption[reverse_indices],
-                    f1=result.f1[reverse_indices],
-                    f2=result.f2[reverse_indices],
-                    Critical_Angle=result.Critical_Angle[reverse_indices],
-                    Attenuation_Length=result.Attenuation_Length[reverse_indices],
-                    reSLD=result.reSLD[reverse_indices],
-                    imSLD=result.imSLD[reverse_indices]
+                    formula=result.formula,
+                    molecular_weight_g_mol=result.molecular_weight_g_mol,
+                    total_electrons=result.total_electrons,
+                    density_g_cm3=result.density_g_cm3,
+                    electron_density_per_ang3=result.electron_density_per_ang3,
+                    energy_kev=result.energy_kev[reverse_indices],
+                    wavelength_angstrom=result.wavelength_angstrom[reverse_indices],
+                    dispersion_delta=result.dispersion_delta[reverse_indices],
+                    absorption_beta=result.absorption_beta[reverse_indices],
+                    scattering_factor_f1=result.scattering_factor_f1[reverse_indices],
+                    scattering_factor_f2=result.scattering_factor_f2[reverse_indices],
+                    critical_angle_degrees=result.critical_angle_degrees[reverse_indices],
+                    attenuation_length_cm=result.attenuation_length_cm[reverse_indices],
+                    real_sld_per_ang2=result.real_sld_per_ang2[reverse_indices],
+                    imaginary_sld_per_ang2=result.imaginary_sld_per_ang2[reverse_indices]
                 )
             
             return (formula, result)

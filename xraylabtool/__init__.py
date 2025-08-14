@@ -5,7 +5,7 @@ This package provides tools and utilities for X-ray crystallography
 and related laboratory analysis tasks.
 """
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"
 

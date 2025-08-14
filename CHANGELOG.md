@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2025-08-14
+
+### Added
+- New descriptive snake_case field names for XRayResult dataclass (e.g., `formula`, `molecular_weight_g_mol`, `critical_angle_degrees`)
+- Comprehensive migration guide in README.md for transitioning from legacy field names
+- Enhanced .gitignore to prevent system and build artifacts
+- Backward compatibility via deprecated property aliases with deprecation warnings
+
+### Changed
+- **MAJOR**: XRayResult dataclass now uses descriptive snake_case field names instead of CamelCase
+- Updated all documentation and examples to use new field names
+- README.md examples now showcase both new (recommended) and legacy field usage
+- Enhanced plotting examples with new field names
+
+### Deprecated
+- Legacy CamelCase field names (e.g., `Formula`, `MW`, `Critical_Angle`) - still functional but emit deprecation warnings
+- Users should migrate to new snake_case field names for clearer, more maintainable code
+
+### Removed
+- System artifacts: .DS_Store files, __pycache__ directories, *.pyc files
+- Build artifacts: docs/build directory
+
+### Notes
+- All numerical results and functionality remain identical - this is a non-breaking API enhancement
+- Comprehensive test suite (145 tests) passes with new field names
+- Legacy field names will be supported for several versions to ensure smooth migration
+
 ## [0.1.4] - 2025-01-14
 
 ### Changed
