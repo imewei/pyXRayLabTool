@@ -364,7 +364,6 @@ def _initialize_element_paths() -> None:
     Pre-compute all available element file paths at module load time.
     This optimization eliminates repeated file system checks.
     """
-    global _AVAILABLE_ELEMENTS
 
     base_paths = [
         Path.cwd() / "src" / "AtomicScatteringFactor",
@@ -406,7 +405,6 @@ def load_scattering_factor_data(element: str) -> pd.DataFrame:
         >>> print(data.shape)
         (200, 3)
     """
-    global _scattering_factor_cache
 
     # Validate input
     if not element or not isinstance(element, str):
@@ -604,7 +602,6 @@ def clear_scattering_factor_cache() -> None:
     This function removes all cached scattering factor data from memory.
     Useful for testing or memory management.
     """
-    global _scattering_factor_cache, _interpolator_cache, _atomic_data_cache
     _scattering_factor_cache.clear()
     _interpolator_cache.clear()
     _atomic_data_cache.clear()
