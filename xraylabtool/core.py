@@ -1224,7 +1224,8 @@ def _validate_xray_inputs(formulas: List[str], densities: List[float]):
 
     if len(formulas) != len(densities):
         raise ValueError(
-            f"Number of formulas ({len(formulas)}) must match number of densities ({len(densities)})"
+            f"Number of formulas ({len(formulas)}) must match number of "
+            f"densities ({len(densities)})"
         )
 
     for i, formula in enumerate(formulas):

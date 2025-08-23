@@ -14,13 +14,13 @@ from pathlib import Path
 
 def run_command(cmd, description, optional=False):
     """Run a command and handle errors."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Running: {description}")
     print(f"Command: {' '.join(cmd)}")
-    print(f"{'='*60}")
+    print('=' * 60)
 
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
         print(f"✅ SUCCESS: {description}")
         return True
     except subprocess.CalledProcessError as e:
@@ -178,9 +178,9 @@ def main():
                 integration_with_coverage_succeeded = True
 
     # Summary
-    print(f"\n{'='*60}")
-    print(f"TEST SUMMARY")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print("TEST SUMMARY")
+    print('=' * 60)
     print(f"Total test suites: {total_count}")
     print(f"Successful: {success_count}")
     print(f"Failed: {total_count - success_count}")
@@ -201,7 +201,7 @@ def main():
     if Path("coverage.xml").exists():
         print(f"📊 XML coverage report: {project_dir}/coverage.xml")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     sys.exit(exit_code)
 
 

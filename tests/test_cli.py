@@ -7,31 +7,45 @@ ensuring the command line interface works correctly with various inputs and
 edge cases.
 """
 
-import pytest
-import tempfile
-import json
 import csv
+import json
+import os
+import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import patch
-import sys
-import os
+import pytest
 
-# Add parent directory to path to import xraylabtool
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from xraylabtool.cli import (
-    main,
-    parse_energy_string,
-    format_xray_result,
-    cmd_calc,
-    cmd_batch,
-    cmd_convert,
-    cmd_formula,
-    cmd_atomic,
-    cmd_bragg,
-    cmd_list,
-)
-import xraylabtool as xlt
+try:
+    from xraylabtool.cli import (
+        main,
+        parse_energy_string,
+        format_xray_result,
+        cmd_calc,
+        cmd_batch,
+        cmd_convert,
+        cmd_formula,
+        cmd_atomic,
+        cmd_bragg,
+        cmd_list,
+    )
+    import xraylabtool as xlt
+except ImportError:
+    # Add parent directory to path to import xraylabtool
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from xraylabtool.cli import (
+        main,
+        parse_energy_string,
+        format_xray_result,
+        cmd_calc,
+        cmd_batch,
+        cmd_convert,
+        cmd_formula,
+        cmd_atomic,
+        cmd_bragg,
+        cmd_list,
+    )
+    import xraylabtool as xlt
 
 
 class TestEnergyParsing:

@@ -5,11 +5,11 @@ This module tests the vectorized calculate_scattering_factors function
 and derived quantity calculations that were ported from Julia.
 """
 
-import pytest
-import numpy as np
-import sys
 import os
-from typing import Dict, Any
+import sys
+
+import numpy as np
+import pytest
 
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -18,17 +18,12 @@ from xraylabtool.core import (
     calculate_scattering_factors,
     calculate_derived_quantities,
     create_scattering_factor_interpolators,
-    calculate_xray_properties,
     calculate_single_material_properties,
-    calculate_multiple_xray_properties,
     clear_scattering_factor_cache,
     XRayResult,
 )
 from xraylabtool.constants import (
-    SCATTERING_FACTOR,
-    AVOGADRO,
     ENERGY_TO_WAVELENGTH_FACTOR,
-    PI,
 )
 
 

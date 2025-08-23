@@ -5,14 +5,16 @@ This test module mirrors the comprehensive test suite from test/formula_parsing.
 ensuring identical behavior between the Julia and Python implementations.
 """
 
-import pytest
-import sys
 import os
+import sys
+import pytest
 
-# Add parent directory to path to import xraylabtool
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from xraylabtool.utils import parse_formula
+try:
+    from xraylabtool.utils import parse_formula
+except ImportError:
+    # Add parent directory to path to import xraylabtool
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from xraylabtool.utils import parse_formula
 
 
 class TestFormulaParsingBasic:

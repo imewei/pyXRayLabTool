@@ -7,7 +7,6 @@ options for PyPI publishing. The primary package configuration is in
 pyproject.toml, following modern Python packaging standards.
 """
 
-import os
 import re
 from pathlib import Path
 from setuptools import setup, find_packages
@@ -127,11 +126,13 @@ KEYWORDS = [
 PROJECT_URLS = {
     "Homepage": "https://github.com/imewei/pyXRayLabTool",
     "Documentation": "https://pyxraylabtool.readthedocs.io",
-    "Repository": f"https://github.com/imewei/pyXRayLabTool.git",
-    "Bug Reports": f"https://github.com/imewei/pyXRayLabTool/issues",
-    "Issues": f"https://github.com/imewei/pyXRayLabTool/issues",
-    "Changelog": f"https://github.com/imewei/pyXRayLabTool/blob/main/CHANGELOG.md",
-    "CLI Reference": f"https://github.com/imewei/pyXRayLabTool/blob/main/CLI_REFERENCE.md",
+    "Repository": "https://github.com/imewei/pyXRayLabTool.git",
+    "Bug Reports": "https://github.com/imewei/pyXRayLabTool/issues",
+    "Issues": "https://github.com/imewei/pyXRayLabTool/issues",
+    "Changelog": "https://github.com/imewei/pyXRayLabTool/blob/main/CHANGELOG.md",
+    "CLI Reference": (
+        "https://github.com/imewei/pyXRayLabTool/blob/main/CLI_REFERENCE.md"
+    ),
     "Source": "https://github.com/imewei/pyXRayLabTool",
 }
 

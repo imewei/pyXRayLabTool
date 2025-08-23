@@ -9,7 +9,6 @@ from xraylabtool.utils import (
     get_atomic_weight,
     get_atomic_data,
     UnknownElementError,
-    AtomicDataError,
 )
 
 

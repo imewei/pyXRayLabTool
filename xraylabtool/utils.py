@@ -489,7 +489,8 @@ def get_atomic_number(element_symbol: str) -> int:
         raise  # pragma: no cover
     except Exception as e:
         raise AtomicDataError(
-            f"Unexpected error loading atomic number for element '{element_symbol}': {e}"
+            f"Unexpected error loading atomic number for element "
+            f"'{element_symbol}': {e}"
         )
 
 
@@ -546,7 +547,7 @@ def get_atomic_weight(element_symbol: str) -> float:
             raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
         else:
             raise AtomicDataError(
-                f"Could not load atomic weight for element " f"'{element_symbol}': {e}"
+                f"Could not load atomic weight for element '{element_symbol}': {e}"
             )
     except Exception as e:
         raise AtomicDataError(

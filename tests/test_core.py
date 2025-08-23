@@ -2,17 +2,17 @@
 Tests for the core module.
 """
 
-import pytest
-import numpy as np
-import pandas as pd
-from pathlib import Path
-import sys
 import os
+import sys
+import numpy as np
+import pytest
 
-# Add parent directory to path to import xraylabtool
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from xraylabtool.core import AtomicScatteringFactor, CrystalStructure, load_data_file
+try:
+    from xraylabtool.core import AtomicScatteringFactor, CrystalStructure, load_data_file
+except ImportError:
+    # Add parent directory to path to import xraylabtool
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from xraylabtool.core import AtomicScatteringFactor, CrystalStructure, load_data_file
 
 
 class TestAtomicScatteringFactor:

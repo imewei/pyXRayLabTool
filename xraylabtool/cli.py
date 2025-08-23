@@ -467,7 +467,10 @@ def _format_material_properties(result: XRayResult, precision: int) -> List[str]
         f"  Molecular Weight: {result.molecular_weight_g_mol:.{precision}f} g/mol",
         f"  Total Electrons: {result.total_electrons:.{precision}f}",
         f"  Density: {result.density_g_cm3:.{precision}f} g/cm³",
-        f"  Electron Density: {result.electron_density_per_ang3:.{precision}e} electrons/Å³",
+        (
+            f"  Electron Density: {result.electron_density_per_ang3:.{precision}e} "
+            "electrons/Å³"
+        ),
         "",
     ]
 
@@ -558,7 +561,8 @@ def _print_calc_verbose_info(args, energies):
     """Print verbose calculation information."""
     print(f"Calculating X-ray properties for {args.formula}...")
     print(
-        f"Energy range: {energies.min():.3f} - {energies.max():.3f} keV ({len(energies)} points)"
+        f"Energy range: {energies.min():.3f} - {energies.max():.3f} keV "
+        f"({len(energies)} points)"
     )
     print(f"Density: {args.density} g/cm³")
     print()
@@ -737,7 +741,8 @@ def _save_batch_results(results, args):
     if args.verbose:
         print(f"Results saved to {args.output}")
         print(
-            f"Processed {len(results)} data points from {len(set(r['formula'] for r in results))} unique materials"
+            f"Processed {len(results)} data points from "
+            f"{len(set(r['formula'] for r in results))} unique materials"
         )
 
 
@@ -870,7 +875,8 @@ def _print_formula_results(results, verbose):
             print("Atomic data:")
             for atom_data in result["atomic_data"]:
                 print(
-                    f"  {atom_data['element']:>2}: Z={atom_data['atomic_number']:>3}, MW={atom_data['atomic_weight']:>8.3f}"
+                    f"  {atom_data['element']:>2}: Z={atom_data['atomic_number']:>3}, "
+                    f"MW={atom_data['atomic_weight']:>8.3f}"
                 )
         print()
 

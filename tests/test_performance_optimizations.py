@@ -8,10 +8,10 @@ This test module specifically tests the new caching and optimization features:
 - Enhanced cache management
 """
 
-import pytest
-import numpy as np
-from unittest.mock import patch, MagicMock
 import time
+
+import numpy as np
+import pytest
 
 from xraylabtool.core import (
     get_bulk_atomic_data,
@@ -20,9 +20,6 @@ from xraylabtool.core import (
     _AVAILABLE_ELEMENTS,
     _interpolator_cache,
     clear_scattering_factor_cache,
-    get_cached_elements,
-    is_element_cached,
-    load_scattering_factor_data,
 )
 import xraylabtool as xlt
 
@@ -129,7 +126,7 @@ class TestInterpolatorCaching:
             # Warm cache should be significantly faster
             assert warm_time < cold_time
             # Expect at least 2x speedup with caching
-            assert warm_time < cold_time / 2
+            assert warm_time < cold_time / 2.0
 
         except FileNotFoundError:
             pytest.skip(
@@ -306,7 +303,7 @@ class TestPerformanceRegression:
             # Record the speedup for information
             speedup = cold_time / warm_time if warm_time > 0 else float("inf")
             print(
-                f"Cache speedup: {speedup:.1f}x (cold: {cold_time*1000:.2f}ms, warm: {warm_time*1000:.2f}ms)"
+                f"Cache speedup: {speedup:.1f}x (cold: {cold_time * 1000:.2f}ms, warm: {warm_time * 1000:.2f}ms)"
             )
 
         except FileNotFoundError:

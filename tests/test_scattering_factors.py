@@ -5,24 +5,33 @@ This module tests the new f1/f2 scattering table loading and caching
 functionality implemented in Step 5.
 """
 
-import pytest
-import pandas as pd
-import numpy as np
-from pathlib import Path
-import sys
 import os
+import sys
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import pytest
 
-# Add parent directory to path to import xraylabtool
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from xraylabtool.core import (
-    load_scattering_factor_data,
-    get_cached_elements,
-    clear_scattering_factor_cache,
-    is_element_cached,
-    AtomicScatteringFactor,
-    create_scattering_factor_interpolators,
-)
+try:
+    from xraylabtool.core import (
+        load_scattering_factor_data,
+        get_cached_elements,
+        clear_scattering_factor_cache,
+        is_element_cached,
+        AtomicScatteringFactor,
+        create_scattering_factor_interpolators,
+    )
+except ImportError:
+    # Add parent directory to path to import xraylabtool
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from xraylabtool.core import (
+        load_scattering_factor_data,
+        get_cached_elements,
+        clear_scattering_factor_cache,
+        is_element_cached,
+        AtomicScatteringFactor,
+        create_scattering_factor_interpolators,
+    )
 
 
 class TestScatteringFactorLoading:
@@ -148,7 +157,7 @@ class TestScatteringFactorLoading:
 
         for element in elements_to_test:
             try:
-                data = load_scattering_factor_data(element)
+                load_scattering_factor_data(element)
                 loaded_elements.append(element)
                 assert is_element_cached(element)
             except FileNotFoundError:
@@ -365,7 +374,7 @@ class TestPCHIPInterpolators:
             pytest.skip("Silicon .nff file not available for testing")
 
     def test_extrapolation_behavior(self):
-        """Test that extrapolation is disabled by default."""
+        """Test that extrapolation is disabled."""
         try:
             data = load_scattering_factor_data("Si")
             f1_interp, f2_interp = create_scattering_factor_interpolators("Si")
@@ -375,10 +384,10 @@ class TestPCHIPInterpolators:
             # Test extrapolation below range
             try:
                 result = f1_interp(E_min - 10)
-                # If no exception, the result should be NaN or the function allows extrapolation
+                # If no exception, result should be NaN or function allows extrapolation
                 if not np.isnan(result):
                     pytest.skip(
-                        "Interpolator allows extrapolation or returns boundary values"
+                        "Interpolator allows extrapolation"
                     )
             except (ValueError, RuntimeError):
                 pass  # Expected behavior for no extrapolation
@@ -418,7 +427,8 @@ class TestPCHIPInterpolators:
             pytest.skip("Silicon .nff file not available for testing")
         except ValueError as e:
             # If there's a ValueError, it should mention insufficient data points
-            assert "PCHIP interpolation requires at least 2 points" in str(e)
+            assert ("PCHIP interpolation requires at least 2 points"
+                    in str(e))
 
     def test_case_insensitive_interpolators(self):
         """Test case insensitive element symbols for interpolators."""

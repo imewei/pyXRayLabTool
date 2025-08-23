@@ -5,10 +5,11 @@ This module includes test utilities that mirror the Julia test/utils.jl function
 providing vector comparison utilities and cache management for consistent testing.
 """
 
-import pytest
-import numpy as np
-import sys
 import os
+import sys
+
+import numpy as np
+import pytest
 
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -22,11 +23,9 @@ from xraylabtool.utils import (
     angle_from_q,
     smooth_data,
     normalize_intensity,
-    parse_formula,
 )
 from xraylabtool import (
     clear_scattering_factor_cache,
-    calculate_single_material_properties,
 )
 
 # calculate_xray_properties is now imported from main module
@@ -208,10 +207,10 @@ class TestCrystallographicCalculations:
     def test_d_spacing_cubic(self):
         """Test d-spacing calculation for cubic system."""
         a = 5.0  # Angstroms
-        h, k, l = 1, 0, 0
+        h, k, miller_l = 1, 0, 0
 
-        d = d_spacing_cubic(h, k, l, a)
-        expected = a / np.sqrt(h**2 + k**2 + l**2)
+        d = d_spacing_cubic(h, k, miller_l, a)
+        expected = a / np.sqrt(h**2 + k**2 + miller_l**2)
 
         assert abs(d - expected) < 1e-10
 
