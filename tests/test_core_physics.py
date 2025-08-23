@@ -19,6 +19,7 @@ from xraylabtool.core import (
     calculate_derived_quantities,
     create_scattering_factor_interpolators,
     calculate_single_material_properties,
+    calculate_multiple_xray_properties,
     clear_scattering_factor_cache,
     XRayResult,
 )

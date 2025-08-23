@@ -16,6 +16,7 @@ import pytest
 from xraylabtool.core import (
     get_bulk_atomic_data,
     create_scattering_factor_interpolators,
+    get_cached_elements,
     _initialize_element_paths,
     _AVAILABLE_ELEMENTS,
     _interpolator_cache,
