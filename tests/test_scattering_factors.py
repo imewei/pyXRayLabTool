@@ -386,9 +386,7 @@ class TestPCHIPInterpolators:
                 result = f1_interp(E_min - 10)
                 # If no exception, result should be NaN or function allows extrapolation
                 if not np.isnan(result):
-                    pytest.skip(
-                        "Interpolator allows extrapolation"
-                    )
+                    pytest.skip("Interpolator allows extrapolation")
             except (ValueError, RuntimeError):
                 pass  # Expected behavior for no extrapolation
 
@@ -427,8 +425,7 @@ class TestPCHIPInterpolators:
             pytest.skip("Silicon .nff file not available for testing")
         except ValueError as e:
             # If there's a ValueError, it should mention insufficient data points
-            assert ("PCHIP interpolation requires at least 2 points"
-                    in str(e))
+            assert "PCHIP interpolation requires at least 2 points" in str(e)
 
     def test_case_insensitive_interpolators(self):
         """Test case insensitive element symbols for interpolators."""

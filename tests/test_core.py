@@ -8,11 +8,19 @@ import numpy as np
 import pytest
 
 try:
-    from xraylabtool.core import AtomicScatteringFactor, CrystalStructure, load_data_file
+    from xraylabtool.core import (
+        AtomicScatteringFactor,
+        CrystalStructure,
+        load_data_file,
+    )
 except ImportError:
     # Add parent directory to path to import xraylabtool
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    from xraylabtool.core import AtomicScatteringFactor, CrystalStructure, load_data_file
+    from xraylabtool.core import (
+        AtomicScatteringFactor,
+        CrystalStructure,
+        load_data_file,
+    )
 
 
 class TestAtomicScatteringFactor:
