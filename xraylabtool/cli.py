@@ -455,7 +455,8 @@ def _format_as_csv(result: XRayResult, fields: List[str], precision: int) -> str
 
     if data_rows:
         df = pd.DataFrame(data_rows)
-        return df.to_csv(index=False)
+        csv_output: str = df.to_csv(index=False)
+        return csv_output
     return ""
 
 

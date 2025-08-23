@@ -16,6 +16,10 @@ black>=21.0.0
 flake8>=3.9.0
 mypy>=0.900
 
+# Type stubs for external libraries
+pandas-stubs>=2.0.0
+types-psutil>=5.0.0
+
 # Additional development tools (optional)
 # twine>=3.4.0              # For uploading to PyPI
 # build>=0.7.0              # Modern build tool
