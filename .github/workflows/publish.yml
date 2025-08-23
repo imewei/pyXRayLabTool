@@ -1,0 +1,61 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target repository (test or prod)'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+        - test
+        - prod
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install build tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: Install package with dev dependencies
+      run: |
+        pip install -e .[dev]
+    
+    - name: Run tests
+      run: |
+        pytest tests/ -v --cov=xraylabtool
+    
+    - name: Build package
+      run: |
+        python -m build
+    
+    - name: Check package integrity
+      run: |
+        python -m twine check dist/*
+    
+    - name: Publish to Test PyPI
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'test'
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository_url: https://test.pypi.org/legacy/
+    
+    - name: Publish to PyPI
+      if: (github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'prod')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}

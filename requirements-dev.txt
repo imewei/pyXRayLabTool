@@ -1,0 +1,23 @@
+# Development dependencies for XRayLabTool
+# 
+# Install with: pip install -r requirements-dev.txt
+# This includes all production dependencies plus development tools
+
+# Include production requirements
+-r requirements.txt
+
+# Testing framework and coverage
+pytest>=6.2.0
+pytest-cov>=2.12.0
+pytest-benchmark>=3.4.0
+
+# Code formatting and linting
+black>=21.0.0
+flake8>=3.9.0
+mypy>=0.900
+
+# Additional development tools (optional)
+# twine>=3.4.0              # For uploading to PyPI
+# build>=0.7.0              # Modern build tool
+# sphinx>=4.0.0             # Documentation
+# sphinx-rtd-theme>=0.5.0   # Documentation theme

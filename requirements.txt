@@ -1,0 +1,19 @@
+# Core production dependencies for XRayLabTool
+# 
+# This file contains the minimal dependencies required to run XRayLabTool
+# in production environments. For development dependencies, use:
+#   pip install -e .[dev]
+
+# Data manipulation and scientific computing
+pandas>=1.3.0
+numpy>=1.20.0
+scipy>=1.7.0
+
+# Atomic data and periodic table
+mendeleev>=0.10.0
+
+# Progress bars for CLI operations
+tqdm>=4.60.0
+
+# Plotting support (optional but included in core)
+matplotlib>=3.4.0

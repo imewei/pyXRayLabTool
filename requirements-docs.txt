@@ -1,0 +1,17 @@
+# Documentation dependencies for XRayLabTool
+#
+# Install with: pip install -r requirements-docs.txt
+# Used for building Sphinx documentation
+
+# Include production requirements (needed for API documentation)
+-r requirements.txt
+
+# Sphinx documentation framework
+sphinx>=4.0.0
+sphinx-rtd-theme>=0.5.0
+sphinxcontrib-napoleon>=0.7
+
+# Optional documentation enhancements
+# sphinx-autodoc-typehints>=1.12.0  # Type hints in docs
+# myst-parser>=0.17.0               # Markdown support
+# sphinx-copybutton>=0.5.0          # Copy code button

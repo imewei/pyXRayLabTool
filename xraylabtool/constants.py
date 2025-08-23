@@ -91,7 +91,9 @@ For the most current CODATA value, see: 6.02214076e23 mol⁻¹ (exact since 2019
 # DERIVED CONSTANTS FOR COMPUTATIONAL EFFICIENCY
 # =====================================================================================
 
-ENERGY_TO_WAVELENGTH_FACTOR: Final[float] = (SPEED_OF_LIGHT * PLANCK / ELEMENT_CHARGE) / 1000.0
+ENERGY_TO_WAVELENGTH_FACTOR: Final[float] = (
+    SPEED_OF_LIGHT * PLANCK / ELEMENT_CHARGE
+) / 1000.0
 """
 Pre-computed factor for energy-to-wavelength conversion.
 
@@ -243,16 +245,17 @@ Usage: angle_deg = angle_rad * RADIANS_TO_DEGREES
 # HELPER FUNCTIONS FOR CONSTANT USAGE
 # =====================================================================================
 
+
 def energy_to_wavelength_angstrom(energy_kev: float) -> float:
     """
     Convert X-ray energy in keV to wavelength in Angstroms.
-    
+
     Args:
         energy_kev: X-ray energy in keV
-        
+
     Returns:
         Wavelength in Angstroms
-        
+
     Example:
         >>> wavelength = energy_to_wavelength_angstrom(10.0)  # 10 keV
         >>> print(f"Wavelength: {wavelength:.4f} Å")
@@ -260,7 +263,7 @@ def energy_to_wavelength_angstrom(energy_kev: float) -> float:
     """
     if energy_kev <= 0:
         raise ValueError("Energy must be positive")
-    
+
     wavelength_m = ENERGY_TO_WAVELENGTH_FACTOR / energy_kev
     return wavelength_m * METER_TO_ANGSTROM
 
@@ -268,13 +271,13 @@ def energy_to_wavelength_angstrom(energy_kev: float) -> float:
 def wavelength_angstrom_to_energy(wavelength_angstrom: float) -> float:
     """
     Convert X-ray wavelength in Angstroms to energy in keV.
-    
+
     Args:
         wavelength_angstrom: X-ray wavelength in Angstroms
-        
+
     Returns:
         Energy in keV
-        
+
     Example:
         >>> energy = wavelength_angstrom_to_energy(1.2398)  # Cu Kα₁
         >>> print(f"Energy: {energy:.4f} keV")
@@ -282,7 +285,7 @@ def wavelength_angstrom_to_energy(wavelength_angstrom: float) -> float:
     """
     if wavelength_angstrom <= 0:
         raise ValueError("Wavelength must be positive")
-        
+
     wavelength_m = wavelength_angstrom * ANGSTROM_TO_METER
     return ENERGY_TO_WAVELENGTH_FACTOR / wavelength_m
 
@@ -290,20 +293,20 @@ def wavelength_angstrom_to_energy(wavelength_angstrom: float) -> float:
 def critical_angle_degrees(dispersion: float) -> float:
     """
     Calculate critical angle for total external reflection from dispersion coefficient.
-    
+
     Args:
         dispersion: Dispersion coefficient δ (dimensionless)
-        
+
     Returns:
         Critical angle in degrees
-        
+
     Example:
         >>> theta_c = critical_angle_degrees(1e-6)
         >>> print(f"Critical angle: {theta_c:.4f}°")
     """
     if dispersion <= 0:
         raise ValueError("Dispersion coefficient must be positive")
-        
+
     theta_c_rad = np.sqrt(2.0 * dispersion)
     return theta_c_rad * RADIANS_TO_DEGREES
 
@@ -311,14 +314,14 @@ def critical_angle_degrees(dispersion: float) -> float:
 def attenuation_length_cm(wavelength_angstrom: float, absorption: float) -> float:
     """
     Calculate X-ray attenuation length from wavelength and absorption coefficient.
-    
+
     Args:
         wavelength_angstrom: X-ray wavelength in Angstroms
         absorption: Absorption coefficient β (dimensionless)
-        
+
     Returns:
         Attenuation length (1/e length) in centimeters
-        
+
     Example:
         >>> length = attenuation_length_cm(1.24, 1e-7)
         >>> print(f"Attenuation length: {length:.2f} cm")
@@ -327,7 +330,7 @@ def attenuation_length_cm(wavelength_angstrom: float, absorption: float) -> floa
         raise ValueError("Wavelength must be positive")
     if absorption <= 0:
         raise ValueError("Absorption coefficient must be positive")
-        
+
     wavelength_m = wavelength_angstrom * ANGSTROM_TO_METER
     length_m = wavelength_m / (4 * PI * absorption)
     return length_m * METER_TO_CM
@@ -337,45 +340,48 @@ def attenuation_length_cm(wavelength_angstrom: float, absorption: float) -> floa
 # CONSTANT VALIDATION
 # =====================================================================================
 
+
 def validate_constants() -> bool:
     """
     Validate that all constants are properly defined and have reasonable values.
-    
+
     Returns:
         True if all constants pass validation
-        
+
     Raises:
         ValueError: If any constant fails validation
     """
     # Check fundamental constants are positive
     fundamental_constants = {
-        'THOMPSON': THOMPSON,
-        'SPEED_OF_LIGHT': SPEED_OF_LIGHT,
-        'PLANCK': PLANCK,
-        'ELEMENT_CHARGE': ELEMENT_CHARGE,
-        'AVOGADRO': AVOGADRO
+        "THOMPSON": THOMPSON,
+        "SPEED_OF_LIGHT": SPEED_OF_LIGHT,
+        "PLANCK": PLANCK,
+        "ELEMENT_CHARGE": ELEMENT_CHARGE,
+        "AVOGADRO": AVOGADRO,
     }
-    
+
     for name, value in fundamental_constants.items():
         if value <= 0:
-            raise ValueError(f"Fundamental constant {name} must be positive, got {value}")
-    
+            raise ValueError(
+                f"Fundamental constant {name} must be positive, got {value}"
+            )
+
     # Check derived constants
     expected_energy_factor = (SPEED_OF_LIGHT * PLANCK / ELEMENT_CHARGE) / 1000.0
     if not np.isclose(ENERGY_TO_WAVELENGTH_FACTOR, expected_energy_factor, rtol=1e-10):
         raise ValueError("ENERGY_TO_WAVELENGTH_FACTOR calculation error")
-    
+
     expected_scattering_factor = THOMPSON * AVOGADRO * 1e6 / (2 * np.pi)
     if not np.isclose(SCATTERING_FACTOR, expected_scattering_factor, rtol=1e-10):
         raise ValueError("SCATTERING_FACTOR calculation error")
-    
+
     # Validate conversion factors
     if not np.isclose(KEV_TO_EV * EV_TO_KEV, 1.0):
         raise ValueError("keV/eV conversion factors are inconsistent")
-    
+
     if not np.isclose(ANGSTROM_TO_METER * METER_TO_ANGSTROM, 1.0):
         raise ValueError("Angstrom/meter conversion factors are inconsistent")
-    
+
     return True
 
 
@@ -385,6 +391,7 @@ if __name__ != "__main__":
         validate_constants()
     except ValueError as e:
         import warnings
+
         warnings.warn(f"Constants validation failed: {e}", UserWarning)
 
 
@@ -394,15 +401,30 @@ if __name__ != "__main__":
 
 __all__ = [
     # Fundamental constants
-    'THOMPSON', 'SPEED_OF_LIGHT', 'PLANCK', 'ELEMENT_CHARGE', 'AVOGADRO',
+    "THOMPSON",
+    "SPEED_OF_LIGHT",
+    "PLANCK",
+    "ELEMENT_CHARGE",
+    "AVOGADRO",
     # Derived constants
-    'ENERGY_TO_WAVELENGTH_FACTOR', 'SCATTERING_FACTOR',
+    "ENERGY_TO_WAVELENGTH_FACTOR",
+    "SCATTERING_FACTOR",
     # Mathematical constants
-    'PI', 'TWO_PI',
+    "PI",
+    "TWO_PI",
     # Unit conversions
-    'KEV_TO_EV', 'EV_TO_KEV', 'ANGSTROM_TO_METER', 'METER_TO_ANGSTROM',
-    'CM_TO_METER', 'METER_TO_CM', 'DEGREES_TO_RADIANS', 'RADIANS_TO_DEGREES',
+    "KEV_TO_EV",
+    "EV_TO_KEV",
+    "ANGSTROM_TO_METER",
+    "METER_TO_ANGSTROM",
+    "CM_TO_METER",
+    "METER_TO_CM",
+    "DEGREES_TO_RADIANS",
+    "RADIANS_TO_DEGREES",
     # Helper functions
-    'energy_to_wavelength_angstrom', 'wavelength_angstrom_to_energy',
-    'critical_angle_degrees', 'attenuation_length_cm', 'validate_constants'
+    "energy_to_wavelength_angstrom",
+    "wavelength_angstrom_to_energy",
+    "critical_angle_degrees",
+    "attenuation_length_cm",
+    "validate_constants",
 ]
