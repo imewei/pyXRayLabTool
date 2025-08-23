@@ -11,7 +11,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import List, Optional, Union, Dict, Any
+from typing import List, Optional
 import numpy as np
 import pandas as pd
 from textwrap import dedent
@@ -19,7 +19,6 @@ from textwrap import dedent
 # Import the main XRayLabTool functionality
 from . import (
     calculate_single_material_properties,
-    calculate_xray_properties,
     XRayResult,
     energy_to_wavelength,
     wavelength_to_energy,
@@ -91,33 +90,37 @@ def add_calc_command(subparsers):
     parser = subparsers.add_parser(
         "calc",
         help="Calculate X-ray properties for a single material",
-        description="Calculate X-ray optical properties for a single material composition",
+        description=(
+            "Calculate X-ray optical properties for a single material composition"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=dedent(
             """
         Examples:
           # Single energy calculation
           xraylabtool calc SiO2 -e 10.0 -d 2.2
-          
+
           # Multiple energies (comma-separated)
           xraylabtool calc Si -e 5.0,10.0,15.0,20.0 -d 2.33
-          
+
           # Energy range with linear spacing
           xraylabtool calc Al2O3 -e 5-15:11 -d 3.95
-          
+
           # Energy range with log spacing
           xraylabtool calc C -e 1-30:100:log -d 3.52
-          
+
           # Save results to file
           xraylabtool calc SiO2 -e 8.0,10.0,12.0 -d 2.2 -o results.csv
-          
+
           # JSON output format
           xraylabtool calc Si -e 10.0 -d 2.33 -o results.json --format json
         """
         ),
     )
 
-    parser.add_argument("formula", help="Chemical formula (e.g., SiO2, Al2O3, Fe2O3)")
+    parser.add_argument(
+        "formula",
+        help="Chemical formula (e.g., SiO2, Al2O3, Fe2O3)")
 
     parser.add_argument(
         "-e",
@@ -135,12 +138,16 @@ def add_calc_command(subparsers):
     )
 
     parser.add_argument(
-        "-d", "--density", type=float, required=True, help="Material density in g/cm³"
-    )
+        "-d",
+        "--density",
+        type=float,
+        required=True,
+        help="Material density in g/cm³")
 
     parser.add_argument(
-        "-o", "--output", help="Output filename (CSV or JSON based on extension)"
-    )
+        "-o",
+        "--output",
+        help="Output filename (CSV or JSON based on extension)")
 
     parser.add_argument(
         "--format",
@@ -150,8 +157,8 @@ def add_calc_command(subparsers):
     )
 
     parser.add_argument(
-        "--fields", help="Comma-separated list of fields to output (default: all)"
-    )
+        "--fields",
+        help="Comma-separated list of fields to output (default: all)")
 
     parser.add_argument(
         "--precision",
@@ -172,27 +179,29 @@ def add_batch_command(subparsers):
             """
         Input CSV format:
         The input CSV file should have columns: formula, density, energy
-        
+
         Example CSV content:
         formula,density,energy
         SiO2,2.2,10.0
         Al2O3,3.95,"5.0,10.0,15.0"
         Si,2.33,8.0
-        
+
         Examples:
           # Process materials from CSV
           xraylabtool batch materials.csv -o results.csv
-          
+
           # Specific output format
           xraylabtool batch materials.csv -o results.json --format json
-          
+
           # Parallel processing with 4 workers
           xraylabtool batch materials.csv -o results.csv --workers 4
         """
         ),
     )
 
-    parser.add_argument("input_file", help="Input CSV file with materials data")
+    parser.add_argument(
+        "input_file",
+        help="Input CSV file with materials data")
 
     parser.add_argument(
         "-o",
@@ -208,8 +217,9 @@ def add_batch_command(subparsers):
     )
 
     parser.add_argument(
-        "--workers", type=int, help="Number of parallel workers (default: auto)"
-    )
+        "--workers",
+        type=int,
+        help="Number of parallel workers (default: auto)")
 
     parser.add_argument(
         "--fields", help="Comma-separated list of fields to include in output"
@@ -228,13 +238,13 @@ def add_convert_command(subparsers):
         Examples:
           # Convert energy to wavelength
           xraylabtool convert energy 10.0 --to wavelength
-          
+
           # Convert wavelength to energy
           xraylabtool convert wavelength 1.24 --to energy
-          
+
           # Multiple values
           xraylabtool convert energy 5.0,10.0,15.0 --to wavelength
-          
+
           # Save to file
           xraylabtool convert energy 5.0,10.0,15.0 --to wavelength -o conversions.csv
         """
@@ -272,13 +282,13 @@ def add_formula_command(subparsers):
         Examples:
           # Parse a simple formula
           xraylabtool formula SiO2
-          
+
           # Detailed information
           xraylabtool formula Al2O3 --verbose
-          
+
           # Multiple formulas
           xraylabtool formula SiO2,Al2O3,Fe2O3
-          
+
           # Save results to file
           xraylabtool formula SiO2,Al2O3 -o formulas.json
         """
@@ -304,10 +314,10 @@ def add_atomic_command(subparsers):
         Examples:
           # Single element
           xraylabtool atomic Si
-          
+
           # Multiple elements
           xraylabtool atomic H,C,N,O,Si
-          
+
           # Save to file
           xraylabtool atomic Si,Al,Fe -o atomic_data.csv
         """
@@ -319,8 +329,9 @@ def add_atomic_command(subparsers):
     )
 
     parser.add_argument(
-        "-o", "--output", help="Output filename (CSV or JSON based on extension)"
-    )
+        "-o",
+        "--output",
+        help="Output filename (CSV or JSON based on extension)")
 
 
 def add_bragg_command(subparsers):
@@ -335,10 +346,10 @@ def add_bragg_command(subparsers):
         Examples:
           # Single calculation
           xraylabtool bragg -d 3.14 -w 1.54 --order 1
-          
+
           # Multiple d-spacings
           xraylabtool bragg -d 3.14,2.45,1.92 -w 1.54
-          
+
           # Energy instead of wavelength
           xraylabtool bragg -d 3.14 -e 8.0
         """
@@ -353,7 +364,10 @@ def add_bragg_command(subparsers):
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-w", "--wavelength", help="X-ray wavelength in Angstroms")
+    group.add_argument(
+        "-w",
+        "--wavelength",
+        help="X-ray wavelength in Angstroms")
     group.add_argument("-e", "--energy", help="X-ray energy in keV")
 
     parser.add_argument(
@@ -469,25 +483,29 @@ def format_xray_result(
         output_lines.append("Material Properties:")
         output_lines.append(f"  Formula: {result.formula}")
         output_lines.append(
-            f"  Molecular Weight: {result.molecular_weight_g_mol:.{precision}f} g/mol"
-        )
+            f"  Molecular Weight: {
+                result.molecular_weight_g_mol:.{precision}f} g/mol")
         output_lines.append(
             f"  Total Electrons: {result.total_electrons:.{precision}f}"
         )
-        output_lines.append(f"  Density: {result.density_g_cm3:.{precision}f} g/cm³")
         output_lines.append(
-            f"  Electron Density: {result.electron_density_per_ang3:.{precision}e} electrons/Å³"
-        )
+            f"  Density: {
+                result.density_g_cm3:.{precision}f} g/cm³")
+        output_lines.append(
+            f"  Electron Density: {
+                result.electron_density_per_ang3:.{precision}e} electrons/Å³")
         output_lines.append("")
 
         # X-ray properties table
         if len(result.energy_kev) == 1:
             # Single energy - vertical layout
             output_lines.append("X-ray Properties:")
-            output_lines.append(f"  Energy: {result.energy_kev[0]:.{precision}f} keV")
             output_lines.append(
-                f"  Wavelength: {result.wavelength_angstrom[0]:.{precision}f} Å"
-            )
+                f"  Energy: {
+                    result.energy_kev[0]:.{precision}f} keV")
+            output_lines.append(
+                f"  Wavelength: {
+                    result.wavelength_angstrom[0]:.{precision}f} Å")
             output_lines.append(
                 f"  Dispersion (δ): {result.dispersion_delta[0]:.{precision}e}"
             )
@@ -495,23 +513,23 @@ def format_xray_result(
                 f"  Absorption (β): {result.absorption_beta[0]:.{precision}e}"
             )
             output_lines.append(
-                f"  Scattering f1: {result.scattering_factor_f1[0]:.{precision}f}"
-            )
+                f"  Scattering f1: {
+                    result.scattering_factor_f1[0]:.{precision}f}")
             output_lines.append(
-                f"  Scattering f2: {result.scattering_factor_f2[0]:.{precision}f}"
-            )
+                f"  Scattering f2: {
+                    result.scattering_factor_f2[0]:.{precision}f}")
             output_lines.append(
-                f"  Critical Angle: {result.critical_angle_degrees[0]:.{precision}f}°"
-            )
+                f"  Critical Angle: {
+                    result.critical_angle_degrees[0]:.{precision}f}°")
             output_lines.append(
-                f"  Attenuation Length: {result.attenuation_length_cm[0]:.{precision}f} cm"
-            )
+                f"  Attenuation Length: {
+                    result.attenuation_length_cm[0]:.{precision}f} cm")
             output_lines.append(
                 f"  Real SLD: {result.real_sld_per_ang2[0]:.{precision}e} Å⁻²"
             )
             output_lines.append(
-                f"  Imaginary SLD: {result.imaginary_sld_per_ang2[0]:.{precision}e} Å⁻²"
-            )
+                f"  Imaginary SLD: {
+                    result.imaginary_sld_per_ang2[0]:.{precision}e} Å⁻²")
         else:
             # Multiple energies - table format
             output_lines.append("X-ray Properties (tabular):")
@@ -560,8 +578,10 @@ def cmd_calc(args):
         if args.verbose:
             print(f"Calculating X-ray properties for {args.formula}...")
             print(
-                f"Energy range: {energies.min():.3f} - {energies.max():.3f} keV ({len(energies)} points)"
-            )
+                f"Energy range: {
+                    energies.min():.3f} - {
+                    energies.max():.3f} keV ({
+                    len(energies)} points)")
             print(f"Density: {args.density} g/cm³")
             print()
 
@@ -610,7 +630,10 @@ def cmd_batch(args):
         # Read input CSV
         input_path = Path(args.input_file)
         if not input_path.exists():
-            print(f"Error: Input file {args.input_file} not found", file=sys.stderr)
+            print(
+                f"Error: Input file {
+                    args.input_file} not found",
+                file=sys.stderr)
             return 1
 
         df_input = pd.read_csv(input_path)
@@ -622,8 +645,8 @@ def cmd_batch(args):
         ]
         if missing_columns:
             print(
-                f"Error: Missing required columns: {missing_columns}", file=sys.stderr
-            )
+                f"Error: Missing required columns: {missing_columns}",
+                file=sys.stderr)
             return 1
 
         # Handle energy column - can be single values or comma-separated
@@ -644,13 +667,15 @@ def cmd_batch(args):
             energy_str = str(row["energy"])
             try:
                 if "," in energy_str:
-                    energies = [float(x.strip()) for x in energy_str.split(",")]
+                    energies = [float(x.strip())
+                                for x in energy_str.split(",")]
                 else:
                     energies = [float(energy_str)]
                 energy_sets.append(energies)
             except ValueError:
                 print(
-                    f"Error: Invalid energy format for {row['formula']}: {energy_str}",
+                    f"Error: Invalid energy format for {
+                        row['formula']}: {energy_str}",
                     file=sys.stderr,
                 )
                 return 1
@@ -667,7 +692,7 @@ def cmd_batch(args):
         ):
             try:
                 if args.verbose:
-                    print(f"  {i+1}/{len(formulas)}: {formula}")
+                    print(f"  {i + 1}/{len(formulas)}: {formula}")
 
                 result = calculate_single_material_properties(
                     formula, energies, density
@@ -699,7 +724,9 @@ def cmd_batch(args):
                 continue
 
         if not results:
-            print("Error: No materials were successfully processed", file=sys.stderr)
+            print(
+                "Error: No materials were successfully processed",
+                file=sys.stderr)
             return 1
 
         # Filter fields if specified
@@ -727,7 +754,8 @@ def cmd_batch(args):
         if args.verbose:
             print(f"Results saved to {args.output}")
             print(
-                f"Processed {len(results)} data points from {len(set(r['formula'] for r in results))} unique materials"
+                f"Processed {len(results)} data points from "
+                f"{len(set(r['formula'] for r in results))} unique materials"
             )
 
         return 0
@@ -752,7 +780,9 @@ def cmd_convert(args):
             unit_label = "keV"
         else:
             print(
-                f"Error: Cannot convert from {args.from_unit} to {args.to_unit}",
+                f"Error: Cannot convert from {
+                    args.from_unit} to {
+                    args.to_unit}",
                 file=sys.stderr,
             )
             return 1
@@ -814,7 +844,8 @@ def cmd_formula(args):
                             )
                         except Exception as e:
                             print(
-                                f"Warning: Could not get atomic data for {element}: {e}"
+                                f"Warning: Could not get atomic data for "
+                                f"{element}: {e}"
                             )
 
                     formula_info["atomic_data"] = atomic_data
@@ -841,9 +872,10 @@ def cmd_formula(args):
                     print("Atomic data:")
                     for atom_data in result["atomic_data"]:
                         print(
-                            f"  {atom_data['element']:>2}: Z={atom_data['atomic_number']:>3}, "
-                            f"MW={atom_data['atomic_weight']:>8.3f}"
-                        )
+                            f"  {
+                                atom_data['element']:>2}: Z={
+                                atom_data['atomic_number']:>3}, " f"MW={
+                                atom_data['atomic_weight']:>8.3f}")
                 print()
 
         return 0
@@ -872,7 +904,9 @@ def cmd_atomic(args):
                 results.append(element_data)
 
             except Exception as e:
-                print(f"Error getting atomic data for {element}: {e}", file=sys.stderr)
+                print(
+                    f"Error getting atomic data for {element}: {e}",
+                    file=sys.stderr)
                 continue
 
         if not results:
@@ -896,7 +930,8 @@ def cmd_atomic(args):
             print("-" * 30)
             for data in results:
                 print(
-                    f"{data['element']:>8} {data['atomic_number']:>3} {data['atomic_weight']:>10.3f}"
+                    f"{data['element']:>8} {data['atomic_number']:>3} "
+                    f"{data['atomic_weight']:>10.3f}"
                 )
 
         return 0
@@ -935,8 +970,7 @@ def cmd_bragg(args):
                 )
             except Exception as e:
                 print(
-                    f"Warning: Could not calculate Bragg angle for d={d_spacing}: {e}"
-                )
+                    f"Warning: Could not calculate Bragg angle for d={d_spacing}: {e}")
                 continue
 
         if not results:

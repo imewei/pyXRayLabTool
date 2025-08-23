@@ -1,8 +1,9 @@
 """
 Physical constants for X-ray calculations.
 
-This module contains fundamental physical constants used throughout X-ray analysis
-calculations, translated from the Julia implementation with preserved numerical precision.
+This module contains fundamental physical constants used throughout X-ray
+analysis calculations, translated from the Julia implementation with preserved
+numerical precision.
 All values are provided with explanatory docstrings describing their physical meaning
 and units.
 
@@ -22,7 +23,7 @@ THOMPSON: Final[float] = 2.8179403227e-15
 Thomson scattering length (classical electron radius).
 
 The Thomson scattering length represents the classical radius of an electron,
-which is the length scale characterizing the scattering of electromagnetic 
+which is the length scale characterizing the scattering of electromagnetic
 radiation by a free electron in the classical limit.
 
 Value: 2.8179403227 × 10⁻¹⁵ m
@@ -311,7 +312,9 @@ def critical_angle_degrees(dispersion: float) -> float:
     return theta_c_rad * RADIANS_TO_DEGREES
 
 
-def attenuation_length_cm(wavelength_angstrom: float, absorption: float) -> float:
+def attenuation_length_cm(
+        wavelength_angstrom: float,
+        absorption: float) -> float:
     """
     Calculate X-ray attenuation length from wavelength and absorption coefficient.
 
@@ -367,12 +370,19 @@ def validate_constants() -> bool:
             )
 
     # Check derived constants
-    expected_energy_factor = (SPEED_OF_LIGHT * PLANCK / ELEMENT_CHARGE) / 1000.0
-    if not np.isclose(ENERGY_TO_WAVELENGTH_FACTOR, expected_energy_factor, rtol=1e-10):
+    expected_energy_factor = (
+        SPEED_OF_LIGHT * PLANCK / ELEMENT_CHARGE) / 1000.0
+    if not np.isclose(
+            ENERGY_TO_WAVELENGTH_FACTOR,
+            expected_energy_factor,
+            rtol=1e-10):
         raise ValueError("ENERGY_TO_WAVELENGTH_FACTOR calculation error")
 
     expected_scattering_factor = THOMPSON * AVOGADRO * 1e6 / (2 * np.pi)
-    if not np.isclose(SCATTERING_FACTOR, expected_scattering_factor, rtol=1e-10):
+    if not np.isclose(
+            SCATTERING_FACTOR,
+            expected_scattering_factor,
+            rtol=1e-10):
         raise ValueError("SCATTERING_FACTOR calculation error")
 
     # Validate conversion factors

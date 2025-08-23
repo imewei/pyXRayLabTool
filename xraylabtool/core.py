@@ -8,14 +8,11 @@ including atomic scattering factors and crystallographic calculations.
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Callable
-import os
+from typing import Dict, List, Tuple, Union, Callable
 from scipy.interpolate import PchipInterpolator
 from dataclasses import dataclass
 import concurrent.futures
 from functools import lru_cache
-import weakref
-from collections import OrderedDict
 
 # =====================================================================================
 # DATA STRUCTURES
@@ -47,8 +44,8 @@ class XRayResult:
         scattering_factor_f2: Imaginary part of atomic scattering factor (numpy.ndarray)
         critical_angle_degrees: Critical angles in degrees (numpy.ndarray)
         attenuation_length_cm: Attenuation lengths in cm (numpy.ndarray)
-        real_sld_per_ang2: Real part of scattering length density in Å⁻² (numpy.ndarray)
-        imaginary_sld_per_ang2: Imaginary part of scattering length density in Å⁻² (numpy.ndarray)
+        real_sld_per_ang2: Real part of scattering length density in Å⁻²
+        imaginary_sld_per_ang2: Imaginary part of scattering length density in Å⁻²
     """
 
     # New snake_case field names
@@ -289,8 +286,9 @@ class XRayResult:
             molecular_weight_g_mol=MW or kwargs.get("molecular_weight_g_mol", 0.0),
             total_electrons=Number_Of_Electrons or kwargs.get("total_electrons", 0.0),
             density_g_cm3=Density or kwargs.get("density_g_cm3", 0.0),
-            electron_density_per_ang3=Electron_Density
-            or kwargs.get("electron_density_per_ang3", 0.0),
+            electron_density_per_ang3=(
+                Electron_Density or kwargs.get("electron_density_per_ang3", 0.0)
+            ),
             energy_kev=(
                 Energy if Energy is not None else kwargs.get("energy_kev", np.array([]))
             ),
@@ -350,7 +348,9 @@ class XRayResult:
 _scattering_factor_cache: Dict[str, pd.DataFrame] = {}
 
 # Module-level cache for interpolators to avoid repeated creation
-_interpolator_cache: Dict[str, Tuple[PchipInterpolator, PchipInterpolator]] = {}
+_interpolator_cache: Dict[str,
+                          Tuple[PchipInterpolator,
+                                PchipInterpolator]] = {}
 
 # Pre-computed element file paths for faster access
 _AVAILABLE_ELEMENTS: Dict[str, Path] = {}
@@ -448,7 +448,8 @@ def load_scattering_factor_data(element: str) -> pd.DataFrame:
         # Verify data is not empty
         if scattering_data.empty:
             raise ValueError(
-                f"Empty scattering factor data file for element '{element}': {file_path}"
+                f"Empty scattering factor data file for element "
+                f"'{element}': {file_path}"
             )
 
         # Cache the data
@@ -458,16 +459,19 @@ def load_scattering_factor_data(element: str) -> pd.DataFrame:
 
     except pd.errors.EmptyDataError as e:
         raise pd.errors.EmptyDataError(
-            f"Empty or corrupted scattering factor data file for element '{element}': {file_path}"
+            f"Empty or corrupted scattering factor data file for element "
+            f"'{element}': {file_path}"
         ) from e
     except pd.errors.ParserError as e:
         raise pd.errors.ParserError(
-            f"Invalid file format in scattering factor data file for element '{element}': {file_path}. "
+            f"Invalid file format in scattering factor data file for element "
+            f"'{element}': {file_path}. "
             f"Expected CSV format with columns: E,f1,f2"
         ) from e
     except Exception as e:
         raise RuntimeError(
-            f"Unexpected error loading scattering factor data for element '{element}' from {file_path}: {e}"
+            f"Unexpected error loading scattering factor data for element "
+            f"'{element}' from {file_path}: {e}"
         ) from e
 
 
@@ -482,7 +486,8 @@ class AtomicScatteringFactor:
     def __init__(self):
         # Maintain backward compatibility with existing tests
         self.data: Dict[str, pd.DataFrame] = {}
-        self.data_path = Path(__file__).parent / "data" / "AtomicScatteringFactor"
+        self.data_path = Path(__file__).parent / "data" / \
+            "AtomicScatteringFactor"
 
         # Create data directory if it doesn't exist (for test compatibility)
         self.data_path.mkdir(parents=True, exist_ok=True)
@@ -503,7 +508,10 @@ class AtomicScatteringFactor:
         """
         return load_scattering_factor_data(element)
 
-    def get_scattering_factor(self, element: str, q_values: np.ndarray) -> np.ndarray:
+    def get_scattering_factor(
+            self,
+            element: str,
+            q_values: np.ndarray) -> np.ndarray:
         """
         Calculate scattering factors for given q values.
 
@@ -523,9 +531,13 @@ class CrystalStructure:
     Class for representing and manipulating crystal structures.
     """
 
-    def __init__(
-        self, lattice_parameters: Tuple[float, float, float, float, float, float]
-    ):
+    def __init__(self,
+                 lattice_parameters: Tuple[float,
+                                           float,
+                                           float,
+                                           float,
+                                           float,
+                                           float]):
         """
         Initialize crystal structure.
 
@@ -535,9 +547,12 @@ class CrystalStructure:
         self.a, self.b, self.c, self.alpha, self.beta, self.gamma = lattice_parameters
         self.atoms: List[Dict] = []
 
-    def add_atom(
-        self, element: str, position: Tuple[float, float, float], occupancy: float = 1.0
-    ):
+    def add_atom(self,
+                 element: str,
+                 position: Tuple[float,
+                                 float,
+                                 float],
+                 occupancy: float = 1.0):
         """
         Add an atom to the crystal structure.
 
@@ -632,7 +647,7 @@ def calculate_scattering_factors(
     element_data: List[Tuple[float, Callable, Callable]],
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
-    Highly optimized vectorized calculation of X-ray scattering factors and optical properties.
+    Optimized vectorized calculation of X-ray scattering factors and properties.
 
     This function performs the core calculation of dispersion, absorption, and total
     scattering factors for a material based on its elemental composition.
@@ -676,7 +691,8 @@ def calculate_scattering_factors(
 
     # Pre-compute common constants outside the loop
     common_factor = SCATTERING_FACTOR * mass_density / molecular_weight
-    wave_sq = np.square(wavelength)  # Use np.square for better performance than ** or *
+    # Use np.square for better performance than ** or *
+    wave_sq = np.square(wavelength)
 
     # Handle empty element data case
     if n_elements == 0:
@@ -767,7 +783,12 @@ def calculate_derived_quantities(
     # Calculate electron density (electrons per unit volume)
     # ρₑ = ρ × Nₐ × Z / M × 10⁻³⁰ (converted to electrons/Å³)
     electron_density = (
-        1e6 * mass_density / molecular_weight * AVOGADRO * number_of_electrons / 1e30
+        1e6
+        * mass_density
+        / molecular_weight
+        * AVOGADRO
+        * number_of_electrons
+        / 1e30
     )
 
     # Calculate critical angle for total external reflection
@@ -835,7 +856,8 @@ def create_scattering_factor_interpolators(
     if len(scattering_factor_data) < 2:
         raise ValueError(
             f"Insufficient data points for element '{element}'. "
-            f"PCHIP interpolation requires at least 2 points, found {len(scattering_factor_data)}."
+            f"PCHIP interpolation requires at least 2 points, "
+            f"found {len(scattering_factor_data)}."
         )
 
     # Extract energy, f1, and f2 data
@@ -853,9 +875,12 @@ def create_scattering_factor_interpolators(
 
     # Create PCHIP interpolators
     # PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) preserves monotonicity
-    # and provides smooth, shape-preserving interpolation similar to Julia's behavior
-    f1_interpolator = PchipInterpolator(energy_values, f1_values, extrapolate=False)
-    f2_interpolator = PchipInterpolator(energy_values, f2_values, extrapolate=False)
+    # and provides smooth, shape-preserving interpolation similar to Julia's
+    # behavior
+    f1_interpolator = PchipInterpolator(
+        energy_values, f1_values, extrapolate=False)
+    f2_interpolator = PchipInterpolator(
+        energy_values, f2_values, extrapolate=False)
 
     # Cache the interpolators for future use
     _interpolator_cache[element] = (f1_interpolator, f2_interpolator)
@@ -905,7 +930,7 @@ def _calculate_single_material_xray_properties(
         This is an internal function. Use calculate_single_material_properties()
         for the public API that returns XRayResult objects.
     """
-    from .utils import parse_formula, get_atomic_number, get_atomic_weight
+    from .utils import parse_formula
     from .constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM
 
     # Validate inputs
@@ -922,7 +947,8 @@ def _calculate_single_material_xray_properties(
             try:
                 energy_kev = np.array([float(energy_kev)], dtype=np.float64)
             except (ValueError, TypeError):
-                raise ValueError(f"Cannot convert energy to float: {energy_kev}")
+                raise ValueError(
+                    f"Cannot convert energy to float: {energy_kev}")
     else:
         energy_kev = np.array(energy_kev, dtype=np.float64)
 
@@ -939,7 +965,6 @@ def _calculate_single_material_xray_properties(
     # Parse the chemical formula into elements and their counts
     element_symbols, element_counts = parse_formula(formula_str)
     n_elements = len(element_symbols)
-    n_energies = len(energy_kev)
 
     # Bulk load atomic data for all elements (optimization)
     elements_tuple = tuple(element_symbols)
@@ -1046,7 +1071,8 @@ def calculate_multiple_xray_properties(
     """
     # Input validation
     if len(formula_list) != len(mass_density_list):
-        raise ValueError("Formula list and mass density list must have the same length")
+        raise ValueError(
+            "Formula list and mass density list must have the same length")
 
     if not formula_list:
         raise ValueError("Formula list must not be empty")
@@ -1054,14 +1080,16 @@ def calculate_multiple_xray_properties(
     # Process each formula
     results = {}
 
-    for i, (formula, mass_density) in enumerate(zip(formula_list, mass_density_list)):
+    for i, (formula, mass_density) in enumerate(
+            zip(formula_list, mass_density_list)):
         try:
             # Calculate properties for this formula
             result = calculate_single_material_properties(
                 formula, energy_kev, mass_density
             )
 
-            # Convert XRayResult to dictionary format for backward compatibility
+            # Convert XRayResult to dictionary format for backward
+            # compatibility
             result_dict = {
                 "formula": result.Formula,
                 "molecular_weight": result.MW,
@@ -1161,7 +1189,9 @@ def calculate_single_material_properties(
         Molecular weight: 60.08 g/mol
 
         >>> # Multiple energies
-        >>> result = calculate_single_material_properties("Al2O3", [8.0, 10.0, 12.0], 3.95)
+        >>> result = calculate_single_material_properties(
+        ...     "Al2O3", [8.0, 10.0, 12.0], 3.95
+        ... )
         >>> print(f"Critical angles: {result.Critical_Angle}")
 
         >>> # Array input
@@ -1247,20 +1277,23 @@ def calculate_xray_properties(
 
     if len(formulas) != len(densities):
         raise ValueError(
-            f"Number of formulas ({len(formulas)}) must match number of densities ({len(densities)})"
+            f"Number of formulas ({len(formulas)}) must match number of "
+            f"densities ({len(densities)})"
         )
 
     # Validate individual formulas and densities
     for i, formula in enumerate(formulas):
         if not isinstance(formula, str) or not formula.strip():
             raise ValueError(
-                f"Formula at index {i} must be a non-empty string, got: {repr(formula)}"
+                f"Formula at index {i} must be a non-empty string, "
+                f"got: {repr(formula)}"
             )
 
     for i, density in enumerate(densities):
         if not isinstance(density, (int, float)) or density <= 0:
             raise ValueError(
-                f"Density at index {i} must be a positive number, got: {density}"
+                f"Density at index {i} must be a positive number, "
+                f"got: {density}"
             )
 
     # Convert and validate energies
@@ -1302,12 +1335,14 @@ def calculate_xray_properties(
                 formula, sorted_energies, density
             )
 
-            # If energies were sorted, we need to restore original order in results
+            # If energies were sorted, we need to restore original order in
+            # results
             if not np.array_equal(sort_indices, np.arange(len(sort_indices))):
                 # Create reverse mapping to restore original order
                 reverse_indices = np.argsort(sort_indices)
 
-                # Restore original order in all array fields using new field names
+                # Restore original order in all array fields using new field
+                # names
                 result = XRayResult(
                     formula=result.formula,
                     molecular_weight_g_mol=result.molecular_weight_g_mol,
@@ -1320,20 +1355,23 @@ def calculate_xray_properties(
                     absorption_beta=result.absorption_beta[reverse_indices],
                     scattering_factor_f1=result.scattering_factor_f1[reverse_indices],
                     scattering_factor_f2=result.scattering_factor_f2[reverse_indices],
-                    critical_angle_degrees=result.critical_angle_degrees[
-                        reverse_indices
-                    ],
-                    attenuation_length_cm=result.attenuation_length_cm[reverse_indices],
+                    critical_angle_degrees=(
+                        result.critical_angle_degrees[reverse_indices]
+                    ),
+                    attenuation_length_cm=(
+                        result.attenuation_length_cm[reverse_indices]
+                    ),
                     real_sld_per_ang2=result.real_sld_per_ang2[reverse_indices],
-                    imaginary_sld_per_ang2=result.imaginary_sld_per_ang2[
-                        reverse_indices
-                    ],
+                    imaginary_sld_per_ang2=(
+                        result.imaginary_sld_per_ang2[reverse_indices]
+                    ),
                 )
 
             return (formula, result)
         except Exception as e:
             # Re-raise with more context
-            raise RuntimeError(f"Failed to process formula '{formula}': {e}") from e
+            raise RuntimeError(
+                f"Failed to process formula '{formula}': {e}") from e
 
     # Process formulas in parallel using ThreadPoolExecutor
     formula_density_pairs = list(zip(formulas, densities))
@@ -1342,7 +1380,8 @@ def calculate_xray_properties(
     # Optimize worker count based on system capabilities and workload
     import multiprocessing
 
-    optimal_workers = min(len(formulas), max(1, multiprocessing.cpu_count() // 2), 8)
+    optimal_workers = min(len(formulas), max(
+        1, multiprocessing.cpu_count() // 2), 8)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=optimal_workers) as executor:
         # Submit all tasks

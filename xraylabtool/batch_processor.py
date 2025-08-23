@@ -8,13 +8,12 @@ parallel execution, and progress tracking for large-scale X-ray property calcula
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Callable, Iterator
+from typing import Dict, List, Optional, Tuple, Union, Iterator
 import concurrent.futures
 from dataclasses import dataclass
 import gc
 import psutil
 import os
-from functools import partial
 import warnings
 
 from .core import calculate_single_material_properties, XRayResult
@@ -89,7 +88,8 @@ class MemoryMonitor:
         gc.collect()
 
 
-def chunk_iterator(data: List[Tuple], chunk_size: int) -> Iterator[List[Tuple]]:
+def chunk_iterator(data: List[Tuple],
+                   chunk_size: int) -> Iterator[List[Tuple]]:
     """
     Yield successive chunks of data.
 
@@ -101,7 +101,7 @@ def chunk_iterator(data: List[Tuple], chunk_size: int) -> Iterator[List[Tuple]]:
         Lists of data tuples of specified chunk size
     """
     for i in range(0, len(data), chunk_size):
-        yield data[i : i + chunk_size]
+        yield data[i: i + chunk_size]
 
 
 def process_single_calculation(
@@ -119,7 +119,8 @@ def process_single_calculation(
         Tuple of (formula, XRayResult)
     """
     try:
-        result = calculate_single_material_properties(formula, energies, density)
+        result = calculate_single_material_properties(
+            formula, energies, density)
         return (formula, result)
     except Exception as e:
         warnings.warn(f"Failed to process formula '{formula}': {e}")
@@ -143,7 +144,8 @@ def process_batch_chunk(
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
 
     # Use ThreadPoolExecutor for I/O bound operations (file loading)
-    # ProcessPoolExecutor would be better for CPU-bound, but has pickle overhead
+    # ProcessPoolExecutor would be better for CPU-bound, but has pickle
+    # overhead
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=config.max_workers
     ) as executor:
@@ -159,7 +161,8 @@ def process_batch_chunk(
         for future in concurrent.futures.as_completed(future_to_formula):
             formula = future_to_formula[future]
             try:
-                result = future.result(timeout=300)  # 5 minute timeout per calculation
+                # 5 minute timeout per calculation
+                result = future.result(timeout=300)
                 results.append(result)
 
                 # Memory management
@@ -241,7 +244,9 @@ def calculate_batch_properties(
         try:
             from tqdm import tqdm
 
-            progress_bar = tqdm(total=len(formulas), desc="Processing materials")
+            progress_bar = tqdm(
+                total=len(formulas),
+                desc="Processing materials")
         except ImportError:
             config.enable_progress = False
             warnings.warn("tqdm not available, progress tracking disabled")
@@ -299,9 +304,8 @@ def save_batch_results(
     output_path = Path(output_file)
 
     # Filter out failed calculations
-    valid_results = {
-        formula: result for formula, result in results.items() if result is not None
-    }
+    valid_results = {formula: result for formula,
+                     result in results.items() if result is not None}
 
     if not valid_results:
         raise ValueError("No valid results to save")
@@ -407,7 +411,8 @@ def load_batch_input(
 
     # Validate required columns
     required_columns = [formula_column, density_column]
-    missing_columns = [col for col in required_columns if col not in df.columns]
+    missing_columns = [
+        col for col in required_columns if col not in df.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns: {missing_columns}")
 

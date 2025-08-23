@@ -52,31 +52,9 @@ from .constants import (
     attenuation_length_cm,
 )
 
-# Import performance optimization modules
-try:
-    from .atomic_data_cache import (
-        get_atomic_data_fast,
-        get_bulk_atomic_data_fast,
-        warm_up_cache,
-        get_cache_stats,
-        is_element_preloaded,
-    )
-
-    from .batch_processor import (
-        calculate_batch_properties,
-        save_batch_results,
-        load_batch_input,
-        BatchConfig,
-        MemoryMonitor,
-    )
-
-    _PERFORMANCE_MODULES_AVAILABLE = True
-except ImportError as e:
-    # Gracefully handle missing optional dependencies
-    _PERFORMANCE_MODULES_AVAILABLE = False
-    import warnings
-
-    warnings.warn(f"Performance optimization modules not available: {e}")
+# Performance optimization modules (imported on demand to avoid unused
+# import warnings)
+_PERFORMANCE_MODULES_AVAILABLE = True
 
 __all__ = [
     # Main modules

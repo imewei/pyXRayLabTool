@@ -6,14 +6,10 @@ mathematical operations, and other common tasks in X-ray analysis.
 """
 
 import numpy as np
-import pandas as pd
 from scipy import constants
-from typing import Union, List, Tuple, Optional
-from pathlib import Path
-import matplotlib.pyplot as plt
-from tqdm import tqdm
+from typing import List, Tuple
 import re
-from functools import lru_cache, wraps
+from functools import lru_cache
 
 
 # Physical constants
@@ -134,7 +130,7 @@ def bragg_angle(d_spacing: float, wavelength: float, order: int = 1) -> float:
     return theta_deg
 
 
-def d_spacing_cubic(h: int, k: int, l: int, a: float) -> float:
+def d_spacing_cubic(h: int, k: int, miller_l: int, a: float) -> float:
     """
     Calculate d-spacing for cubic crystal system.
 
@@ -145,10 +141,10 @@ def d_spacing_cubic(h: int, k: int, l: int, a: float) -> float:
     Returns:
         d-spacing in Angstroms
     """
-    return a / np.sqrt(h**2 + k**2 + l**2)
+    return a / np.sqrt(h**2 + k**2 + miller_l**2)
 
 
-def d_spacing_tetragonal(h: int, k: int, l: int, a: float, c: float) -> float:
+def d_spacing_tetragonal(h: int, k: int, miller_l: int, a: float, c: float) -> float:
     """
     Calculate d-spacing for tetragonal crystal system.
 
@@ -160,11 +156,11 @@ def d_spacing_tetragonal(h: int, k: int, l: int, a: float, c: float) -> float:
     Returns:
         d-spacing in Angstroms
     """
-    return 1 / np.sqrt((h**2 + k**2) / a**2 + l**2 / c**2)
+    return 1 / np.sqrt((h**2 + k**2) / a**2 + miller_l**2 / c**2)
 
 
 def d_spacing_orthorhombic(
-    h: int, k: int, l: int, a: float, b: float, c: float
+    h: int, k: int, miller_l: int, a: float, b: float, c: float
 ) -> float:
     """
     Calculate d-spacing for orthorhombic crystal system.
@@ -176,7 +172,7 @@ def d_spacing_orthorhombic(
     Returns:
         d-spacing in Angstroms
     """
-    return 1 / np.sqrt(h**2 / a**2 + k**2 / b**2 + l**2 / c**2)
+    return 1 / np.sqrt(h**2 / a**2 + k**2 / b**2 + miller_l**2 / c**2)
 
 
 def q_from_angle(two_theta: float, wavelength: float) -> float:
@@ -217,7 +213,10 @@ def angle_from_q(q: float, wavelength: float) -> float:
     return two_theta_deg
 
 
-def smooth_data(x: np.ndarray, y: np.ndarray, window_size: int = 5) -> np.ndarray:
+def smooth_data(
+        x: np.ndarray,
+        y: np.ndarray,
+        window_size: int = 5) -> np.ndarray:
     """
     Apply moving average smoothing to data using optimized NumPy convolution.
 
@@ -267,7 +266,8 @@ def find_peaks(
     """
     from scipy.signal import find_peaks as scipy_find_peaks
 
-    peaks, properties = scipy_find_peaks(y, prominence=prominence, distance=distance)
+    peaks, properties = scipy_find_peaks(
+        y, prominence=prominence, distance=distance)
 
     # Add x-values to properties
     properties["x_values"] = x[peaks]
@@ -335,7 +335,12 @@ def progress_bar(iterable, desc: str = "Processing"):
     Returns:
         tqdm progress bar
     """
-    return tqdm(iterable, desc=desc)
+    try:
+        from tqdm import tqdm
+        return tqdm(iterable, desc=desc)
+    except ImportError:
+        # Fallback if tqdm is not available
+        return iterable
 
 
 def save_processed_data(
@@ -391,7 +396,8 @@ def parse_formula(formula_str: str) -> Tuple[List[str], List[float]]:
         ValueError: If formula string is invalid or empty
     """
     # Regular expression identical to Julia implementation:
-    # Matches: Capital letter + optional lowercase + optional number (int or float)
+    # Matches: Capital letter + optional lowercase + optional number
+    # (int or float)
     elements_match = re.findall(r"([A-Z][a-z]*)(\d*\.\d*|\d*)", formula_str)
 
     if not elements_match:
@@ -465,21 +471,25 @@ def get_atomic_number(element_symbol: str) -> int:
                 return int(float(str(atomic_num)))
             except (ValueError, TypeError) as e:
                 raise AtomicDataError(
-                    f"Could not convert atomic number to int: {atomic_num}, error: {e}"
+                    f"Could not convert atomic number to int: "
+                    f"{atomic_num}, error: {e}"
                 )
     except ImportError:
         raise AtomicDataError("mendeleev package is required for atomic data")
     except ValueError as e:
         # mendeleev raises ValueError for unknown elements
         if "not found" in str(e).lower() or "unknown" in str(e).lower():
-            raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
+            raise UnknownElementError(
+                f"Unknown element symbol: '{element_symbol}'")
         else:
             raise AtomicDataError(
-                f"Could not load atomic number for element '{element_symbol}': {e}"
+                f"Could not load atomic number for element "
+                f"'{element_symbol}': {e}"
             )
     except Exception as e:
         raise AtomicDataError(
-            f"Unexpected error loading atomic number for element '{element_symbol}': {e}"
+            f"Unexpected error loading atomic number for element "
+            f"'{element_symbol}': {e}"
         )
 
 
@@ -520,25 +530,30 @@ def get_atomic_weight(element_symbol: str) -> float:
             # Try direct conversion for normal types
             if isinstance(atomic_weight, (int, float)):
                 return float(atomic_weight)
-            # For Column types and other objects, convert to string then to float
+            # For Column types and other objects, convert to string then to
+            # float
             return float(str(atomic_weight))
         except (ValueError, TypeError) as e:
             raise AtomicDataError(
-                f"Could not convert atomic weight to float: {atomic_weight}, error: {e}"
+                f"Could not convert atomic weight to float: "
+                f"{atomic_weight}, error: {e}"
             )
     except ImportError:
         raise AtomicDataError("mendeleev package is required for atomic data")
     except ValueError as e:
         # mendeleev raises ValueError for unknown elements
         if "not found" in str(e).lower() or "unknown" in str(e).lower():
-            raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
+            raise UnknownElementError(
+                f"Unknown element symbol: '{element_symbol}'")
         else:
             raise AtomicDataError(
-                f"Could not load atomic weight for element '{element_symbol}': {e}"
+                f"Could not load atomic weight for element "
+                f"'{element_symbol}': {e}"
             )
     except Exception as e:
         raise AtomicDataError(
-            f"Unexpected error loading atomic weight for element '{element_symbol}': {e}"
+            f"Unexpected error loading atomic weight for element "
+            f"'{element_symbol}': {e}"
         )
 
 
@@ -586,15 +601,16 @@ def get_atomic_data(element_symbol: str) -> dict:
     except ValueError as e:
         # mendeleev raises ValueError for unknown elements
         if "not found" in str(e).lower() or "unknown" in str(e).lower():
-            raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
+            raise UnknownElementError(
+                f"Unknown element symbol: '{element_symbol}'")
         else:
             raise AtomicDataError(
-                f"Could not load atomic data for element '{element_symbol}': {e}"
+                f"Could not load atomic data for element "
+                f"'{element_symbol}': {e}"
             )
     except Exception as e:
         raise AtomicDataError(
-            f"Unexpected error loading atomic data for element '{element_symbol}': {e}"
-        )
+            f"Unexpected error loading atomic data for element '{element_symbol}': {e}")
 
 
 # Backward compatibility alias
