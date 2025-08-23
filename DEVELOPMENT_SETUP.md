@@ -6,7 +6,7 @@
 
 **Location:** `/Users/b80985/Projects/pyXRayLabTool/venv/`  
 **Python Version:** 3.13.7  
-**Package Version:** XRayLabTool 0.1.5  
+**Package Version:** XRayLabTool 0.1.8
 
 ### 📦 Installed Dependencies
 

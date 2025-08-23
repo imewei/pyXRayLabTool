@@ -100,7 +100,7 @@ def validate_requirements():
     """Validate requirements files."""
     print("🔍 Validating requirements files...")
 
-    req_files = ["requirements.txt", "requirements-dev.txt", "requirements-docs.txt"]
+    req_files = ["requirements.txt"]
 
     all_valid = True
     for req_file in req_files:

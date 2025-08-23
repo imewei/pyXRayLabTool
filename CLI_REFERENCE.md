@@ -1,6 +1,6 @@
 # XRayLabTool CLI Reference
 
-**Version:** 0.1.5  
+**Version:** 0.1.8
 **Author:** Wei Chen  
 **License:** MIT  
 
@@ -64,7 +64,7 @@ These options are available for the main `xraylabtool` command:
 **Example:**
 ```bash
 xraylabtool --version
-# Output: XRayLabTool 0.1.5
+# Output: XRayLabTool 0.1.8
 ```
 
 ---
@@ -826,7 +826,7 @@ xraylabtool formula SiO2,TiO2,Al2O3,Fe2O3 -o oxides.json
 
 ## Version History
 
-- **v0.1.5** - Current version with full CLI functionality
+- **v0.1.8** - Current version with full CLI functionality
 - **Python Requirements** - ≥ 3.12
 - **License** - MIT
 
@@ -837,4 +837,4 @@ For more information, see:
 
 ---
 
-*This documentation was generated for XRayLabTool v0.1.5. For the latest updates, check the project repository.*
+*This documentation was generated for XRayLabTool v0.1.8. For the latest updates, check the project repository.*
