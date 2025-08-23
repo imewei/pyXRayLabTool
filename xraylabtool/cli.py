@@ -11,7 +11,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 import numpy as np
 import pandas as pd
 from textwrap import dedent
@@ -85,7 +85,7 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def add_calc_command(subparsers):
+def add_calc_command(subparsers: Any) -> None:
     """Add the 'calc' subcommand for single material calculations."""
     parser = subparsers.add_parser(
         "calc",
@@ -162,7 +162,7 @@ def add_calc_command(subparsers):
     )
 
 
-def add_batch_command(subparsers):
+def add_batch_command(subparsers: Any) -> None:
     """Add the 'batch' subcommand for processing multiple materials."""
     parser = subparsers.add_parser(
         "batch",
@@ -217,7 +217,7 @@ def add_batch_command(subparsers):
     )
 
 
-def add_convert_command(subparsers):
+def add_convert_command(subparsers: Any) -> None:
     """Add the 'convert' subcommand for unit conversions."""
     parser = subparsers.add_parser(
         "convert",
@@ -261,7 +261,7 @@ def add_convert_command(subparsers):
     parser.add_argument("-o", "--output", help="Output filename (CSV format)")
 
 
-def add_formula_command(subparsers):
+def add_formula_command(subparsers: Any) -> None:
     """Add the 'formula' subcommand for formula parsing."""
     parser = subparsers.add_parser(
         "formula",
@@ -293,7 +293,7 @@ def add_formula_command(subparsers):
     parser.add_argument("-o", "--output", help="Output filename (JSON format)")
 
 
-def add_atomic_command(subparsers):
+def add_atomic_command(subparsers: Any) -> None:
     """Add the 'atomic' subcommand for atomic data lookup."""
     parser = subparsers.add_parser(
         "atomic",
@@ -324,7 +324,7 @@ def add_atomic_command(subparsers):
     )
 
 
-def add_bragg_command(subparsers):
+def add_bragg_command(subparsers: Any) -> None:
     """Add the 'bragg' subcommand for Bragg angle calculations."""
     parser = subparsers.add_parser(
         "bragg",
@@ -364,7 +364,7 @@ def add_bragg_command(subparsers):
     parser.add_argument("-o", "--output", help="Output filename (CSV format)")
 
 
-def add_list_command(subparsers):
+def add_list_command(subparsers: Any) -> None:
     """Add the 'list' subcommand for listing available data."""
     parser = subparsers.add_parser(
         "list",
@@ -541,7 +541,7 @@ def format_xray_result(
         return "\n".join(output_lines)
 
 
-def _validate_calc_inputs(args, energies):
+def _validate_calc_inputs(args: Any, energies: np.ndarray) -> bool:
     """Validate calc command inputs."""
     if args.density <= 0:
         print("Error: Density must be positive", file=sys.stderr)
@@ -557,7 +557,7 @@ def _validate_calc_inputs(args, energies):
     return True
 
 
-def _print_calc_verbose_info(args, energies):
+def _print_calc_verbose_info(args: Any, energies: np.ndarray) -> None:
     """Print verbose calculation information."""
     print(f"Calculating X-ray properties for {args.formula}...")
     print(
@@ -568,9 +568,9 @@ def _print_calc_verbose_info(args, energies):
     print()
 
 
-def _determine_output_format(args):
+def _determine_output_format(args: Any) -> str:
     """Determine output format based on args and file extension."""
-    output_format = args.format
+    output_format: str = args.format
 
     if args.output:
         output_path = Path(args.output)
@@ -583,7 +583,7 @@ def _determine_output_format(args):
     return output_format
 
 
-def _save_or_print_output(formatted_output, args):
+def _save_or_print_output(formatted_output: str, args: Any) -> None:
     """Save output to file or print to stdout."""
     if args.output:
         Path(args.output).write_text(formatted_output)
@@ -593,7 +593,7 @@ def _save_or_print_output(formatted_output, args):
         print(formatted_output)
 
 
-def cmd_calc(args):
+def cmd_calc(args: Any) -> int:
     """Handle the 'calc' command."""
     try:
         energies = parse_energy_string(args.energy)
@@ -625,7 +625,7 @@ def cmd_calc(args):
         return 1
 
 
-def _validate_batch_input(args):
+def _validate_batch_input(args: Any) -> Optional[pd.DataFrame]:
     """Validate batch input file and columns."""
     input_path = Path(args.input_file)
     if not input_path.exists():
@@ -643,7 +643,9 @@ def _validate_batch_input(args):
     return df_input
 
 
-def _parse_batch_data(df_input):
+def _parse_batch_data(
+    df_input: pd.DataFrame,
+) -> Tuple[Optional[List[str]], Optional[List[float]], Optional[List[List[float]]]]:
     """Parse batch data from DataFrame."""
     formulas = []
     densities = []
@@ -670,7 +672,7 @@ def _parse_batch_data(df_input):
     return formulas, densities, energy_sets
 
 
-def _convert_result_to_dict(result, energy_index):
+def _convert_result_to_dict(result: XRayResult, energy_index: int) -> Dict[str, Any]:
     """Convert XRayResult to dictionary for specific energy point."""
     return {
         "formula": result.formula,
@@ -691,7 +693,12 @@ def _convert_result_to_dict(result, energy_index):
     }
 
 
-def _process_batch_materials(formulas, densities, energy_sets, args):
+def _process_batch_materials(
+    formulas: List[str],
+    densities: List[float],
+    energy_sets: List[List[float]],
+    args: Any,
+) -> List[Dict[str, Any]]:
     """Process all materials and return results."""
     results = []
 
@@ -718,7 +725,7 @@ def _process_batch_materials(formulas, densities, energy_sets, args):
     return results
 
 
-def _save_batch_results(results, args):
+def _save_batch_results(results: List[Dict[str, Any]], args: Any) -> None:
     """Save batch results to output file."""
     if args.fields:
         field_list = [field.strip() for field in args.fields.split(",")]
@@ -746,17 +753,21 @@ def _save_batch_results(results, args):
         )
 
 
-def cmd_batch(args):
+def cmd_batch(args: Any) -> int:
     """Handle the 'batch' command."""
     try:
         df_input = _validate_batch_input(args)
         if df_input is None:
             return 1
 
-        formulas, densities, energy_sets = _parse_batch_data(df_input)
-        if formulas is None:
+        parsed_data = _parse_batch_data(df_input)
+        if parsed_data[0] is None:
             return 1
 
+        formulas, densities, energy_sets = parsed_data
+        assert (
+            formulas is not None and densities is not None and energy_sets is not None
+        )
         results = _process_batch_materials(formulas, densities, energy_sets, args)
 
         if not results:
@@ -771,7 +782,7 @@ def cmd_batch(args):
         return 1
 
 
-def cmd_convert(args):
+def cmd_convert(args: Any) -> int:
     """Handle the 'convert' command."""
     try:
         # Parse values
@@ -818,7 +829,7 @@ def cmd_convert(args):
         return 1
 
 
-def _get_atomic_data(elements):
+def _get_atomic_data(elements: List[str]) -> List[Dict[str, Any]]:
     """Get atomic data for list of elements."""
     atomic_data = []
     for element in elements:
@@ -835,7 +846,7 @@ def _get_atomic_data(elements):
     return atomic_data
 
 
-def _process_formula(formula, verbose):
+def _process_formula(formula: str, verbose: bool) -> Dict[str, Any]:
     """Process a single formula and return info."""
     elements, counts = parse_formula(formula)
 
@@ -853,7 +864,7 @@ def _process_formula(formula, verbose):
     return formula_info
 
 
-def _output_formula_results(results, args):
+def _output_formula_results(results: List[Dict[str, Any]], args: Any) -> None:
     """Output formula results to file or console."""
     if args.output:
         with open(args.output, "w") as f:
@@ -863,7 +874,7 @@ def _output_formula_results(results, args):
         _print_formula_results(results, args.verbose)
 
 
-def _print_formula_results(results, verbose):
+def _print_formula_results(results: List[Dict[str, Any]], verbose: bool) -> None:
     """Print formula results to console."""
     for result in results:
         print(f"Formula: {result['formula']}")
@@ -881,7 +892,7 @@ def _print_formula_results(results, verbose):
         print()
 
 
-def cmd_formula(args):
+def cmd_formula(args: Any) -> int:
     """Handle the 'formula' command."""
     try:
         formulas = [f.strip() for f in args.formulas.split(",")]
@@ -903,7 +914,7 @@ def cmd_formula(args):
         return 1
 
 
-def cmd_atomic(args):
+def cmd_atomic(args: Any) -> int:
     """Handle the 'atomic' command."""
     try:
         elements = [e.strip() for e in args.elements.split(",")]
@@ -957,7 +968,7 @@ def cmd_atomic(args):
         return 1
 
 
-def cmd_bragg(args):
+def cmd_bragg(args: Any) -> int:
     """Handle the 'bragg' command."""
     try:
         # Parse d-spacings
@@ -1018,7 +1029,7 @@ def cmd_bragg(args):
         return 1
 
 
-def cmd_list(args):
+def cmd_list(args: Any) -> int:
     """Handle the 'list' command."""
     if args.type == "constants":
         print("Physical Constants:")
@@ -1085,7 +1096,7 @@ def cmd_list(args):
     return 0
 
 
-def main():
+def main() -> int:
     """Main CLI entry point."""
     parser = create_parser()
 

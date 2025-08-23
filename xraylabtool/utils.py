@@ -7,7 +7,7 @@ mathematical operations, and other common tasks in X-ray analysis.
 
 import numpy as np
 from scipy import constants
-from typing import List, Tuple, NoReturn
+from typing import List, Tuple, NoReturn, Dict, Any, Iterator, Union
 import re
 from functools import lru_cache
 
@@ -127,7 +127,7 @@ def bragg_angle(d_spacing: float, wavelength: float, order: int = 1) -> float:
     theta_rad = np.arcsin(sin_theta)
     theta_deg = np.degrees(theta_rad)
 
-    return theta_deg
+    return float(theta_deg)
 
 
 def d_spacing_cubic(h: int, k: int, miller_l: int, a: float) -> float:
@@ -141,7 +141,7 @@ def d_spacing_cubic(h: int, k: int, miller_l: int, a: float) -> float:
     Returns:
         d-spacing in Angstroms
     """
-    return a / np.sqrt(h**2 + k**2 + miller_l**2)
+    return float(a / np.sqrt(h**2 + k**2 + miller_l**2))
 
 
 def d_spacing_tetragonal(h: int, k: int, miller_l: int, a: float, c: float) -> float:
@@ -156,7 +156,7 @@ def d_spacing_tetragonal(h: int, k: int, miller_l: int, a: float, c: float) -> f
     Returns:
         d-spacing in Angstroms
     """
-    return 1 / np.sqrt((h**2 + k**2) / a**2 + miller_l**2 / c**2)
+    return float(1 / np.sqrt((h**2 + k**2) / a**2 + miller_l**2 / c**2))
 
 
 def d_spacing_orthorhombic(
@@ -172,7 +172,7 @@ def d_spacing_orthorhombic(
     Returns:
         d-spacing in Angstroms
     """
-    return 1 / np.sqrt(h**2 / a**2 + k**2 / b**2 + miller_l**2 / c**2)
+    return float(1 / np.sqrt(h**2 / a**2 + k**2 / b**2 + miller_l**2 / c**2))
 
 
 def q_from_angle(two_theta: float, wavelength: float) -> float:
@@ -188,7 +188,7 @@ def q_from_angle(two_theta: float, wavelength: float) -> float:
     """
     theta_rad = np.radians(two_theta / 2)
     q = (4 * np.pi * np.sin(theta_rad)) / wavelength
-    return q
+    return float(q)
 
 
 def angle_from_q(q: float, wavelength: float) -> float:
@@ -210,7 +210,7 @@ def angle_from_q(q: float, wavelength: float) -> float:
     theta_rad = np.arcsin(sin_theta)
     two_theta_deg = 2 * np.degrees(theta_rad)
 
-    return two_theta_deg
+    return float(two_theta_deg)
 
 
 def smooth_data(x: np.ndarray, y: np.ndarray, window_size: int = 5) -> np.ndarray:
@@ -248,7 +248,7 @@ def smooth_data(x: np.ndarray, y: np.ndarray, window_size: int = 5) -> np.ndarra
 
 def find_peaks(
     x: np.ndarray, y: np.ndarray, prominence: float = 0.1, distance: int = 10
-) -> Tuple[np.ndarray, dict]:
+) -> Tuple[np.ndarray, Dict[str, Any]]:
     """
     Find peaks in diffraction data.
 
@@ -311,16 +311,16 @@ def normalize_intensity(y: np.ndarray, method: str = "max") -> np.ndarray:
         Normalized intensity data
     """
     if method == "max":
-        return y / np.max(y)
+        return y / float(np.max(y))
     elif method == "area":
-        return y / np.trapezoid(y)
+        return y / float(np.trapezoid(y))
     elif method == "standard":
-        return (y - np.mean(y)) / np.std(y)
+        return (y - float(np.mean(y))) / float(np.std(y))
     else:
         raise ValueError("Method must be 'max', 'area', or 'standard'")
 
 
-def progress_bar(iterable, desc: str = "Processing"):
+def progress_bar(iterable: Any, desc: str = "Processing") -> Union[Any, Iterator[Any]]:
     """
     Create a progress bar for iterations.
 
@@ -345,7 +345,7 @@ def save_processed_data(
     y: np.ndarray,
     filename: str,
     header: str = "# X-ray diffraction data",
-):
+) -> None:
     """
     Save processed data to file.
 
@@ -427,7 +427,7 @@ class UnknownElementError(AtomicDataError):
     pass
 
 
-def _convert_atomic_number_to_int(atomic_num):
+def _convert_atomic_number_to_int(atomic_num: Any) -> int:
     """Convert atomic number to integer, handling various types."""
     try:
         if isinstance(atomic_num, (int, float)):
@@ -442,7 +442,7 @@ def _convert_atomic_number_to_int(atomic_num):
             )
 
 
-def _handle_mendeleev_error(e, element_symbol) -> NoReturn:
+def _handle_mendeleev_error(e: Exception, element_symbol: str) -> NoReturn:
     """Handle errors from mendeleev package."""
     error_str = str(e).lower()
     if "not found" in error_str or "unknown" in error_str:
@@ -480,7 +480,7 @@ def get_atomic_number(element_symbol: str) -> int:
         from mendeleev import element as get_element
 
         elem = get_element(element_symbol)
-        return _convert_atomic_number_to_int(elem.atomic_number)
+        return int(_convert_atomic_number_to_int(elem.atomic_number))
     except ImportError:
         raise AtomicDataError("mendeleev package is required for atomic data")
     except ValueError as e:
@@ -557,7 +557,7 @@ def get_atomic_weight(element_symbol: str) -> float:
 
 
 @lru_cache(maxsize=128)
-def get_atomic_data(element_symbol: str) -> dict:
+def get_atomic_data(element_symbol: str) -> Dict[str, Any]:
     """
     Get comprehensive atomic data for given element symbol with LRU caching.
 

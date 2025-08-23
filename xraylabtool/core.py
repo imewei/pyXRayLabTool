@@ -8,7 +8,7 @@ including atomic scattering factors and crystallographic calculations.
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Tuple, Union, Callable, Optional
+from typing import Dict, List, Tuple, Union, Callable, Optional, Any
 from scipy.interpolate import PchipInterpolator
 from dataclasses import dataclass
 import concurrent.futures
@@ -65,7 +65,7 @@ class XRayResult:
     real_sld_per_ang2: np.ndarray  # Real part of SLD (Å⁻²)
     imaginary_sld_per_ang2: np.ndarray  # Imaginary part of SLD (Å⁻²)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Post-initialization to handle any setup after object creation."""
         # Ensure all arrays are numpy arrays
         self.energy_kev = np.asarray(self.energy_kev)
@@ -278,7 +278,7 @@ class XRayResult:
         Attenuation_Length: Optional[np.ndarray] = None,
         reSLD: Optional[np.ndarray] = None,
         imSLD: Optional[np.ndarray] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "XRayResult":
         """Create XRayResult from legacy field names (for internal use)."""
         return cls(
@@ -481,7 +481,7 @@ class AtomicScatteringFactor:
     from .nff files using the module-level cache.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Maintain backward compatibility with existing tests
         self.data: Dict[str, pd.DataFrame] = {}
         self.data_path = Path(__file__).parent / "data" / "AtomicScatteringFactor"
@@ -535,11 +535,11 @@ class CrystalStructure:
             lattice_parameters: (a, b, c, alpha, beta, gamma) in Angstroms and degrees
         """
         self.a, self.b, self.c, self.alpha, self.beta, self.gamma = lattice_parameters
-        self.atoms: List[Dict] = []
+        self.atoms: List[Dict[str, Any]] = []
 
     def add_atom(
         self, element: str, position: Tuple[float, float, float], occupancy: float = 1.0
-    ):
+    ) -> None:
         """
         Add an atom to the crystal structure.
 
@@ -631,7 +631,7 @@ def calculate_scattering_factors(
     wavelength: np.ndarray,
     mass_density: float,
     molecular_weight: float,
-    element_data: List[Tuple[float, Callable, Callable]],
+    element_data: List[Tuple[float, Callable[..., Any], Callable[..., Any]]],
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Optimized vectorized calculation of X-ray scattering factors and properties.
@@ -872,7 +872,7 @@ def _validate_single_material_inputs(
     formula_str: str,
     energy_kev: Union[float, List[float], np.ndarray],
     mass_density: float,
-):
+) -> np.ndarray:
     """Validate inputs for single material calculation."""
     if not formula_str or not isinstance(formula_str, str):
         raise ValueError("Formula must be a non-empty string")
@@ -892,7 +892,7 @@ def _validate_single_material_inputs(
     return energy_kev
 
 
-def _convert_energy_input(energy_kev):
+def _convert_energy_input(energy_kev: Any) -> np.ndarray:
     """Convert energy input to numpy array."""
     if np.isscalar(energy_kev):
         if isinstance(energy_kev, complex):
@@ -907,10 +907,14 @@ def _convert_energy_input(energy_kev):
     else:
         energy_kev = np.array(energy_kev, dtype=np.float64)
 
-    return energy_kev
+    return np.asarray(energy_kev)
 
 
-def _calculate_molecular_properties(element_symbols, element_counts, atomic_data_bulk):
+def _calculate_molecular_properties(
+    element_symbols: List[str],
+    element_counts: List[float],
+    atomic_data_bulk: Dict[str, Dict[str, Any]],
+) -> Tuple[float, float]:
     """Calculate molecular weight and total electrons."""
     molecular_weight = 0.0
     number_of_electrons = 0.0
@@ -926,7 +930,9 @@ def _calculate_molecular_properties(element_symbols, element_counts, atomic_data
     return molecular_weight, number_of_electrons
 
 
-def _prepare_element_data(element_symbols, element_counts):
+def _prepare_element_data(
+    element_symbols: List[str], element_counts: List[float]
+) -> List[Tuple[float, Any, Any]]:
     """Prepare element data with interpolators."""
     element_data = []
 
@@ -1080,7 +1086,7 @@ def calculate_multiple_xray_properties(
 
             # Convert XRayResult to dictionary format for backward
             # compatibility
-            result_dict = {
+            result_dict: Dict[str, Union[str, float, np.ndarray]] = {
                 "formula": result.Formula,
                 "molecular_weight": result.MW,
                 "number_of_electrons": result.Number_Of_Electrons,
@@ -1214,7 +1220,7 @@ def calculate_single_material_properties(
     )
 
 
-def _validate_xray_inputs(formulas: List[str], densities: List[float]):
+def _validate_xray_inputs(formulas: List[str], densities: List[float]) -> None:
     """Validate input formulas and densities."""
     if not isinstance(formulas, list) or not formulas:
         raise ValueError("Formulas must be a non-empty list")
@@ -1241,7 +1247,7 @@ def _validate_xray_inputs(formulas: List[str], densities: List[float]):
             )
 
 
-def _validate_and_process_energies(energies):
+def _validate_and_process_energies(energies: Any) -> np.ndarray:
     """Validate and convert energies to numpy array."""
     if np.isscalar(energies):
         if isinstance(energies, complex):
@@ -1252,7 +1258,7 @@ def _validate_and_process_energies(energies):
             try:
                 energies_array = np.array([float(energies)], dtype=np.float64)
             except (ValueError, TypeError):
-                raise ValueError(f"Cannot convert energy to float: {energies}")
+                raise ValueError(f"Cannot convert energy to float: {energies!r}")
     else:
         energies_array = np.array(energies, dtype=np.float64)
 
@@ -1293,7 +1299,7 @@ def _restore_energy_order(
 
 def _create_process_formula_function(
     sorted_energies: np.ndarray, sort_indices: np.ndarray
-):
+) -> Callable[[Tuple[str, float]], Tuple[str, XRayResult]]:
     """Create process formula function with energy sorting logic."""
 
     def process_formula(
@@ -1317,8 +1323,10 @@ def _create_process_formula_function(
 
 
 def _process_formulas_parallel(
-    formulas: List[str], densities: List[float], process_func
-):
+    formulas: List[str],
+    densities: List[float],
+    process_func: Callable[[Tuple[str, float]], Tuple[str, XRayResult]],
+) -> Dict[str, XRayResult]:
     """Process formulas in parallel using ThreadPoolExecutor."""
     import multiprocessing
 

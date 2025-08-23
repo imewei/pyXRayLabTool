@@ -5,7 +5,7 @@ This module provides a pre-populated cache of atomic data for common elements
 to eliminate expensive database queries to the Mendeleev library during runtime.
 """
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 from functools import lru_cache
 from .utils import UnknownElementError
 
@@ -178,7 +178,7 @@ def get_bulk_atomic_data_fast(
     return result
 
 
-def warm_up_cache(elements: list) -> None:
+def warm_up_cache(elements: List[str]) -> None:
     """
     Pre-warm the cache with specific elements.
 

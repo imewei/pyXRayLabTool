@@ -309,7 +309,7 @@ def critical_angle_degrees(dispersion: float) -> float:
         raise ValueError("Dispersion coefficient must be positive")
 
     theta_c_rad = np.sqrt(2.0 * dispersion)
-    return theta_c_rad * RADIANS_TO_DEGREES
+    return float(theta_c_rad * RADIANS_TO_DEGREES)
 
 
 def attenuation_length_cm(wavelength_angstrom: float, absorption: float) -> float:

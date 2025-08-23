@@ -8,7 +8,7 @@ parallel execution, and progress tracking for large-scale X-ray property calcula
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Iterator
+from typing import Dict, List, Optional, Tuple, Union, Iterator, Any
 import concurrent.futures
 from dataclasses import dataclass
 import gc
@@ -38,7 +38,7 @@ class BatchConfig:
     enable_progress: bool = True
     cache_results: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.max_workers is None:
             # Auto-detect optimal worker count based on system capabilities
             cpu_count = os.cpu_count() or 1
@@ -64,7 +64,7 @@ class MemoryMonitor:
         """
         try:
             memory_info = self.process.memory_info()
-            return memory_info.rss < self.limit_bytes
+            return bool(memory_info.rss < self.limit_bytes)
         except Exception:
             return True  # If we can't check, assume it's fine
 
@@ -77,7 +77,7 @@ class MemoryMonitor:
         """
         try:
             memory_info = self.process.memory_info()
-            return memory_info.rss / (1024 * 1024)
+            return float(memory_info.rss / (1024 * 1024))
         except Exception:
             return 0.0
 
@@ -88,7 +88,9 @@ class MemoryMonitor:
         gc.collect()
 
 
-def chunk_iterator(data: List[Tuple], chunk_size: int) -> Iterator[List[Tuple]]:
+def chunk_iterator(
+    data: List[Tuple[Any, ...]], chunk_size: int
+) -> Iterator[List[Tuple[Any, ...]]]:
     """
     Yield successive chunks of data.
 
@@ -206,7 +208,7 @@ def _prepare_energies_array(
     return energies_array
 
 
-def _initialize_progress_bar(config: BatchConfig, total: int):
+def _initialize_progress_bar(config: BatchConfig, total: int) -> Any:
     """Initialize progress bar if enabled."""
     if not config.enable_progress:
         return None
@@ -221,7 +223,11 @@ def _initialize_progress_bar(config: BatchConfig, total: int):
         return None
 
 
-def _process_chunks(calculation_data: List, config: BatchConfig, progress_bar):
+def _process_chunks(
+    calculation_data: List[Tuple[str, np.ndarray, float]],
+    config: BatchConfig,
+    progress_bar: Any,
+) -> Dict[str, Optional[XRayResult]]:
     """Process data chunks and collect results."""
     all_results = {}
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
@@ -286,13 +292,13 @@ def calculate_batch_properties(
     progress_bar = _initialize_progress_bar(config, len(formulas))
 
     try:
-        return _process_chunks(calculation_data, config, progress_bar)
+        return dict(_process_chunks(calculation_data, config, progress_bar))
     finally:
         if progress_bar is not None:
             progress_bar.close()
 
 
-def _prepare_result_data(valid_results: Dict[str, XRayResult]) -> List[Dict]:
+def _prepare_result_data(valid_results: Dict[str, XRayResult]) -> List[Dict[str, Any]]:
     """Prepare result data for export."""
     data_rows = []
 
@@ -313,7 +319,7 @@ def _prepare_result_data(valid_results: Dict[str, XRayResult]) -> List[Dict]:
     return data_rows
 
 
-def _get_energy_point_data(result: XRayResult, index: int) -> Dict:
+def _get_energy_point_data(result: XRayResult, index: int) -> Dict[str, Any]:
     """Get data for a specific energy point."""
     return {
         "energy_kev": result.energy_kev[index],

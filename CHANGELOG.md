@@ -10,6 +10,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Coming soon...
 
+## [0.1.7] - 2025-08-23
+
+### Added
+- **🧹 Code Quality Improvements**: Comprehensive code formatting and type checking overhaul
+  - **Black Code Formatting**: All Python files now follow consistent formatting standards
+  - **Strict Type Checking**: Complete MyPy type annotations with strict mode compliance
+  - **External Type Stubs**: Added pandas-stubs and types-psutil for complete type coverage
+  - **Enhanced Developer Experience**: Better IDE support with comprehensive type hints
+
+### Changed
+- **Code Style**: All 7 source files now pass Black formatter with consistent style
+- **Type Safety**: Complete type annotations across all modules:
+  - `utils.py`: Added comprehensive type hints for all utility functions
+  - `atomic_data_cache.py`: Full type coverage for caching and dataclass methods
+  - `core.py`: Complete type annotations including complex return types and function signatures
+  - `batch_processor.py`: Comprehensive typing for batch processing operations
+  - `cli.py`: Full type coverage for all CLI command handlers and utility functions
+- **Developer Dependencies**: Added type checking dependencies (pandas-stubs, types-psutil)
+
+### Fixed
+- **Type Checking Issues**: Resolved all MyPy strict mode violations
+  - Fixed generic type parameters (dict → Dict[str, Any], list → List[str])
+  - Added missing return type annotations across all functions
+  - Corrected complex nested type annotations
+  - Fixed string formatting issues with proper type handling
+  - Resolved optional value handling with proper type guards
+- **Code Consistency**: Uniform formatting and style across the entire codebase
+
+### Technical Improvements
+- **Zero Type Errors**: All 7 source files pass MyPy strict type checking
+- **Consistent Formatting**: All code follows Black formatting standards
+- **Better IDE Support**: Enhanced autocomplete and error detection with complete type hints
+- **Maintainability**: Improved code clarity with explicit type annotations
+- **Future-Proof**: Type safety ensures better compatibility with future Python versions
+
+### Development
+- **Quality Assurance**: Established type checking and formatting as development standards
+- **Clean Codebase**: Removed build artifacts and maintained clean project structure
+- **Enhanced Reliability**: Type safety reduces potential runtime errors
+
 ## [0.1.6] - 2025-08-23
 
 ### Added
