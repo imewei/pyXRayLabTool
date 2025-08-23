@@ -348,9 +348,7 @@ class XRayResult:
 _scattering_factor_cache: Dict[str, pd.DataFrame] = {}
 
 # Module-level cache for interpolators to avoid repeated creation
-_interpolator_cache: Dict[str,
-                          Tuple[PchipInterpolator,
-                                PchipInterpolator]] = {}
+_interpolator_cache: Dict[str, Tuple[PchipInterpolator, PchipInterpolator]] = {}
 
 # Pre-computed element file paths for faster access
 _AVAILABLE_ELEMENTS: Dict[str, Path] = {}
@@ -486,8 +484,7 @@ class AtomicScatteringFactor:
     def __init__(self):
         # Maintain backward compatibility with existing tests
         self.data: Dict[str, pd.DataFrame] = {}
-        self.data_path = Path(__file__).parent / "data" / \
-            "AtomicScatteringFactor"
+        self.data_path = Path(__file__).parent / "data" / "AtomicScatteringFactor"
 
         # Create data directory if it doesn't exist (for test compatibility)
         self.data_path.mkdir(parents=True, exist_ok=True)
@@ -508,10 +505,7 @@ class AtomicScatteringFactor:
         """
         return load_scattering_factor_data(element)
 
-    def get_scattering_factor(
-            self,
-            element: str,
-            q_values: np.ndarray) -> np.ndarray:
+    def get_scattering_factor(self, element: str, q_values: np.ndarray) -> np.ndarray:
         """
         Calculate scattering factors for given q values.
 
@@ -531,13 +525,9 @@ class CrystalStructure:
     Class for representing and manipulating crystal structures.
     """
 
-    def __init__(self,
-                 lattice_parameters: Tuple[float,
-                                           float,
-                                           float,
-                                           float,
-                                           float,
-                                           float]):
+    def __init__(
+        self, lattice_parameters: Tuple[float, float, float, float, float, float]
+    ):
         """
         Initialize crystal structure.
 
@@ -547,12 +537,9 @@ class CrystalStructure:
         self.a, self.b, self.c, self.alpha, self.beta, self.gamma = lattice_parameters
         self.atoms: List[Dict] = []
 
-    def add_atom(self,
-                 element: str,
-                 position: Tuple[float,
-                                 float,
-                                 float],
-                 occupancy: float = 1.0):
+    def add_atom(
+        self, element: str, position: Tuple[float, float, float], occupancy: float = 1.0
+    ):
         """
         Add an atom to the crystal structure.
 
@@ -783,12 +770,7 @@ def calculate_derived_quantities(
     # Calculate electron density (electrons per unit volume)
     # ρₑ = ρ × Nₐ × Z / M × 10⁻³⁰ (converted to electrons/Å³)
     electron_density = (
-        1e6
-        * mass_density
-        / molecular_weight
-        * AVOGADRO
-        * number_of_electrons
-        / 1e30
+        1e6 * mass_density / molecular_weight * AVOGADRO * number_of_electrons / 1e30
     )
 
     # Calculate critical angle for total external reflection
@@ -877,10 +859,8 @@ def create_scattering_factor_interpolators(
     # PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) preserves monotonicity
     # and provides smooth, shape-preserving interpolation similar to Julia's
     # behavior
-    f1_interpolator = PchipInterpolator(
-        energy_values, f1_values, extrapolate=False)
-    f2_interpolator = PchipInterpolator(
-        energy_values, f2_values, extrapolate=False)
+    f1_interpolator = PchipInterpolator(energy_values, f1_values, extrapolate=False)
+    f2_interpolator = PchipInterpolator(energy_values, f2_values, extrapolate=False)
 
     # Cache the interpolators for future use
     _interpolator_cache[element] = (f1_interpolator, f2_interpolator)
@@ -888,23 +868,27 @@ def create_scattering_factor_interpolators(
     return f1_interpolator, f2_interpolator
 
 
-def _validate_single_material_inputs(formula_str: str, energy_kev: Union[float, List[float], np.ndarray], mass_density: float):
+def _validate_single_material_inputs(
+    formula_str: str,
+    energy_kev: Union[float, List[float], np.ndarray],
+    mass_density: float,
+):
     """Validate inputs for single material calculation."""
     if not formula_str or not isinstance(formula_str, str):
         raise ValueError("Formula must be a non-empty string")
-    
+
     if mass_density <= 0:
         raise ValueError("Mass density must be positive")
-    
+
     # Convert and validate energy
     energy_kev = _convert_energy_input(energy_kev)
-    
+
     if np.any(energy_kev <= 0):
         raise ValueError("All energies must be positive")
-    
+
     if np.any(energy_kev < 0.03) or np.any(energy_kev > 30):
         raise ValueError("Energy is out of range 0.03keV ~ 30keV")
-    
+
     return energy_kev
 
 
@@ -922,7 +906,7 @@ def _convert_energy_input(energy_kev):
                 raise ValueError(f"Cannot convert energy to float: {energy_kev}")
     else:
         energy_kev = np.array(energy_kev, dtype=np.float64)
-    
+
     return energy_kev
 
 
@@ -930,26 +914,26 @@ def _calculate_molecular_properties(element_symbols, element_counts, atomic_data
     """Calculate molecular weight and total electrons."""
     molecular_weight = 0.0
     number_of_electrons = 0.0
-    
+
     for symbol, count in zip(element_symbols, element_counts):
         data = atomic_data_bulk[symbol]
         atomic_number = data["atomic_number"]
         atomic_mass = data["atomic_weight"]
-        
+
         molecular_weight += count * atomic_mass
         number_of_electrons += atomic_number * count
-    
+
     return molecular_weight, number_of_electrons
 
 
 def _prepare_element_data(element_symbols, element_counts):
     """Prepare element data with interpolators."""
     element_data = []
-    
+
     for i, symbol in enumerate(element_symbols):
         f1_interp, f2_interp = create_scattering_factor_interpolators(symbol)
         element_data.append((element_counts[i], f1_interp, f2_interp))
-    
+
     return element_data
 
 
@@ -997,32 +981,37 @@ def _calculate_single_material_xray_properties(
     """
     from .utils import parse_formula
     from .constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM
-    
+
     energy_kev = _validate_single_material_inputs(formula_str, energy_kev, mass_density)
-    
+
     element_symbols, element_counts = parse_formula(formula_str)
     elements_tuple = tuple(element_symbols)
     atomic_data_bulk = get_bulk_atomic_data(elements_tuple)
-    
+
     molecular_weight, number_of_electrons = _calculate_molecular_properties(
         element_symbols, element_counts, atomic_data_bulk
     )
-    
+
     wavelength = ENERGY_TO_WAVELENGTH_FACTOR / energy_kev
     energy_ev = energy_kev * 1000.0
-    
+
     element_data = _prepare_element_data(element_symbols, element_counts)
-    
+
     dispersion, absorption, f1_total, f2_total = calculate_scattering_factors(
         energy_ev, wavelength, mass_density, molecular_weight, element_data
     )
-    
+
     electron_density, critical_angle, attenuation_length, re_sld, im_sld = (
         calculate_derived_quantities(
-            wavelength, dispersion, absorption, mass_density, molecular_weight, number_of_electrons
+            wavelength,
+            dispersion,
+            absorption,
+            mass_density,
+            molecular_weight,
+            number_of_electrons,
         )
     )
-    
+
     return {
         "formula": formula_str,
         "molecular_weight": molecular_weight,
@@ -1074,8 +1063,7 @@ def calculate_multiple_xray_properties(
     """
     # Input validation
     if len(formula_list) != len(mass_density_list):
-        raise ValueError(
-            "Formula list and mass density list must have the same length")
+        raise ValueError("Formula list and mass density list must have the same length")
 
     if not formula_list:
         raise ValueError("Formula list must not be empty")
@@ -1230,22 +1218,26 @@ def _validate_xray_inputs(formulas: List[str], densities: List[float]):
     """Validate input formulas and densities."""
     if not isinstance(formulas, list) or not formulas:
         raise ValueError("Formulas must be a non-empty list")
-    
+
     if not isinstance(densities, list) or not densities:
         raise ValueError("Densities must be a non-empty list")
-    
+
     if len(formulas) != len(densities):
         raise ValueError(
             f"Number of formulas ({len(formulas)}) must match number of densities ({len(densities)})"
         )
-    
+
     for i, formula in enumerate(formulas):
         if not isinstance(formula, str) or not formula.strip():
-            raise ValueError(f"Formula at index {i} must be a non-empty string, got: {repr(formula)}")
-    
+            raise ValueError(
+                f"Formula at index {i} must be a non-empty string, got: {repr(formula)}"
+            )
+
     for i, density in enumerate(densities):
         if not isinstance(density, (int, float)) or density <= 0:
-            raise ValueError(f"Density at index {i} must be a positive number, got: {density}")
+            raise ValueError(
+                f"Density at index {i} must be a positive number, got: {density}"
+            )
 
 
 def _validate_and_process_energies(energies):
@@ -1262,20 +1254,22 @@ def _validate_and_process_energies(energies):
                 raise ValueError(f"Cannot convert energy to float: {energies}")
     else:
         energies_array = np.array(energies, dtype=np.float64)
-    
+
     if energies_array.size == 0:
         raise ValueError("Energies array cannot be empty")
-    
+
     if np.any(energies_array <= 0):
         raise ValueError("All energies must be positive")
-    
+
     if np.any(energies_array < 0.03) or np.any(energies_array > 30):
         raise ValueError("Energy values must be in range 0.03-30 keV")
-    
+
     return energies_array
 
 
-def _restore_energy_order(result: XRayResult, reverse_indices: np.ndarray) -> XRayResult:
+def _restore_energy_order(
+    result: XRayResult, reverse_indices: np.ndarray
+) -> XRayResult:
     """Restore original energy order in XRayResult."""
     return XRayResult(
         formula=result.formula,
@@ -1296,39 +1290,48 @@ def _restore_energy_order(result: XRayResult, reverse_indices: np.ndarray) -> XR
     )
 
 
-def _create_process_formula_function(sorted_energies: np.ndarray, sort_indices: np.ndarray):
+def _create_process_formula_function(
+    sorted_energies: np.ndarray, sort_indices: np.ndarray
+):
     """Create process formula function with energy sorting logic."""
-    def process_formula(formula_density_pair: Tuple[str, float]) -> Tuple[str, XRayResult]:
+
+    def process_formula(
+        formula_density_pair: Tuple[str, float],
+    ) -> Tuple[str, XRayResult]:
         formula, density = formula_density_pair
         try:
-            result = calculate_single_material_properties(formula, sorted_energies, density)
-            
+            result = calculate_single_material_properties(
+                formula, sorted_energies, density
+            )
+
             if not np.array_equal(sort_indices, np.arange(len(sort_indices))):
                 reverse_indices = np.argsort(sort_indices)
                 result = _restore_energy_order(result, reverse_indices)
-            
+
             return (formula, result)
         except Exception as e:
             raise RuntimeError(f"Failed to process formula '{formula}': {e}") from e
-    
+
     return process_formula
 
 
-def _process_formulas_parallel(formulas: List[str], densities: List[float], process_func):
+def _process_formulas_parallel(
+    formulas: List[str], densities: List[float], process_func
+):
     """Process formulas in parallel using ThreadPoolExecutor."""
     import multiprocessing
-    
+
     formula_density_pairs = list(zip(formulas, densities))
     results = {}
-    
+
     optimal_workers = min(len(formulas), max(1, multiprocessing.cpu_count() // 2), 8)
-    
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=optimal_workers) as executor:
         future_to_formula = {
             executor.submit(process_func, pair): pair[0]
             for pair in formula_density_pairs
         }
-        
+
         for future in concurrent.futures.as_completed(future_to_formula):
             formula = future_to_formula[future]
             try:
@@ -1337,7 +1340,7 @@ def _process_formulas_parallel(formulas: List[str], densities: List[float], proc
             except Exception as e:
                 print(f"Warning: Failed to process formula '{formula}': {e}")
                 continue
-    
+
     return results
 
 
@@ -1387,16 +1390,16 @@ def calculate_xray_properties(
     """
     _validate_xray_inputs(formulas, densities)
     energies_array = _validate_and_process_energies(energies)
-    
+
     sort_indices = np.argsort(energies_array)
     sorted_energies = energies_array[sort_indices]
-    
+
     process_func = _create_process_formula_function(sorted_energies, sort_indices)
     results = _process_formulas_parallel(formulas, densities, process_func)
-    
+
     if not results:
         raise RuntimeError("Failed to process any formulas successfully")
-    
+
     return results
 
 

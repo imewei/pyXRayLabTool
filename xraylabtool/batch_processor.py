@@ -88,8 +88,7 @@ class MemoryMonitor:
         gc.collect()
 
 
-def chunk_iterator(data: List[Tuple],
-                   chunk_size: int) -> Iterator[List[Tuple]]:
+def chunk_iterator(data: List[Tuple], chunk_size: int) -> Iterator[List[Tuple]]:
     """
     Yield successive chunks of data.
 
@@ -101,7 +100,7 @@ def chunk_iterator(data: List[Tuple],
         Lists of data tuples of specified chunk size
     """
     for i in range(0, len(data), chunk_size):
-        yield data[i: i + chunk_size]
+        yield data[i : i + chunk_size]
 
 
 def process_single_calculation(
@@ -119,8 +118,7 @@ def process_single_calculation(
         Tuple of (formula, XRayResult)
     """
     try:
-        result = calculate_single_material_properties(
-            formula, energies, density)
+        result = calculate_single_material_properties(formula, energies, density)
         return (formula, result)
     except Exception as e:
         warnings.warn(f"Failed to process formula '{formula}': {e}")
@@ -187,7 +185,9 @@ def _validate_batch_inputs(formulas: List[str], densities: List[float]) -> None:
         raise ValueError("Formula list cannot be empty")
 
 
-def _prepare_energies_array(energies: Union[float, List[float], np.ndarray]) -> np.ndarray:
+def _prepare_energies_array(
+    energies: Union[float, List[float], np.ndarray],
+) -> np.ndarray:
     """Convert energies to numpy array and validate."""
     if np.isscalar(energies):
         # Handle scalar values including complex numbers
@@ -197,12 +197,12 @@ def _prepare_energies_array(energies: Union[float, List[float], np.ndarray]) -> 
             energies_array = np.array([float(energies)], dtype=np.float64)
     else:
         energies_array = np.array(energies, dtype=np.float64)
-    
+
     if np.any(energies_array <= 0):
         raise ValueError("All energies must be positive")
     if np.any(energies_array < 0.03) or np.any(energies_array > 30):
         raise ValueError("Energy values must be in range 0.03-30 keV")
-    
+
     return energies_array
 
 
@@ -210,9 +210,10 @@ def _initialize_progress_bar(config: BatchConfig, total: int):
     """Initialize progress bar if enabled."""
     if not config.enable_progress:
         return None
-    
+
     try:
         from tqdm import tqdm
+
         return tqdm(total=total, desc="Processing materials")
     except ImportError:
         config.enable_progress = False
@@ -224,19 +225,19 @@ def _process_chunks(calculation_data: List, config: BatchConfig, progress_bar):
     """Process data chunks and collect results."""
     all_results = {}
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
-    
+
     for chunk in chunk_iterator(calculation_data, config.chunk_size):
         chunk_results = process_batch_chunk(chunk, config)
-        
+
         for formula, result in chunk_results:
             all_results[formula] = result
-        
+
         if progress_bar is not None:
             progress_bar.update(len(chunk))
-        
+
         if not memory_monitor.check_memory():
             memory_monitor.force_gc()
-    
+
     return all_results
 
 
@@ -276,14 +277,14 @@ def calculate_batch_properties(
 
     _validate_batch_inputs(formulas, densities)
     energies_array = _prepare_energies_array(energies)
-    
+
     calculation_data = [
         (formula, energies_array, density)
         for formula, density in zip(formulas, densities)
     ]
-    
+
     progress_bar = _initialize_progress_bar(config, len(formulas))
-    
+
     try:
         return _process_chunks(calculation_data, config, progress_bar)
     finally:
@@ -294,7 +295,7 @@ def calculate_batch_properties(
 def _prepare_result_data(valid_results: Dict[str, XRayResult]) -> List[Dict]:
     """Prepare result data for export."""
     data_rows = []
-    
+
     for formula, result in valid_results.items():
         base_data = {
             "formula": result.formula,
@@ -303,12 +304,12 @@ def _prepare_result_data(valid_results: Dict[str, XRayResult]) -> List[Dict]:
             "density_g_cm3": result.density_g_cm3,
             "electron_density_per_ang3": result.electron_density_per_ang3,
         }
-        
+
         for i in range(len(result.energy_kev)):
             row_data = base_data.copy()
             row_data.update(_get_energy_point_data(result, i))
             data_rows.append(row_data)
-    
+
     return data_rows
 
 
@@ -328,18 +329,20 @@ def _get_energy_point_data(result: XRayResult, index: int) -> Dict:
     }
 
 
-def _filter_dataframe_fields(df: pd.DataFrame, fields: Optional[List[str]]) -> pd.DataFrame:
+def _filter_dataframe_fields(
+    df: pd.DataFrame, fields: Optional[List[str]]
+) -> pd.DataFrame:
     """Filter DataFrame columns based on requested fields."""
     if fields is None:
         return df
-    
+
     available_fields = set(df.columns)
     requested_fields = set(fields)
     missing_fields = requested_fields - available_fields
-    
+
     if missing_fields:
         warnings.warn(f"Requested fields not found: {missing_fields}")
-    
+
     valid_fields = [f for f in fields if f in available_fields]
     return df[valid_fields] if valid_fields else df
 
@@ -347,7 +350,7 @@ def _filter_dataframe_fields(df: pd.DataFrame, fields: Optional[List[str]]) -> p
 def _save_dataframe(df: pd.DataFrame, output_path: Path, format: str) -> None:
     """Save DataFrame to file in specified format."""
     format_lower = format.lower()
-    
+
     if format_lower == "csv":
         df.to_csv(output_path, index=False)
     elif format_lower == "json":
@@ -381,13 +384,14 @@ def save_batch_results(
         IOError: If file cannot be written
     """
     output_path = Path(output_file)
-    
-    valid_results = {formula: result for formula, result in results.items() 
-                     if result is not None}
-    
+
+    valid_results = {
+        formula: result for formula, result in results.items() if result is not None
+    }
+
     if not valid_results:
         raise ValueError("No valid results to save")
-    
+
     data_rows = _prepare_result_data(valid_results)
     df = pd.DataFrame(data_rows)
     df = _filter_dataframe_fields(df, fields)
@@ -435,8 +439,7 @@ def load_batch_input(
 
     # Validate required columns
     required_columns = [formula_column, density_column]
-    missing_columns = [
-        col for col in required_columns if col not in df.columns]
+    missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns: {missing_columns}")
 

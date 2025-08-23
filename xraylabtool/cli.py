@@ -118,9 +118,7 @@ def add_calc_command(subparsers):
         ),
     )
 
-    parser.add_argument(
-        "formula",
-        help="Chemical formula (e.g., SiO2, Al2O3, Fe2O3)")
+    parser.add_argument("formula", help="Chemical formula (e.g., SiO2, Al2O3, Fe2O3)")
 
     parser.add_argument(
         "-e",
@@ -138,16 +136,12 @@ def add_calc_command(subparsers):
     )
 
     parser.add_argument(
-        "-d",
-        "--density",
-        type=float,
-        required=True,
-        help="Material density in g/cm³")
+        "-d", "--density", type=float, required=True, help="Material density in g/cm³"
+    )
 
     parser.add_argument(
-        "-o",
-        "--output",
-        help="Output filename (CSV or JSON based on extension)")
+        "-o", "--output", help="Output filename (CSV or JSON based on extension)"
+    )
 
     parser.add_argument(
         "--format",
@@ -157,8 +151,8 @@ def add_calc_command(subparsers):
     )
 
     parser.add_argument(
-        "--fields",
-        help="Comma-separated list of fields to output (default: all)")
+        "--fields", help="Comma-separated list of fields to output (default: all)"
+    )
 
     parser.add_argument(
         "--precision",
@@ -199,9 +193,7 @@ def add_batch_command(subparsers):
         ),
     )
 
-    parser.add_argument(
-        "input_file",
-        help="Input CSV file with materials data")
+    parser.add_argument("input_file", help="Input CSV file with materials data")
 
     parser.add_argument(
         "-o",
@@ -217,9 +209,8 @@ def add_batch_command(subparsers):
     )
 
     parser.add_argument(
-        "--workers",
-        type=int,
-        help="Number of parallel workers (default: auto)")
+        "--workers", type=int, help="Number of parallel workers (default: auto)"
+    )
 
     parser.add_argument(
         "--fields", help="Comma-separated list of fields to include in output"
@@ -329,9 +320,8 @@ def add_atomic_command(subparsers):
     )
 
     parser.add_argument(
-        "-o",
-        "--output",
-        help="Output filename (CSV or JSON based on extension)")
+        "-o", "--output", help="Output filename (CSV or JSON based on extension)"
+    )
 
 
 def add_bragg_command(subparsers):
@@ -364,10 +354,7 @@ def add_bragg_command(subparsers):
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "-w",
-        "--wavelength",
-        help="X-ray wavelength in Angstroms")
+    group.add_argument("-w", "--wavelength", help="X-ray wavelength in Angstroms")
     group.add_argument("-e", "--energy", help="X-ray energy in keV")
 
     parser.add_argument(
@@ -455,7 +442,7 @@ def _format_as_csv(result: XRayResult, fields: List[str], precision: int) -> str
     """Format result as CSV."""
     data_rows = []
     n_energies = len(result.energy_kev)
-    
+
     for i in range(n_energies):
         row = {}
         for field in fields:
@@ -465,7 +452,7 @@ def _format_as_csv(result: XRayResult, fields: List[str], precision: int) -> str
             else:
                 row[field] = value
         data_rows.append(row)
-    
+
     if data_rows:
         df = pd.DataFrame(data_rows)
         return df.to_csv(index=False)
@@ -505,7 +492,7 @@ def _format_single_energy(result: XRayResult, precision: int) -> List[str]:
 def _format_multiple_energies(result: XRayResult, precision: int) -> List[str]:
     """Format multiple energy points as table."""
     output_lines = ["X-ray Properties (tabular):"]
-    
+
     df_data = {
         "Energy (keV)": result.energy_kev,
         "λ (Å)": result.wavelength_angstrom,
@@ -516,12 +503,12 @@ def _format_multiple_energies(result: XRayResult, precision: int) -> List[str]:
         "θc (°)": result.critical_angle_degrees,
         "μ (cm)": result.attenuation_length_cm,
     }
-    
+
     df = pd.DataFrame(df_data)
     pd.set_option("display.float_format", f"{{:.{precision}g}}".format)
     table_str = df.to_string(index=False)
     output_lines.append(table_str)
-    
+
     return output_lines
 
 
@@ -535,19 +522,19 @@ def format_xray_result(
     if fields is None:
         scalar_fields, array_fields = _get_default_fields()
         fields = scalar_fields + array_fields
-    
+
     if format_type == "json":
         return _format_as_json(result, fields)
     elif format_type == "csv":
         return _format_as_csv(result, fields, precision)
     else:  # table format
         output_lines = _format_material_properties(result, precision)
-        
+
         if len(result.energy_kev) == 1:
             output_lines.extend(_format_single_energy(result, precision))
         else:
             output_lines.extend(_format_multiple_energies(result, precision))
-        
+
         return "\n".join(output_lines)
 
 
@@ -556,21 +543,23 @@ def _validate_calc_inputs(args, energies):
     if args.density <= 0:
         print("Error: Density must be positive", file=sys.stderr)
         return False
-    
+
     if np.any(energies <= 0):
         print("Error: All energies must be positive", file=sys.stderr)
         return False
-    
+
     if np.any(energies < 0.03) or np.any(energies > 30):
         print("Warning: Energy values outside typical X-ray range (0.03-30 keV)")
-    
+
     return True
 
 
 def _print_calc_verbose_info(args, energies):
     """Print verbose calculation information."""
     print(f"Calculating X-ray properties for {args.formula}...")
-    print(f"Energy range: {energies.min():.3f} - {energies.max():.3f} keV ({len(energies)} points)")
+    print(
+        f"Energy range: {energies.min():.3f} - {energies.max():.3f} keV ({len(energies)} points)"
+    )
     print(f"Density: {args.density} g/cm³")
     print()
 
@@ -578,7 +567,7 @@ def _print_calc_verbose_info(args, energies):
 def _determine_output_format(args):
     """Determine output format based on args and file extension."""
     output_format = args.format
-    
+
     if args.output:
         output_path = Path(args.output)
         if not output_format or output_format == "table":
@@ -586,7 +575,7 @@ def _determine_output_format(args):
                 output_format = "json"
             elif output_path.suffix.lower() == ".csv":
                 output_format = "csv"
-    
+
     return output_format
 
 
@@ -604,27 +593,29 @@ def cmd_calc(args):
     """Handle the 'calc' command."""
     try:
         energies = parse_energy_string(args.energy)
-        
+
         if not _validate_calc_inputs(args, energies):
             return 1
-        
+
         if args.verbose:
             _print_calc_verbose_info(args, energies)
-        
+
         result = calculate_single_material_properties(
             args.formula, energies, args.density
         )
-        
+
         fields = None
         if args.fields:
             fields = [field.strip() for field in args.fields.split(",")]
-        
+
         output_format = _determine_output_format(args)
-        formatted_output = format_xray_result(result, output_format, args.precision, fields)
-        
+        formatted_output = format_xray_result(
+            result, output_format, args.precision, fields
+        )
+
         _save_or_print_output(formatted_output, args)
         return 0
-    
+
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
@@ -636,15 +627,15 @@ def _validate_batch_input(args):
     if not input_path.exists():
         print(f"Error: Input file {args.input_file} not found", file=sys.stderr)
         return None
-    
+
     df_input = pd.read_csv(input_path)
-    
+
     required_columns = ["formula", "density", "energy"]
     missing_columns = [col for col in required_columns if col not in df_input.columns]
     if missing_columns:
         print(f"Error: Missing required columns: {missing_columns}", file=sys.stderr)
         return None
-    
+
     return df_input
 
 
@@ -653,11 +644,11 @@ def _parse_batch_data(df_input):
     formulas = []
     densities = []
     energy_sets = []
-    
+
     for _, row in df_input.iterrows():
         formulas.append(row["formula"])
         densities.append(float(row["density"]))
-        
+
         energy_str = str(row["energy"])
         try:
             if "," in energy_str:
@@ -666,9 +657,12 @@ def _parse_batch_data(df_input):
                 energies = [float(energy_str)]
             energy_sets.append(energies)
         except ValueError:
-            print(f"Error: Invalid energy format for {row['formula']}: {energy_str}", file=sys.stderr)
+            print(
+                f"Error: Invalid energy format for {row['formula']}: {energy_str}",
+                file=sys.stderr,
+            )
             return None, None, None
-    
+
     return formulas, densities, energy_sets
 
 
@@ -696,25 +690,27 @@ def _convert_result_to_dict(result, energy_index):
 def _process_batch_materials(formulas, densities, energy_sets, args):
     """Process all materials and return results."""
     results = []
-    
+
     if args.verbose:
         print(f"Processing {len(formulas)} materials...")
-    
-    for i, (formula, density, energies) in enumerate(zip(formulas, densities, energy_sets)):
+
+    for i, (formula, density, energies) in enumerate(
+        zip(formulas, densities, energy_sets)
+    ):
         try:
             if args.verbose:
                 print(f"  {i + 1}/{len(formulas)}: {formula}")
-            
+
             result = calculate_single_material_properties(formula, energies, density)
-            
+
             for j, energy in enumerate(energies):
                 result_dict = _convert_result_to_dict(result, j)
                 results.append(result_dict)
-        
+
         except Exception as e:
             print(f"Warning: Failed to process {formula}: {e}")
             continue
-    
+
     return results
 
 
@@ -722,23 +718,27 @@ def _save_batch_results(results, args):
     """Save batch results to output file."""
     if args.fields:
         field_list = [field.strip() for field in args.fields.split(",")]
-        results = [{k: v for k, v in result.items() if k in field_list} for result in results]
-    
+        results = [
+            {k: v for k, v in result.items() if k in field_list} for result in results
+        ]
+
     output_format = args.format
     output_path = Path(args.output)
     if not output_format:
         output_format = "json" if output_path.suffix.lower() == ".json" else "csv"
-    
+
     if output_format == "json":
         with open(args.output, "w") as f:
             json.dump(results, f, indent=2)
     else:
         df_output = pd.DataFrame(results)
         df_output.to_csv(args.output, index=False)
-    
+
     if args.verbose:
         print(f"Results saved to {args.output}")
-        print(f"Processed {len(results)} data points from {len(set(r['formula'] for r in results))} unique materials")
+        print(
+            f"Processed {len(results)} data points from {len(set(r['formula'] for r in results))} unique materials"
+        )
 
 
 def cmd_batch(args):
@@ -747,20 +747,20 @@ def cmd_batch(args):
         df_input = _validate_batch_input(args)
         if df_input is None:
             return 1
-        
+
         formulas, densities, energy_sets = _parse_batch_data(df_input)
         if formulas is None:
             return 1
-        
+
         results = _process_batch_materials(formulas, densities, energy_sets, args)
-        
+
         if not results:
             print("Error: No materials were successfully processed", file=sys.stderr)
             return 1
-        
+
         _save_batch_results(results, args)
         return 0
-    
+
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
@@ -818,11 +818,13 @@ def _get_atomic_data(elements):
     atomic_data = []
     for element in elements:
         try:
-            atomic_data.append({
-                "element": element,
-                "atomic_number": get_atomic_number(element),
-                "atomic_weight": get_atomic_weight(element),
-            })
+            atomic_data.append(
+                {
+                    "element": element,
+                    "atomic_number": get_atomic_number(element),
+                    "atomic_weight": get_atomic_weight(element),
+                }
+            )
         except Exception as e:
             print(f"Warning: Could not get atomic data for {element}: {e}")
     return atomic_data
@@ -831,7 +833,7 @@ def _get_atomic_data(elements):
 def _process_formula(formula, verbose):
     """Process a single formula and return info."""
     elements, counts = parse_formula(formula)
-    
+
     formula_info = {
         "formula": formula,
         "elements": elements,
@@ -839,10 +841,10 @@ def _process_formula(formula, verbose):
         "element_count": len(elements),
         "total_atoms": sum(counts),
     }
-    
+
     if verbose:
         formula_info["atomic_data"] = _get_atomic_data(elements)
-    
+
     return formula_info
 
 
@@ -863,11 +865,13 @@ def _print_formula_results(results, verbose):
         print(f"Elements: {', '.join(result['elements'])}")
         print(f"Counts: {', '.join(map(str, result['counts']))}")
         print(f"Total atoms: {result['total_atoms']}")
-        
+
         if verbose and "atomic_data" in result:
             print("Atomic data:")
             for atom_data in result["atomic_data"]:
-                print(f"  {atom_data['element']:>2}: Z={atom_data['atomic_number']:>3}, MW={atom_data['atomic_weight']:>8.3f}")
+                print(
+                    f"  {atom_data['element']:>2}: Z={atom_data['atomic_number']:>3}, MW={atom_data['atomic_weight']:>8.3f}"
+                )
         print()
 
 
@@ -876,7 +880,7 @@ def cmd_formula(args):
     try:
         formulas = [f.strip() for f in args.formulas.split(",")]
         results = []
-        
+
         for formula in formulas:
             try:
                 formula_info = _process_formula(formula, args.verbose)
@@ -884,10 +888,10 @@ def cmd_formula(args):
             except Exception as e:
                 print(f"Error parsing formula {formula}: {e}", file=sys.stderr)
                 continue
-        
+
         _output_formula_results(results, args)
         return 0
-    
+
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
@@ -912,9 +916,7 @@ def cmd_atomic(args):
                 results.append(element_data)
 
             except Exception as e:
-                print(
-                    f"Error getting atomic data for {element}: {e}",
-                    file=sys.stderr)
+                print(f"Error getting atomic data for {element}: {e}", file=sys.stderr)
                 continue
 
         if not results:
@@ -978,7 +980,8 @@ def cmd_bragg(args):
                 )
             except Exception as e:
                 print(
-                    f"Warning: Could not calculate Bragg angle for d={d_spacing}: {e}")
+                    f"Warning: Could not calculate Bragg angle for d={d_spacing}: {e}"
+                )
                 continue
 
         if not results:

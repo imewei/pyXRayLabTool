@@ -213,10 +213,7 @@ def angle_from_q(q: float, wavelength: float) -> float:
     return two_theta_deg
 
 
-def smooth_data(
-        x: np.ndarray,
-        y: np.ndarray,
-        window_size: int = 5) -> np.ndarray:
+def smooth_data(x: np.ndarray, y: np.ndarray, window_size: int = 5) -> np.ndarray:
     """
     Apply moving average smoothing to data using optimized NumPy convolution.
 
@@ -266,8 +263,7 @@ def find_peaks(
     """
     from scipy.signal import find_peaks as scipy_find_peaks
 
-    peaks, properties = scipy_find_peaks(
-        y, prominence=prominence, distance=distance)
+    peaks, properties = scipy_find_peaks(y, prominence=prominence, distance=distance)
 
     # Add x-values to properties
     properties["x_values"] = x[peaks]
@@ -337,6 +333,7 @@ def progress_bar(iterable, desc: str = "Processing"):
     """
     try:
         from tqdm import tqdm
+
         return tqdm(iterable, desc=desc)
     except ImportError:
         # Fallback if tqdm is not available
@@ -451,7 +448,9 @@ def _handle_mendeleev_error(e, element_symbol) -> NoReturn:
     if "not found" in error_str or "unknown" in error_str:
         raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
     else:
-        raise AtomicDataError(f"Could not load atomic number for element '{element_symbol}': {e}")
+        raise AtomicDataError(
+            f"Could not load atomic number for element '{element_symbol}': {e}"
+        )
 
 
 @lru_cache(maxsize=128)
@@ -479,6 +478,7 @@ def get_atomic_number(element_symbol: str) -> int:
     """
     try:
         from mendeleev import element as get_element
+
         elem = get_element(element_symbol)
         return _convert_atomic_number_to_int(elem.atomic_number)
     except ImportError:
@@ -488,7 +488,9 @@ def get_atomic_number(element_symbol: str) -> int:
         # This line should never be reached as _handle_mendeleev_error always raises
         raise  # pragma: no cover
     except Exception as e:
-        raise AtomicDataError(f"Unexpected error loading atomic number for element '{element_symbol}': {e}")
+        raise AtomicDataError(
+            f"Unexpected error loading atomic number for element '{element_symbol}': {e}"
+        )
 
 
 @lru_cache(maxsize=128)
@@ -541,12 +543,10 @@ def get_atomic_weight(element_symbol: str) -> float:
     except ValueError as e:
         # mendeleev raises ValueError for unknown elements
         if "not found" in str(e).lower() or "unknown" in str(e).lower():
-            raise UnknownElementError(
-                f"Unknown element symbol: '{element_symbol}'")
+            raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
         else:
             raise AtomicDataError(
-                f"Could not load atomic weight for element "
-                f"'{element_symbol}': {e}"
+                f"Could not load atomic weight for element " f"'{element_symbol}': {e}"
             )
     except Exception as e:
         raise AtomicDataError(
@@ -599,16 +599,15 @@ def get_atomic_data(element_symbol: str) -> dict:
     except ValueError as e:
         # mendeleev raises ValueError for unknown elements
         if "not found" in str(e).lower() or "unknown" in str(e).lower():
-            raise UnknownElementError(
-                f"Unknown element symbol: '{element_symbol}'")
+            raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
         else:
             raise AtomicDataError(
-                f"Could not load atomic data for element "
-                f"'{element_symbol}': {e}"
+                f"Could not load atomic data for element " f"'{element_symbol}': {e}"
             )
     except Exception as e:
         raise AtomicDataError(
-            f"Unexpected error loading atomic data for element '{element_symbol}': {e}")
+            f"Unexpected error loading atomic data for element '{element_symbol}': {e}"
+        )
 
 
 # Backward compatibility alias

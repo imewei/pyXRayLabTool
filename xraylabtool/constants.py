@@ -312,9 +312,7 @@ def critical_angle_degrees(dispersion: float) -> float:
     return theta_c_rad * RADIANS_TO_DEGREES
 
 
-def attenuation_length_cm(
-        wavelength_angstrom: float,
-        absorption: float) -> float:
+def attenuation_length_cm(wavelength_angstrom: float, absorption: float) -> float:
     """
     Calculate X-ray attenuation length from wavelength and absorption coefficient.
 
@@ -370,19 +368,12 @@ def validate_constants() -> bool:
             )
 
     # Check derived constants
-    expected_energy_factor = (
-        SPEED_OF_LIGHT * PLANCK / ELEMENT_CHARGE) / 1000.0
-    if not np.isclose(
-            ENERGY_TO_WAVELENGTH_FACTOR,
-            expected_energy_factor,
-            rtol=1e-10):
+    expected_energy_factor = (SPEED_OF_LIGHT * PLANCK / ELEMENT_CHARGE) / 1000.0
+    if not np.isclose(ENERGY_TO_WAVELENGTH_FACTOR, expected_energy_factor, rtol=1e-10):
         raise ValueError("ENERGY_TO_WAVELENGTH_FACTOR calculation error")
 
     expected_scattering_factor = THOMPSON * AVOGADRO * 1e6 / (2 * np.pi)
-    if not np.isclose(
-            SCATTERING_FACTOR,
-            expected_scattering_factor,
-            rtol=1e-10):
+    if not np.isclose(SCATTERING_FACTOR, expected_scattering_factor, rtol=1e-10):
         raise ValueError("SCATTERING_FACTOR calculation error")
 
     # Validate conversion factors
