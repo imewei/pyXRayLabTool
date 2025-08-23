@@ -13,7 +13,7 @@ from setuptools import setup, find_packages
 
 # Package metadata
 PACKAGE_NAME = "xraylabtool"
-VERSION = "0.1.5"
+VERSION = "0.1.8"
 AUTHOR = "Wei Chen"
 AUTHOR_EMAIL = "wchen@anl.gov"
 DESCRIPTION = (
@@ -58,6 +58,8 @@ EXTRAS_REQUIRE = {
         "black>=21.0.0",
         "flake8>=3.9.0",
         "mypy>=0.900",
+        "pandas-stubs>=2.0.0",
+        "types-psutil>=5.0.0",
     ],
     "docs": [
         "sphinx>=4.0.0",
@@ -73,6 +75,8 @@ EXTRAS_REQUIRE = {
         "black>=21.0.0",
         "flake8>=3.9.0",
         "mypy>=0.900",
+        "pandas-stubs>=2.0.0",
+        "types-psutil>=5.0.0",
     ],
 }
 

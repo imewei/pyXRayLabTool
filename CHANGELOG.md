@@ -10,6 +10,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Coming soon...
 
+## [0.1.8] - 2025-08-23
+
+### Fixed
+- **🔧 MyPy Type Checking Issues**: Resolved all remaining type checking errors
+  - Fixed pandas DataFrame.to_csv() return type annotation issue
+  - Enhanced MyPy configuration for pandas-stubs compatibility
+  - Added explicit type annotation for CSV output string
+  - Improved type safety for DataFrame operations
+
+### Changed
+- **📦 Development Dependencies**: Enhanced type checking infrastructure
+  - Added pandas-stubs>=2.0.0 to development requirements
+  - Added types-psutil>=5.0.0 to development requirements
+  - Updated pyproject.toml with proper MyPy overrides for pandas
+  - Updated requirements-dev.txt with type stub packages
+  - Updated setup.py with consistent dependency management
+
+### Technical Improvements
+- **Enhanced MyPy Configuration**: Explicit pandas type stub handling
+- **Consistent Dependencies**: All config files now synchronized
+- **Improved Type Safety**: Zero MyPy errors across all environments
+- **Better Developer Experience**: Reliable type checking in CI/CD pipelines
+
+### Quality Assurance
+- **✅ Verified MyPy Strict Mode**: Zero errors across 7 source files
+- **✅ Verified Black Formatting**: Consistent code style maintained
+- **✅ Verified Core Functionality**: All features working correctly
+- **✅ Verified Version Consistency**: All config files updated to 0.1.8
+
 ## [0.1.7] - 2025-08-23
 
 ### Added
