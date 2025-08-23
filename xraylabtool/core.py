@@ -8,7 +8,7 @@ including atomic scattering factors and crystallographic calculations.
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Tuple, Union, Callable
+from typing import Dict, List, Tuple, Union, Callable, Optional
 from scipy.interpolate import PchipInterpolator
 from dataclasses import dataclass
 import concurrent.futures
@@ -263,21 +263,21 @@ class XRayResult:
     @classmethod
     def from_legacy(
         cls,
-        Formula: str = None,
-        MW: float = None,
-        Number_Of_Electrons: float = None,
-        Density: float = None,
-        Electron_Density: float = None,
-        Energy: np.ndarray = None,
-        Wavelength: np.ndarray = None,
-        Dispersion: np.ndarray = None,
-        Absorption: np.ndarray = None,
-        f1: np.ndarray = None,
-        f2: np.ndarray = None,
-        Critical_Angle: np.ndarray = None,
-        Attenuation_Length: np.ndarray = None,
-        reSLD: np.ndarray = None,
-        imSLD: np.ndarray = None,
+        Formula: Optional[str] = None,
+        MW: Optional[float] = None,
+        Number_Of_Electrons: Optional[float] = None,
+        Density: Optional[float] = None,
+        Electron_Density: Optional[float] = None,
+        Energy: Optional[np.ndarray] = None,
+        Wavelength: Optional[np.ndarray] = None,
+        Dispersion: Optional[np.ndarray] = None,
+        Absorption: Optional[np.ndarray] = None,
+        f1: Optional[np.ndarray] = None,
+        f2: Optional[np.ndarray] = None,
+        Critical_Angle: Optional[np.ndarray] = None,
+        Attenuation_Length: Optional[np.ndarray] = None,
+        reSLD: Optional[np.ndarray] = None,
+        imSLD: Optional[np.ndarray] = None,
         **kwargs,
     ) -> "XRayResult":
         """Create XRayResult from legacy field names (for internal use)."""
@@ -888,6 +888,71 @@ def create_scattering_factor_interpolators(
     return f1_interpolator, f2_interpolator
 
 
+def _validate_single_material_inputs(formula_str: str, energy_kev: Union[float, List[float], np.ndarray], mass_density: float):
+    """Validate inputs for single material calculation."""
+    if not formula_str or not isinstance(formula_str, str):
+        raise ValueError("Formula must be a non-empty string")
+    
+    if mass_density <= 0:
+        raise ValueError("Mass density must be positive")
+    
+    # Convert and validate energy
+    energy_kev = _convert_energy_input(energy_kev)
+    
+    if np.any(energy_kev <= 0):
+        raise ValueError("All energies must be positive")
+    
+    if np.any(energy_kev < 0.03) or np.any(energy_kev > 30):
+        raise ValueError("Energy is out of range 0.03keV ~ 30keV")
+    
+    return energy_kev
+
+
+def _convert_energy_input(energy_kev):
+    """Convert energy input to numpy array."""
+    if np.isscalar(energy_kev):
+        if isinstance(energy_kev, complex):
+            energy_kev = np.array([float(energy_kev.real)], dtype=np.float64)
+        elif isinstance(energy_kev, (int, float, np.number)):
+            energy_kev = np.array([float(energy_kev)], dtype=np.float64)
+        else:
+            try:
+                energy_kev = np.array([float(energy_kev)], dtype=np.float64)
+            except (ValueError, TypeError):
+                raise ValueError(f"Cannot convert energy to float: {energy_kev}")
+    else:
+        energy_kev = np.array(energy_kev, dtype=np.float64)
+    
+    return energy_kev
+
+
+def _calculate_molecular_properties(element_symbols, element_counts, atomic_data_bulk):
+    """Calculate molecular weight and total electrons."""
+    molecular_weight = 0.0
+    number_of_electrons = 0.0
+    
+    for symbol, count in zip(element_symbols, element_counts):
+        data = atomic_data_bulk[symbol]
+        atomic_number = data["atomic_number"]
+        atomic_mass = data["atomic_weight"]
+        
+        molecular_weight += count * atomic_mass
+        number_of_electrons += atomic_number * count
+    
+    return molecular_weight, number_of_electrons
+
+
+def _prepare_element_data(element_symbols, element_counts):
+    """Prepare element data with interpolators."""
+    element_data = []
+    
+    for i, symbol in enumerate(element_symbols):
+        f1_interp, f2_interp = create_scattering_factor_interpolators(symbol)
+        element_data.append((element_counts[i], f1_interp, f2_interp))
+    
+    return element_data
+
+
 def _calculate_single_material_xray_properties(
     formula_str: str,
     energy_kev: Union[float, List[float], np.ndarray],
@@ -932,94 +997,32 @@ def _calculate_single_material_xray_properties(
     """
     from .utils import parse_formula
     from .constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM
-
-    # Validate inputs
-    if not formula_str or not isinstance(formula_str, str):
-        raise ValueError("Formula must be a non-empty string")
-
-    # Convert energy to numpy array
-    if np.isscalar(energy_kev):
-        if isinstance(energy_kev, complex):
-            energy_kev = np.array([float(energy_kev.real)], dtype=np.float64)
-        elif isinstance(energy_kev, (int, float, np.number)):
-            energy_kev = np.array([float(energy_kev)], dtype=np.float64)
-        else:
-            try:
-                energy_kev = np.array([float(energy_kev)], dtype=np.float64)
-            except (ValueError, TypeError):
-                raise ValueError(
-                    f"Cannot convert energy to float: {energy_kev}")
-    else:
-        energy_kev = np.array(energy_kev, dtype=np.float64)
-
-    if mass_density <= 0:
-        raise ValueError("Mass density must be positive")
-
-    if np.any(energy_kev <= 0):
-        raise ValueError("All energies must be positive")
-
-    # Validate energy range (X-ray energies typically 0.03-30 keV)
-    if np.any(energy_kev < 0.03) or np.any(energy_kev > 30):
-        raise ValueError("Energy is out of range 0.03keV ~ 30keV")
-
-    # Parse the chemical formula into elements and their counts
+    
+    energy_kev = _validate_single_material_inputs(formula_str, energy_kev, mass_density)
+    
     element_symbols, element_counts = parse_formula(formula_str)
-    n_elements = len(element_symbols)
-
-    # Bulk load atomic data for all elements (optimization)
     elements_tuple = tuple(element_symbols)
     atomic_data_bulk = get_bulk_atomic_data(elements_tuple)
-
-    # Calculate molecular properties efficiently
-    molecular_weight = 0.0
-    number_of_electrons = 0.0
-
-    for symbol, count in zip(element_symbols, element_counts):
-        data = atomic_data_bulk[symbol]
-        atomic_number = data["atomic_number"]
-        atomic_mass = data["atomic_weight"]
-
-        # Accumulate molecular weight and total electrons
-        molecular_weight += count * atomic_mass
-        number_of_electrons += atomic_number * count
-
-    # Convert X-ray energies (keV) to wavelengths (m)
-    # λ = hc/E, where h = Planck constant, c = speed of light
+    
+    molecular_weight, number_of_electrons = _calculate_molecular_properties(
+        element_symbols, element_counts, atomic_data_bulk
+    )
+    
     wavelength = ENERGY_TO_WAVELENGTH_FACTOR / energy_kev
-
-    # Convert energies to eV for scattering factor interpolation
     energy_ev = energy_kev * 1000.0
-
-    # Load atomic scattering factor tables and create interpolators
-    element_data = []
-
-    for i in range(n_elements):
-        # Create interpolators for this element
-        f1_interp, f2_interp = create_scattering_factor_interpolators(
-            element_symbols[i]
-        )
-
-        # Store element count and interpolators
-        element_data.append((element_counts[i], f1_interp, f2_interp))
-
-    # Calculate dispersion, absorption, and total scattering factors
+    
+    element_data = _prepare_element_data(element_symbols, element_counts)
+    
     dispersion, absorption, f1_total, f2_total = calculate_scattering_factors(
         energy_ev, wavelength, mass_density, molecular_weight, element_data
     )
-
-    # Calculate derived quantities
+    
     electron_density, critical_angle, attenuation_length, re_sld, im_sld = (
         calculate_derived_quantities(
-            wavelength,
-            dispersion,
-            absorption,
-            mass_density,
-            molecular_weight,
-            number_of_electrons,
+            wavelength, dispersion, absorption, mass_density, molecular_weight, number_of_electrons
         )
     )
-
-    # Return complete result structure
+    
     return {
         "formula": formula_str,
         "molecular_weight": molecular_weight,
@@ -1027,7 +1030,7 @@ def _calculate_single_material_xray_properties(
         "mass_density": mass_density,
         "electron_density": electron_density,
         "energy": energy_kev,
-        "wavelength": wavelength * METER_TO_ANGSTROM,  # Convert to Angstroms
+        "wavelength": wavelength * METER_TO_ANGSTROM,
         "dispersion": dispersion,
         "absorption": absorption,
         "f1_total": f1_total,
@@ -1080,8 +1083,7 @@ def calculate_multiple_xray_properties(
     # Process each formula
     results = {}
 
-    for i, (formula, mass_density) in enumerate(
-            zip(formula_list, mass_density_list)):
+    for formula, mass_density in zip(formula_list, mass_density_list):
         try:
             # Calculate properties for this formula
             result = calculate_single_material_properties(
@@ -1224,6 +1226,121 @@ def calculate_single_material_properties(
     )
 
 
+def _validate_xray_inputs(formulas: List[str], densities: List[float]):
+    """Validate input formulas and densities."""
+    if not isinstance(formulas, list) or not formulas:
+        raise ValueError("Formulas must be a non-empty list")
+    
+    if not isinstance(densities, list) or not densities:
+        raise ValueError("Densities must be a non-empty list")
+    
+    if len(formulas) != len(densities):
+        raise ValueError(
+            f"Number of formulas ({len(formulas)}) must match number of densities ({len(densities)})"
+        )
+    
+    for i, formula in enumerate(formulas):
+        if not isinstance(formula, str) or not formula.strip():
+            raise ValueError(f"Formula at index {i} must be a non-empty string, got: {repr(formula)}")
+    
+    for i, density in enumerate(densities):
+        if not isinstance(density, (int, float)) or density <= 0:
+            raise ValueError(f"Density at index {i} must be a positive number, got: {density}")
+
+
+def _validate_and_process_energies(energies):
+    """Validate and convert energies to numpy array."""
+    if np.isscalar(energies):
+        if isinstance(energies, complex):
+            energies_array = np.array([float(energies.real)], dtype=np.float64)
+        elif isinstance(energies, (int, float, np.number)):
+            energies_array = np.array([float(energies)], dtype=np.float64)
+        else:
+            try:
+                energies_array = np.array([float(energies)], dtype=np.float64)
+            except (ValueError, TypeError):
+                raise ValueError(f"Cannot convert energy to float: {energies}")
+    else:
+        energies_array = np.array(energies, dtype=np.float64)
+    
+    if energies_array.size == 0:
+        raise ValueError("Energies array cannot be empty")
+    
+    if np.any(energies_array <= 0):
+        raise ValueError("All energies must be positive")
+    
+    if np.any(energies_array < 0.03) or np.any(energies_array > 30):
+        raise ValueError("Energy values must be in range 0.03-30 keV")
+    
+    return energies_array
+
+
+def _restore_energy_order(result: XRayResult, reverse_indices: np.ndarray) -> XRayResult:
+    """Restore original energy order in XRayResult."""
+    return XRayResult(
+        formula=result.formula,
+        molecular_weight_g_mol=result.molecular_weight_g_mol,
+        total_electrons=result.total_electrons,
+        density_g_cm3=result.density_g_cm3,
+        electron_density_per_ang3=result.electron_density_per_ang3,
+        energy_kev=result.energy_kev[reverse_indices],
+        wavelength_angstrom=result.wavelength_angstrom[reverse_indices],
+        dispersion_delta=result.dispersion_delta[reverse_indices],
+        absorption_beta=result.absorption_beta[reverse_indices],
+        scattering_factor_f1=result.scattering_factor_f1[reverse_indices],
+        scattering_factor_f2=result.scattering_factor_f2[reverse_indices],
+        critical_angle_degrees=result.critical_angle_degrees[reverse_indices],
+        attenuation_length_cm=result.attenuation_length_cm[reverse_indices],
+        real_sld_per_ang2=result.real_sld_per_ang2[reverse_indices],
+        imaginary_sld_per_ang2=result.imaginary_sld_per_ang2[reverse_indices],
+    )
+
+
+def _create_process_formula_function(sorted_energies: np.ndarray, sort_indices: np.ndarray):
+    """Create process formula function with energy sorting logic."""
+    def process_formula(formula_density_pair: Tuple[str, float]) -> Tuple[str, XRayResult]:
+        formula, density = formula_density_pair
+        try:
+            result = calculate_single_material_properties(formula, sorted_energies, density)
+            
+            if not np.array_equal(sort_indices, np.arange(len(sort_indices))):
+                reverse_indices = np.argsort(sort_indices)
+                result = _restore_energy_order(result, reverse_indices)
+            
+            return (formula, result)
+        except Exception as e:
+            raise RuntimeError(f"Failed to process formula '{formula}': {e}") from e
+    
+    return process_formula
+
+
+def _process_formulas_parallel(formulas: List[str], densities: List[float], process_func):
+    """Process formulas in parallel using ThreadPoolExecutor."""
+    import multiprocessing
+    
+    formula_density_pairs = list(zip(formulas, densities))
+    results = {}
+    
+    optimal_workers = min(len(formulas), max(1, multiprocessing.cpu_count() // 2), 8)
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=optimal_workers) as executor:
+        future_to_formula = {
+            executor.submit(process_func, pair): pair[0]
+            for pair in formula_density_pairs
+        }
+        
+        for future in concurrent.futures.as_completed(future_to_formula):
+            formula = future_to_formula[future]
+            try:
+                formula_result, xray_result = future.result()
+                results[formula_result] = xray_result
+            except Exception as e:
+                print(f"Warning: Failed to process formula '{formula}': {e}")
+                continue
+    
+    return results
+
+
 def calculate_xray_properties(
     formulas: List[str],
     energies: Union[float, List[float], np.ndarray],
@@ -1268,142 +1385,18 @@ def calculate_xray_properties(
         >>> results = calculate_xray_properties(["SiO2"], energy_array, [2.2])
         >>> print(f"Energy points: {len(results['SiO2'].Energy)}")
     """
-    # Input validation
-    if not isinstance(formulas, list) or not formulas:
-        raise ValueError("Formulas must be a non-empty list")
-
-    if not isinstance(densities, list) or not densities:
-        raise ValueError("Densities must be a non-empty list")
-
-    if len(formulas) != len(densities):
-        raise ValueError(
-            f"Number of formulas ({len(formulas)}) must match number of "
-            f"densities ({len(densities)})"
-        )
-
-    # Validate individual formulas and densities
-    for i, formula in enumerate(formulas):
-        if not isinstance(formula, str) or not formula.strip():
-            raise ValueError(
-                f"Formula at index {i} must be a non-empty string, "
-                f"got: {repr(formula)}"
-            )
-
-    for i, density in enumerate(densities):
-        if not isinstance(density, (int, float)) or density <= 0:
-            raise ValueError(
-                f"Density at index {i} must be a positive number, "
-                f"got: {density}"
-            )
-
-    # Convert and validate energies
-    if np.isscalar(energies):
-        if isinstance(energies, complex):
-            energies_array = np.array([float(energies.real)], dtype=np.float64)
-        elif isinstance(energies, (int, float, np.number)):
-            energies_array = np.array([float(energies)], dtype=np.float64)
-        else:
-            try:
-                energies_array = np.array([float(energies)], dtype=np.float64)
-            except (ValueError, TypeError):
-                raise ValueError(f"Cannot convert energy to float: {energies}")
-    else:
-        energies_array = np.array(energies, dtype=np.float64)
-
-    if energies_array.size == 0:
-        raise ValueError("Energies array cannot be empty")
-
-    if np.any(energies_array <= 0):
-        raise ValueError("All energies must be positive")
-
-    if np.any(energies_array < 0.03) or np.any(energies_array > 30):
-        raise ValueError("Energy values must be in range 0.03-30 keV")
-
-    # Sort energies for consistent processing
-    # Note: We sort the energies to ensure consistent results, but we'll maintain
-    # the original order in the final results by sorting back if needed
+    _validate_xray_inputs(formulas, densities)
+    energies_array = _validate_and_process_energies(energies)
+    
     sort_indices = np.argsort(energies_array)
     sorted_energies = energies_array[sort_indices]
-
-    # Function to process a single formula
-    def process_formula(
-        formula_density_pair: Tuple[str, float],
-    ) -> Tuple[str, XRayResult]:
-        formula, density = formula_density_pair
-        try:
-            result = calculate_single_material_properties(
-                formula, sorted_energies, density
-            )
-
-            # If energies were sorted, we need to restore original order in
-            # results
-            if not np.array_equal(sort_indices, np.arange(len(sort_indices))):
-                # Create reverse mapping to restore original order
-                reverse_indices = np.argsort(sort_indices)
-
-                # Restore original order in all array fields using new field
-                # names
-                result = XRayResult(
-                    formula=result.formula,
-                    molecular_weight_g_mol=result.molecular_weight_g_mol,
-                    total_electrons=result.total_electrons,
-                    density_g_cm3=result.density_g_cm3,
-                    electron_density_per_ang3=result.electron_density_per_ang3,
-                    energy_kev=result.energy_kev[reverse_indices],
-                    wavelength_angstrom=result.wavelength_angstrom[reverse_indices],
-                    dispersion_delta=result.dispersion_delta[reverse_indices],
-                    absorption_beta=result.absorption_beta[reverse_indices],
-                    scattering_factor_f1=result.scattering_factor_f1[reverse_indices],
-                    scattering_factor_f2=result.scattering_factor_f2[reverse_indices],
-                    critical_angle_degrees=(
-                        result.critical_angle_degrees[reverse_indices]
-                    ),
-                    attenuation_length_cm=(
-                        result.attenuation_length_cm[reverse_indices]
-                    ),
-                    real_sld_per_ang2=result.real_sld_per_ang2[reverse_indices],
-                    imaginary_sld_per_ang2=(
-                        result.imaginary_sld_per_ang2[reverse_indices]
-                    ),
-                )
-
-            return (formula, result)
-        except Exception as e:
-            # Re-raise with more context
-            raise RuntimeError(
-                f"Failed to process formula '{formula}': {e}") from e
-
-    # Process formulas in parallel using ThreadPoolExecutor
-    formula_density_pairs = list(zip(formulas, densities))
-    results = {}
-
-    # Optimize worker count based on system capabilities and workload
-    import multiprocessing
-
-    optimal_workers = min(len(formulas), max(
-        1, multiprocessing.cpu_count() // 2), 8)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=optimal_workers) as executor:
-        # Submit all tasks
-        future_to_formula = {
-            executor.submit(process_formula, pair): pair[0]
-            for pair in formula_density_pairs
-        }
-
-        # Collect results as they complete
-        for future in concurrent.futures.as_completed(future_to_formula):
-            formula = future_to_formula[future]
-            try:
-                formula_result, xray_result = future.result()
-                results[formula_result] = xray_result
-            except Exception as e:
-                # Log the error but continue processing other formulas
-                print(f"Warning: Failed to process formula '{formula}': {e}")
-                continue
-
+    
+    process_func = _create_process_formula_function(sorted_energies, sort_indices)
+    results = _process_formulas_parallel(formulas, densities, process_func)
+    
     if not results:
         raise RuntimeError("Failed to process any formulas successfully")
-
+    
     return results
 
 

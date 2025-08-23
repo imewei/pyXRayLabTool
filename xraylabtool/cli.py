@@ -11,7 +11,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from textwrap import dedent
@@ -415,6 +415,116 @@ def parse_energy_string(energy_str: str) -> np.ndarray:
         return np.array([float(energy_str)])
 
 
+def _get_default_fields() -> Tuple[List[str], List[str]]:
+    """Get default scalar and array fields."""
+    array_fields = [
+        "energy_kev",
+        "wavelength_angstrom",
+        "dispersion_delta",
+        "absorption_beta",
+        "scattering_factor_f1",
+        "scattering_factor_f2",
+        "critical_angle_degrees",
+        "attenuation_length_cm",
+        "real_sld_per_ang2",
+        "imaginary_sld_per_ang2",
+    ]
+    scalar_fields = [
+        "formula",
+        "molecular_weight_g_mol",
+        "total_electrons",
+        "density_g_cm3",
+        "electron_density_per_ang3",
+    ]
+    return scalar_fields, array_fields
+
+
+def _format_as_json(result: XRayResult, fields: List[str]) -> str:
+    """Format result as JSON."""
+    data = {}
+    for field in fields:
+        value = getattr(result, field)
+        if isinstance(value, np.ndarray):
+            data[field] = value.tolist()
+        else:
+            data[field] = value
+    return json.dumps(data, indent=2)
+
+
+def _format_as_csv(result: XRayResult, fields: List[str], precision: int) -> str:
+    """Format result as CSV."""
+    data_rows = []
+    n_energies = len(result.energy_kev)
+    
+    for i in range(n_energies):
+        row = {}
+        for field in fields:
+            value = getattr(result, field)
+            if isinstance(value, np.ndarray):
+                row[field] = round(value[i], precision)
+            else:
+                row[field] = value
+        data_rows.append(row)
+    
+    if data_rows:
+        df = pd.DataFrame(data_rows)
+        return df.to_csv(index=False)
+    return ""
+
+
+def _format_material_properties(result: XRayResult, precision: int) -> List[str]:
+    """Format material properties section."""
+    return [
+        "Material Properties:",
+        f"  Formula: {result.formula}",
+        f"  Molecular Weight: {result.molecular_weight_g_mol:.{precision}f} g/mol",
+        f"  Total Electrons: {result.total_electrons:.{precision}f}",
+        f"  Density: {result.density_g_cm3:.{precision}f} g/cm³",
+        f"  Electron Density: {result.electron_density_per_ang3:.{precision}e} electrons/Å³",
+        "",
+    ]
+
+
+def _format_single_energy(result: XRayResult, precision: int) -> List[str]:
+    """Format single energy point properties."""
+    return [
+        "X-ray Properties:",
+        f"  Energy: {result.energy_kev[0]:.{precision}f} keV",
+        f"  Wavelength: {result.wavelength_angstrom[0]:.{precision}f} Å",
+        f"  Dispersion (δ): {result.dispersion_delta[0]:.{precision}e}",
+        f"  Absorption (β): {result.absorption_beta[0]:.{precision}e}",
+        f"  Scattering f1: {result.scattering_factor_f1[0]:.{precision}f}",
+        f"  Scattering f2: {result.scattering_factor_f2[0]:.{precision}f}",
+        f"  Critical Angle: {result.critical_angle_degrees[0]:.{precision}f}°",
+        f"  Attenuation Length: {result.attenuation_length_cm[0]:.{precision}f} cm",
+        f"  Real SLD: {result.real_sld_per_ang2[0]:.{precision}e} Å⁻²",
+        f"  Imaginary SLD: {result.imaginary_sld_per_ang2[0]:.{precision}e} Å⁻²",
+    ]
+
+
+def _format_multiple_energies(result: XRayResult, precision: int) -> List[str]:
+    """Format multiple energy points as table."""
+    output_lines = ["X-ray Properties (tabular):"]
+    
+    df_data = {
+        "Energy (keV)": result.energy_kev,
+        "λ (Å)": result.wavelength_angstrom,
+        "δ": result.dispersion_delta,
+        "β": result.absorption_beta,
+        "f1": result.scattering_factor_f1,
+        "f2": result.scattering_factor_f2,
+        "θc (°)": result.critical_angle_degrees,
+        "μ (cm)": result.attenuation_length_cm,
+    }
+    
+    df = pd.DataFrame(df_data)
+    pd.set_option("display.float_format", f"{{:.{precision}g}}".format)
+    table_str = df.to_string(index=False)
+    output_lines.append(table_str)
+    
+    return output_lines
+
+
 def format_xray_result(
     result: XRayResult,
     format_type: str,
@@ -423,343 +533,234 @@ def format_xray_result(
 ) -> str:
     """Format XRayResult for output."""
     if fields is None:
-        # Use new snake_case field names by default
-        array_fields = [
-            "energy_kev",
-            "wavelength_angstrom",
-            "dispersion_delta",
-            "absorption_beta",
-            "scattering_factor_f1",
-            "scattering_factor_f2",
-            "critical_angle_degrees",
-            "attenuation_length_cm",
-            "real_sld_per_ang2",
-            "imaginary_sld_per_ang2",
-        ]
-        scalar_fields = [
-            "formula",
-            "molecular_weight_g_mol",
-            "total_electrons",
-            "density_g_cm3",
-            "electron_density_per_ang3",
-        ]
+        scalar_fields, array_fields = _get_default_fields()
         fields = scalar_fields + array_fields
-
+    
     if format_type == "json":
-        data = {}
-        for field in fields:
-            value = getattr(result, field)
-            if isinstance(value, np.ndarray):
-                data[field] = value.tolist()
-            else:
-                data[field] = value
-        return json.dumps(data, indent=2)
-
+        return _format_as_json(result, fields)
     elif format_type == "csv":
-        # For CSV, we need to handle array fields differently
-        data_rows = []
-        n_energies = len(result.energy_kev)
-
-        for i in range(n_energies):
-            row = {}
-            for field in fields:
-                value = getattr(result, field)
-                if isinstance(value, np.ndarray):
-                    row[field] = round(value[i], precision)
-                else:
-                    row[field] = value
-            data_rows.append(row)
-
-        if data_rows:
-            df = pd.DataFrame(data_rows)
-            return df.to_csv(index=False)
-        else:
-            return ""
-
+        return _format_as_csv(result, fields, precision)
     else:  # table format
-        output_lines = []
-
-        # Material properties
-        output_lines.append("Material Properties:")
-        output_lines.append(f"  Formula: {result.formula}")
-        output_lines.append(
-            f"  Molecular Weight: {
-                result.molecular_weight_g_mol:.{precision}f} g/mol")
-        output_lines.append(
-            f"  Total Electrons: {result.total_electrons:.{precision}f}"
-        )
-        output_lines.append(
-            f"  Density: {
-                result.density_g_cm3:.{precision}f} g/cm³")
-        output_lines.append(
-            f"  Electron Density: {
-                result.electron_density_per_ang3:.{precision}e} electrons/Å³")
-        output_lines.append("")
-
-        # X-ray properties table
+        output_lines = _format_material_properties(result, precision)
+        
         if len(result.energy_kev) == 1:
-            # Single energy - vertical layout
-            output_lines.append("X-ray Properties:")
-            output_lines.append(
-                f"  Energy: {
-                    result.energy_kev[0]:.{precision}f} keV")
-            output_lines.append(
-                f"  Wavelength: {
-                    result.wavelength_angstrom[0]:.{precision}f} Å")
-            output_lines.append(
-                f"  Dispersion (δ): {result.dispersion_delta[0]:.{precision}e}"
-            )
-            output_lines.append(
-                f"  Absorption (β): {result.absorption_beta[0]:.{precision}e}"
-            )
-            output_lines.append(
-                f"  Scattering f1: {
-                    result.scattering_factor_f1[0]:.{precision}f}")
-            output_lines.append(
-                f"  Scattering f2: {
-                    result.scattering_factor_f2[0]:.{precision}f}")
-            output_lines.append(
-                f"  Critical Angle: {
-                    result.critical_angle_degrees[0]:.{precision}f}°")
-            output_lines.append(
-                f"  Attenuation Length: {
-                    result.attenuation_length_cm[0]:.{precision}f} cm")
-            output_lines.append(
-                f"  Real SLD: {result.real_sld_per_ang2[0]:.{precision}e} Å⁻²"
-            )
-            output_lines.append(
-                f"  Imaginary SLD: {
-                    result.imaginary_sld_per_ang2[0]:.{precision}e} Å⁻²")
+            output_lines.extend(_format_single_energy(result, precision))
         else:
-            # Multiple energies - table format
-            output_lines.append("X-ray Properties (tabular):")
-
-            # Create DataFrame for better formatting
-            df_data = {
-                "Energy (keV)": result.energy_kev,
-                "λ (Å)": result.wavelength_angstrom,
-                "δ": result.dispersion_delta,
-                "β": result.absorption_beta,
-                "f1": result.scattering_factor_f1,
-                "f2": result.scattering_factor_f2,
-                "θc (°)": result.critical_angle_degrees,
-                "μ (cm)": result.attenuation_length_cm,
-            }
-
-            df = pd.DataFrame(df_data)
-
-            # Format the DataFrame for display
-            pd.set_option("display.float_format", f"{{:.{precision}g}}".format)
-            table_str = df.to_string(index=False)
-            output_lines.append(table_str)
-
+            output_lines.extend(_format_multiple_energies(result, precision))
+        
         return "\n".join(output_lines)
+
+
+def _validate_calc_inputs(args, energies):
+    """Validate calc command inputs."""
+    if args.density <= 0:
+        print("Error: Density must be positive", file=sys.stderr)
+        return False
+    
+    if np.any(energies <= 0):
+        print("Error: All energies must be positive", file=sys.stderr)
+        return False
+    
+    if np.any(energies < 0.03) or np.any(energies > 30):
+        print("Warning: Energy values outside typical X-ray range (0.03-30 keV)")
+    
+    return True
+
+
+def _print_calc_verbose_info(args, energies):
+    """Print verbose calculation information."""
+    print(f"Calculating X-ray properties for {args.formula}...")
+    print(f"Energy range: {energies.min():.3f} - {energies.max():.3f} keV ({len(energies)} points)")
+    print(f"Density: {args.density} g/cm³")
+    print()
+
+
+def _determine_output_format(args):
+    """Determine output format based on args and file extension."""
+    output_format = args.format
+    
+    if args.output:
+        output_path = Path(args.output)
+        if not output_format or output_format == "table":
+            if output_path.suffix.lower() == ".json":
+                output_format = "json"
+            elif output_path.suffix.lower() == ".csv":
+                output_format = "csv"
+    
+    return output_format
+
+
+def _save_or_print_output(formatted_output, args):
+    """Save output to file or print to stdout."""
+    if args.output:
+        Path(args.output).write_text(formatted_output)
+        if args.verbose:
+            print(f"Results saved to {args.output}")
+    else:
+        print(formatted_output)
 
 
 def cmd_calc(args):
     """Handle the 'calc' command."""
     try:
-        # Parse energy input
         energies = parse_energy_string(args.energy)
-
-        # Validate inputs
-        if args.density <= 0:
-            print("Error: Density must be positive", file=sys.stderr)
+        
+        if not _validate_calc_inputs(args, energies):
             return 1
-
-        if np.any(energies <= 0):
-            print("Error: All energies must be positive", file=sys.stderr)
-            return 1
-
-        if np.any(energies < 0.03) or np.any(energies > 30):
-            print("Warning: Energy values outside typical X-ray range (0.03-30 keV)")
-
-        # Calculate properties
+        
         if args.verbose:
-            print(f"Calculating X-ray properties for {args.formula}...")
-            print(
-                f"Energy range: {
-                    energies.min():.3f} - {
-                    energies.max():.3f} keV ({
-                    len(energies)} points)")
-            print(f"Density: {args.density} g/cm³")
-            print()
-
+            _print_calc_verbose_info(args, energies)
+        
         result = calculate_single_material_properties(
             args.formula, energies, args.density
         )
-
-        # Parse fields if specified
+        
         fields = None
         if args.fields:
             fields = [field.strip() for field in args.fields.split(",")]
-
-        # Format output
-        output_format = args.format
-        if args.output:
-            # Auto-detect format from extension if not specified
-            output_path = Path(args.output)
-            if not output_format or output_format == "table":
-                if output_path.suffix.lower() == ".json":
-                    output_format = "json"
-                elif output_path.suffix.lower() == ".csv":
-                    output_format = "csv"
-
-        formatted_output = format_xray_result(
-            result, output_format, args.precision, fields
-        )
-
-        # Save or print output
-        if args.output:
-            Path(args.output).write_text(formatted_output)
-            if args.verbose:
-                print(f"Results saved to {args.output}")
-        else:
-            print(formatted_output)
-
+        
+        output_format = _determine_output_format(args)
+        formatted_output = format_xray_result(result, output_format, args.precision, fields)
+        
+        _save_or_print_output(formatted_output, args)
         return 0
-
+    
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
 
+def _validate_batch_input(args):
+    """Validate batch input file and columns."""
+    input_path = Path(args.input_file)
+    if not input_path.exists():
+        print(f"Error: Input file {args.input_file} not found", file=sys.stderr)
+        return None
+    
+    df_input = pd.read_csv(input_path)
+    
+    required_columns = ["formula", "density", "energy"]
+    missing_columns = [col for col in required_columns if col not in df_input.columns]
+    if missing_columns:
+        print(f"Error: Missing required columns: {missing_columns}", file=sys.stderr)
+        return None
+    
+    return df_input
+
+
+def _parse_batch_data(df_input):
+    """Parse batch data from DataFrame."""
+    formulas = []
+    densities = []
+    energy_sets = []
+    
+    for _, row in df_input.iterrows():
+        formulas.append(row["formula"])
+        densities.append(float(row["density"]))
+        
+        energy_str = str(row["energy"])
+        try:
+            if "," in energy_str:
+                energies = [float(x.strip()) for x in energy_str.split(",")]
+            else:
+                energies = [float(energy_str)]
+            energy_sets.append(energies)
+        except ValueError:
+            print(f"Error: Invalid energy format for {row['formula']}: {energy_str}", file=sys.stderr)
+            return None, None, None
+    
+    return formulas, densities, energy_sets
+
+
+def _convert_result_to_dict(result, energy_index):
+    """Convert XRayResult to dictionary for specific energy point."""
+    return {
+        "formula": result.formula,
+        "density_g_cm3": result.density_g_cm3,
+        "energy_kev": result.energy_kev[energy_index],
+        "wavelength_angstrom": result.wavelength_angstrom[energy_index],
+        "molecular_weight_g_mol": result.molecular_weight_g_mol,
+        "total_electrons": result.total_electrons,
+        "electron_density_per_ang3": result.electron_density_per_ang3,
+        "dispersion_delta": result.dispersion_delta[energy_index],
+        "absorption_beta": result.absorption_beta[energy_index],
+        "scattering_factor_f1": result.scattering_factor_f1[energy_index],
+        "scattering_factor_f2": result.scattering_factor_f2[energy_index],
+        "critical_angle_degrees": result.critical_angle_degrees[energy_index],
+        "attenuation_length_cm": result.attenuation_length_cm[energy_index],
+        "real_sld_per_ang2": result.real_sld_per_ang2[energy_index],
+        "imaginary_sld_per_ang2": result.imaginary_sld_per_ang2[energy_index],
+    }
+
+
+def _process_batch_materials(formulas, densities, energy_sets, args):
+    """Process all materials and return results."""
+    results = []
+    
+    if args.verbose:
+        print(f"Processing {len(formulas)} materials...")
+    
+    for i, (formula, density, energies) in enumerate(zip(formulas, densities, energy_sets)):
+        try:
+            if args.verbose:
+                print(f"  {i + 1}/{len(formulas)}: {formula}")
+            
+            result = calculate_single_material_properties(formula, energies, density)
+            
+            for j, energy in enumerate(energies):
+                result_dict = _convert_result_to_dict(result, j)
+                results.append(result_dict)
+        
+        except Exception as e:
+            print(f"Warning: Failed to process {formula}: {e}")
+            continue
+    
+    return results
+
+
+def _save_batch_results(results, args):
+    """Save batch results to output file."""
+    if args.fields:
+        field_list = [field.strip() for field in args.fields.split(",")]
+        results = [{k: v for k, v in result.items() if k in field_list} for result in results]
+    
+    output_format = args.format
+    output_path = Path(args.output)
+    if not output_format:
+        output_format = "json" if output_path.suffix.lower() == ".json" else "csv"
+    
+    if output_format == "json":
+        with open(args.output, "w") as f:
+            json.dump(results, f, indent=2)
+    else:
+        df_output = pd.DataFrame(results)
+        df_output.to_csv(args.output, index=False)
+    
+    if args.verbose:
+        print(f"Results saved to {args.output}")
+        print(f"Processed {len(results)} data points from {len(set(r['formula'] for r in results))} unique materials")
+
+
 def cmd_batch(args):
     """Handle the 'batch' command."""
     try:
-        # Read input CSV
-        input_path = Path(args.input_file)
-        if not input_path.exists():
-            print(
-                f"Error: Input file {
-                    args.input_file} not found",
-                file=sys.stderr)
+        df_input = _validate_batch_input(args)
+        if df_input is None:
             return 1
-
-        df_input = pd.read_csv(input_path)
-
-        # Validate required columns
-        required_columns = ["formula", "density"]
-        missing_columns = [
-            col for col in required_columns if col not in df_input.columns
-        ]
-        if missing_columns:
-            print(
-                f"Error: Missing required columns: {missing_columns}",
-                file=sys.stderr)
+        
+        formulas, densities, energy_sets = _parse_batch_data(df_input)
+        if formulas is None:
             return 1
-
-        # Handle energy column - can be single values or comma-separated
-        if "energy" not in df_input.columns:
-            print("Error: Missing 'energy' column", file=sys.stderr)
-            return 1
-
-        # Prepare materials for batch processing
-        formulas = []
-        densities = []
-        energy_sets = []
-
-        for _, row in df_input.iterrows():
-            formulas.append(row["formula"])
-            densities.append(float(row["density"]))
-
-            # Parse energy - handle both single values and comma-separated
-            energy_str = str(row["energy"])
-            try:
-                if "," in energy_str:
-                    energies = [float(x.strip())
-                                for x in energy_str.split(",")]
-                else:
-                    energies = [float(energy_str)]
-                energy_sets.append(energies)
-            except ValueError:
-                print(
-                    f"Error: Invalid energy format for {
-                        row['formula']}: {energy_str}",
-                    file=sys.stderr,
-                )
-                return 1
-
-        # For batch processing, we need to handle different energy sets
-        # We'll process each material individually
-        results = []
-
-        if args.verbose:
-            print(f"Processing {len(formulas)} materials...")
-
-        for i, (formula, density, energies) in enumerate(
-            zip(formulas, densities, energy_sets)
-        ):
-            try:
-                if args.verbose:
-                    print(f"  {i + 1}/{len(formulas)}: {formula}")
-
-                result = calculate_single_material_properties(
-                    formula, energies, density
-                )
-
-                # Convert result to dictionary format for easier handling
-                for j, energy in enumerate(energies):
-                    result_dict = {
-                        "formula": result.formula,
-                        "density_g_cm3": result.density_g_cm3,
-                        "energy_kev": result.energy_kev[j],
-                        "wavelength_angstrom": result.wavelength_angstrom[j],
-                        "molecular_weight_g_mol": result.molecular_weight_g_mol,
-                        "total_electrons": result.total_electrons,
-                        "electron_density_per_ang3": result.electron_density_per_ang3,
-                        "dispersion_delta": result.dispersion_delta[j],
-                        "absorption_beta": result.absorption_beta[j],
-                        "scattering_factor_f1": result.scattering_factor_f1[j],
-                        "scattering_factor_f2": result.scattering_factor_f2[j],
-                        "critical_angle_degrees": result.critical_angle_degrees[j],
-                        "attenuation_length_cm": result.attenuation_length_cm[j],
-                        "real_sld_per_ang2": result.real_sld_per_ang2[j],
-                        "imaginary_sld_per_ang2": result.imaginary_sld_per_ang2[j],
-                    }
-                    results.append(result_dict)
-
-            except Exception as e:
-                print(f"Warning: Failed to process {formula}: {e}")
-                continue
-
+        
+        results = _process_batch_materials(formulas, densities, energy_sets, args)
+        
         if not results:
-            print(
-                "Error: No materials were successfully processed",
-                file=sys.stderr)
+            print("Error: No materials were successfully processed", file=sys.stderr)
             return 1
-
-        # Filter fields if specified
-        if args.fields:
-            field_list = [field.strip() for field in args.fields.split(",")]
-            results = [
-                {k: v for k, v in result.items() if k in field_list}
-                for result in results
-            ]
-
-        # Determine output format
-        output_format = args.format
-        output_path = Path(args.output)
-        if not output_format:
-            output_format = "json" if output_path.suffix.lower() == ".json" else "csv"
-
-        # Save results
-        if output_format == "json":
-            with open(args.output, "w") as f:
-                json.dump(results, f, indent=2)
-        else:  # CSV
-            df_output = pd.DataFrame(results)
-            df_output.to_csv(args.output, index=False)
-
-        if args.verbose:
-            print(f"Results saved to {args.output}")
-            print(
-                f"Processed {len(results)} data points from "
-                f"{len(set(r['formula'] for r in results))} unique materials"
-            )
-
+        
+        _save_batch_results(results, args)
         return 0
-
+    
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
@@ -812,74 +813,81 @@ def cmd_convert(args):
         return 1
 
 
+def _get_atomic_data(elements):
+    """Get atomic data for list of elements."""
+    atomic_data = []
+    for element in elements:
+        try:
+            atomic_data.append({
+                "element": element,
+                "atomic_number": get_atomic_number(element),
+                "atomic_weight": get_atomic_weight(element),
+            })
+        except Exception as e:
+            print(f"Warning: Could not get atomic data for {element}: {e}")
+    return atomic_data
+
+
+def _process_formula(formula, verbose):
+    """Process a single formula and return info."""
+    elements, counts = parse_formula(formula)
+    
+    formula_info = {
+        "formula": formula,
+        "elements": elements,
+        "counts": counts,
+        "element_count": len(elements),
+        "total_atoms": sum(counts),
+    }
+    
+    if verbose:
+        formula_info["atomic_data"] = _get_atomic_data(elements)
+    
+    return formula_info
+
+
+def _output_formula_results(results, args):
+    """Output formula results to file or console."""
+    if args.output:
+        with open(args.output, "w") as f:
+            json.dump(results, f, indent=2)
+        print(f"Formula analysis saved to {args.output}")
+    else:
+        _print_formula_results(results, args.verbose)
+
+
+def _print_formula_results(results, verbose):
+    """Print formula results to console."""
+    for result in results:
+        print(f"Formula: {result['formula']}")
+        print(f"Elements: {', '.join(result['elements'])}")
+        print(f"Counts: {', '.join(map(str, result['counts']))}")
+        print(f"Total atoms: {result['total_atoms']}")
+        
+        if verbose and "atomic_data" in result:
+            print("Atomic data:")
+            for atom_data in result["atomic_data"]:
+                print(f"  {atom_data['element']:>2}: Z={atom_data['atomic_number']:>3}, MW={atom_data['atomic_weight']:>8.3f}")
+        print()
+
+
 def cmd_formula(args):
     """Handle the 'formula' command."""
     try:
         formulas = [f.strip() for f in args.formulas.split(",")]
         results = []
-
+        
         for formula in formulas:
             try:
-                elements, counts = parse_formula(formula)
-
-                formula_info = {
-                    "formula": formula,
-                    "elements": elements,
-                    "counts": counts,
-                    "element_count": len(elements),
-                    "total_atoms": sum(counts),
-                }
-
-                if args.verbose:
-                    # Add atomic data for each element
-                    atomic_data = []
-                    for element in elements:
-                        try:
-                            atomic_data.append(
-                                {
-                                    "element": element,
-                                    "atomic_number": get_atomic_number(element),
-                                    "atomic_weight": get_atomic_weight(element),
-                                }
-                            )
-                        except Exception as e:
-                            print(
-                                f"Warning: Could not get atomic data for "
-                                f"{element}: {e}"
-                            )
-
-                    formula_info["atomic_data"] = atomic_data
-
+                formula_info = _process_formula(formula, args.verbose)
                 results.append(formula_info)
-
             except Exception as e:
                 print(f"Error parsing formula {formula}: {e}", file=sys.stderr)
                 continue
-
-        # Output results
-        if args.output:
-            with open(args.output, "w") as f:
-                json.dump(results, f, indent=2)
-            print(f"Formula analysis saved to {args.output}")
-        else:
-            for result in results:
-                print(f"Formula: {result['formula']}")
-                print(f"Elements: {', '.join(result['elements'])}")
-                print(f"Counts: {', '.join(map(str, result['counts']))}")
-                print(f"Total atoms: {result['total_atoms']}")
-
-                if args.verbose and "atomic_data" in result:
-                    print("Atomic data:")
-                    for atom_data in result["atomic_data"]:
-                        print(
-                            f"  {
-                                atom_data['element']:>2}: Z={
-                                atom_data['atomic_number']:>3}, " f"MW={
-                                atom_data['atomic_weight']:>8.3f}")
-                print()
-
+        
+        _output_formula_results(results, args)
         return 0
-
+    
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1

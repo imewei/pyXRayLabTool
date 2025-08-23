@@ -106,7 +106,7 @@ def chunk_iterator(data: List[Tuple],
 
 def process_single_calculation(
     formula: str, energies: np.ndarray, density: float
-) -> Tuple[str, XRayResult]:
+) -> Tuple[str, Optional[XRayResult]]:
     """
     Process a single X-ray calculation.
 
@@ -179,6 +179,67 @@ def process_batch_chunk(
     return results
 
 
+def _validate_batch_inputs(formulas: List[str], densities: List[float]) -> None:
+    """Validate batch processing inputs."""
+    if len(formulas) != len(densities):
+        raise ValueError("Number of formulas must match number of densities")
+    if not formulas:
+        raise ValueError("Formula list cannot be empty")
+
+
+def _prepare_energies_array(energies: Union[float, List[float], np.ndarray]) -> np.ndarray:
+    """Convert energies to numpy array and validate."""
+    if np.isscalar(energies):
+        # Handle scalar values including complex numbers
+        if isinstance(energies, complex):
+            energies_array = np.array([float(energies.real)], dtype=np.float64)
+        else:
+            energies_array = np.array([float(energies)], dtype=np.float64)
+    else:
+        energies_array = np.array(energies, dtype=np.float64)
+    
+    if np.any(energies_array <= 0):
+        raise ValueError("All energies must be positive")
+    if np.any(energies_array < 0.03) or np.any(energies_array > 30):
+        raise ValueError("Energy values must be in range 0.03-30 keV")
+    
+    return energies_array
+
+
+def _initialize_progress_bar(config: BatchConfig, total: int):
+    """Initialize progress bar if enabled."""
+    if not config.enable_progress:
+        return None
+    
+    try:
+        from tqdm import tqdm
+        return tqdm(total=total, desc="Processing materials")
+    except ImportError:
+        config.enable_progress = False
+        warnings.warn("tqdm not available, progress tracking disabled")
+        return None
+
+
+def _process_chunks(calculation_data: List, config: BatchConfig, progress_bar):
+    """Process data chunks and collect results."""
+    all_results = {}
+    memory_monitor = MemoryMonitor(config.memory_limit_gb)
+    
+    for chunk in chunk_iterator(calculation_data, config.chunk_size):
+        chunk_results = process_batch_chunk(chunk, config)
+        
+        for formula, result in chunk_results:
+            all_results[formula] = result
+        
+        if progress_bar is not None:
+            progress_bar.update(len(chunk))
+        
+        if not memory_monitor.check_memory():
+            memory_monitor.force_gc()
+    
+    return all_results
+
+
 def calculate_batch_properties(
     formulas: List[str],
     energies: Union[float, List[float], np.ndarray],
@@ -213,73 +274,91 @@ def calculate_batch_properties(
     if config is None:
         config = BatchConfig()
 
-    # Input validation
-    if len(formulas) != len(densities):
-        raise ValueError("Number of formulas must match number of densities")
-
-    if not formulas:
-        raise ValueError("Formula list cannot be empty")
-
-    # Convert energies to numpy array
-    if np.isscalar(energies):
-        energies_array = np.array([float(energies)], dtype=np.float64)
-    else:
-        energies_array = np.array(energies, dtype=np.float64)
-
-    # Validate energy range
-    if np.any(energies_array <= 0):
-        raise ValueError("All energies must be positive")
-
-    if np.any(energies_array < 0.03) or np.any(energies_array > 30):
-        raise ValueError("Energy values must be in range 0.03-30 keV")
-
-    # Prepare data for chunked processing
+    _validate_batch_inputs(formulas, densities)
+    energies_array = _prepare_energies_array(energies)
+    
     calculation_data = [
         (formula, energies_array, density)
         for formula, density in zip(formulas, densities)
     ]
-
-    # Initialize progress tracking if enabled
-    if config.enable_progress:
-        try:
-            from tqdm import tqdm
-
-            progress_bar = tqdm(
-                total=len(formulas),
-                desc="Processing materials")
-        except ImportError:
-            config.enable_progress = False
-            warnings.warn("tqdm not available, progress tracking disabled")
-            progress_bar = None
-    else:
-        progress_bar = None
-
-    # Process data in chunks to manage memory
-    all_results = {}
-    memory_monitor = MemoryMonitor(config.memory_limit_gb)
-
+    
+    progress_bar = _initialize_progress_bar(config, len(formulas))
+    
     try:
-        for chunk in chunk_iterator(calculation_data, config.chunk_size):
-            # Process chunk
-            chunk_results = process_batch_chunk(chunk, config)
-
-            # Collect results
-            for formula, result in chunk_results:
-                all_results[formula] = result
-
-            # Update progress
-            if progress_bar is not None:
-                progress_bar.update(len(chunk))
-
-            # Memory management between chunks
-            if not memory_monitor.check_memory():
-                memory_monitor.force_gc()
-
+        return _process_chunks(calculation_data, config, progress_bar)
     finally:
         if progress_bar is not None:
             progress_bar.close()
 
-    return all_results
+
+def _prepare_result_data(valid_results: Dict[str, XRayResult]) -> List[Dict]:
+    """Prepare result data for export."""
+    data_rows = []
+    
+    for formula, result in valid_results.items():
+        base_data = {
+            "formula": result.formula,
+            "molecular_weight_g_mol": result.molecular_weight_g_mol,
+            "total_electrons": result.total_electrons,
+            "density_g_cm3": result.density_g_cm3,
+            "electron_density_per_ang3": result.electron_density_per_ang3,
+        }
+        
+        for i in range(len(result.energy_kev)):
+            row_data = base_data.copy()
+            row_data.update(_get_energy_point_data(result, i))
+            data_rows.append(row_data)
+    
+    return data_rows
+
+
+def _get_energy_point_data(result: XRayResult, index: int) -> Dict:
+    """Get data for a specific energy point."""
+    return {
+        "energy_kev": result.energy_kev[index],
+        "wavelength_angstrom": result.wavelength_angstrom[index],
+        "dispersion_delta": result.dispersion_delta[index],
+        "absorption_beta": result.absorption_beta[index],
+        "scattering_factor_f1": result.scattering_factor_f1[index],
+        "scattering_factor_f2": result.scattering_factor_f2[index],
+        "critical_angle_degrees": result.critical_angle_degrees[index],
+        "attenuation_length_cm": result.attenuation_length_cm[index],
+        "real_sld_per_ang2": result.real_sld_per_ang2[index],
+        "imaginary_sld_per_ang2": result.imaginary_sld_per_ang2[index],
+    }
+
+
+def _filter_dataframe_fields(df: pd.DataFrame, fields: Optional[List[str]]) -> pd.DataFrame:
+    """Filter DataFrame columns based on requested fields."""
+    if fields is None:
+        return df
+    
+    available_fields = set(df.columns)
+    requested_fields = set(fields)
+    missing_fields = requested_fields - available_fields
+    
+    if missing_fields:
+        warnings.warn(f"Requested fields not found: {missing_fields}")
+    
+    valid_fields = [f for f in fields if f in available_fields]
+    return df[valid_fields] if valid_fields else df
+
+
+def _save_dataframe(df: pd.DataFrame, output_path: Path, format: str) -> None:
+    """Save DataFrame to file in specified format."""
+    format_lower = format.lower()
+    
+    if format_lower == "csv":
+        df.to_csv(output_path, index=False)
+    elif format_lower == "json":
+        df.to_json(output_path, orient="records", indent=2)
+    elif format_lower == "parquet":
+        try:
+            df.to_parquet(output_path, index=False)
+        except ImportError:
+            raise ValueError("Parquet format requires pyarrow or fastparquet")
+    else:
+        raise ValueError(f"Unsupported format: {format}")
 
 
 def save_batch_results(
@@ -302,73 +381,17 @@ def save_batch_results(
         IOError: If file cannot be written
     """
     output_path = Path(output_file)
-
-    # Filter out failed calculations
-    valid_results = {formula: result for formula,
-                     result in results.items() if result is not None}
-
+    
+    valid_results = {formula: result for formula, result in results.items() 
+                     if result is not None}
+    
     if not valid_results:
         raise ValueError("No valid results to save")
-
-    # Prepare data for export
-    data_rows = []
-
-    for formula, result in valid_results.items():
-        # Get all scalar properties
-        base_data = {
-            "formula": result.formula,
-            "molecular_weight_g_mol": result.molecular_weight_g_mol,
-            "total_electrons": result.total_electrons,
-            "density_g_cm3": result.density_g_cm3,
-            "electron_density_per_ang3": result.electron_density_per_ang3,
-        }
-
-        # Add array properties for each energy point
-        for i in range(len(result.energy_kev)):
-            row_data = base_data.copy()
-            row_data.update(
-                {
-                    "energy_kev": result.energy_kev[i],
-                    "wavelength_angstrom": result.wavelength_angstrom[i],
-                    "dispersion_delta": result.dispersion_delta[i],
-                    "absorption_beta": result.absorption_beta[i],
-                    "scattering_factor_f1": result.scattering_factor_f1[i],
-                    "scattering_factor_f2": result.scattering_factor_f2[i],
-                    "critical_angle_degrees": result.critical_angle_degrees[i],
-                    "attenuation_length_cm": result.attenuation_length_cm[i],
-                    "real_sld_per_ang2": result.real_sld_per_ang2[i],
-                    "imaginary_sld_per_ang2": result.imaginary_sld_per_ang2[i],
-                }
-            )
-            data_rows.append(row_data)
-
-    # Create DataFrame
+    
+    data_rows = _prepare_result_data(valid_results)
     df = pd.DataFrame(data_rows)
-
-    # Filter fields if specified
-    if fields is not None:
-        available_fields = set(df.columns)
-        requested_fields = set(fields)
-        missing_fields = requested_fields - available_fields
-        if missing_fields:
-            warnings.warn(f"Requested fields not found: {missing_fields}")
-
-        valid_fields = [f for f in fields if f in available_fields]
-        if valid_fields:
-            df = df[valid_fields]
-
-    # Save to file based on format
-    if format.lower() == "csv":
-        df.to_csv(output_path, index=False)
-    elif format.lower() == "json":
-        df.to_json(output_path, orient="records", indent=2)
-    elif format.lower() == "parquet":
-        try:
-            df.to_parquet(output_path, index=False)
-        except ImportError:
-            raise ValueError("Parquet format requires pyarrow or fastparquet")
-    else:
-        raise ValueError(f"Unsupported format: {format}")
+    df = _filter_dataframe_fields(df, fields)
+    _save_dataframe(df, output_path, format)
 
 
 def load_batch_input(
@@ -376,7 +399,7 @@ def load_batch_input(
     formula_column: str = "formula",
     density_column: str = "density",
     energy_column: Optional[str] = None,
-) -> Tuple[List[str], List[float], Optional[np.ndarray]]:
+) -> Tuple[List[str], List[float], Optional[List[np.ndarray]]]:
     """
     Load batch input data from file.
 
@@ -388,6 +411,7 @@ def load_batch_input(
 
     Returns:
         Tuple of (formulas, densities, energies)
+        where energies is either None or a list of numpy arrays
 
     Raises:
         FileNotFoundError: If input file doesn't exist

@@ -7,16 +7,16 @@ mathematical operations, and other common tasks in X-ray analysis.
 
 import numpy as np
 from scipy import constants
-from typing import List, Tuple
+from typing import List, Tuple, NoReturn
 import re
 from functools import lru_cache
 
 
 # Physical constants
-PLANCK_CONSTANT = constants.h  # J⋅s
-SPEED_OF_LIGHT = constants.c  # m/s
-ELECTRON_CHARGE = constants.e  # C
-AVOGADRO_NUMBER = constants.N_A  # mol⁻¹
+PLANCK_CONSTANT: float = float(constants.h)  # J⋅s
+SPEED_OF_LIGHT: float = float(constants.c)  # m/s
+ELECTRON_CHARGE: float = float(constants.e)  # C
+AVOGADRO_NUMBER: float = float(constants.N_A)  # mol⁻¹
 
 # Export all public functions
 __all__ = [
@@ -430,6 +430,30 @@ class UnknownElementError(AtomicDataError):
     pass
 
 
+def _convert_atomic_number_to_int(atomic_num):
+    """Convert atomic number to integer, handling various types."""
+    try:
+        if isinstance(atomic_num, (int, float)):
+            return int(atomic_num)
+        return int(str(atomic_num))
+    except (ValueError, TypeError):
+        try:
+            return int(float(str(atomic_num)))
+        except (ValueError, TypeError) as e:
+            raise AtomicDataError(
+                f"Could not convert atomic number to int: {atomic_num}, error: {e}"
+            )
+
+
+def _handle_mendeleev_error(e, element_symbol) -> NoReturn:
+    """Handle errors from mendeleev package."""
+    error_str = str(e).lower()
+    if "not found" in error_str or "unknown" in error_str:
+        raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
+    else:
+        raise AtomicDataError(f"Could not load atomic number for element '{element_symbol}': {e}")
+
+
 @lru_cache(maxsize=128)
 def get_atomic_number(element_symbol: str) -> int:
     """
@@ -455,42 +479,16 @@ def get_atomic_number(element_symbol: str) -> int:
     """
     try:
         from mendeleev import element as get_element
-
         elem = get_element(element_symbol)
-        atomic_num = elem.atomic_number
-        # Handle Column type from mendeleev by converting to string first
-        try:
-            # Try direct conversion for normal types
-            if isinstance(atomic_num, (int, float)):
-                return int(atomic_num)
-            # For Column types and other objects, convert to string then to int
-            return int(str(atomic_num))
-        except (ValueError, TypeError):
-            # Final fallback - try float conversion first
-            try:
-                return int(float(str(atomic_num)))
-            except (ValueError, TypeError) as e:
-                raise AtomicDataError(
-                    f"Could not convert atomic number to int: "
-                    f"{atomic_num}, error: {e}"
-                )
+        return _convert_atomic_number_to_int(elem.atomic_number)
     except ImportError:
         raise AtomicDataError("mendeleev package is required for atomic data")
     except ValueError as e:
-        # mendeleev raises ValueError for unknown elements
-        if "not found" in str(e).lower() or "unknown" in str(e).lower():
-            raise UnknownElementError(
-                f"Unknown element symbol: '{element_symbol}'")
-        else:
-            raise AtomicDataError(
-                f"Could not load atomic number for element "
-                f"'{element_symbol}': {e}"
-            )
+        _handle_mendeleev_error(e, element_symbol)
+        # This line should never be reached as _handle_mendeleev_error always raises
+        raise  # pragma: no cover
     except Exception as e:
-        raise AtomicDataError(
-            f"Unexpected error loading atomic number for element "
-            f"'{element_symbol}': {e}"
-        )
+        raise AtomicDataError(f"Unexpected error loading atomic number for element '{element_symbol}': {e}")
 
 
 @lru_cache(maxsize=128)

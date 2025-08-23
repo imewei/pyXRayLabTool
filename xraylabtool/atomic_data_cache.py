@@ -7,6 +7,7 @@ to eliminate expensive database queries to the Mendeleev library during runtime.
 
 from typing import Dict, Tuple
 from functools import lru_cache
+from .utils import UnknownElementError
 
 # Pre-populated atomic data for the 50 most common elements in materials science
 # This eliminates the need for expensive Mendeleev database queries
@@ -137,7 +138,7 @@ def get_atomic_data_fast(element: str) -> Dict[str, float]:
 
     # Fall back to Mendeleev (slowest)
     try:
-        from .utils import get_atomic_number, get_atomic_weight, UnknownElementError
+        from .utils import get_atomic_number, get_atomic_weight
 
         atomic_data = {
             "atomic_number": get_atomic_number(element),
