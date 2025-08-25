@@ -11,7 +11,6 @@ from typing import List, Tuple, NoReturn, Dict, Any, Iterator, Union
 import re
 from functools import lru_cache
 
-
 # Physical constants
 PLANCK_CONSTANT: float = float(constants.h)  # J⋅s
 SPEED_OF_LIGHT: float = float(constants.c)  # m/s

@@ -202,7 +202,7 @@ def get_cache_stats() -> Dict[str, int]:
     return {
         "preloaded_elements": len(_ATOMIC_DATA_PRELOADED),
         "runtime_cached_elements": len(_RUNTIME_CACHE),
-        "total_cached_elements": (len(_ATOMIC_DATA_PRELOADED) + len(_RUNTIME_CACHE)),
+        "total_cached_elements": len(_ATOMIC_DATA_PRELOADED) + len(_RUNTIME_CACHE),
     }
 
 
