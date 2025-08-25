@@ -51,6 +51,41 @@ def validate_setup_py():
         return False
 
 
+def _get_toml_loader():
+    """Get appropriate TOML loader."""
+    try:
+        import tomllib
+
+        return tomllib
+    except ImportError:
+        try:
+            import tomli as tomllib  # type: ignore
+
+            return tomllib
+        except ImportError:
+            return None
+
+
+def _validate_toml_sections(data):
+    """Validate required TOML sections."""
+    required_sections = ["build-system", "project"]
+    for section in required_sections:
+        if section not in data:
+            print(f"❌ Missing section in pyproject.toml: {section}")
+            return False
+    return True
+
+
+def _validate_project_fields(project_data):
+    """Validate required project fields."""
+    required_fields = ["name", "version", "description", "dependencies"]
+    for field in required_fields:
+        if field not in project_data:
+            print(f"❌ Missing field in [project]: {field}")
+            return False
+    return True
+
+
 def validate_pyproject_toml():
     """Validate pyproject.toml file."""
     print("🔍 Validating pyproject.toml...")
@@ -60,34 +95,20 @@ def validate_pyproject_toml():
         print("❌ pyproject.toml not found")
         return False
 
-    try:
-        import tomllib
-    except ImportError:
-        # Python < 3.11
-        try:
-            import tomli as tomllib  # type: ignore
-        except ImportError:
-            print("⚠️  Cannot validate TOML (tomllib/tomli not available)")
-            return True
+    tomllib = _get_toml_loader()
+    if not tomllib:
+        print("⚠️  Cannot validate TOML (tomllib/tomli not available)")
+        return True
 
     try:
         with open(pyproject_path, "rb") as f:
             data = tomllib.load(f)
 
-        # Check required sections
-        required_sections = ["build-system", "project"]
-        for section in required_sections:
-            if section not in data:
-                print(f"❌ Missing section in pyproject.toml: {section}")
-                return False
+        if not _validate_toml_sections(data):
+            return False
 
-        # Check project metadata
-        project = data["project"]
-        required_fields = ["name", "version", "description", "dependencies"]
-        for field in required_fields:
-            if field not in project:
-                print(f"❌ Missing field in [project]: {field}")
-                return False
+        if not _validate_project_fields(data["project"]):
+            return False
 
         print("✅ pyproject.toml validation passed")
         return True
@@ -187,13 +208,8 @@ def validate_package_structure():
     return all_exist
 
 
-def validate_version_consistency():
-    """Check version consistency across files."""
-    print("🔍 Checking version consistency...")
-
-    versions = {}
-
-    # Check setup.py
+def _extract_setup_version():
+    """Extract version from setup.py."""
     try:
         setup_path = Path("setup.py")
         if setup_path.exists():
@@ -201,28 +217,29 @@ def validate_version_consistency():
                 content = f.read()
             match = re.search(r'VERSION\s*=\s*["\']([^"\']+)["\']', content)
             if match:
-                versions["setup.py"] = match.group(1)
+                return match.group(1)
     except Exception as e:
         print(f"⚠️  Could not extract version from setup.py: {e}")
+    return None
 
-    # Check pyproject.toml
+
+def _extract_pyproject_version():
+    """Extract version from pyproject.toml."""
+    tomllib = _get_toml_loader()
+    if not tomllib:
+        return None
+
     try:
-        import tomllib
-    except ImportError:
-        try:
-            import tomli as tomllib  # type: ignore
-        except ImportError:
-            tomllib = None
+        with open("pyproject.toml", "rb") as f:
+            data = tomllib.load(f)
+        return data["project"]["version"]
+    except Exception as e:
+        print(f"⚠️  Could not extract version from pyproject.toml: {e}")
+        return None
 
-    if tomllib:
-        try:
-            with open("pyproject.toml", "rb") as f:
-                data = tomllib.load(f)
-            versions["pyproject.toml"] = data["project"]["version"]
-        except Exception as e:
-            print(f"⚠️  Could not extract version from pyproject.toml: {e}")
 
-    # Check versions match
+def _check_version_consistency(versions):
+    """Check if all versions match."""
     if len(set(versions.values())) > 1:
         print(f"❌ Version mismatch found: {versions}")
         return False
@@ -233,6 +250,23 @@ def validate_version_consistency():
     else:
         print("⚠️  Could not validate version consistency")
         return True
+
+
+def validate_version_consistency():
+    """Check version consistency across files."""
+    print("🔍 Checking version consistency...")
+
+    versions = {}
+
+    setup_version = _extract_setup_version()
+    if setup_version:
+        versions["setup.py"] = setup_version
+
+    pyproject_version = _extract_pyproject_version()
+    if pyproject_version:
+        versions["pyproject.toml"] = pyproject_version
+
+    return _check_version_consistency(versions)
 
 
 def main():

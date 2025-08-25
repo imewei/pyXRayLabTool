@@ -568,53 +568,90 @@ def _get_field_labels() -> Dict[str, str]:
     }
 
 
+def _format_scalar_fields_section(
+    result: XRayResult, fields_to_show: List[str], precision: int
+) -> List[str]:
+    """Format scalar fields section."""
+    if not fields_to_show:
+        return []
+
+    output_lines = ["Material Properties:"]
+    for field in fields_to_show:
+        value = getattr(result, field)
+        line = _format_scalar_field(field, value, precision)
+        if line:
+            output_lines.append(line)
+    output_lines.append("")
+    return output_lines
+
+
+def _format_single_energy_section(
+    result: XRayResult, fields_to_show: List[str], precision: int
+) -> List[str]:
+    """Format single energy point array fields."""
+    if not fields_to_show:
+        return []
+
+    output_lines = ["X-ray Properties:"]
+    for field in fields_to_show:
+        value = getattr(result, field)[0]
+        line = _format_array_field_single(field, value, precision)
+        if line:
+            output_lines.append(line)
+    return output_lines
+
+
+def _format_multiple_energy_section(
+    result: XRayResult, fields_to_show: List[str], precision: int
+) -> List[str]:
+    """Format multiple energy points as tabular data."""
+    if not fields_to_show:
+        return []
+
+    output_lines = ["X-ray Properties (tabular):"]
+    field_labels = _get_field_labels()
+    df_data = {}
+
+    for field in fields_to_show:
+        label = field_labels.get(field, field)
+        df_data[label] = getattr(result, field)
+
+    if df_data:
+        df = pd.DataFrame(df_data)
+        format_str = f"{{:.{precision}g}}"
+        pd.set_option("display.float_format", format_str.format)
+        table_str = df.to_string(index=False)
+        output_lines.append(table_str)
+
+    return output_lines
+
+
 def _format_filtered_table(
     result: XRayResult, fields: List[str], precision: int
 ) -> str:
     """Format table with only specified fields."""
-    output_lines = []
-
     # Separate scalar and array fields
     scalar_fields, array_fields = _get_default_fields()
     scalar_fields_to_show = [f for f in fields if f in scalar_fields]
     array_fields_to_show = [f for f in fields if f in array_fields]
 
-    # Show scalar fields if requested
-    if scalar_fields_to_show:
-        output_lines.append("Material Properties:")
-        for field in scalar_fields_to_show:
-            value = getattr(result, field)
-            line = _format_scalar_field(field, value, precision)
-            if line:
-                output_lines.append(line)
-        output_lines.append("")
+    output_lines = []
 
-    # Show array fields if requested
+    # Add scalar fields section
+    output_lines.extend(
+        _format_scalar_fields_section(result, scalar_fields_to_show, precision)
+    )
+
+    # Add array fields section
     if array_fields_to_show:
         if len(result.energy_kev) == 1:
-            # Single energy point
-            output_lines.append("X-ray Properties:")
-            for field in array_fields_to_show:
-                value = getattr(result, field)[0]
-                line = _format_array_field_single(field, value, precision)
-                if line:
-                    output_lines.append(line)
+            output_lines.extend(
+                _format_single_energy_section(result, array_fields_to_show, precision)
+            )
         else:
-            # Multiple energy points
-            output_lines.append("X-ray Properties (tabular):")
-
-            field_labels = _get_field_labels()
-            df_data = {}
-
-            for field in array_fields_to_show:
-                label = field_labels.get(field, field)
-                df_data[label] = getattr(result, field)
-
-            if df_data:
-                df = pd.DataFrame(df_data)
-                pd.set_option("display.float_format", f"{{:.{precision}g}}".format)
-                table_str = df.to_string(index=False)
-                output_lines.append(table_str)
+            output_lines.extend(
+                _format_multiple_energy_section(result, array_fields_to_show, precision)
+            )
 
     return "\n".join(output_lines)
 
