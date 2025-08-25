@@ -162,7 +162,7 @@ All numerical comparisons use `numpy.isclose()` with appropriate tolerances:
 
 The test suite is designed for cross-platform CI using GitHub Actions:
 - **Platforms**: Linux (Ubuntu), macOS, Windows
-- **Python versions**: 3.8, 3.9, 3.10, 3.11, 3.12
+- **Python versions**: 3.12, 3.13
 - **Coverage reporting**: Codecov integration
 - **Benchmark comparison**: PR-based performance regression detection
 

@@ -6,6 +6,8 @@ XRayLabTool provides a comprehensive command-line interface for quick calculatio
 Installation & Verification
 ----------------------------
 
+**Requirements:** Python ≥ 3.12
+
 Install XRayLabTool with CLI support:
 
 .. code-block:: bash
@@ -17,7 +19,7 @@ Verify CLI installation:
 .. code-block:: bash
 
    xraylabtool --version
-   # Output: XRayLabTool 0.1.5
+   # Output: XRayLabTool 0.1.8
 
 Global Options
 --------------

@@ -78,6 +78,14 @@ Quick Start
    xraylabtool batch materials.csv -o results.csv
 
 
+Requirements
+------------
+
+- **Python** ≥ 3.12
+- **NumPy** ≥ 1.20.0
+- **SciPy** ≥ 1.7.0
+- **Pandas** ≥ 1.3.0
+
 Installation
 ------------
 
