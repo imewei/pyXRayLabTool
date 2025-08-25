@@ -13,7 +13,7 @@ import os
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from xraylabtool.utils import smooth_data
+from xraylabtool.utils import smooth_data  # noqa: E402
 
 
 class TestSmoothDataUpdates:

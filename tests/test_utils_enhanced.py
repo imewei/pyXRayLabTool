@@ -14,7 +14,7 @@ import pytest
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from xraylabtool.utils import (
+from xraylabtool.utils import (  # noqa: E402
     wavelength_to_energy,
     energy_to_wavelength,
     bragg_angle,
@@ -24,7 +24,7 @@ from xraylabtool.utils import (
     smooth_data,
     normalize_intensity,
 )
-from xraylabtool import (
+from xraylabtool import (  # noqa: E402
     clear_scattering_factor_cache,
 )
 

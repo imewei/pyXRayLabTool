@@ -17,7 +17,7 @@ def run_command(cmd, description, optional=False):
     print(f"\n{'=' * 60}")
     print(f"Running: {description}")
     print(f"Command: {' '.join(cmd)}")
-    print('=' * 60)
+    print("=" * 60)
 
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -180,7 +180,7 @@ def main():
     # Summary
     print(f"\n{'=' * 60}")
     print("TEST SUMMARY")
-    print('=' * 60)
+    print("=" * 60)
     print(f"Total test suites: {total_count}")
     print(f"Successful: {success_count}")
     print(f"Failed: {total_count - success_count}")

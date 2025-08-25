@@ -5,27 +5,28 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
+
+sys.path.insert(0, os.path.abspath("../../"))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'XRayLabTool'
-copyright = '2025, XRayLabTool Developers'
-author = 'XRayLabTool Developers'
-release = '0.1.8'
-version = '0.1.8'
+project = "XRayLabTool"
+copyright = "2025, XRayLabTool Developers"
+author = "XRayLabTool Developers"
+release = "0.1.8"
+version = "0.1.8"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.napoleon',  # Support for NumPy and Google style docstrings
-    'sphinx.ext.autosummary',
-    'sphinx.ext.mathjax',  # For math equations
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",  # Support for NumPy and Google style docstrings
+    "sphinx.ext.autosummary",
+    "sphinx.ext.mathjax",  # For math equations
 ]
 
 # Napoleon settings for numpydoc style
@@ -42,35 +43,35 @@ napoleon_use_param = True
 napoleon_use_rtype = True
 
 # Autodoc settings
-autodoc_typehints = 'description'
-autodoc_member_order = 'bysource'
-autoclass_content = 'both'
+autodoc_typehints = "description"
+autodoc_member_order = "bysource"
+autoclass_content = "both"
 autosummary_generate = True
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
 
 # RTD theme options
 html_theme_options = {
-    'canonical_url': '',
-    'analytics_id': '',
-    'logo_only': False,
-    'prev_next_buttons_location': 'bottom',
-    'style_external_links': False,
-    'vcs_pageview_mode': '',
-    'style_nav_header_background': 'white',
+    "canonical_url": "",
+    "analytics_id": "",
+    "logo_only": False,
+    "prev_next_buttons_location": "bottom",
+    "style_external_links": False,
+    "vcs_pageview_mode": "",
+    "style_nav_header_background": "white",
     # Toc options
-    'collapse_navigation': True,
-    'sticky_navigation': True,
-    'navigation_depth': 4,
-    'includehidden': True,
-    'titles_only': False
+    "collapse_navigation": True,
+    "sticky_navigation": True,
+    "navigation_depth": 4,
+    "includehidden": True,
+    "titles_only": False,
 }
 
 html_context = {
@@ -85,9 +86,9 @@ html_context = {
 # https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#configuration
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
-    'pandas': ('https://pandas.pydata.org/docs/', None),
-    'matplotlib': ('https://matplotlib.org/stable/', None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
 }

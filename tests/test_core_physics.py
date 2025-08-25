@@ -14,7 +14,7 @@ import pytest
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from xraylabtool.core import (
+from xraylabtool.core import (  # noqa: E402
     calculate_scattering_factors,
     calculate_derived_quantities,
     create_scattering_factor_interpolators,
@@ -23,7 +23,7 @@ from xraylabtool.core import (
     clear_scattering_factor_cache,
     XRayResult,
 )
-from xraylabtool.constants import (
+from xraylabtool.constants import (  # noqa: E402
     ENERGY_TO_WAVELENGTH_FACTOR,
 )
 
@@ -374,7 +374,9 @@ class TestPhysicsConsistency:
             wavelength_angstrom = result.Wavelength[0]
 
             # Convert back to energy
-            calculated_energy = ENERGY_TO_WAVELENGTH_FACTOR / (wavelength_angstrom * 1e-10)  # type: ignore
+            calculated_energy = ENERGY_TO_WAVELENGTH_FACTOR / (
+                wavelength_angstrom * 1e-10
+            )  # type: ignore
 
             assert abs(calculated_energy - energy_kev) < 1e-10
 

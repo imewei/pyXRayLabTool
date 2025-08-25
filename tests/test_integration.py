@@ -14,7 +14,10 @@ import os
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from xraylabtool import calculate_xray_properties, calculate_single_material_properties
+from xraylabtool import (
+    calculate_xray_properties,
+    calculate_single_material_properties,
+)  # noqa: E402
 
 # Test constants (matching Julia test constants)
 DEFAULT_TOL = 1e-6
@@ -254,7 +257,7 @@ class TestSubRefracErrorHandling:
 
     def test_invalid_chemical_formula(self):
         """Test invalid chemical formula."""
-        from xraylabtool.utils import UnknownElementError
+        from xraylabtool.utils import UnknownElementError  # noqa: E402
 
         with pytest.raises(UnknownElementError, match=r".*Unknown element.*"):
             calculate_single_material_properties("InvalidElement123", [8.0], 2.2)

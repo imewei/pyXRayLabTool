@@ -1,20 +1,15 @@
 [flake8]
 max-line-length = 88
-# E203: whitespace before ':' - conflicts with Black formatting
-# W503: line break before binary operator - conflicts with Black
-ignore = E203,W503
+extend-ignore = E203,W503
 exclude = 
     .git,
     __pycache__,
-    build,
-    dist,
-    *.egg-info,
     .venv,
     venv,
-    .env,
-    env,
-    .tox,
-    .mypy_cache,
-    .pytest_cache,
-    docs/build
-max-complexity = 10
+    .eggs,
+    *.egg,
+    build,
+    dist,
+    .tox
+per-file-ignores =
+    tests/*:E501,E402

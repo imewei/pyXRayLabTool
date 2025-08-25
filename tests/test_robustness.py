@@ -13,8 +13,8 @@ import os
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from xraylabtool.core import calculate_single_material_properties
-from xraylabtool.utils import get_atomic_number, get_atomic_weight
+from xraylabtool.core import calculate_single_material_properties  # noqa: E402
+from xraylabtool.utils import get_atomic_number, get_atomic_weight  # noqa: E402
 
 
 class TestComplexNumberHandling:
@@ -84,7 +84,7 @@ class TestAtomicDataRobustness:
 
     def test_atomic_data_error_handling(self):
         """Test error handling for invalid element symbols."""
-        from xraylabtool.utils import UnknownElementError, AtomicDataError
+        from xraylabtool.utils import UnknownElementError, AtomicDataError  # noqa: E402
 
         # Test with invalid element symbols
         invalid_elements = ["Xx", "InvalidElement", "ABC"]

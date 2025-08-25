@@ -108,7 +108,7 @@ class TestFormulaParsingComplex:
     """Test complex formulas and validation."""
 
     def test_complex_formulas_and_validation(self):
-        """Test common chemical compounds (Julia: Complex formulas and validation test set)."""
+        """Test common chemical compounds (Julia: Complex formulas)."""
         # Test common chemical compounds
         symbols, counts = parse_formula("SiO2")
         assert symbols == ["Si", "O"]
