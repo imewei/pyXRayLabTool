@@ -108,14 +108,8 @@ jobs:
         pip install -e .[test]
 
     - name: Run tests with pytest
-      run: |
-        pytest tests/ -v \
-          --cov=xraylabtool \
-          --cov-report=xml \
-          --cov-report=html \
-          --cov-report=term-missing \
-          --junit-xml=pytest-results.xml \
-          --benchmark-skip
+      shell: bash
+      run: pytest tests/ -v --cov=xraylabtool --cov-report=xml --cov-report=html --cov-report=term-missing --junit-xml=pytest-results.xml --benchmark-skip
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -227,11 +221,13 @@ jobs:
         pip install dist/*.whl
 
     - name: Test CLI functionality
+      shell: bash
       run: |
         xraylabtool --version
         xraylabtool calc Si -e 10.0 -d 2.33 --fields energy_kev,wavelength_angstrom
 
     - name: Test package import
+      shell: bash
       run: |
         python -c "
         import xraylabtool
