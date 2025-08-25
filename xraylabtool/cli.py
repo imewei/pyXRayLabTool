@@ -516,6 +516,93 @@ def _format_multiple_energies(result: XRayResult, precision: int) -> List[str]:
     return output_lines
 
 
+def _format_filtered_table(result: XRayResult, fields: List[str], precision: int) -> str:
+    """Format table with only specified fields."""
+    output_lines = []
+    
+    # Separate scalar and array fields
+    scalar_fields, array_fields = _get_default_fields()
+    
+    # Filter fields to only those that exist
+    scalar_fields_to_show = [f for f in fields if f in scalar_fields]
+    array_fields_to_show = [f for f in fields if f in array_fields]
+    
+    # Show scalar fields if requested
+    if scalar_fields_to_show:
+        output_lines.append("Material Properties:")
+        for field in scalar_fields_to_show:
+            value = getattr(result, field)
+            if field == "formula":
+                output_lines.append(f"  Formula: {value}")
+            elif field == "molecular_weight_g_mol":
+                output_lines.append(f"  Molecular Weight: {value:.{precision}f} g/mol")
+            elif field == "total_electrons":
+                output_lines.append(f"  Total Electrons: {value:.{precision}f}")
+            elif field == "density_g_cm3":
+                output_lines.append(f"  Density: {value:.{precision}f} g/cm³")
+            elif field == "electron_density_per_ang3":
+                output_lines.append(f"  Electron Density: {value:.{precision}e} electrons/Å³")
+        output_lines.append("")
+    
+    # Show array fields if requested
+    if array_fields_to_show:
+        if len(result.energy_kev) == 1:
+            # Single energy point
+            output_lines.append("X-ray Properties:")
+            for field in array_fields_to_show:
+                value = getattr(result, field)[0]
+                if field == "energy_kev":
+                    output_lines.append(f"  Energy: {value:.{precision}f} keV")
+                elif field == "wavelength_angstrom":
+                    output_lines.append(f"  Wavelength: {value:.{precision}f} Å")
+                elif field == "dispersion_delta":
+                    output_lines.append(f"  Dispersion (δ): {value:.{precision}e}")
+                elif field == "absorption_beta":
+                    output_lines.append(f"  Absorption (β): {value:.{precision}e}")
+                elif field == "scattering_factor_f1":
+                    output_lines.append(f"  Scattering f1: {value:.{precision}f}")
+                elif field == "scattering_factor_f2":
+                    output_lines.append(f"  Scattering f2: {value:.{precision}f}")
+                elif field == "critical_angle_degrees":
+                    output_lines.append(f"  Critical Angle: {value:.{precision}f}°")
+                elif field == "attenuation_length_cm":
+                    output_lines.append(f"  Attenuation Length: {value:.{precision}f} cm")
+                elif field == "real_sld_per_ang2":
+                    output_lines.append(f"  Real SLD: {value:.{precision}e} Å⁻²")
+                elif field == "imaginary_sld_per_ang2":
+                    output_lines.append(f"  Imaginary SLD: {value:.{precision}e} Å⁻²")
+        else:
+            # Multiple energy points
+            output_lines.append("X-ray Properties (tabular):")
+            
+            # Build DataFrame with only requested fields
+            df_data = {}
+            field_labels = {
+                "energy_kev": "Energy (keV)",
+                "wavelength_angstrom": "λ (Å)",
+                "dispersion_delta": "δ",
+                "absorption_beta": "β",
+                "scattering_factor_f1": "f1",
+                "scattering_factor_f2": "f2",
+                "critical_angle_degrees": "θc (°)",
+                "attenuation_length_cm": "μ (cm)",
+                "real_sld_per_ang2": "Real SLD",
+                "imaginary_sld_per_ang2": "Imag SLD",
+            }
+            
+            for field in array_fields_to_show:
+                label = field_labels.get(field, field)
+                df_data[label] = getattr(result, field)
+            
+            if df_data:
+                df = pd.DataFrame(df_data)
+                pd.set_option("display.float_format", f"{{:.{precision}g}}".format)
+                table_str = df.to_string(index=False)
+                output_lines.append(table_str)
+    
+    return "\n".join(output_lines)
+
+
 def format_xray_result(
     result: XRayResult,
     format_type: str,
@@ -532,6 +619,11 @@ def format_xray_result(
     elif format_type == "csv":
         return _format_as_csv(result, fields, precision)
     else:  # table format
+        # For table format with custom fields, use a filtered output
+        if fields != _get_default_fields()[0] + _get_default_fields()[1]:
+            return _format_filtered_table(result, fields, precision)
+        
+        # Default table format (all fields)
         output_lines = _format_material_properties(result, precision)
 
         if len(result.energy_kev) == 1:

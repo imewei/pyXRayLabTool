@@ -94,7 +94,7 @@ xraylabtool calc FORMULA -e ENERGY -d DENSITY [OPTIONS]
 |-----------|-------------|---------|---------|
 | `-o, --output OUTPUT` | Output filename | Console | `results.csv`, `data.json` |
 | `--format FORMAT` | Output format | `table` | `table`, `csv`, `json` |
-| `--fields FIELDS` | Comma-separated field list | All fields | `formula,energy_kev,dispersion_delta` |
+| `--fields FIELDS` | Comma-separated field list (works for all formats) | All fields | `formula,energy_kev,dispersion_delta` |
 | `--precision PRECISION` | Decimal places | `6` | `3`, `8` |
 
 ### Energy Input Formats
@@ -179,6 +179,12 @@ xraylabtool calc Si -e 10.0 -d 2.33 \
   --format json \
   --fields formula,energy_kev,dispersion_delta,critical_angle_degrees \
   -o results.json
+```
+
+#### Table Output with Selected Fields
+```bash
+xraylabtool calc Si -e 10.0 -d 2.33 \
+  --fields energy_kev,wavelength_angstrom,dispersion_delta
 ```
 
 #### High Precision Output
@@ -559,11 +565,14 @@ Shows practical usage examples for all commands.
 ## Output Formats
 
 ### Table Format (Default)
-Human-readable console output with aligned columns and clear headers.
+Human-readable console output with aligned columns and clear headers. Supports field filtering with `--fields` parameter.
 
 **Usage:** Default format or `--format table`
 ```bash
 xraylabtool calc SiO2 -e 10.0 -d 2.2
+
+# With specific fields
+xraylabtool calc SiO2 -e 10.0 -d 2.2 --fields energy_kev,dispersion_delta
 ```
 
 ### CSV Format
