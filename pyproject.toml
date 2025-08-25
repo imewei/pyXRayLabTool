@@ -84,6 +84,7 @@ dev = [
     # Type stubs
     "pandas-stubs>=2.0.0",
     "types-tqdm>=4.64.0",
+    "types-psutil>=5.9.0",
     
     # Pre-commit hooks
     "pre-commit>=3.0.0",
@@ -113,6 +114,7 @@ lint = [
     "ruff>=0.1.0",
     "pandas-stubs>=2.0.0",
     "types-tqdm>=4.64.0",
+    "types-psutil>=5.9.0",
 ]
 
 # Performance profiling and optimization
@@ -266,6 +268,11 @@ disallow_incomplete_defs = false
 [[tool.mypy.overrides]]
 # Pandas has stubs available
 module = "pandas.*"
+ignore_missing_imports = false
+
+[[tool.mypy.overrides]]
+# Psutil has stubs available
+module = "psutil.*"
 ignore_missing_imports = false
 
 [tool.ruff]
