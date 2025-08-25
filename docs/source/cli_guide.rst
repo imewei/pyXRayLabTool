@@ -162,7 +162,7 @@ Calculate X-ray optical properties for a single material composition.
    xraylabtool calc SiO2 -e 8.0,10.0,12.0 -d 2.2 \
      --fields formula,energy_kev,dispersion_delta,critical_angle_degrees \
      -o results.csv
-   
+
    # Table output with selected fields
    xraylabtool calc Si -e 10.0 -d 2.33 \
      --fields energy_kev,wavelength_angstrom,dispersion_delta
@@ -350,13 +350,13 @@ XRayLabTool CLI supports three output formats:
 
 **CSV Format:**
    Comma-separated values suitable for spreadsheets and data analysis.
-   
+
    - Use ``--format csv`` or output file with ``.csv`` extension
    - Headers in first row, one row per energy point
 
 **JSON Format:**
    Structured data format ideal for programmatic processing.
-   
+
    - Use ``--format json`` or output file with ``.json`` extension
    - Nested structure with arrays for energy-dependent properties
 

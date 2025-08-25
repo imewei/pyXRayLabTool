@@ -2,13 +2,14 @@
 Tests for atomic data lookup functions with LRU caching.
 """
 
-import pytest
 import numpy as np
+import pytest
+
 from xraylabtool.utils import (
+    UnknownElementError,
+    get_atomic_data,
     get_atomic_number,
     get_atomic_weight,
-    get_atomic_data,
-    UnknownElementError,
 )
 
 

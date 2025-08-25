@@ -5,18 +5,19 @@ This module provides optimized batch processing capabilities with memory managem
 parallel execution, and progress tracking for large-scale X-ray property calculations.
 """
 
-import numpy as np
-import pandas as pd
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Iterator, Any
 import concurrent.futures
-from dataclasses import dataclass
 import gc
-import psutil
 import os
 import warnings
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-from .core import calculate_single_material_properties, XRayResult
+import numpy as np
+import pandas as pd
+import psutil
+
+from .core import XRayResult, calculate_single_material_properties
 
 
 @dataclass

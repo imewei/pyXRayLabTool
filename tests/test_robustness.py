@@ -5,10 +5,11 @@ These tests verify that the improvements made to handle edge cases,
 type conversions, and error conditions work correctly.
 """
 
-import pytest
-import numpy as np
-import sys
 import os
+import sys
+
+import numpy as np
+import pytest
 
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -84,7 +85,7 @@ class TestAtomicDataRobustness:
 
     def test_atomic_data_error_handling(self):
         """Test error handling for invalid element symbols."""
-        from xraylabtool.utils import UnknownElementError, AtomicDataError  # noqa: E402
+        from xraylabtool.utils import AtomicDataError, UnknownElementError  # noqa: E402
 
         # Test with invalid element symbols
         invalid_elements = ["Xx", "InvalidElement", "ABC"]

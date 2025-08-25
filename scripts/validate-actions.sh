@@ -24,7 +24,7 @@ check_deprecated_action() {
     local pattern="$2"
     local action_name="$3"
     local current_version="$4"
-    
+
     if grep -q "$pattern" "$file"; then
         echo -e "  ${RED}❌ DEPRECATED:${NC} $action_name found in $(basename "$file")"
         echo -e "     ${YELLOW}Should use:${NC} $current_version"
@@ -36,10 +36,10 @@ check_deprecated_action() {
 
 # Function to check for current actions
 check_current_action() {
-    local file="$1" 
+    local file="$1"
     local pattern="$2"
     local action_name="$3"
-    
+
     if grep -q "$pattern" "$file"; then
         echo -e "  ${GREEN}✅ CURRENT:${NC} $action_name found in $(basename "$file")"
         return 0
@@ -70,20 +70,20 @@ echo ""
 # Check each workflow file
 for file in $WORKFLOW_FILES; do
     echo -e "🔍 Checking $(basename "$file")..."
-    
+
     # Check for deprecated artifact actions (v3)
     check_deprecated_action "$file" "actions/upload-artifact@v3" "upload-artifact@v3" "upload-artifact@v4"
     check_deprecated_action "$file" "actions/download-artifact@v3" "download-artifact@v3" "download-artifact@v4"
-    
+
     # Check for old setup-python (v4)
     check_deprecated_action "$file" "actions/setup-python@v4" "setup-python@v4" "setup-python@v5"
-    
+
     # Check for old cache action (v3)
     check_deprecated_action "$file" "actions/cache@v3" "cache@v3" "cache@v4"
-    
+
     # Check for old codecov action (v3)
     check_deprecated_action "$file" "codecov/codecov-action@v3" "codecov-action@v3" "codecov-action@v4"
-    
+
     # Check for current versions
     check_current_action "$file" "actions/upload-artifact@v4" "upload-artifact@v4"
     check_current_action "$file" "actions/download-artifact@v4" "download-artifact@v4"
@@ -91,7 +91,7 @@ for file in $WORKFLOW_FILES; do
     check_current_action "$file" "actions/cache@v4" "cache@v4"
     check_current_action "$file" "codecov/codecov-action@v4" "codecov-action@v4"
     check_current_action "$file" "actions/checkout@v4" "checkout@v4"
-    
+
     echo ""
 done
 
@@ -106,12 +106,12 @@ if [ $ISSUES_FOUND -eq 0 ]; then
     echo ""
     echo "Current versions in use:"
     echo "  • actions/checkout@v4"
-    echo "  • actions/setup-python@v5"  
+    echo "  • actions/setup-python@v5"
     echo "  • actions/cache@v4"
     echo "  • actions/upload-artifact@v4"
     echo "  • actions/download-artifact@v4"
     echo "  • codecov/codecov-action@v4"
-    
+
     exit 0
 else
     echo -e "${RED}❌ Found $ISSUES_FOUND deprecated action(s)${NC}"
@@ -126,6 +126,6 @@ else
     echo "  • codecov/codecov-action@v3 → @v4"
     echo ""
     echo "🔧 Please update the workflows before pushing to avoid failures."
-    
+
     exit 1
 fi

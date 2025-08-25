@@ -14,17 +14,15 @@ import pytest
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from xraylabtool.constants import ENERGY_TO_WAVELENGTH_FACTOR  # noqa: E402
 from xraylabtool.core import (  # noqa: E402
-    calculate_scattering_factors,
-    calculate_derived_quantities,
-    create_scattering_factor_interpolators,
-    calculate_single_material_properties,
-    calculate_multiple_xray_properties,
-    clear_scattering_factor_cache,
     XRayResult,
-)
-from xraylabtool.constants import (  # noqa: E402
-    ENERGY_TO_WAVELENGTH_FACTOR,
+    calculate_derived_quantities,
+    calculate_multiple_xray_properties,
+    calculate_scattering_factors,
+    calculate_single_material_properties,
+    clear_scattering_factor_cache,
+    create_scattering_factor_interpolators,
 )
 
 

@@ -5,14 +5,15 @@ This module contains the main classes and functions for X-ray analysis,
 including atomic scattering factors and crystallographic calculations.
 """
 
+import concurrent.futures
+from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from typing import Dict, List, Tuple, Union, Callable, Optional, Any
 from scipy.interpolate import PchipInterpolator
-from dataclasses import dataclass
-import concurrent.futures
-from functools import lru_cache
 
 # =====================================================================================
 # DATA STRUCTURES
@@ -985,8 +986,8 @@ def _calculate_single_material_xray_properties(
         This is an internal function. Use calculate_single_material_properties()
         for the public API that returns XRayResult objects.
     """
-    from .utils import parse_formula
     from .constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM
+    from .utils import parse_formula
 
     energy_kev = _validate_single_material_inputs(formula_str, energy_kev, mass_density)
 

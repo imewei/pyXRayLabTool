@@ -6,18 +6,19 @@ ensuring identical behavior and validation between the Julia and Python implemen
 Uses numpy.isclose assertions for numerical comparisons as requested.
 """
 
-import pytest
-import numpy as np
-import sys
 import os
+import sys
+
+import numpy as np
+import pytest
 
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from xraylabtool import (
-    calculate_xray_properties,
+from xraylabtool import (  # noqa: E402
     calculate_single_material_properties,
-)  # noqa: E402
+    calculate_xray_properties,
+)
 
 # Test constants (matching Julia test constants)
 DEFAULT_TOL = 1e-6

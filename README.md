@@ -264,7 +264,7 @@ print(f"Attenuation: {result.attenuation_length_cm[0]:.1f} cm")          # Atten
 ```python
 # Legacy field names still work but emit deprecation warnings
 print(f"Formula: {result.Formula}")                    # ⚠️ DeprecationWarning
-print(f"Molecular weight: {result.MW:.2f} g/mol")     # ⚠️ DeprecationWarning  
+print(f"Molecular weight: {result.MW:.2f} g/mol")     # ⚠️ DeprecationWarning
 print(f"Dispersion: {result.Dispersion[0]:.2e}")       # ⚠️ DeprecationWarning
 print(f"Critical angle: {result.Critical_Angle[0]:.3f}°")  # ⚠️ DeprecationWarning
 ```
@@ -318,9 +318,9 @@ result = xlt.calculate_single_material_properties("Si", energies, 2.33)
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
 # Plot using new descriptive field names
-ax1.loglog(result.energy_kev, result.dispersion_delta, 'b-', 
+ax1.loglog(result.energy_kev, result.dispersion_delta, 'b-',
            label='δ (dispersion)', linewidth=2)
-ax1.loglog(result.energy_kev, result.absorption_beta, 'r-', 
+ax1.loglog(result.energy_kev, result.absorption_beta, 'r-',
            label='β (absorption)', linewidth=2)
 ax1.set_xlabel('Energy (keV)')
 ax1.set_ylabel('Optical constants')
@@ -388,7 +388,7 @@ import warnings
 
 # Suppress only XRayLabTool deprecation warnings
 with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning, 
+    warnings.filterwarnings("ignore", category=DeprecationWarning,
                           message=".*deprecated.*")
     # Your legacy code here
     print(f"Result: {result.Critical_Angle[0]}")
@@ -397,7 +397,7 @@ with warnings.catch_warnings():
 ### Migration Strategy
 
 1. **Identify Usage**: Search your codebase for the legacy field names
-2. **Update Gradually**: Replace legacy names with new ones section by section  
+2. **Update Gradually**: Replace legacy names with new ones section by section
 3. **Test**: Ensure your code works with new field names
 4. **Clean Up**: Remove any deprecation warning suppressions
 
@@ -489,7 +489,7 @@ print(get_cache_stats())
 # Single element materials use optimized direct computation
 result_single = xlt.calculate_single_material_properties("Si", energies, 2.33)
 
-# Multi-element materials use vectorized matrix operations  
+# Multi-element materials use vectorized matrix operations
 result_multi = xlt.calculate_single_material_properties("SiO2", energies, 2.2)
 ```
 
@@ -504,7 +504,7 @@ from xraylabtool.batch_processor import calculate_batch_properties, BatchConfig
 # Configure for optimal performance
 config = BatchConfig(
     chunk_size=100,        # Process in chunks of 100
-    max_workers=8,         # Use 8 parallel workers  
+    max_workers=8,         # Use 8 parallel workers
     memory_limit_gb=4.0,   # Limit memory usage
     enable_progress=True   # Show progress bar
 )
@@ -529,7 +529,7 @@ results = calculate_batch_properties(formulas, energies, densities, config)
 
 **Single Material Calculations:**
 - Single energy point: **~0.03 ms**
-- 100 energy points: **~0.3 ms** 
+- 100 energy points: **~0.3 ms**
 - 1000 energy points: **~3 ms**
 
 **Batch Processing:**
@@ -569,7 +569,7 @@ for formula in formulas:
 results = xlt.calculate_xray_properties(formulas, energies, densities)  # ✅ Parallel
 
 # Instead of:
-# results = {f: xlt.calculate_single_material_properties(f, energies, d) 
+# results = {f: xlt.calculate_single_material_properties(f, energies, d)
 #           for f, d in zip(formulas, densities)}  # ❌ Sequential
 ```
 

@@ -6,9 +6,9 @@ This script runs the complete test suite including integration tests,
 performance benchmarks, and generates coverage reports.
 """
 
-import sys
-import subprocess
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 

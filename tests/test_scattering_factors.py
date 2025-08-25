@@ -8,29 +8,30 @@ functionality implemented in Step 5.
 import os
 import sys
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 
 try:
     from xraylabtool.core import (
-        load_scattering_factor_data,
-        get_cached_elements,
-        clear_scattering_factor_cache,
-        is_element_cached,
         AtomicScatteringFactor,
+        clear_scattering_factor_cache,
         create_scattering_factor_interpolators,
+        get_cached_elements,
+        is_element_cached,
+        load_scattering_factor_data,
     )
 except ImportError:
     # Add parent directory to path to import xraylabtool
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
     from xraylabtool.core import (
-        load_scattering_factor_data,
-        get_cached_elements,
-        clear_scattering_factor_cache,
-        is_element_cached,
         AtomicScatteringFactor,
+        clear_scattering_factor_cache,
         create_scattering_factor_interpolators,
+        get_cached_elements,
+        is_element_cached,
+        load_scattering_factor_data,
     )
 
 

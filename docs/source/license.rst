@@ -26,8 +26,8 @@ SOFTWARE.
 Attribution
 -----------
 
-This Python package is ported from a Julia module, which was translated from 
-a MATLAB script originally developed by **Zhang Jiang** at the **Advanced 
+This Python package is ported from a Julia module, which was translated from
+a MATLAB script originally developed by **Zhang Jiang** at the **Advanced
 Photon Source**, Argonne National Laboratory.
 
 The atomic scattering factor data is derived from:

@@ -14,18 +14,16 @@ import pytest
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from xraylabtool import clear_scattering_factor_cache  # noqa: E402
 from xraylabtool.utils import (  # noqa: E402
-    wavelength_to_energy,
-    energy_to_wavelength,
+    angle_from_q,
     bragg_angle,
     d_spacing_cubic,
-    q_from_angle,
-    angle_from_q,
-    smooth_data,
+    energy_to_wavelength,
     normalize_intensity,
-)
-from xraylabtool import (  # noqa: E402
-    clear_scattering_factor_cache,
+    q_from_angle,
+    smooth_data,
+    wavelength_to_energy,
 )
 
 # calculate_xray_properties is now imported from main module

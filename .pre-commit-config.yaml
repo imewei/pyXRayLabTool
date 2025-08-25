@@ -21,7 +21,7 @@ repos:
 
   # Python code formatting
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 24.8.0
     hooks:
       - id: black
         language_version: python3
@@ -47,8 +47,8 @@ repos:
     rev: v1.3.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-all]
-        args: ['--ignore-missing-imports']
+        additional_dependencies: [types-requests, types-setuptools]
+        args: ['--ignore-missing-imports', '--no-strict-optional']
 
   # Security checks
   - repo: https://github.com/PyCQA/bandit
@@ -62,7 +62,7 @@ repos:
 ci:
   autofix_commit_msg: |
     [pre-commit.ci] auto fixes from pre-commit hooks
-    
+
     for more information, see https://pre-commit.ci
   autofix_prs: true
   autoupdate_branch: ''

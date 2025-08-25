@@ -5,11 +5,12 @@ This module contains helper functions for data processing, unit conversions,
 mathematical operations, and other common tasks in X-ray analysis.
 """
 
-import numpy as np
-from scipy import constants
-from typing import List, Tuple, NoReturn, Dict, Any, Iterator, Union
 import re
 from functools import lru_cache
+from typing import Any, Dict, Iterator, List, NoReturn, Tuple, Union
+
+import numpy as np
+from scipy import constants
 
 # Physical constants
 PLANCK_CONSTANT: float = float(constants.h)  # J⋅s

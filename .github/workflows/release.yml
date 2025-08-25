@@ -41,34 +41,34 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
       is_prerelease: ${{ steps.version.outputs.is_prerelease }}
-      
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Validate and parse version
       id: version
       run: |
         VERSION="${{ github.event.inputs.version }}"
-        
+
         # Validate version format
         if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z0-9\-\.]*)?$ ]]; then
           echo "❌ Invalid version format: $VERSION"
           exit 1
         fi
-        
+
         # Check if prerelease
         IS_PRERELEASE="false"
         if [[ "$VERSION" == *"rc"* ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"alpha"* ]]; then
           IS_PRERELEASE="true"
         fi
-        
+
         TAG="v$VERSION"
-        
+
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=$TAG" >> $GITHUB_OUTPUT
         echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
-        
+
         echo "✅ Version: $VERSION (prerelease: $IS_PRERELEASE)"
 
   pre-release-tests:
@@ -83,48 +83,48 @@ jobs:
     needs: [validate-version, pre-release-tests]
     if: always() && (needs.pre-release-tests.result == 'success' || github.event.inputs.skip_tests == 'true')
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        
+
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
-        
+
     - name: Update version in pyproject.toml
       run: |
         sed -i 's/^version = ".*"/version = "${{ needs.validate-version.outputs.version }}"/' pyproject.toml
-        
+
     - name: Update version in __init__.py
       run: |
         if [ -f "xraylabtool/__init__.py" ]; then
           sed -i 's/__version__ = ".*"/__version__ = "${{ needs.validate-version.outputs.version }}"/' xraylabtool/__init__.py
         fi
-        
+
     - name: Generate changelog entry
       run: |
         VERSION="${{ needs.validate-version.outputs.version }}"
         DATE=$(date +%Y-%m-%d)
-        
+
         # Create changelog entry
         cat << EOF > changelog_entry.md
         ## [$VERSION] - $DATE
-        
+
         ### Added
         - Release $VERSION
-        
+
         ### Changed
         - Version bump to $VERSION
-        
+
         ### Fixed
         - Various improvements and bug fixes
-        
+
         EOF
-        
+
         # Prepend to CHANGELOG.md if it exists
         if [ -f "CHANGELOG.md" ]; then
           cat changelog_entry.md CHANGELOG.md > temp_changelog.md
@@ -132,7 +132,7 @@ jobs:
         else
           mv changelog_entry.md CHANGELOG.md
         fi
-        
+
     - name: Commit version changes
       run: |
         git config --local user.email "action@github.com"
@@ -147,32 +147,32 @@ jobs:
     name: Build Release Assets
     needs: [validate-version, update-version]
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         ref: ${{ needs.validate-version.outputs.tag }}
-        
+
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
-        
+
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
         pip install build twine wheel
-        
+
     - name: Build distributions
       run: |
         python -m build
-        
+
     - name: Verify distributions
       run: |
         python -m twine check dist/*
-        
+
     - name: Generate build info
       run: |
         cat << EOF > build_info.txt
@@ -184,14 +184,14 @@ jobs:
         Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
         Python Version: $(python --version)
         Platform: $(uname -a)
-        
+
         Files:
         $(ls -la dist/)
-        
+
         Checksums:
         $(cd dist && sha256sum *)
         EOF
-        
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -204,42 +204,42 @@ jobs:
     name: Create GitHub Release
     needs: [validate-version, build-release]
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         ref: ${{ needs.validate-version.outputs.tag }}
-        
+
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: release-distributions
-        
+
     - name: Generate release notes
       id: release_notes
       run: |
         VERSION="${{ needs.validate-version.outputs.version }}"
-        
+
         cat << EOF > release_notes.md
         # Release $VERSION
-        
+
         ## What's New
-        
+
         This release includes various improvements and bug fixes for the xraylabtool package.
-        
+
         ## Installation
-        
+
         \`\`\`bash
         pip install xraylabtool==$VERSION
         \`\`\`
-        
+
         ## Package Files
-        
+
         This release includes the following distribution files:
-        
+
         EOF
-        
+
         # Add checksums
         echo "## Checksums" >> release_notes.md
         echo "" >> release_notes.md
@@ -247,12 +247,12 @@ jobs:
         cd dist && sha256sum * >> ../release_notes.md
         cd ..
         echo '```' >> release_notes.md
-        
+
         # Set output
         echo "notes<<EOF" >> $GITHUB_OUTPUT
         cat release_notes.md >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
-        
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
@@ -271,18 +271,18 @@ jobs:
     name: Publish to PyPI
     needs: [validate-version, create-github-release]
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: pypi
       url: https://pypi.org/p/xraylabtool
     permissions:
       id-token: write  # For trusted publishing
-      
+
     steps:
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: release-distributions
-        
+
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
@@ -294,11 +294,11 @@ jobs:
     name: Post-Release Tasks
     needs: [validate-version, publish-pypi]
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Create post-release issue
       uses: actions/github-script@v7
       with:
@@ -306,19 +306,19 @@ jobs:
           const version = '${{ needs.validate-version.outputs.version }}';
           const issueBody = `
           ## Post-Release Checklist for v${version}
-          
+
           - [ ] Verify package is available on PyPI
           - [ ] Update documentation if needed
           - [ ] Announce release on social media/forums
           - [ ] Monitor for any issues or bug reports
           - [ ] Update any dependent projects
-          
+
           **Release Details:**
           - Version: ${version}
           - Tag: ${{ needs.validate-version.outputs.tag }}
           - PyPI: https://pypi.org/project/xraylabtool/${version}/
           `;
-          
+
           await github.rest.issues.create({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -326,7 +326,7 @@ jobs:
             body: issueBody,
             labels: ['release', 'task']
           });
-          
+
     - name: Send release notification
       uses: actions/github-script@v7
       with:

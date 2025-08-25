@@ -11,8 +11,9 @@ The constants are defined with high precision to ensure accurate calculations
 in X-ray optical property computations.
 """
 
-import numpy as np
 from typing import Final
+
+import numpy as np
 
 # =====================================================================================
 # FUNDAMENTAL PHYSICAL CONSTANTS

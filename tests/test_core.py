@@ -4,6 +4,7 @@ Tests for the core module.
 
 import os
 import sys
+
 import numpy as np
 import pytest
 

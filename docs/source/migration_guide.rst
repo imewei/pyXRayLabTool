@@ -13,7 +13,7 @@ The new field names provide better clarity about units and meaning:
    :header-rows: 1
 
    * - Legacy Name (Deprecated)
-     - New Name (Recommended) 
+     - New Name (Recommended)
      - Status
    * - ``result.Formula``
      - ``result.formula``
@@ -69,12 +69,12 @@ Backward Compatibility
 .. code-block:: python
 
    import xraylabtool as xlt
-   
+
    result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
-   
+
    # This still works but emits a warning
    print(result.Critical_Angle[0])  # ⚠️ DeprecationWarning
-   
+
    # This is the recommended approach
    print(result.critical_angle_degrees[0])  # ✅ No warning
 
@@ -101,7 +101,7 @@ Replace legacy names one section at a time:
    print(f"Critical angle: {result.Critical_Angle[0]:.3f}°")
    print(f"Molecular weight: {result.MW:.2f} g/mol")
    print(f"Dispersion: {result.Dispersion[0]:.2e}")
-   
+
    # After (recommended)
    print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
    print(f"Molecular weight: {result.molecular_weight_g_mol:.2f} g/mol")
@@ -114,12 +114,12 @@ Ensure your code works correctly with new field names:
 .. code-block:: python
 
    import xraylabtool as xlt
-   
+
    # Test basic functionality
    result = xlt.calculate_single_material_properties("Si", 10.0, 2.33)
    assert hasattr(result, 'critical_angle_degrees')
    assert hasattr(result, 'molecular_weight_g_mol')
-   
+
    print("Migration successful!")
 
 **Step 4: Clean Up**
@@ -136,7 +136,7 @@ Common Migration Patterns
    # Legacy
    critical_angle = result.Critical_Angle[0]
    molecular_weight = result.MW
-   
+
    # New
    critical_angle = result.critical_angle_degrees[0]
    molecular_weight = result.molecular_weight_g_mol
@@ -152,7 +152,7 @@ Common Migration Patterns
        'critical_angle': result.Critical_Angle[0],
        'dispersion': result.Dispersion[0]
    }
-   
+
    # New
    properties = {
        'formula': result.formula,
@@ -166,12 +166,12 @@ Common Migration Patterns
 .. code-block:: python
 
    import numpy as np
-   
+
    # Legacy
    energies = result.Energy
    dispersions = result.Dispersion
    angles = result.Critical_Angle
-   
+
    # New
    energies = result.energy_kev
    dispersions = result.dispersion_delta
@@ -182,12 +182,12 @@ Common Migration Patterns
 .. code-block:: python
 
    import matplotlib.pyplot as plt
-   
+
    # Legacy
    plt.loglog(result.Energy, result.Dispersion, label='δ')
    plt.loglog(result.Energy, result.Absorption, label='β')
    plt.xlabel('Energy (keV)')
-   
+
    # New
    plt.loglog(result.energy_kev, result.dispersion_delta, label='δ')
    plt.loglog(result.energy_kev, result.absorption_beta, label='β')
@@ -201,10 +201,10 @@ Handling Deprecation Warnings
 .. code-block:: python
 
    import warnings
-   
+
    # Suppress only XRayLabTool deprecation warnings during migration
    with warnings.catch_warnings():
-       warnings.filterwarnings("ignore", category=DeprecationWarning, 
+       warnings.filterwarnings("ignore", category=DeprecationWarning,
                              message=".*deprecated.*")
        # Your legacy code here
        print(f"Result: {result.Critical_Angle[0]}")
@@ -214,7 +214,7 @@ Handling Deprecation Warnings
 .. code-block:: python
 
    import pytest
-   
+
    @pytest.mark.filterwarnings("ignore:.*deprecated.*:DeprecationWarning")
    def test_legacy_field_access():
        # Test that legacy fields still work during migration period
@@ -232,7 +232,7 @@ Benefits of New Field Names
    result.MW  # g/mol? u? kg/mol?
    result.Critical_Angle  # degrees? radians?
    result.reSLD  # Å⁻²? cm⁻²?
-   
+
    # New - units explicit
    result.molecular_weight_g_mol  # Clearly g/mol
    result.critical_angle_degrees  # Clearly degrees
@@ -248,7 +248,7 @@ New field names provide better IDE autocompletion and documentation.
 
    # Legacy - requires comments or documentation lookup
    angle = result.Critical_Angle[0]  # Is this in degrees?
-   
+
    # New - self-documenting
    angle = result.critical_angle_degrees[0]  # Obviously degrees
 

@@ -132,7 +132,7 @@ pytest tests/ -v
 # Integration tests only
 pytest tests/test_integration.py -v
 
-# Performance benchmarks only  
+# Performance benchmarks only
 pytest tests/test_integration.py::TestPerformanceBenchmarks --benchmark-only
 
 # Formula parsing tests
@@ -191,7 +191,7 @@ Some tests are conditionally skipped when required data files are not available:
 
 For complete test coverage, the following data files should be available:
 - `src/AtomicScatteringFactor/si.nff` (Silicon)
-- `src/AtomicScatteringFactor/ge.nff` (Germanium) 
+- `src/AtomicScatteringFactor/ge.nff` (Germanium)
 - `src/AtomicScatteringFactor/h.nff` (Hydrogen)
 - `src/AtomicScatteringFactor/c.nff` (Carbon)
 - `src/AtomicScatteringFactor/n.nff` (Nitrogen)
@@ -222,7 +222,7 @@ When adding new tests:
 
 **New Test Coverage:**
 - ✅ Complex number handling in energy conversion functions
-- ✅ Type safety validation and conversion edge cases  
+- ✅ Type safety validation and conversion edge cases
 - ✅ Updated pandas method compatibility (`bfill`/`ffill`)
 - ✅ Enhanced atomic data type conversion robustness
 - ✅ PCHIP interpolation accuracy and edge cases

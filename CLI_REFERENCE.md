@@ -1,8 +1,8 @@
 # XRayLabTool CLI Reference
 
 **Version:** 0.1.8
-**Author:** Wei Chen  
-**License:** MIT  
+**Author:** Wei Chen
+**License:** MIT
 
 This document provides a comprehensive reference for all XRayLabTool command-line interface (CLI) commands, their functionalities, parameters, and usage examples.
 
@@ -759,10 +759,10 @@ xraylabtool formula SiO2,TiO2,Al2O3,Fe2O3 -o oxides.json
    ```bash
    # Invalid energy range
    xraylabtool calc SiO2 -e 0.01 -d 2.2  # Error: too low
-   
+
    # Invalid formula
    xraylabtool calc XYZ123 -e 10 -d 1.0  # Error: unknown elements
-   
+
    # Missing parameters
    xraylabtool calc SiO2 -e 10.0         # Error: missing density
    ```
@@ -771,7 +771,7 @@ xraylabtool formula SiO2,TiO2,Al2O3,Fe2O3 -o oxides.json
    ```bash
    # Test formula parsing first
    xraylabtool formula Ca10P6O26H2
-   
+
    # Verify atomic data availability
    xraylabtool atomic Ca,P,O,H
    ```
@@ -782,7 +782,7 @@ xraylabtool formula SiO2,TiO2,Al2O3,Fe2O3 -o oxides.json
    ```bash
    # Organized output structure
    mkdir -p results/{calculations,conversions,batch}
-   
+
    xraylabtool calc SiO2 -e 5-20:50 -d 2.2 -o results/calculations/sio2_scan.csv
    xraylabtool batch materials.csv -o results/batch/materials_batch.csv
    ```

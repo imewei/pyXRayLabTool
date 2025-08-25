@@ -18,20 +18,20 @@ requires-python = ">=3.12"
 classifiers = [
     # Development Status
     "Development Status :: 4 - Beta",
-    
+
     # Intended Audience
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
-    
+
     # Operating System
     "Operating System :: OS Independent",
-    
+
     # Programming Language
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: Implementation :: CPython",
-    
+
     # Topics
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Scientific/Engineering :: Chemistry",
@@ -39,27 +39,27 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Shells",
     "Topic :: Utilities",
-    
+
     # Environment
     "Environment :: Console",
-    
+
     # Natural Language
     "Natural Language :: English",
-    
+
     # Typing
     "Typing :: Typed",
 ]
 keywords = [
-    "xray", "x-ray", "crystallography", "diffraction", "scattering", 
+    "xray", "x-ray", "crystallography", "diffraction", "scattering",
     "synchrotron", "optics", "materials", "physics", "chemistry",
-    "cxro", "nist", "cli", "command-line", "batch-processing", 
+    "cxro", "nist", "cli", "command-line", "batch-processing",
     "scientific-computing", "laboratory", "analysis"
 ]
 
 # Core runtime dependencies
 dependencies = [
     "numpy>=1.21.0",
-    "pandas>=1.5.0", 
+    "pandas>=1.5.0",
     "scipy>=1.9.0",
     "matplotlib>=3.5.0",
     "mendeleev>=0.15.0",
@@ -74,18 +74,18 @@ dev = [
     "pytest-cov>=4.0.0",
     "pytest-benchmark>=4.0.0",
     "pytest-xdist>=3.0.0",  # Parallel test execution
-    
+
     # Code quality
     "black>=23.0.0",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
     "ruff>=0.1.0",  # Fast linter alternative to flake8
-    
+
     # Type stubs
     "pandas-stubs>=2.0.0",
     "types-tqdm>=4.64.0",
     "types-psutil>=5.9.0",
-    
+
     # Pre-commit hooks
     "pre-commit>=3.0.0",
 ]

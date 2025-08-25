@@ -5,8 +5,9 @@ This module provides a pre-populated cache of atomic data for common elements
 to eliminate expensive database queries to the Mendeleev library during runtime.
 """
 
-from typing import Dict, Tuple, List
 from functools import lru_cache
+from typing import Dict, List, Tuple
+
 from .utils import UnknownElementError
 
 # Pre-populated atomic data for the 50 most common elements in materials science

@@ -14,38 +14,39 @@ import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
+
 import pytest
 
 try:
+    import xraylabtool as xlt
     from xraylabtool.cli import (
-        main,
-        parse_energy_string,
-        format_xray_result,
-        cmd_calc,
+        cmd_atomic,
         cmd_batch,
+        cmd_bragg,
+        cmd_calc,
         cmd_convert,
         cmd_formula,
-        cmd_atomic,
-        cmd_bragg,
         cmd_list,
+        format_xray_result,
+        main,
+        parse_energy_string,
     )
-    import xraylabtool as xlt
 except ImportError:
     # Add parent directory to path to import xraylabtool
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    import xraylabtool as xlt
     from xraylabtool.cli import (
-        main,
-        parse_energy_string,
-        format_xray_result,
-        cmd_calc,
+        cmd_atomic,
         cmd_batch,
+        cmd_bragg,
+        cmd_calc,
         cmd_convert,
         cmd_formula,
-        cmd_atomic,
-        cmd_bragg,
         cmd_list,
+        format_xray_result,
+        main,
+        parse_energy_string,
     )
-    import xraylabtool as xlt
 
 
 class TestEnergyParsing:

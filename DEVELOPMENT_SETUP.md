@@ -4,15 +4,15 @@
 
 ### ✅ Environment Details
 
-**Location:** `/Users/b80985/Projects/pyXRayLabTool/venv/`  
-**Python Version:** 3.13.7  
+**Location:** `/Users/b80985/Projects/pyXRayLabTool/venv/`
+**Python Version:** 3.13.7
 **Package Version:** XRayLabTool 0.1.8
 
 ### 📦 Installed Dependencies
 
 #### Core Dependencies:
 - **pandas** 2.3.2 - Data manipulation
-- **numpy** 2.3.2 - Numerical computing  
+- **numpy** 2.3.2 - Numerical computing
 - **scipy** 1.16.1 - Scientific computing
 - **matplotlib** 3.10.5 - Plotting support
 - **mendeleev** 1.1.0 - Atomic data

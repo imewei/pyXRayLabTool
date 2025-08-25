@@ -17,35 +17,35 @@ jobs:
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
-        
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -e .[dev]
         pip install bandit safety semgrep
-        
+
     - name: Run Bandit security scanner
       run: |
         bandit -r xraylabtool/ -f json -o bandit-report.json
         bandit -r xraylabtool/ -ll -i
       continue-on-error: false
-        
+
     - name: Run Safety vulnerability scanner
       run: |
         safety check --json --output safety-report.json
         safety check
       continue-on-error: false
-        
+
     - name: Run Semgrep security scanner
       uses: semgrep/semgrep-action@v1
       with:
@@ -53,13 +53,13 @@ jobs:
       env:
         SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
       continue-on-error: true
-        
+
     - name: Upload Semgrep results to GitHub Security
       uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: semgrep.sarif
-        
+
     - name: Upload security reports
       uses: actions/upload-artifact@v4
       if: always()
@@ -74,11 +74,11 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Dependency Review
       uses: actions/dependency-review-action@v4
       with:
@@ -93,25 +93,25 @@ jobs:
       actions: read
       contents: read
       security-events: write
-      
+
     strategy:
       fail-fast: false
       matrix:
         language: [ python ]
-        
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         config-file: ./.github/codeql/codeql-config.yml
-        
+
     - name: Autobuild
       uses: github/codeql-action/autobuild@v3
-      
+
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
@@ -120,28 +120,28 @@ jobs:
   license-check:
     name: License Compliance
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
-        
+
     - name: Install pip-licenses
       run: |
         python -m pip install --upgrade pip
         pip install pip-licenses
         pip install -e .
-        
+
     - name: Check licenses
       run: |
         pip-licenses --format=json --output-file=licenses.json
         pip-licenses --fail-on="GPL;AGPL;LGPL"
-        
+
     - name: Upload license report
       uses: actions/upload-artifact@v4
       with:
@@ -151,35 +151,35 @@ jobs:
   code-quality:
     name: Advanced Code Quality
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
-        
+
     - name: Install quality tools
       run: |
         python -m pip install --upgrade pip
         pip install -e .[dev]
         pip install radon xenon vulture dead
-        
+
     - name: Run complexity analysis
       run: |
         radon cc xraylabtool/ --min B --json > complexity-report.json
         radon mi xraylabtool/ --json > maintainability-report.json
         xenon xraylabtool/ --max-absolute B --max-modules B
-        
+
     - name: Check for dead code
       run: |
         vulture xraylabtool/ --json > dead-code-report.json
         dead xraylabtool/
       continue-on-error: true
-        
+
     - name: Upload quality reports
       uses: actions/upload-artifact@v4
       if: always()
@@ -193,13 +193,13 @@ jobs:
   secrets-scan:
     name: Secrets Scanning
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        
+
     - name: Run TruffleHog OSS
       uses: trufflesecurity/trufflehog@main
       with:

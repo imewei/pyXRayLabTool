@@ -4,32 +4,33 @@ Tests for the utils module.
 
 import os
 import sys
+
 import numpy as np
 import pytest
 
 try:
     from xraylabtool.utils import (
-        wavelength_to_energy,
-        energy_to_wavelength,
+        angle_from_q,
         bragg_angle,
         d_spacing_cubic,
-        q_from_angle,
-        angle_from_q,
-        smooth_data,
+        energy_to_wavelength,
         normalize_intensity,
+        q_from_angle,
+        smooth_data,
+        wavelength_to_energy,
     )
 except ImportError:
     # Add parent directory to path to import xraylabtool
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
     from xraylabtool.utils import (
-        wavelength_to_energy,
-        energy_to_wavelength,
+        angle_from_q,
         bragg_angle,
         d_spacing_cubic,
-        q_from_angle,
-        angle_from_q,
-        smooth_data,
+        energy_to_wavelength,
         normalize_intensity,
+        q_from_angle,
+        smooth_data,
+        wavelength_to_energy,
     )
 
 

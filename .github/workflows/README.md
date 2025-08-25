@@ -12,7 +12,7 @@ A comprehensive CI pipeline with multiple parallel jobs:
 - **Code Quality & Linting**: Pre-commit hooks, Black formatting, flake8 linting, MyPy type checking, Bandit security, Safety vulnerability scanning
 - **Test Suite**: Matrix testing across Ubuntu/macOS/Windows with Python 3.12/3.13
 - **Performance Benchmarks**: Automated performance regression testing
-- **Build Verification**: Package building and integrity validation  
+- **Build Verification**: Package building and integrity validation
 - **Integration Testing**: End-to-end CLI and import testing
 - **Status Reporting**: Consolidated pass/fail status for branch protection
 
@@ -86,7 +86,7 @@ Proactive dependency lifecycle management:
 #### Test Suite (`test.yml`)
 Simple matrix testing workflow (superseded by ci.yml but maintained for compatibility)
 
-#### PyPI Publishing (`publish.yml`)  
+#### PyPI Publishing (`publish.yml`)
 Basic publishing workflow (enhanced by release.yml automation)
 
 ## Workflow Configuration
@@ -123,7 +123,7 @@ Configure branch protection on `main` branch with:
 
 ### Manual Dependency Updates
 ```bash
-# Navigate to Actions → Dependency Management → Run workflow  
+# Navigate to Actions → Dependency Management → Run workflow
 # Update type: minor
 # Create PR: true
 ```

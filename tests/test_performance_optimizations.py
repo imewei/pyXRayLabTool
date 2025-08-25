@@ -13,16 +13,16 @@ import time
 import numpy as np
 import pytest
 
+import xraylabtool as xlt
 from xraylabtool.core import (
-    get_bulk_atomic_data,
-    create_scattering_factor_interpolators,
-    get_cached_elements,
-    _initialize_element_paths,
     _AVAILABLE_ELEMENTS,
+    _initialize_element_paths,
     _interpolator_cache,
     clear_scattering_factor_cache,
+    create_scattering_factor_interpolators,
+    get_bulk_atomic_data,
+    get_cached_elements,
 )
-import xraylabtool as xlt
 
 
 class TestBulkAtomicDataLoading:

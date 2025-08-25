@@ -11,22 +11,23 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple, Dict, Any
+from textwrap import dedent
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from textwrap import dedent
 
 # Import the main XRayLabTool functionality
 from . import (
-    calculate_single_material_properties,
     XRayResult,
-    energy_to_wavelength,
-    wavelength_to_energy,
+    __version__,
     bragg_angle,
-    parse_formula,
+    calculate_single_material_properties,
+    energy_to_wavelength,
     get_atomic_number,
     get_atomic_weight,
-    __version__,
+    parse_formula,
+    wavelength_to_energy,
 )
 
 

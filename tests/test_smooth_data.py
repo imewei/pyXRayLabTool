@@ -5,10 +5,11 @@ These tests verify both the pandas fillna method updates and the new
 optimized NumPy convolution implementation in v0.1.2.
 """
 
-import pytest
-import numpy as np
-import sys
 import os
+import sys
+
+import numpy as np
+import pytest
 
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))

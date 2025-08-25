@@ -19,7 +19,7 @@ Basic Single Material Calculation
 
    # Calculate properties for quartz at 10 keV
    result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
-   
+
    # Using new descriptive field names (recommended)
    print(f"Formula: {result.formula}")
    print(f"Molecular Weight: {result.molecular_weight_g_mol:.2f} g/mol")
@@ -78,9 +78,9 @@ Plotting with Matplotlib
    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
    # Plot using new descriptive field names
-   ax1.loglog(result.energy_kev, result.dispersion_delta, 'b-', 
+   ax1.loglog(result.energy_kev, result.dispersion_delta, 'b-',
               label='δ (dispersion)', linewidth=2)
-   ax1.loglog(result.energy_kev, result.absorption_beta, 'r-', 
+   ax1.loglog(result.energy_kev, result.absorption_beta, 'r-',
               label='β (absorption)', linewidth=2)
    ax1.set_xlabel('Energy (keV)')
    ax1.set_ylabel('Optical constants')
@@ -322,11 +322,11 @@ X-ray Optics Design
 
    # Design multilayer mirror
    energies = np.linspace(8, 12, 100)
-   
+
    # Layer materials
    heavy_layer = xlt.calculate_single_material_properties("W", energies, 19.3)
    light_layer = xlt.calculate_single_material_properties("B4C", energies, 2.52)
-   
+
    # Calculate optical constants for multilayer design
    # Use dispersion and absorption for reflectivity calculations
 
@@ -337,13 +337,13 @@ Performance Benchmarking
 
    import time
    import xraylabtool as xlt
-   
+
    # Benchmark single material calculations
    start_time = time.time()
    for _ in range(1000):
        result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
    single_time = time.time() - start_time
-   
+
    print(f"1000 single material calculations: {single_time:.3f} s")
    print(f"Average per calculation: {single_time/1000*1000:.3f} ms")
 
@@ -354,10 +354,10 @@ Integration with Data Analysis
 
    import pandas as pd
    import xraylabtool as xlt
-   
+
    # Load experimental data
    exp_data = pd.read_csv("experimental_results.csv")
-   
+
    # Calculate theoretical properties
    theoretical_results = []
    for _, row in exp_data.iterrows():
@@ -370,14 +370,14 @@ Integration with Data Analysis
            'theoretical_critical_angle': result.critical_angle_degrees[0],
            'theoretical_attenuation': result.attenuation_length_cm[0]
        })
-   
+
    # Merge with experimental data
    theory_df = pd.DataFrame(theoretical_results)
    combined_data = exp_data.merge(theory_df, on=['formula', 'energy'])
-   
+
    # Analyze differences
    combined_data['angle_difference'] = (
-       combined_data['measured_critical_angle'] - 
+       combined_data['measured_critical_angle'] -
        combined_data['theoretical_critical_angle']
    )
 
