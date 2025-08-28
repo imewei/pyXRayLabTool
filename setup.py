@@ -14,7 +14,7 @@ from setuptools import find_packages, setup
 
 # Package metadata
 PACKAGE_NAME = "xraylabtool"
-VERSION = "0.1.8"
+VERSION = "0.1.10"
 AUTHOR = "Wei Chen"
 AUTHOR_EMAIL = "wchen@anl.gov"
 DESCRIPTION = (
@@ -42,12 +42,12 @@ def read_long_description():
 
 # Core dependencies (production requirements)
 INSTALL_REQUIRES = [
-    "pandas>=1.3.0",
-    "numpy>=1.20.0",
-    "scipy>=1.7.0",
-    "mendeleev>=0.10.0",
-    "tqdm>=4.60.0",
-    "matplotlib>=3.4.0",
+    "numpy>=1.21.0",
+    "pandas>=1.5.0",
+    "scipy>=1.9.0",
+    "matplotlib>=3.5.0",
+    "mendeleev>=0.15.0",
+    "tqdm>=4.64.0",
 ]
 
 # Optional dependencies for different use cases
@@ -125,6 +125,15 @@ KEYWORDS = [
     "analysis",
     "physics",
     "chemistry",
+    "shell-completion",
+    "bash-completion",
+    "zsh-completion",
+    "fish-completion",
+    "powershell-completion",
+    "tab-completion",
+    "cross-platform",
+    "windows-powershell",
+    "pwsh",
 ]
 
 # Project URLs
@@ -137,6 +146,9 @@ PROJECT_URLS = {
     "Changelog": "https://github.com/imewei/pyXRayLabTool/blob/main/CHANGELOG.md",
     "CLI Reference": (
         "https://github.com/imewei/pyXRayLabTool/blob/main/CLI_REFERENCE.md"
+    ),
+    "Shell Completion": (
+        "https://github.com/imewei/pyXRayLabTool/blob/main/SHELL_COMPLETION.md"
     ),
     "Source": "https://github.com/imewei/pyXRayLabTool",
 }

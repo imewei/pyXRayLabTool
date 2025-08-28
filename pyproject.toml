@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xraylabtool"
-version = "0.1.9"
+version = "0.1.10"
 authors = [
     {name = "Wei Chen", email = "wchen@anl.gov"},
 ]
@@ -53,7 +53,9 @@ keywords = [
     "xray", "x-ray", "crystallography", "diffraction", "scattering",
     "synchrotron", "optics", "materials", "physics", "chemistry",
     "cxro", "nist", "cli", "command-line", "batch-processing",
-    "scientific-computing", "laboratory", "analysis"
+    "scientific-computing", "laboratory", "analysis", "shell-completion",
+    "bash-completion", "zsh-completion", "fish-completion", "powershell-completion",
+    "tab-completion", "cross-platform", "windows-powershell", "pwsh"
 ]
 
 # Core runtime dependencies
@@ -138,6 +140,7 @@ Repository = "https://github.com/imewei/pyXRayLabTool"
 "Bug Tracker" = "https://github.com/imewei/pyXRayLabTool/issues"
 "Changelog" = "https://github.com/imewei/pyXRayLabTool/blob/main/CHANGELOG.md"
 "CLI Reference" = "https://github.com/imewei/pyXRayLabTool/blob/main/CLI_REFERENCE.md"
+"Shell Completion" = "https://github.com/imewei/pyXRayLabTool/blob/main/SHELL_COMPLETION.md"
 "Discussions" = "https://github.com/imewei/pyXRayLabTool/discussions"
 "Release Notes" = "https://github.com/imewei/pyXRayLabTool/releases"
 

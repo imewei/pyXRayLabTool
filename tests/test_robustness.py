@@ -44,7 +44,9 @@ class TestComplexNumberHandling:
         ]
 
         for energy in energies_to_test:
-            result = calculate_single_material_properties("Si", energy, 2.33)
+            # Type cast to float for mypy since we know all values are numeric
+            energy_val = float(energy)  # type: ignore[arg-type]
+            result = calculate_single_material_properties("Si", energy_val, 2.33)
             assert len(result.Energy) == 1
             assert np.isclose(result.Energy[0], 8.0)
 
@@ -111,7 +113,9 @@ class TestArrayTypeHandling:
         ]
 
         for energies in energy_arrays:
-            result = calculate_single_material_properties("Si", energies, 2.33)
+            # Convert to numpy array to ensure proper typing
+            energies_array = np.asarray(energies, dtype=float)
+            result = calculate_single_material_properties("Si", energies_array, 2.33)
             assert len(result.Energy) == 3
             assert isinstance(result.Energy, np.ndarray)
             assert np.allclose(result.Energy, [8.0, 10.0, 12.0])

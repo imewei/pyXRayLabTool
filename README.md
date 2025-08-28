@@ -19,6 +19,7 @@ XRayLabTool is a comprehensive Python package and command-line tool for calculat
 - **🔬 Scientific Accuracy**: CXRO/NIST atomic scattering factor databases
 - **🎨 Flexible Input**: Support for energy ranges, multiple materials, and batch processing
 - **📊 Memory Efficient**: Optimized for large-scale calculations with intelligent memory management
+- **⌨️ Shell Completion**: Intelligent bash completion for enhanced CLI productivity
 ---
 
 ## 📦 Installation
@@ -36,6 +37,45 @@ git clone https://github.com/imewei/pyXRayLabTool.git
 cd pyXRayLabTool
 pip install -e .
 ```
+
+### Shell Completion Setup
+
+After installation, enable intelligent tab completion for enhanced CLI productivity:
+
+```bash
+# Auto-detect current shell and install completion
+xraylabtool --install-completion
+
+# Or install for specific shell
+xraylabtool --install-completion bash
+xraylabtool --install-completion zsh
+xraylabtool --install-completion fish
+xraylabtool --install-completion powershell
+```
+
+**Prerequisites for Bash users:**
+```bash
+# Install bash-completion for full functionality
+brew install bash-completion@2
+
+# Add to ~/.bash_profile:
+[[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"
+```
+
+**Prerequisites for PowerShell users:**
+```powershell
+# PowerShell 5.1+ or PowerShell Core 7+ required
+# Check version: $PSVersionTable.PSVersion
+
+# Install PowerShell completion
+xraylabtool --install-completion powershell
+
+# After installation, the module is automatically configured
+# Restart PowerShell to enable tab completion
+# Manual import (if needed): Import-Module XRayLabTool
+```
+
+Restart your shell or source your config file after installation.
 
 ### Requirements
 
@@ -113,6 +153,12 @@ pip install xraylabtool
 
 # Verify CLI installation
 xraylabtool --version
+
+# Install shell completion (recommended)
+xraylabtool --install-completion
+
+# Test completion is working
+xraylabtool --install-completion --test
 ```
 
 ### Quick CLI Examples
@@ -173,6 +219,25 @@ xraylabtool bragg -d 3.14,2.45,1.92 -e 8.048
 | `atomic` | Atomic data lookup | `xraylabtool atomic Si,Al,Fe` |
 | `bragg` | Diffraction angle calculations | `xraylabtool bragg -d 3.14 -e 8.0` |
 | `list` | Show constants/fields/examples | `xraylabtool list constants` |
+| `install-completion` | Install shell completion | `xraylabtool install-completion zsh` |
+
+### Shell Completion Commands
+
+Both syntaxes are supported for shell completion:
+
+```bash
+# Flag syntax (recommended for basic use)
+xraylabtool --install-completion bash
+xraylabtool --install-completion zsh --test
+xraylabtool --install-completion fish --system
+xraylabtool --install-completion powershell
+
+# Subcommand syntax (supports all advanced options)
+xraylabtool install-completion bash --uninstall
+xraylabtool install-completion zsh --system --test
+xraylabtool install-completion fish --user
+xraylabtool install-completion powershell --test
+```
 
 ### Output Formats
 
@@ -187,6 +252,12 @@ xraylabtool bragg -d 3.14,2.45,1.92 -e 8.048
 - **Field Selection**: Choose specific output fields with `--fields`
 - **Precision Control**: Set decimal places with `--precision`
 - **File Output**: Save results to CSV or JSON files
+- **Multi-Shell Completion**: Intelligent tab completion for Bash, Zsh, Fish, and PowerShell
+  - **Context-aware**: Suggests appropriate values based on current command
+  - **File completion**: Automatic file path completion for input/output files
+  - **Chemical formulas**: Common materials and element suggestions
+  - **Energy values**: Typical X-ray energy suggestions
+  - **Cross-platform**: Works on Windows PowerShell 5.1+, PowerShell Core 7+, and Unix shells
 
 ### 📖 Complete CLI Documentation
 
@@ -195,12 +266,21 @@ For comprehensive CLI documentation with detailed examples, parameters, and use 
 **👉 [CLI_REFERENCE.md](CLI_REFERENCE.md) - Complete Command-Line Interface Guide**
 
 The CLI reference includes:
-- Detailed syntax for all commands
+- Detailed syntax for all 8 commands (including install-completion)
 - Energy input format examples
 - Batch processing workflows
 - Output format specifications
+- Shell completion setup and usage
 - Common use cases and best practices
 - Performance optimization tips
+
+**👉 [SHELL_COMPLETION.md](SHELL_COMPLETION.md) - Shell Completion Setup Guide**
+
+Complete documentation for installing and using shell completion:
+- Installation instructions for Bash, Zsh, Fish, and PowerShell
+- Tab completion features and examples for all supported shells
+- Cross-platform setup (Windows, macOS, Linux)
+- Troubleshooting and configuration options
 
 ---
 
@@ -700,7 +780,7 @@ If you use XRayLabTool in your research, please cite:
   author = {Wei Chen},
   url = {https://github.com/imewei/pyXRayLabTool},
   year = {2024},
-  version = {0.1.6}
+  version = {0.1.10}
 }
 ```
 

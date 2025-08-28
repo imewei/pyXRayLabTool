@@ -21,6 +21,18 @@ Verify CLI installation:
    xraylabtool --version
    # Output: XRayLabTool 0.1.8
 
+Install shell completion (recommended):
+
+.. code-block:: bash
+
+   xraylabtool --install-completion
+
+   # Or install for specific shell
+   xraylabtool --install-completion bash
+   xraylabtool --install-completion zsh
+   xraylabtool --install-completion fish
+   xraylabtool --install-completion powershell
+
 Global Options
 --------------
 
@@ -42,7 +54,7 @@ These options are available for the main ``xraylabtool`` command:
 Available Commands
 ------------------
 
-XRayLabTool CLI provides 7 subcommands:
+XRayLabTool CLI provides 8 subcommands:
 
 .. list-table::
    :widths: 15 35 50
@@ -72,6 +84,9 @@ XRayLabTool CLI provides 7 subcommands:
    * - ``list``
      - Show constants/fields/examples
      - ``xraylabtool list constants``
+   * - ``install-completion``
+     - Install shell completion
+     - ``xraylabtool install-completion``
 
 calc - Single Material Calculations
 ------------------------------------
@@ -338,6 +353,76 @@ Display reference information including physical constants, available output fie
 
    # Usage examples
    xraylabtool list examples
+
+install-completion - Shell Completion Setup
+--------------------------------------------
+
+Install and manage shell completion functionality for enhanced command-line productivity.
+
+**Purpose:**
+   Enable intelligent tab completion for xraylabtool commands, parameters, and values.
+
+**Syntax:**
+
+.. code-block:: bash
+
+   xraylabtool install-completion [OPTIONS]
+
+**Optional Parameters:**
+
+.. list-table::
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Parameter
+     - Description
+   * - ``--user`` (default)
+     - Install completion for current user only
+   * - ``--system``
+     - Install completion system-wide (requires sudo)
+   * - ``--test``
+     - Test if completion is working
+   * - ``--uninstall``
+     - Remove existing completion installation
+
+**Examples:**
+
+.. code-block:: bash
+
+   # Install completion for current user (recommended)
+   xraylabtool install-completion
+
+   # Install system-wide (requires sudo privileges)
+   xraylabtool install-completion --system
+
+   # Test if completion is working
+   xraylabtool install-completion --test
+
+   # Remove completion
+   xraylabtool install-completion --uninstall
+
+**Shell Completion Features:**
+
+Once installed, you get intelligent completion for:
+
+- **Commands**: ``xraylabtool <TAB>`` shows all available commands
+- **Parameters**: ``xraylabtool calc SiO2 -<TAB>`` shows all calc options
+- **Values**: ``xraylabtool calc <TAB>`` suggests common formulas (SiO2, Al2O3, etc.)
+- **Formats**: ``xraylabtool calc SiO2 --format <TAB>`` shows: table, csv, json
+- **Files**: Automatic file completion for input/output files
+
+**Supported Shells:**
+   - **Bash**: Full completion support with context-aware suggestions
+   - **Zsh**: Compatible through bash completion compatibility mode
+   - **Fish**: Native Fish completion script with intelligent suggestions
+   - **PowerShell**: Native PowerShell module with cross-platform support (Windows PowerShell 5.1+ and PowerShell Core 7+)
+
+**Installation Notes:**
+   - **Bash/Zsh**: Creates ``~/.bash_completion.d/xraylabtool`` and adds sourcing to shell config
+   - **Fish**: Installs completion script to ``~/.config/fish/completions/xraylabtool.fish``
+   - **PowerShell**: Creates PowerShell module at ``~/.local/share/powershell/Modules/XRayLabTool`` (Unix) or ``Documents/WindowsPowerShell/Modules/XRayLabTool`` (Windows)
+   - **Cross-platform**: Works on Windows, macOS, and Linux
+   - Restart your shell after installation for completion to take effect
 
 Output Formats
 --------------

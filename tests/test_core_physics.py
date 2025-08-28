@@ -7,6 +7,7 @@ and derived quantity calculations that were ported from Julia.
 
 import os
 import sys
+from typing import Any, Callable
 
 import numpy as np
 import pytest
@@ -130,7 +131,9 @@ class TestCalculateScatteringFactors:
         wavelength = np.array([ENERGY_TO_WAVELENGTH_FACTOR / 10.0])
         mass_density = 2.2
         molecular_weight = 60.08
-        element_data = []  # Empty
+        element_data: list[tuple[float, Callable[..., Any], Callable[..., Any]]] = (
+            []
+        )  # Empty
 
         dispersion, absorption, f1_total, f2_total = calculate_scattering_factors(
             energy_ev, wavelength, mass_density, molecular_weight, element_data
@@ -374,7 +377,7 @@ class TestPhysicsConsistency:
             # Convert back to energy
             calculated_energy = ENERGY_TO_WAVELENGTH_FACTOR / (
                 wavelength_angstrom * 1e-10
-            )  # type: ignore
+            )
 
             assert abs(calculated_energy - energy_kev) < 1e-10
 

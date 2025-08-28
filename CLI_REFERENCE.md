@@ -1,6 +1,6 @@
 # XRayLabTool CLI Reference
 
-**Version:** 0.1.8
+**Version:** 0.1.10
 **Author:** Wei Chen
 **License:** MIT
 
@@ -18,6 +18,7 @@ This document provides a comprehensive reference for all XRayLabTool command-lin
    - [atomic](#atomic---atomic-data-lookup)
    - [bragg](#bragg---diffraction-angle-calculations)
    - [list](#list---reference-information)
+   - [install-completion](#install-completion---shell-completion-setup)
 4. [Output Formats](#output-formats)
 5. [Energy Input Formats](#energy-input-formats)
 6. [Common Use Cases](#common-use-cases)
@@ -64,7 +65,7 @@ These options are available for the main `xraylabtool` command:
 **Example:**
 ```bash
 xraylabtool --version
-# Output: XRayLabTool 0.1.8
+# Output: XRayLabTool 0.1.10
 ```
 
 ---
@@ -562,6 +563,193 @@ Shows practical usage examples for all commands.
 
 ---
 
+## `install-completion` - Shell Completion Setup
+
+Install and manage shell completion functionality for Bash, Zsh, and Fish shells.
+
+### Dual Syntax Support
+
+XRayLabTool supports two syntaxes for shell completion installation:
+
+#### Flag Syntax (Recommended for basic use)
+```bash
+xraylabtool --install-completion [SHELL] [OPTIONS]
+```
+
+#### Subcommand Syntax (Full feature support)
+```bash
+xraylabtool install-completion [SHELL] [OPTIONS]
+```
+
+Both syntaxes provide the same core functionality, with the subcommand syntax supporting all advanced options.
+
+### Shell Types
+- `bash` - Bash shell completion
+- `zsh` - Zsh shell completion
+- `fish` - Fish shell completion
+- `powershell` - PowerShell completion
+- (Auto-detected if not specified)
+
+### Optional Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--user` | Install for current user only | Default behavior |
+| `--system` | Install system-wide (requires sudo) | User installation |
+| `--test` | Test if completion is working | Installation mode |
+| `--uninstall` | Remove existing completion | Installation mode |
+
+### Examples
+
+#### Basic Installation (Flag Syntax)
+
+**Install for Current Shell (Auto-detected)**
+```bash
+# Flag syntax (simple and quick)
+xraylabtool --install-completion
+```
+
+**Install for Specific Shell**
+```bash
+# Flag syntax examples
+xraylabtool --install-completion bash
+xraylabtool --install-completion zsh
+xraylabtool --install-completion fish
+xraylabtool --install-completion powershell
+```
+
+**Test Installation**
+```bash
+# Flag syntax with options
+xraylabtool --install-completion bash --test
+xraylabtool --install-completion zsh --test
+xraylabtool --install-completion fish --test
+xraylabtool --install-completion powershell --test
+```
+
+#### Advanced Installation (Subcommand Syntax)
+
+**Standard Installation**
+```bash
+# Subcommand syntax (traditional)
+xraylabtool install-completion
+xraylabtool install-completion bash
+xraylabtool install-completion zsh
+xraylabtool install-completion fish
+xraylabtool install-completion powershell
+```
+
+**System-Wide Installation**
+```bash
+# Subcommand syntax supports all options
+xraylabtool install-completion --system
+xraylabtool install-completion bash --system
+```
+**Note:** Requires sudo privileges. Installs to system completion directory.
+
+**Test Installation**
+```bash
+xraylabtool install-completion --test
+xraylabtool install-completion bash --test
+```
+**Output:**
+```
+✓ xraylabtool command found in PATH
+✓ [Shell] completion appears to be loaded
+```
+
+#### Uninstall Completion
+```bash
+# Either syntax works for uninstalling
+xraylabtool --install-completion --uninstall
+xraylabtool install-completion --uninstall
+```
+Removes completion scripts and configuration for your current shell.
+
+### Shell Completion Features
+
+Once installed, you get intelligent completion for:
+
+#### Command Completion
+```bash
+xraylabtool <TAB>         # Shows all available commands
+xraylabtool c<TAB>        # Completes to calc/convert
+```
+
+#### Parameter Completion
+```bash
+xraylabtool calc SiO2 -<TAB>      # Shows all calc options
+xraylabtool calc SiO2 --format <TAB>  # Shows: table csv json
+```
+
+#### Value Suggestions
+```bash
+xraylabtool calc <TAB>            # Shows common formulas: SiO2 Si Al2O3...
+xraylabtool calc SiO2 -e <TAB>    # Shows energy examples: 10.0 8.048...
+xraylabtool calc SiO2 -e 10.0 -d <TAB>  # Shows densities: 2.2 2.33 3.95...
+```
+
+#### File Completion
+```bash
+xraylabtool calc SiO2 -e 10.0 -d 2.2 -o <TAB>  # Shows files for output
+xraylabtool batch <TAB>                         # Shows *.csv files
+```
+
+### Supported Shells
+
+- **Bash**: Full completion support with bash-completion@2
+- **Zsh**: Full support through bash-completion compatibility
+- **Fish**: Native Fish completion with full feature support
+- **PowerShell**: Native PowerShell completion with full feature support
+
+### Prerequisites
+
+#### Bash Users (macOS)
+Bash completion requires the bash-completion@2 package:
+
+```bash
+# Install bash-completion
+brew install bash-completion@2
+
+# Add to ~/.bash_profile:
+[[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"
+```
+
+#### Zsh Users
+Uses bash-completion compatibility mode - no additional packages needed.
+
+#### Fish Users
+Native Fish completion - no additional packages needed.
+
+#### PowerShell Users
+Requires PowerShell 5.1+ or PowerShell Core 7+:
+
+```powershell
+# Check PowerShell version
+$PSVersionTable.PSVersion
+
+# After installation, add to your PowerShell profile:
+Import-Module XRayLabTool
+
+# To find your profile location:
+$PROFILE
+```
+
+### Troubleshooting
+
+#### Completion Not Working
+1. **Restart your shell**: `exec bash` or open new terminal
+2. **Check installation**: `xraylabtool --install-completion --test`
+3. **Manually source config**: `source ~/.bashrc` (or `~/.zshrc`)
+4. **For bash users**: Ensure bash-completion@2 is installed (see Prerequisites)
+
+#### Permission Issues
+- Use `--user` flag for user-only installation (default)
+- System installation requires sudo privileges
+- Check file permissions in completion directories
+
+---
+
 ## Output Formats
 
 ### Table Format (Default)
@@ -720,6 +908,21 @@ xraylabtool formula Ca10P6O26H2       # Hydroxyapatite
 xraylabtool formula SiO2,TiO2,Al2O3,Fe2O3 -o oxides.json
 ```
 
+### 7. Shell Completion Setup
+Enable tab completion for enhanced productivity:
+```bash
+# Install shell completion (recommended first step)
+xraylabtool install-completion
+
+# Test installation
+xraylabtool install-completion --test
+
+# Now use tab completion for all commands
+xraylabtool calc <TAB>              # Shows formula suggestions
+xraylabtool calc SiO2 -e <TAB>      # Shows energy examples
+xraylabtool calc SiO2 --format <TAB> # Shows: table csv json
+```
+
 ---
 
 ## Tips & Best Practices
@@ -776,9 +979,20 @@ xraylabtool formula SiO2,TiO2,Al2O3,Fe2O3 -o oxides.json
    xraylabtool atomic Ca,P,O,H
    ```
 
-### File Management
+### Productivity Tips
 
-1. **Output Organization**
+1. **Shell Completion**
+   ```bash
+   # Install completion for faster command entry
+   xraylabtool install-completion
+
+   # Use tab completion extensively
+   xraylabtool c<TAB>              # Expands to calc or convert
+   xraylabtool calc Si<TAB>        # Shows Silicon compounds
+   xraylabtool calc SiO2 -<TAB>    # Shows all available options
+   ```
+
+2. **File Management**
    ```bash
    # Organized output structure
    mkdir -p results/{calculations,conversions,batch}
@@ -787,7 +1001,7 @@ xraylabtool formula SiO2,TiO2,Al2O3,Fe2O3 -o oxides.json
    xraylabtool batch materials.csv -o results/batch/materials_batch.csv
    ```
 
-2. **Naming Conventions**
+3. **Naming Conventions**
    ```bash
    # Descriptive filenames
    xraylabtool calc Si -e 8.048 -d 2.33 -o si_cu_ka_8keV.csv
@@ -830,12 +1044,13 @@ xraylabtool formula SiO2,TiO2,Al2O3,Fe2O3 -o oxides.json
 | `atomic` | Element data | `elements` | Atomic properties |
 | `bragg` | Diffraction angles | `-d`, `-w/-e` | Bragg angle table |
 | `list` | Reference info | `type` | Constants/fields/examples |
+| `install-completion` | Shell completion setup | `--user/--system/--test` | Installation status |
 
 ---
 
 ## Version History
 
-- **v0.1.8** - Current version with full CLI functionality
+- **v0.1.10** - Current version with PowerShell completion support
 - **Python Requirements** - ≥ 3.12
 - **License** - MIT
 
@@ -846,4 +1061,4 @@ For more information, see:
 
 ---
 
-*This documentation was generated for XRayLabTool v0.1.8. For the latest updates, check the project repository.*
+*This documentation was generated for XRayLabTool v0.1.10. For the latest updates, check the project repository.*

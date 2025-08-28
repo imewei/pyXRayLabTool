@@ -3,8 +3,21 @@
 Command Line Interface for XRayLabTool.
 
 This module provides a comprehensive CLI for calculating X-ray optical properties
-of materials, including single material calculations, batch processing, and
-utility functions for X-ray analysis.
+of materials, including single material calculations, batch processing, utility
+functions for X-ray analysis, and shell completion installation.
+
+Available Commands:
+    calc                Calculate X-ray properties for a single material
+    batch               Process multiple materials from CSV file
+    convert             Convert between energy and wavelength units
+    formula             Parse and analyze chemical formulas
+    atomic              Look up atomic data for elements
+    bragg               Calculate Bragg angles for diffraction
+    list                List available data and information
+    install-completion  Install shell completion for xraylabtool
+
+The CLI supports various output formats (table, CSV, JSON), field filtering,
+precision control, and comprehensive shell completion for enhanced usability.
 """
 
 import argparse
@@ -55,6 +68,9 @@ def create_parser() -> argparse.ArgumentParser:
           # Parse chemical formula
           xraylabtool formula SiO2 --verbose
 
+          # Install shell completion
+          xraylabtool install-completion
+
         For more detailed help on specific commands, use:
           xraylabtool <command> --help
         """
@@ -67,6 +83,33 @@ def create_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose output"
+    )
+
+    # Add completion installation flags
+    completion_group = parser.add_argument_group("completion installation")
+    completion_group.add_argument(
+        "--install-completion",
+        nargs="?",
+        const="auto",
+        choices=["auto", "bash", "zsh", "fish", "powershell"],
+        metavar="SHELL",
+        help="Install shell completion for specified shell "
+        "(auto-detects if not specified)",
+    )
+    completion_group.add_argument(
+        "--test",
+        action="store_true",
+        help="Test completion installation (use with --install-completion)",
+    )
+    completion_group.add_argument(
+        "--system",
+        action="store_true",
+        help="Install system-wide completion (use with --install-completion)",
+    )
+    completion_group.add_argument(
+        "--uninstall",
+        action="store_true",
+        help="Uninstall completion (use with --install-completion)",
     )
 
     # Create subparsers for different commands
@@ -82,6 +125,7 @@ def create_parser() -> argparse.ArgumentParser:
     add_atomic_command(subparsers)
     add_bragg_command(subparsers)
     add_list_command(subparsers)
+    add_install_completion_command(subparsers)
 
     return parser
 
@@ -377,6 +421,71 @@ def add_list_command(subparsers: Any) -> None:
         "type",
         choices=["constants", "fields", "examples"],
         help="Type of information to list",
+    )
+
+
+def add_install_completion_command(subparsers: Any) -> None:
+    """Add the 'install-completion' subcommand for shell completion setup."""
+    parser = subparsers.add_parser(
+        "install-completion",
+        help="Install shell completion for xraylabtool",
+        description="Install or manage shell completion functionality",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=dedent(
+            """
+        Examples:
+          # Install completion for current shell (auto-detected)
+          xraylabtool install-completion
+
+          # Install for specific shell
+          xraylabtool install-completion bash
+          xraylabtool install-completion zsh
+          xraylabtool install-completion fish
+
+          # Install completion system-wide (requires sudo)
+          xraylabtool install-completion --system
+
+          # Test if completion is working
+          xraylabtool install-completion --test
+
+          # Uninstall completion
+          xraylabtool install-completion --uninstall
+        """
+        ),
+    )
+
+    # Positional argument for shell type
+    parser.add_argument(
+        "shell",
+        nargs="?",
+        choices=["bash", "zsh", "fish", "powershell"],
+        default=None,
+        help="Shell type to install completion for (auto-detected if not specified)",
+    )
+
+    parser.add_argument(
+        "--user",
+        action="store_true",
+        default=True,
+        help="Install for current user only (default)",
+    )
+
+    parser.add_argument(
+        "--system",
+        action="store_true",
+        help="Install system-wide (requires sudo privileges)",
+    )
+
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Test if completion is working",
+    )
+
+    parser.add_argument(
+        "--uninstall",
+        action="store_true",
+        help="Uninstall existing completion",
     )
 
 
@@ -1234,6 +1343,7 @@ def cmd_list(args: Any) -> int:
             ("Unit conversion", "xraylabtool convert energy 10.0 --to wavelength"),
             ("Formula parsing", "xraylabtool formula SiO2 --verbose"),
             ("Bragg angles", "xraylabtool bragg -d 3.14 -e 8.0"),
+            ("Install completion", "xraylabtool install-completion"),
         ]
 
         for description, command in examples:
@@ -1241,6 +1351,13 @@ def cmd_list(args: Any) -> int:
             print(f"  {command}")
 
     return 0
+
+
+def cmd_install_completion(args: Any) -> int:
+    """Handle the 'install-completion' command."""
+    from .completion_installer import install_completion_main
+
+    return install_completion_main(args)
 
 
 def main() -> int:
@@ -1257,6 +1374,35 @@ def main() -> int:
             # Invalid arguments - return error code instead of exiting
             return 1
 
+    # Handle --install-completion flag before checking for subcommands
+    if hasattr(args, "install_completion") and args.install_completion is not None:
+        from .completion_installer import install_completion_main
+
+        # Create a mock args object that matches the install-completion
+        # subcommand format
+        class MockArgs:
+            def __init__(
+                self,
+                shell_type: Optional[str],
+                test: bool = False,
+                system: bool = False,
+                uninstall: bool = False,
+            ) -> None:
+                self.shell = shell_type if shell_type != "auto" else None
+                self.system = system
+                # user installation is default unless system is specified
+                self.user = not system
+                self.uninstall = uninstall
+                self.test = test
+
+        mock_args = MockArgs(
+            args.install_completion,
+            test=getattr(args, "test", False),
+            system=getattr(args, "system", False),
+            uninstall=getattr(args, "uninstall", False),
+        )
+        return install_completion_main(mock_args)
+
     # If no command specified, show help
     if not args.command:
         parser.print_help()
@@ -1271,6 +1417,7 @@ def main() -> int:
         "atomic": cmd_atomic,
         "bragg": cmd_bragg,
         "list": cmd_list,
+        "install-completion": cmd_install_completion,
     }
 
     handler = command_handlers.get(args.command)

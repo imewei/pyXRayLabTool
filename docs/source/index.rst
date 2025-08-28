@@ -19,9 +19,10 @@ Key Features
 
 ⚡ **Command-Line Interface**
    - Powerful CLI for batch processing and quick calculations
-   - 7 subcommands: calc, batch, convert, formula, atomic, bragg, list
+   - 8 subcommands: calc, batch, convert, formula, atomic, bragg, list, install-completion
    - Multiple output formats: Table, CSV, and JSON
    - Flexible energy input formats and parallel processing
+   - Multi-shell completion: Bash, Zsh, Fish, and PowerShell with context-aware suggestions
 
 🔬 **Scientific Accuracy**
    - Based on CXRO/NIST atomic scattering factor databases
@@ -64,6 +65,12 @@ Quick Start
 **Command-Line Interface:**
 
 .. code-block:: bash
+
+   # Install shell completion (recommended first step)
+   xraylabtool --install-completion
+
+   # Or install for specific shell
+   xraylabtool --install-completion powershell  # Windows PowerShell/PowerShell Core
 
    # Single material calculation
    xraylabtool calc SiO2 -e 10.0 -d 2.2

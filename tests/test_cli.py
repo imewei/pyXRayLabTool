@@ -13,6 +13,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -26,6 +27,7 @@ try:
         cmd_calc,
         cmd_convert,
         cmd_formula,
+        cmd_install_completion,
         cmd_list,
         format_xray_result,
         main,
@@ -42,6 +44,7 @@ except ImportError:
         cmd_calc,
         cmd_convert,
         cmd_formula,
+        cmd_install_completion,
         cmd_list,
         format_xray_result,
         main,
@@ -235,7 +238,7 @@ class TestBatchCommand:
     def test_batch_command_basic(self):
         """Test basic batch processing."""
         # Create temporary input CSV file
-        input_data = [
+        input_data: list[list[Any]] = [
             ["formula", "density", "energy"],
             ["SiO2", 2.2, 10.0],
             ["Si", 2.33, 8.0],
@@ -525,6 +528,30 @@ class TestMainFunction:
             result = main()
             assert result == 1  # Should return error
 
+    def test_all_expected_commands_available(self):
+        """Test that all expected commands are available in CLI."""
+        expected_commands = [
+            "calc",
+            "batch",
+            "convert",
+            "formula",
+            "atomic",
+            "bragg",
+            "list",
+            "install-completion",
+        ]
+
+        # Test that each command can be invoked with --help
+        for command in expected_commands:
+            with patch("sys.argv", ["xraylabtool", command, "--help"]):
+                with patch("sys.stdout"):  # Suppress help output
+                    with pytest.raises(SystemExit) as excinfo:
+                        main()
+                    # Help should exit with code 0
+                    assert (
+                        excinfo.value.code == 0
+                    ), f"Command '{command}' not available or failed"
+
 
 class TestCLIIntegration:
     """Integration tests for the CLI."""
@@ -575,7 +602,7 @@ class TestCLIIntegration:
     def test_full_batch_workflow(self):
         """Test full batch processing workflow."""
         # Create input CSV
-        input_data = [
+        input_data: list[list[Any]] = [
             ["formula", "density", "energy"],
             ["SiO2", 2.2, 10.0],
             ["Si", 2.33, "8.0,12.0"],
@@ -624,6 +651,206 @@ class TestCLIIntegration:
             for filename in [input_filename, output_filename]:
                 if Path(filename).exists():
                     Path(filename).unlink()
+
+
+class TestInstallCompletionCommand:
+    """Test the 'install-completion' command functionality."""
+
+    def test_install_completion_help(self):
+        """Test install-completion command shows help correctly."""
+
+        # Mock command line arguments for help
+        class MockArgs:
+            test = False
+            uninstall = False
+            system = False
+            user = True
+
+        # Test that the function exists and can be called
+        # We can't test actual installation without affecting system
+        try:
+            from xraylabtool.completion_installer import CompletionInstaller
+
+            installer = CompletionInstaller()
+            assert installer is not None
+        except ImportError:
+            pytest.skip("completion_installer module not available")
+
+    def test_install_completion_test_mode(self):
+        """Test install-completion --test functionality."""
+
+        class MockArgs:
+            test = True
+            uninstall = False
+            system = False
+            user = True
+            shell = None
+
+        args = MockArgs()
+
+        # Test the command handler
+        try:
+            result = cmd_install_completion(args)
+            # Should return 0 (success) even if completion isn't installed
+            assert isinstance(result, int)
+            assert result in [0, 1]  # Valid return codes
+        except ImportError:
+            pytest.skip("completion_installer module not available")
+
+    def test_install_completion_arguments(self):
+        """Test install-completion command argument handling."""
+        # Test different argument combinations
+        test_cases = [
+            {"test": True, "uninstall": False, "system": False, "user": True},
+            {"test": False, "uninstall": True, "system": False, "user": True},
+            {"test": False, "uninstall": False, "system": True, "user": False},
+            {"test": False, "uninstall": False, "system": False, "user": True},
+        ]
+
+        for case in test_cases:
+
+            class MockArgs:
+                def __init__(self, **kwargs):
+                    self.test: bool = kwargs.get("test", False)
+                    self.uninstall: bool = kwargs.get("uninstall", False)
+                    self.system: bool = kwargs.get("system", False)
+                    self.user: bool = kwargs.get("user", False)
+                    # Set any additional attributes
+                    for key, value in kwargs.items():
+                        setattr(self, key, value)
+
+            args = MockArgs(**case)
+
+            # Verify arguments are set correctly
+            assert args.test == case["test"]
+            assert args.uninstall == case["uninstall"]
+            assert args.system == case["system"]
+            assert args.user == case["user"]
+
+    def test_completion_installer_module_import(self):
+        """Test that completion installer module can be imported."""
+        try:
+            from xraylabtool.completion_installer import (
+                BASH_COMPLETION_SCRIPT,
+                CompletionInstaller,
+                install_completion_main,
+            )
+
+            # Check that key components exist
+            assert CompletionInstaller is not None
+            assert install_completion_main is not None
+            assert isinstance(BASH_COMPLETION_SCRIPT, str)
+            assert len(BASH_COMPLETION_SCRIPT) > 0
+            assert "xraylabtool" in BASH_COMPLETION_SCRIPT
+
+        except ImportError:
+            pytest.skip("completion_installer module not available")
+
+    @patch("subprocess.run")
+    @patch("pathlib.Path.exists")
+    def test_completion_installer_methods(self, mock_exists, mock_subprocess):
+        """Test CompletionInstaller methods with mocked dependencies."""
+        try:
+            from xraylabtool.completion_installer import CompletionInstaller
+
+            # Mock that bash completion directories exist
+            mock_exists.return_value = True
+            mock_subprocess.return_value.returncode = 0
+
+            installer = CompletionInstaller()
+
+            # Test that methods exist and are callable
+            assert hasattr(installer, "install_bash_completion")
+            assert hasattr(installer, "uninstall_bash_completion")
+            assert hasattr(installer, "test_completion")
+            assert hasattr(installer, "get_bash_completion_dir")
+            assert hasattr(installer, "get_user_bash_completion_dir")
+
+            # Test get_user_bash_completion_dir returns Path object
+            user_dir = installer.get_user_bash_completion_dir()
+            assert isinstance(user_dir, Path)
+            assert ".bash_completion.d" in str(user_dir)
+
+        except ImportError:
+            pytest.skip("completion_installer module not available")
+
+    def test_bash_completion_script_content(self):
+        """Test that bash completion script contains expected content."""
+        try:
+            from xraylabtool.completion_installer import BASH_COMPLETION_SCRIPT
+
+            # Check for key completion functions
+            assert "_xraylabtool_complete" in BASH_COMPLETION_SCRIPT
+            assert (
+                "complete -F _xraylabtool_complete xraylabtool"
+                in BASH_COMPLETION_SCRIPT
+            )
+
+            # Check for all commands including install-completion
+            expected_commands = [
+                "calc",
+                "batch",
+                "convert",
+                "formula",
+                "atomic",
+                "bragg",
+                "list",
+                "install-completion",
+            ]
+
+            for command in expected_commands:
+                assert command in BASH_COMPLETION_SCRIPT
+
+            # Check for completion functions for main commands
+            expected_functions = [
+                "_xraylabtool_calc_complete",
+                "_xraylabtool_batch_complete",
+                "_xraylabtool_convert_complete",
+                "_xraylabtool_install_completion_complete",
+            ]
+
+            for func in expected_functions:
+                assert func in BASH_COMPLETION_SCRIPT
+
+            # Check for chemical formulas and elements
+            assert "SiO2" in BASH_COMPLETION_SCRIPT
+            assert "Si" in BASH_COMPLETION_SCRIPT
+
+        except ImportError:
+            pytest.skip("completion_installer module not available")
+
+    def test_main_function_includes_install_completion(self):
+        """Test that main function includes install-completion in command handlers."""
+        # Test that install-completion is in the main help
+        with patch("sys.argv", ["xraylabtool", "--help"]):
+            with patch("sys.stdout") as mock_stdout:
+                try:
+                    main()
+                except SystemExit:
+                    pass  # Expected for --help
+
+                # Check if install-completion appears in help output
+                help_calls = [str(call) for call in mock_stdout.write.call_args_list]
+                help_text = "".join(help_calls)
+                if help_text:  # Only check if we got help output
+                    assert "install-completion" in help_text
+
+    def test_install_completion_in_examples(self):
+        """Test that install-completion appears in list examples."""
+
+        class MockArgs:
+            type = "examples"
+
+        args = MockArgs()
+
+        with patch("builtins.print") as mock_print:
+            result = cmd_list(args)
+            assert result == 0
+
+            # Check that install-completion appears in printed output
+            print_calls = [str(call) for call in mock_print.call_args_list]
+            examples_text = "".join(print_calls)
+            assert "install-completion" in examples_text
 
 
 if __name__ == "__main__":

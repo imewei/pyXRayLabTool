@@ -7,6 +7,8 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   xraylabtool.cli
+   xraylabtool.completion_installer
    xraylabtool.constants
    xraylabtool.core
    xraylabtool.utils

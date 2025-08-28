@@ -68,6 +68,28 @@ The test suite is designed to ensure 100% compatibility between the Julia and Py
   - Edge case handling for small arrays
   - Window size validation
 
+- **`test_cli.py`** - Command line interface testing
+  - All CLI commands and options
+  - Energy string parsing functionality
+  - Result formatting (JSON, CSV, table)
+  - Error handling and input validation
+  - Integration tests for full workflows
+  - Shell completion command testing
+
+- **`test_completion_installer.py`** - Shell completion installer testing
+  - Bash completion script content validation
+  - Installation and uninstallation workflows
+  - System vs user installation modes
+  - Error handling and robustness testing
+  - Completion script syntax validation
+
+- **`test_completion_integration.py`** - Shell completion integration testing
+  - End-to-end completion functionality
+  - CLI integration with completion system
+  - Bash script loading and execution
+  - Installation workflow testing
+  - Cross-platform compatibility
+
 ## Test Categories
 
 ### 1. Integration Tests
@@ -137,6 +159,12 @@ pytest tests/test_integration.py::TestPerformanceBenchmarks --benchmark-only
 
 # Formula parsing tests
 pytest tests/test_formula_parsing.py -v
+
+# CLI tests
+pytest tests/test_cli.py -v
+
+# Shell completion tests
+pytest tests/test_completion_installer.py tests/test_completion_integration.py -v
 
 # With coverage report
 pytest tests/ --cov=xraylabtool --cov-report=html
