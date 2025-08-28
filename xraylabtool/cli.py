@@ -575,11 +575,11 @@ def _format_material_properties(result: XRayResult, precision: int) -> List[str]
     return [
         "Material Properties:",
         f"  Formula: {result.formula}",
-        f"  Molecular Weight: {result.molecular_weight_g_mol:.{precision}f} g/mol",
-        f"  Total Electrons: {result.total_electrons:.{precision}f}",
-        f"  Density: {result.density_g_cm3:.{precision}f} g/cm³",
+        f"  Molecular Weight: {result.molecular_weight_g_mol: .{precision}f} g/mol",
+        f"  Total Electrons: {result.total_electrons: .{precision}f}",
+        f"  Density: {result.density_g_cm3: .{precision}f} g/cm³",
         (
-            f"  Electron Density: {result.electron_density_per_ang3:.{precision}e} "
+            f"  Electron Density: {result.electron_density_per_ang3: .{precision}e} "
             "electrons/Å³"
         ),
         "",
@@ -619,7 +619,7 @@ def _format_multiple_energies(result: XRayResult, precision: int) -> List[str]:
     }
 
     df = pd.DataFrame(df_data)
-    pd.set_option("display.float_format", f"{{:.{precision}g}}".format)
+    pd.set_option("display.float_format", f"{{: .{precision}g}}".format)
     table_str = df.to_string(index=False)
     output_lines.append(table_str)
 
@@ -631,29 +631,29 @@ def _format_scalar_field(field: str, value: Any, precision: int) -> str:
     if field == "formula":
         return f"  Formula: {value}"
     elif field == "molecular_weight_g_mol":
-        return f"  Molecular Weight: {value:.{precision}f} g/mol"
+        return f"  Molecular Weight: {value: .{precision}f} g/mol"
     elif field == "total_electrons":
-        return f"  Total Electrons: {value:.{precision}f}"
+        return f"  Total Electrons: {value: .{precision}f}"
     elif field == "density_g_cm3":
-        return f"  Density: {value:.{precision}f} g/cm³"
+        return f"  Density: {value: .{precision}f} g/cm³"
     elif field == "electron_density_per_ang3":
-        return f"  Electron Density: {value:.{precision}e} electrons/Å³"
+        return f"  Electron Density: {value: .{precision}e} electrons/Å³"
     return ""
 
 
 def _format_array_field_single(field: str, value: float, precision: int) -> str:
     """Format a single array field for single energy point."""
     formatters = {
-        "energy_kev": (f"  Energy: {{:.{precision}f}} keV", "f"),
-        "wavelength_angstrom": (f"  Wavelength: {{:.{precision}f}} Å", "f"),
-        "dispersion_delta": (f"  Dispersion (δ): {{:.{precision}e}}", "e"),
-        "absorption_beta": (f"  Absorption (β): {{:.{precision}e}}", "e"),
-        "scattering_factor_f1": (f"  Scattering f1: {{:.{precision}f}}", "f"),
-        "scattering_factor_f2": (f"  Scattering f2: {{:.{precision}f}}", "f"),
-        "critical_angle_degrees": (f"  Critical Angle: {{:.{precision}f}}°", "f"),
-        "attenuation_length_cm": (f"  Attenuation Length: {{:.{precision}f}} cm", "f"),
-        "real_sld_per_ang2": (f"  Real SLD: {{:.{precision}e}} Å⁻²", "e"),
-        "imaginary_sld_per_ang2": (f"  Imaginary SLD: {{:.{precision}e}} Å⁻²", "e"),
+        "energy_kev": (f"  Energy: {{: .{precision}f}} keV", "f"),
+        "wavelength_angstrom": (f"  Wavelength: {{: .{precision}f}} Å", "f"),
+        "dispersion_delta": (f"  Dispersion (δ): {{: .{precision}e}}", "e"),
+        "absorption_beta": (f"  Absorption (β): {{: .{precision}e}}", "e"),
+        "scattering_factor_f1": (f"  Scattering f1: {{: .{precision}f}}", "f"),
+        "scattering_factor_f2": (f"  Scattering f2: {{: .{precision}f}}", "f"),
+        "critical_angle_degrees": (f"  Critical Angle: {{: .{precision}f}}°", "f"),
+        "attenuation_length_cm": (f"  Attenuation Length: {{: .{precision}f}} cm", "f"),
+        "real_sld_per_ang2": (f"  Real SLD: {{: .{precision}e}} Å⁻²", "e"),
+        "imaginary_sld_per_ang2": (f"  Imaginary SLD: {{: .{precision}e}} Å⁻²", "e"),
     }
 
     if field in formatters:
@@ -728,7 +728,7 @@ def _format_multiple_energy_section(
 
     if df_data:
         df = pd.DataFrame(df_data)
-        format_str = f"{{:.{precision}g}}"
+        format_str = f"{{: .{precision}g}}"
         pd.set_option("display.float_format", format_str.format)
         table_str = df.to_string(index=False)
         output_lines.append(table_str)
@@ -817,7 +817,7 @@ def _print_calc_verbose_info(args: Any, energies: np.ndarray) -> None:
     """Print verbose calculation information."""
     print(f"Calculating X-ray properties for {args.formula}...")
     print(
-        f"Energy range: {energies.min():.3f} - {energies.max():.3f} keV "
+        f"Energy range: {energies.min(): .3f} - {energies.max(): .3f} keV "
         f"({len(energies)} points)"
     )
     print(f"Density: {args.density} g/cm³")
@@ -1076,7 +1076,7 @@ def cmd_convert(args: Any) -> int:
             print(f"{args.from_unit.title()} to {args.to_unit.title()} Conversion:")
             print("-" * 40)
             for original, converted_val in zip(values, converted):
-                print(f"{original:>10.4f} → {converted_val:>10.4f} {unit_label}")
+                print(f"{original: >10.4f} → {converted_val: >10.4f} {unit_label}")
 
         return 0
 
@@ -1142,8 +1142,8 @@ def _print_formula_results(results: List[Dict[str, Any]], verbose: bool) -> None
             print("Atomic data:")
             for atom_data in result["atomic_data"]:
                 print(
-                    f"  {atom_data['element']:>2}: Z={atom_data['atomic_number']:>3}, "
-                    f"MW={atom_data['atomic_weight']:>8.3f}"
+                    f"  {atom_data['element']: >2}: Z={atom_data['atomic_number']: >3}, "
+                    f"MW={atom_data['atomic_weight']: >8.3f}"
                 )
         print()
 
@@ -1209,12 +1209,12 @@ def cmd_atomic(args: Any) -> int:
         else:
             print("Atomic Data:")
             print("-" * 30)
-            print(f"{'Element':>8} {'Z':>3} {'MW (u)':>10}")
+            print(f"{'Element': >8} {'Z': >3} {'MW (u)': >10}")
             print("-" * 30)
             for data in results:
                 print(
-                    f"{data['element']:>8} {data['atomic_number']:>3} "
-                    f"{data['atomic_weight']:>10.3f}"
+                    f"{data['element']: >8} {data['atomic_number']: >3} "
+                    f"{data['atomic_weight']: >10.3f}"
                 )
 
         return 0
@@ -1269,13 +1269,13 @@ def cmd_bragg(args: Any) -> int:
         else:
             print("Bragg Angle Calculations:")
             print("-" * 50)
-            print(f"{'d (Å)':>8} {'θ (°)':>8} {'2θ (°)':>8}")
+            print(f"{'d (Å)': >8} {'θ (°)': >8} {'2θ (°)': >8}")
             print("-" * 50)
             for result in results:
                 print(
-                    f"{result['d_spacing_angstrom']:>8.3f} "
-                    f"{result['bragg_angle_degrees']:>8.3f} "
-                    f"{result['two_theta_degrees']:>8.3f}"
+                    f"{result['d_spacing_angstrom']: >8.3f} "
+                    f"{result['bragg_angle_degrees']: >8.3f} "
+                    f"{result['two_theta_degrees']: >8.3f}"
                 )
 
         return 0
@@ -1305,7 +1305,7 @@ def cmd_list(args: Any) -> int:
         for name in const_names:
             if hasattr(constants, name):
                 value = getattr(constants, name)
-                print(f"{name:25}: {value}")
+                print(f"{name: 25}: {value}")
 
     elif args.type == "fields":
         print("Available XRayResult Fields (new snake_case names):")
@@ -1329,7 +1329,7 @@ def cmd_list(args: Any) -> int:
         ]
 
         for field, description in field_descriptions:
-            print(f"{field:25}: {description}")
+            print(f"{field: 25}: {description}")
 
     elif args.type == "examples":
         print("CLI Usage Examples:")
@@ -1361,7 +1361,7 @@ def cmd_install_completion(args: Any) -> int:
 
 
 def main() -> int:
-    """Main CLI entry point."""
+    """Execute the main CLI application."""
     parser = create_parser()
 
     try:

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-XRayLabTool Shell Completion Installer
+"""XRayLabTool Shell Completion Installer.
 
 A lightweight installer for shell completion functionality.
 Supports Bash completion with automatic detection and installation.
@@ -16,7 +15,8 @@ from typing import Optional
 class CompletionInstaller:
     """Handles installation of shell completion for XRayLabTool."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the completion installer."""
         self.script_dir = Path(__file__).parent
         self.completion_script = self.script_dir / "_xraylabtool_completion.bash"
 
@@ -170,8 +170,8 @@ class CompletionInstaller:
             return False
 
 
-def main():
-    """Main installer function."""
+def main() -> None:
+    """Install shell completion for XRayLabTool."""
     import argparse
 
     parser = argparse.ArgumentParser(

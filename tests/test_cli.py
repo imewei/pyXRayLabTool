@@ -144,7 +144,6 @@ class TestCalcCommand:
 
     def test_basic_calc_command(self):
         """Test basic calculation command."""
-
         # Mock command line arguments
         class MockArgs:
             formula = "SiO2"
@@ -658,7 +657,6 @@ class TestInstallCompletionCommand:
 
     def test_install_completion_help(self):
         """Test install-completion command shows help correctly."""
-
         # Mock command line arguments for help
         class MockArgs:
             test = False

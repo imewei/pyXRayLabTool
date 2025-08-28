@@ -1,6 +1,4 @@
-"""
-Tests for atomic data lookup functions with LRU caching.
-"""
+"""Tests for atomic data lookup functions with LRU caching."""
 
 import numpy as np
 import pytest

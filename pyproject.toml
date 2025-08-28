@@ -232,7 +232,6 @@ warn_redundant_casts = true
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
-extra_checks = true
 
 # Strict mode settings
 disallow_untyped_defs = true

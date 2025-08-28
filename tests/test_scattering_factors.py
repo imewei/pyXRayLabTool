@@ -121,7 +121,7 @@ class TestScatteringFactorLoading:
         with pytest.raises(
             ValueError, match="Element symbol must be a non-empty string"
         ):
-            load_scattering_factor_data(None)  # type: ignore
+            load_scattering_factor_data(None)
 
         # Test non-string
         with pytest.raises(

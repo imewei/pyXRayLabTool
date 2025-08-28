@@ -28,7 +28,7 @@ PYTHON_REQUIRES = ">=3.12"
 
 
 # Read long description from README
-def read_long_description():
+def read_long_description() -> str:
     """Read the long description from README.md."""
     readme_path = Path(__file__).parent / "README.md"
     if readme_path.exists():
@@ -174,8 +174,8 @@ INCLUDE_PACKAGE_DATA = True
 EXCLUDE = ["tests*", "docs*", "benchmarks*"]
 
 
-def main():
-    """Main setup function."""
+def main() -> None:
+    """Execute setup for XRayLabTool package."""
     setup(
         # Basic package information
         name=PACKAGE_NAME,

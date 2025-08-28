@@ -1,6 +1,4 @@
-"""
-Tests for the utils module.
-"""
+"""Tests for the utils module."""
 
 import os
 import sys

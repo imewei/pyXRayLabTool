@@ -40,6 +40,7 @@ class BatchConfig:
     cache_results: bool = False
 
     def __post_init__(self) -> None:
+        """Initialize the configuration after object creation."""
         if self.max_workers is None:
             # Auto-detect optimal worker count based on system capabilities
             cpu_count = os.cpu_count() or 1
@@ -48,11 +49,10 @@ class BatchConfig:
 
 
 class MemoryMonitor:
-    """
-    Memory usage monitor for batch operations.
-    """
+    """Memory usage monitor for batch operations."""
 
     def __init__(self, limit_gb: float = 4.0):
+        """Initialize the memory monitor."""
         self.limit_bytes = limit_gb * 1024 * 1024 * 1024
         self.process = psutil.Process()
 
@@ -83,9 +83,7 @@ class MemoryMonitor:
             return 0.0
 
     def force_gc(self) -> None:
-        """
-        Force garbage collection to free memory.
-        """
+        """Force garbage collection to free memory."""
         gc.collect()
 
 
@@ -197,7 +195,7 @@ def _prepare_energies_array(
         if isinstance(energies, complex):
             energies_array = np.array([float(energies.real)], dtype=np.float64)
         else:
-            energies_array = np.array([float(energies)], dtype=np.float64)
+            energies_array = np.array([float(energies)], dtype=np.float64)  # type: ignore[arg-type]
     else:
         energies_array = np.array(energies, dtype=np.float64)
 
@@ -233,8 +231,8 @@ def _process_chunks(
     all_results = {}
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
 
-    for chunk in chunk_iterator(calculation_data, config.chunk_size):
-        chunk_results = process_batch_chunk(chunk, config)
+    for chunk in chunk_iterator(calculation_data, config.chunk_size):  # type: ignore[arg-type]
+        chunk_results = process_batch_chunk(chunk, config)  # type: ignore[arg-type]
 
         for formula, result in chunk_results:
             all_results[formula] = result

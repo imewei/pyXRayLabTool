@@ -304,7 +304,7 @@ class TestPerformanceRegression:
             # Record the speedup for information
             speedup = cold_time / warm_time if warm_time > 0 else float("inf")
             print(
-                f"Cache speedup: {speedup:.1f}x (cold: {cold_time * 1000:.2f}ms, warm: {warm_time * 1000:.2f}ms)"
+                f"Cache speedup: {speedup: .1f}x (cold: {cold_time * 1000: .2f}ms, warm: {warm_time * 1000: .2f}ms)"
             )
 
         except FileNotFoundError:

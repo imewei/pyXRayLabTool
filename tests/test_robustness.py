@@ -26,7 +26,7 @@ class TestComplexNumberHandling:
         # Test with complex energy - should use the real part
         complex_energy = 8.0 + 2.0j
         try:
-            result = calculate_single_material_properties("Si", complex_energy, 2.33)  # type: ignore
+            result = calculate_single_material_properties("Si", complex_energy, 2.33)
             # Should succeed and use real part (8.0)
             assert result.Energy[0] == 8.0
         except ValueError as e:
@@ -45,7 +45,7 @@ class TestComplexNumberHandling:
 
         for energy in energies_to_test:
             # Type cast to float for mypy since we know all values are numeric
-            energy_val = float(energy)  # type: ignore[arg-type]
+            energy_val = float(energy)
             result = calculate_single_material_properties("Si", energy_val, 2.33)
             assert len(result.Energy) == 1
             assert np.isclose(result.Energy[0], 8.0)
