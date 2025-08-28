@@ -1053,9 +1053,8 @@ def cmd_convert(args: Any) -> int:
             unit_label = "keV"
         else:
             print(
-                f"Error: Cannot convert from {
-                    args.from_unit} to {
-                    args.to_unit}",
+                f"Error: Cannot convert from {args.from_unit} to "
+                f"{args.to_unit}",
                 file=sys.stderr,
             )
             return 1
@@ -1073,10 +1072,11 @@ def cmd_convert(args: Any) -> int:
             print(f"Conversion results saved to {args.output}")
         else:
             # Print to console
-            print(f"{args.from_unit.title()} to {args.to_unit.title()} Conversion:")
+            print(f"{args.from_unit.title()} to {args.to_unit.title()} "
+                  f"Conversion:")
             print("-" * 40)
             for original, converted_val in zip(values, converted):
-                print(f"{original: >10.4f} → {converted_val: >10.4f} {unit_label}")
+                print(f"{original:>10.4f} → {converted_val:>10.4f} {unit_label}")
 
         return 0
 
@@ -1142,8 +1142,9 @@ def _print_formula_results(results: List[Dict[str, Any]], verbose: bool) -> None
             print("Atomic data:")
             for atom_data in result["atomic_data"]:
                 print(
-                    f"  {atom_data['element']: >2}: Z={atom_data['atomic_number']: >3}, "
-                    f"MW={atom_data['atomic_weight']: >8.3f}"
+                    f"  {atom_data['element']:>2}: "
+                    f"Z={atom_data['atomic_number']:>3}, "
+                    f"MW={atom_data['atomic_weight']:>8.3f}"
                 )
         print()
 
@@ -1213,8 +1214,8 @@ def cmd_atomic(args: Any) -> int:
             print("-" * 30)
             for data in results:
                 print(
-                    f"{data['element']: >8} {data['atomic_number']: >3} "
-                    f"{data['atomic_weight']: >10.3f}"
+                    f"{data['element']:>8} {data['atomic_number']:>3} "
+                    f"{data['atomic_weight']:>10.3f}"
                 )
 
         return 0
@@ -1273,9 +1274,9 @@ def cmd_bragg(args: Any) -> int:
             print("-" * 50)
             for result in results:
                 print(
-                    f"{result['d_spacing_angstrom']: >8.3f} "
-                    f"{result['bragg_angle_degrees']: >8.3f} "
-                    f"{result['two_theta_degrees']: >8.3f}"
+                    f"{result['d_spacing_angstrom']:>8.3f} "
+                    f"{result['bragg_angle_degrees']:>8.3f} "
+                    f"{result['two_theta_degrees']:>8.3f}"
                 )
 
         return 0
