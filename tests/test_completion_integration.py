@@ -8,6 +8,7 @@ bash completion behavior.
 """
 
 import os
+import platform
 import subprocess
 import sys
 import tempfile
@@ -104,6 +105,7 @@ class TestCLICompletionIntegration:
 class TestCompletionScriptIntegration:
     """Test integration of the bash completion script."""
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Bash not available on Windows CI")
     def test_completion_script_syntax(self):
         """Test that completion script has valid bash syntax."""
         # Create a temporary script file
@@ -125,6 +127,7 @@ class TestCompletionScriptIntegration:
             finally:
                 os.unlink(temp_file.name)
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Bash not available on Windows CI")
     def test_completion_script_function_loading(self):
         """Test that completion script functions can be loaded."""
         bash_command = """
@@ -148,6 +151,7 @@ class TestCompletionScriptIntegration:
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pytest.skip("Bash not available or timeout occurred")
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Bash not available on Windows CI")
     def test_completion_script_registration(self):
         """Test that completion registration works."""
         bash_command = """
