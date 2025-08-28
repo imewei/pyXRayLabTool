@@ -761,7 +761,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **CLI Reference**: [CLI_REFERENCE.md](CLI_REFERENCE.md) - Comprehensive command-line interface guide
 - **Virtual Environment Setup**: [VIRTUAL_ENV.md](VIRTUAL_ENV.md) - Development environment setup
 - **Changelog**: [CHANGELOG.md](CHANGELOG.md) - Version history and updates
-- **Online Docs**: [https://xraylabtool.readthedocs.io](https://xraylabtool.readthedocs.io)
+- **Online Docs**: [https://pyxraylabtool.readthedocs.io](https://pyxraylabtool.readthedocs.io)
 
 ### 🔍 Getting Help
 - **Issues**: [GitHub Issues](https://github.com/imewei/pyXRayLabTool/issues) - Bug reports and feature requests
