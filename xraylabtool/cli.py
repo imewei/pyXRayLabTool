@@ -1305,7 +1305,7 @@ def cmd_list(args: Any) -> int:
         for name in const_names:
             if hasattr(constants, name):
                 value = getattr(constants, name)
-                print(f"{name: 25}: {value}")
+                print(f"{name:<25}: {value}")
 
     elif args.type == "fields":
         print("Available XRayResult Fields (new snake_case names):")
@@ -1329,7 +1329,7 @@ def cmd_list(args: Any) -> int:
         ]
 
         for field, description in field_descriptions:
-            print(f"{field: 25}: {description}")
+            print(f"{field:<25}: {description}")
 
     elif args.type == "examples":
         print("CLI Usage Examples:")
