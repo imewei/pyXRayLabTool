@@ -1053,8 +1053,7 @@ def cmd_convert(args: Any) -> int:
             unit_label = "keV"
         else:
             print(
-                f"Error: Cannot convert from {args.from_unit} to "
-                f"{args.to_unit}",
+                f"Error: Cannot convert from {args.from_unit} to " f"{args.to_unit}",
                 file=sys.stderr,
             )
             return 1
@@ -1072,8 +1071,7 @@ def cmd_convert(args: Any) -> int:
             print(f"Conversion results saved to {args.output}")
         else:
             # Print to console
-            print(f"{args.from_unit.title()} to {args.to_unit.title()} "
-                  f"Conversion:")
+            print(f"{args.from_unit.title()} to {args.to_unit.title()} " f"Conversion:")
             print("-" * 40)
             for original, converted_val in zip(values, converted):
                 print(f"{original:>10.4f} → {converted_val:>10.4f} {unit_label}")
