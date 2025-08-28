@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.10] - 2025-08-28
+
 ### Added
+- **Domain-specific exception classes** for better error handling and debugging:
+  - `XRayLabToolError` - Base exception for all XRayLabTool-related errors
+  - `CalculationError` - Errors during X-ray property calculations with optional formula/energy context
+  - `FormulaError` - Chemical formula parsing and validation errors
+  - `EnergyError` - Energy range and validation errors with optional valid range info
+  - `DataFileError` - File I/O and data loading errors
+  - `ValidationError` - Input parameter validation errors with parameter context
+  - `AtomicDataError` - Atomic data lookup and processing errors
+  - `UnknownElementError` - Unknown element symbol errors (inherits from AtomicDataError)
+  - `BatchProcessingError` - Batch operation errors with failed items tracking
+  - `ConfigurationError` - Configuration and settings errors
+- **Comprehensive test coverage** for edge cases and boundary conditions:
+  - `tests/test_exceptions.py` - Full test suite for exception classes (100% coverage)
+  - `tests/test_edge_cases.py` - Core functionality edge case testing
+  - `tests/test_cli_edge_cases.py` - CLI-specific edge case and validation testing
+- **73 new tests** covering exception handling, edge cases, and robustness scenarios
 - **🚀 Shell Completion System**: Comprehensive bash completion for enhanced CLI usability
   - New `xraylabtool install-completion` command for easy setup
   - Context-aware parameter completion for all commands
@@ -18,6 +36,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Standalone installer script with auto-detection
   - User and system-wide installation options
   - Comprehensive documentation and troubleshooting guide
+
+### Fixed
+- **String formatting issues** in CLI output that caused flake8 compliance errors
+- **Code style consistency** throughout the codebase with proper f-string formatting
+- **Dependency version synchronization** between pyproject.toml and requirements.txt
+
+### Changed
+- **Modernized packaging** by removing redundant setup.py in favor of pyproject.toml
+- **Centralized exception handling** - moved from scattered local exceptions to unified module
+- **Enhanced error messages** with contextual information (formula, energy, parameter details)
+- **Updated dependency versions** to ensure consistency across configuration files
+
+### Improved
+- **Test coverage** significantly expanded with comprehensive edge case testing
+- **Error handling robustness** with domain-specific exceptions and better error context
+- **Code maintainability** through centralized exception management
+- **Development experience** with better error messages and debugging information
+
+### Technical Details
+- Added exception exports to `__init__.py` for easy importing
+- Updated `utils.py` to use centralized exception classes
+- All new tests pass with 100% success rate
+- Maintains backward compatibility with existing API
 
 ## [0.1.9] - 2025-08-25
 
