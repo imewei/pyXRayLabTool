@@ -415,16 +415,8 @@ def parse_formula(formula_str: str) -> Tuple[List[str], List[float]]:
     return element_symbols, element_counts
 
 
-class AtomicDataError(Exception):
-    """Exception raised when atomic data cannot be retrieved."""
-
-    pass
-
-
-class UnknownElementError(AtomicDataError):
-    """Exception raised when an unknown element symbol is provided."""
-
-    pass
+# Import exceptions from centralized module
+from .exceptions import AtomicDataError, UnknownElementError
 
 
 def _convert_atomic_number_to_int(atomic_num: Any) -> int:

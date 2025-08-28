@@ -10,7 +10,7 @@ __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"
 
 # Import main modules for easy access
-from . import constants, core, utils
+from . import constants, core, exceptions, utils
 
 # Import useful constants
 from .constants import (
@@ -50,6 +50,20 @@ from .utils import (
     wavelength_to_energy,
 )
 
+# Import exceptions for external use
+from .exceptions import (
+    AtomicDataError,
+    BatchProcessingError,
+    CalculationError,
+    ConfigurationError,
+    DataFileError,
+    EnergyError,
+    FormulaError,
+    UnknownElementError,
+    ValidationError,
+    XRayLabToolError,
+)
+
 # Performance optimization modules (imported on demand to avoid unused
 # import warnings)
 _PERFORMANCE_MODULES_AVAILABLE = True
@@ -58,6 +72,7 @@ __all__ = [
     # Main modules
     "constants",
     "core",
+    "exceptions",
     "utils",
     # Core functionality - Main API
     "XRayResult",
@@ -91,4 +106,15 @@ __all__ = [
     "wavelength_angstrom_to_energy",
     "critical_angle_degrees",
     "attenuation_length_cm",
+    # Domain-specific exceptions
+    "XRayLabToolError",
+    "CalculationError",
+    "FormulaError",
+    "EnergyError",
+    "DataFileError",
+    "ValidationError",
+    "AtomicDataError",
+    "UnknownElementError",
+    "BatchProcessingError",
+    "ConfigurationError",
 ]
