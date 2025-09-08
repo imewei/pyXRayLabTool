@@ -41,9 +41,9 @@ class Colors:
 
 def print_section(title: str, color: str = Colors.BLUE) -> None:
     """Print a formatted section header."""
-    print(f"\n{color}{Colors.BOLD}{'='*60}{Colors.END}")
+    print(f"\n{color}{Colors.BOLD}{'=' * 60}{Colors.END}")
     print(f"{color}{Colors.BOLD}{title.center(60)}{Colors.END}")
-    print(f"{color}{Colors.BOLD}{'='*60}{Colors.END}\n")
+    print(f"{color}{Colors.BOLD}{'=' * 60}{Colors.END}\n")
 
 
 def print_status(message: str, status: str, details: str = None) -> None:
@@ -176,11 +176,11 @@ def test_readme_examples(verbose: bool = False) -> Tuple[int, int]:
             or "import xraylabtool" not in code
         ):
             print_status(
-                f"Code block {i+1}", "WARN", "Skipped (placeholder or too short)"
+                f"Code block {i + 1}", "WARN", "Skipped (placeholder or too short)"
             )
             continue
 
-        print_status(f"Testing code block {i+1}...", "INFO")
+        print_status(f"Testing code block {i + 1}...", "INFO")
 
         # Create temporary file
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -199,10 +199,10 @@ def test_readme_examples(verbose: bool = False) -> Tuple[int, int]:
             )
 
             if result.returncode == 0:
-                print_status(f"  Code block {i+1}", "PASS")
+                print_status(f"  Code block {i + 1}", "PASS")
             else:
                 print_status(
-                    f"  Code block {i+1}", "FAIL", f"Exit code: {result.returncode}"
+                    f"  Code block {i + 1}", "FAIL", f"Exit code: {result.returncode}"
                 )
                 if verbose:
                     print(f"    Stdout: {result.stdout}")
@@ -210,10 +210,10 @@ def test_readme_examples(verbose: bool = False) -> Tuple[int, int]:
                 total_failures += 1
 
         except subprocess.TimeoutExpired:
-            print_status(f"  Code block {i+1}", "FAIL", "Timeout (30s)")
+            print_status(f"  Code block {i + 1}", "FAIL", "Timeout (30s)")
             total_failures += 1
         except Exception as e:
-            print_status(f"  Code block {i+1}", "FAIL", f"Error: {e}")
+            print_status(f"  Code block {i + 1}", "FAIL", f"Error: {e}")
             total_failures += 1
         finally:
             os.unlink(temp_file)
