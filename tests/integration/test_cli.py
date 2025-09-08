@@ -532,9 +532,9 @@ class TestMainFunction:
             ):
                 main()
             # Help should exit with code 0
-            assert excinfo.value.code == 0, (
-                f"Command '{command}' not available or failed"
-            )
+            assert (
+                excinfo.value.code == 0
+            ), f"Command '{command}' not available or failed"
 
 
 class TestCLIIntegration(BaseIntegrationTest):

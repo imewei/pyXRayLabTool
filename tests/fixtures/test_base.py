@@ -73,7 +73,7 @@ class BaseXRayLabToolTest:
         """
         threshold = PERFORMANCE_THRESHOLDS[threshold_key]
         assert execution_time_ms <= threshold, (
-            f"{operation_name} took {execution_time_ms:.2f}ms, "
+            f"{operation_name} took {execution_time_ms : .2f}ms, "
             f"exceeds threshold of {threshold}ms"
         )
 
@@ -141,9 +141,9 @@ class BaseXRayLabToolTest:
 
         for field in array_fields:
             field_value = getattr(result, field)
-            assert isinstance(field_value, np.ndarray), (
-                f"Field {field} should be numpy array, got {type(field_value)}"
-            )
+            assert isinstance(
+                field_value, np.ndarray
+            ), f"Field {field} should be numpy array, got {type(field_value)}"
 
     @staticmethod
     def validate_reference_values(

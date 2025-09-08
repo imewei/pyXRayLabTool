@@ -88,8 +88,8 @@ class PerformanceBenchmark:
         p_value = np.percentile(times_ms, percentile)
 
         assert p_value <= threshold_ms, (
-            f"{self.name} {percentile}th percentile: {p_value:.3f}ms "
-            f"exceeds threshold: {threshold_ms:.3f}ms"
+            f"{self.name} {percentile}th percentile: {p_value : .3f}ms "
+            f"exceeds threshold: {threshold_ms : .3f}ms"
         )
 
 
@@ -156,8 +156,8 @@ class MemoryProfiler:
 
         max_increase = self.max_increase_mb
         assert max_increase <= threshold_mb, (
-            f"{self.name} memory increase: {max_increase:.2f}MB "
-            f"exceeds threshold: {threshold_mb:.2f}MB"
+            f"{self.name} memory increase: {max_increase : .2f}MB "
+            f"exceeds threshold: {threshold_mb : .2f}MB"
         )
 
 
@@ -238,7 +238,7 @@ def requires_memory(min_gb: float):
             available_gb = psutil.virtual_memory().available / (1024**3)
             if available_gb < min_gb:
                 pytest.skip(
-                    f"Requires {min_gb}GB memory, {available_gb:.1f}GB available"
+                    f"Requires {min_gb}GB memory, {available_gb : .1f}GB available"
                 )
             return func(*args, **kwargs)
 
@@ -288,7 +288,7 @@ class TestDataFactory:
         """Get list of test materials."""
         if count is None:
             return cls.COMMON_MATERIALS.copy()
-        return cls.COMMON_MATERIALS[:count]
+        return cls.COMMON_MATERIALS[ : count]
 
     @classmethod
     def get_material_formulas(cls, count: int = None) -> list[str]:
@@ -340,36 +340,36 @@ class ResultValidator:
         """Validate XRayResult object."""
         assert result is not None, "Result should not be None"
         assert hasattr(result, "formula"), "Result should have formula attribute"
-        assert result.formula == formula, (
-            f"Formula mismatch: {result.formula} != {formula}"
-        )
+        assert (
+            result.formula == formula
+        ), f"Formula mismatch: {result.formula} != {formula}"
 
         # Validate arrays
         assert hasattr(result, "energy_kev"), "Result should have energy_kev"
         assert len(result.energy_kev) == len(energies), "Energy array length mismatch"
 
         # Validate critical angle
-        assert hasattr(result, "critical_angle_degrees"), (
-            "Result should have critical_angle_degrees"
-        )
-        assert len(result.critical_angle_degrees) == len(energies), (
-            "Critical angle array length mismatch"
-        )
-        assert np.all(np.isfinite(result.critical_angle_degrees)), (
-            "Critical angles should be finite"
-        )
-        assert np.all(result.critical_angle_degrees >= 0), (
-            "Critical angles should be non-negative"
-        )
+        assert hasattr(
+            result, "critical_angle_degrees"
+        ), "Result should have critical_angle_degrees"
+        assert len(result.critical_angle_degrees) == len(
+            energies
+        ), "Critical angle array length mismatch"
+        assert np.all(
+            np.isfinite(result.critical_angle_degrees)
+        ), "Critical angles should be finite"
+        assert np.all(
+            result.critical_angle_degrees >= 0
+        ), "Critical angles should be non-negative"
 
         # Validate transmission
         assert hasattr(result, "transmission"), "Result should have transmission"
-        assert len(result.transmission) == len(energies), (
-            "Transmission array length mismatch"
-        )
-        assert np.all(np.isfinite(result.transmission)), (
-            "Transmission values should be finite"
-        )
+        assert len(result.transmission) == len(
+            energies
+        ), "Transmission array length mismatch"
+        assert np.all(
+            np.isfinite(result.transmission)
+        ), "Transmission values should be finite"
         assert np.all(result.transmission >= 0), "Transmission should be non-negative"
         assert np.all(result.transmission <= 1), "Transmission should not exceed 1"
 
@@ -387,9 +387,9 @@ class ResultValidator:
         # Validate each result
         for formula, result in results.items():
             if result is not None:  # Some results might be None due to errors
-                assert hasattr(result, "formula"), (
-                    f"Result for {formula} should have formula"
-                )
+                assert hasattr(
+                    result, "formula"
+                ), f"Result for {formula} should have formula"
                 assert result.formula == formula, f"Formula mismatch for {formula}"
 
     @staticmethod
@@ -510,8 +510,8 @@ class RegressionTracker:
             else:
                 pytest.fail(
                     f"Performance regression in {test_name}: "
-                    f"{current_time:.3f}s > {regression_threshold:.3f}s "
-                    f"(baseline: {baseline:.3f}s, tolerance: {tolerance_percent}%)"
+                    f"{current_time : .3f}s > {regression_threshold : .3f}s "
+                    f"(baseline: {baseline : .3f}s, tolerance: {tolerance_percent}%)"
                 )
         elif current_time < baseline * 0.8:  # 20% improvement
             # Significant improvement - update baseline
@@ -541,8 +541,8 @@ def validate_batch_performance(
     """Validate batch calculation performance."""
     time_per_item = total_time / batch_size
     assert time_per_item <= max_time_per_item, (
-        f"Batch performance too slow: {time_per_item:.3f}s per item "
-        f"(threshold: {max_time_per_item:.3f}s)"
+        f"Batch performance too slow: {time_per_item : .3f}s per item "
+        f"(threshold: {max_time_per_item : .3f}s)"
     )
 
 
@@ -567,15 +567,15 @@ def expect_warnings(expected_count: int = None, warning_type: type = None):
         yield warning_list
 
         if expected_count is not None:
-            assert len(warning_list) == expected_count, (
-                f"Expected {expected_count} warnings, got {len(warning_list)}"
-            )
+            assert (
+                len(warning_list) == expected_count
+            ), f"Expected {expected_count} warnings, got {len(warning_list)}"
 
         if warning_type is not None:
             for w in warning_list:
-                assert issubclass(w.category, warning_type), (
-                    f"Expected warning type {warning_type}, got {w.category}"
-                )
+                assert issubclass(
+                    w.category, warning_type
+                ), f"Expected warning type {warning_type}, got {w.category}"
 
 
 # System resource utilities
@@ -595,7 +595,7 @@ def get_system_info() -> dict[str, Any]:
 def log_system_info():
     """Log system information for debugging."""
     info = get_system_info()
-    print("\nSystem Info:")
+    print("\nSystem Info : ")
     for key, value in info.items():
         print(f"  {key}: {value}")
 
@@ -606,7 +606,7 @@ def skip_if_insufficient_memory(required_gb: float):
     available_gb = psutil.virtual_memory().available / (1024**3)
     return pytest.mark.skipif(
         available_gb < required_gb,
-        reason=f"Requires {required_gb}GB memory, {available_gb:.1f}GB available",
+        reason=f"Requires {required_gb}GB memory, {available_gb : .1f}GB available",
     )
 
 

@@ -653,8 +653,11 @@ function _xraylabtool_complete {
                 }
                 { $_ -in @('--density', '-d') } {
                     $densityExamples = @('2.2', '2.33', '3.95', '5.24', '7.87')
-                    return $densityExamples | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
-                        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+                    return $densityExamples | Where-Object { $_ -like "$wordToComplete*" } |
+                        ForEach-Object {
+                            [System.Management.Automation.CompletionResult]::new(
+                                $_, $_, 'ParameterValue', $_
+                            )
                     }
                 }
                 default {
