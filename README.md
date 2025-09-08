@@ -4,19 +4,8 @@
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/xraylabtool.svg)](https://badge.fury.io/py/xraylabtool)
-[![PyPI downloads](https://img.shields.io/pypi/dm/xraylabtool.svg)](https://pypistats.org/packages/xraylabtool)
-[![Total downloads](https://static.pepy.tech/personalized-badge/xraylabtool?period=total&units=international_system&left_color=grey&right_color=orange&left_text=Total%20Downloads)](https://pepy.tech/project/xraylabtool)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://github.com/imewei/pyXRayLabTool/workflows/Tests/badge.svg)](https://github.com/imewei/pyXRayLabTool/actions)
-[![CI](https://github.com/imewei/pyXRayLabTool/workflows/CI/badge.svg)](https://github.com/imewei/pyXRayLabTool/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/pyxraylabtool/badge/?version=latest)](https://pyxraylabtool.readthedocs.io/en/latest/?badge=latest)
-[![Coverage](https://img.shields.io/codecov/c/github/imewei/pyXRayLabTool.svg)](https://codecov.io/gh/imewei/pyXRayLabTool)
-[![GitHub issues](https://img.shields.io/github/issues/imewei/pyXRayLabTool.svg)](https://github.com/imewei/pyXRayLabTool/issues)
-[![GitHub stars](https://img.shields.io/github/stars/imewei/pyXRayLabTool.svg)](https://github.com/imewei/pyXRayLabTool/stargazers)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
-[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 **XRayLabTool** is a comprehensive **Python package** and **command-line tool** for calculating X-ray optical properties of materials based on their chemical formulas and densities. Designed for **synchrotron scientists**, **materials researchers**, and **X-ray optics developers**, it provides **ultra-fast**, accurate calculations using **CXRO/NIST atomic scattering factor data**.
 
@@ -26,7 +15,6 @@
 
 ## 📋 Table of Contents
 
-- [🎯 Key Features](#-key-features)
 - [📦 Installation](#-installation)
 - [🚀 Quick Start](#-quick-start)
 - [🖥️ Command-Line Interface (CLI)](#-command-line-interface-cli)
@@ -41,33 +29,6 @@
 - [📚 API Reference](#-api-reference)
 - [📞 Documentation & Support](#-documentation--support)
 - [📈 Citation](#-citation)
-
-## 🎯 Key Features
-
-### 🚀 **Ultra-High Performance X-ray Calculations**
-- **150,000+ calculations/second**: Industry-leading performance for X-ray property calculations
-- **350x speed improvement**: Dramatically faster than conventional tools
-- **Smart atomic data caching**: Preloaded data for 92 elements (H-U) with 10-50x speed boost
-- **Vectorized mathematical operations**: Optimized NumPy/SciPy-based computations
-
-### 🔬 **Scientific Accuracy & Data**
-- **CXRO/NIST databases**: Authoritative atomic scattering factor data
-- **Comprehensive X-ray properties**: δ, β, f1, f2, critical angles, attenuation lengths
-- **Energy range**: 0.03-30 keV (covers most X-ray applications)
-- **Chemical formula parsing**: Support for complex molecular formulas
-
-### 🐍 **Python API & CLI Tools**
-- **Complete Python API**: Programmatic access with descriptive field names
-- **Powerful command-line interface**: 8 specialized commands for various X-ray calculations
-- **Multiple output formats**: Table, CSV, JSON for different workflows
-- **Batch processing**: Handle large datasets with parallel processing
-
-### ⚡ **Advanced Features**
-- **Memory-efficient processing**: Handle datasets larger than RAM
-- **Cross-platform shell completion**: Bash, Zsh, Fish, PowerShell support
-- **Flexible input formats**: Energy ranges, multiple materials, various units
-- **Real-time progress tracking**: Visual feedback for long-running calculations
----
 
 ## 📦 Installation
 
