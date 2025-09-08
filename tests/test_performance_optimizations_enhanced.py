@@ -34,9 +34,9 @@ class TestDeprecationWarningOptimization:
         # Import the core module and check if warnings is available at module level
         from xraylabtool import core
 
-        assert hasattr(
-            core, "warnings"
-        ), "warnings module should be imported at module level"
+        assert hasattr(core, "warnings"), (
+            "warnings module should be imported at module level"
+        )
 
     def test_all_deprecated_properties_trigger_warnings(self):
         """Test that all 12 deprecated properties trigger warnings correctly."""
@@ -66,9 +66,9 @@ class TestDeprecationWarningOptimization:
                 warnings.simplefilter("always")
                 _ = getattr(result, prop)
 
-                assert (
-                    len(w) == 1
-                ), f"Property {prop} should trigger exactly one warning"
+                assert len(w) == 1, (
+                    f"Property {prop} should trigger exactly one warning"
+                )
                 assert issubclass(w[0].category, DeprecationWarning)
                 assert "deprecated" in str(w[0].message).lower()
                 assert prop in str(w[0].message)
@@ -90,9 +90,9 @@ class TestDeprecationWarningOptimization:
         avg_time_per_access = (end_time - start_time) / iterations
 
         # Should be much faster than 50μs (our optimization target)
-        assert (
-            avg_time_per_access < 0.000050
-        ), f"Deprecated property access too slow: {avg_time_per_access:.6f}s"
+        assert avg_time_per_access < 0.000050, (
+            f"Deprecated property access too slow: {avg_time_per_access:.6f}s"
+        )
 
         # Compare to new property access
         start_time = time.perf_counter()
@@ -242,9 +242,9 @@ class TestArrayOptimization:
             "imaginary_sld_per_ang2",
         ]:
             field_value = getattr(result, field_name)
-            assert isinstance(
-                field_value, np.ndarray
-            ), f"{field_name} should be numpy array"
+            assert isinstance(field_value, np.ndarray), (
+                f"{field_name} should be numpy array"
+            )
 
     def test_array_optimization_performance_benchmark(self):
         """Benchmark array conversion optimization performance."""
@@ -336,9 +336,9 @@ class TestAtomicDataCacheOptimization:
 
         # Preloaded access should be very fast
         avg_preloaded_time = preloaded_time / iterations
-        assert (
-            avg_preloaded_time < 0.000005
-        ), f"Preloaded access too slow: {avg_preloaded_time:.8f}s"
+        assert avg_preloaded_time < 0.000005, (
+            f"Preloaded access too slow: {avg_preloaded_time:.8f}s"
+        )
 
         # Verify it's actually preloaded
         assert is_element_preloaded(preloaded_element)
@@ -389,9 +389,9 @@ class TestSingleElementOptimization:
 
         # Allow for small performance differences - optimization may be subtle
         # Single element should not be significantly slower (within 10% margin)
-        assert (
-            avg_single <= avg_multi * 1.1
-        ), f"Single element unexpectedly slow: {avg_single:.6f}s vs {avg_multi:.6f}s"
+        assert avg_single <= avg_multi * 1.1, (
+            f"Single element unexpectedly slow: {avg_single:.6f}s vs {avg_multi:.6f}s"
+        )
 
     def test_single_element_memory_usage(self):
         """Test memory usage optimization for single elements."""

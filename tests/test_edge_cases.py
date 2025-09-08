@@ -40,9 +40,9 @@ class TestFormulaEdgeCases:
         for formula, expected_symbols, expected_counts in test_cases:
             symbols, counts = parse_formula(formula)
             assert symbols == expected_symbols, f"Failed for {formula}, got {symbols}"
-            assert np.allclose(
-                counts, expected_counts
-            ), f"Failed for {formula}, got {counts}"
+            assert np.allclose(counts, expected_counts), (
+                f"Failed for {formula}, got {counts}"
+            )
 
     def test_invalid_formulas(self):
         """Test handling of invalid chemical formulas."""

@@ -565,9 +565,7 @@ class AtomicScatteringFactor:
         """
         return load_scattering_factor_data(element)
 
-    def get_scattering_factor(
-        self, element: str, q_values: np.ndarray
-    ) -> np.ndarray:  # noqa: ARG002
+    def get_scattering_factor(self, element: str, q_values: np.ndarray) -> np.ndarray:  # noqa: ARG002
         """
         Calculate scattering factors for given q values.
 
@@ -614,9 +612,7 @@ class CrystalStructure:
             {"element": element, "position": position, "occupancy": occupancy}
         )
 
-    def calculate_structure_factor(
-        self, hkl: tuple[int, int, int]
-    ) -> complex:  # noqa: ARG002
+    def calculate_structure_factor(self, hkl: tuple[int, int, int]) -> complex:  # noqa: ARG002
         """
         Calculate structure factor for given Miller indices.
 
