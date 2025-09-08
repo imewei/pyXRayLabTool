@@ -115,7 +115,9 @@ class TestCondaIntegration:
         mock_environ.side_effect = lambda key, default=None: (
             "/opt/mambaforge/bin/mamba"
             if key == "MAMBA_EXE"
-            else None if key == "CONDA_EXE" else default
+            else None
+            if key == "CONDA_EXE"
+            else default
         )
 
         result = self.installer._get_conda_base_path()
@@ -435,9 +437,9 @@ class TestCompletionScriptContent:
             "--no-cleanup-session",
         ]
         for option in obsolete_options:
-            assert (
-                option not in BASH_COMPLETION_SCRIPT
-            ), f"Obsolete option '{option}' still in bash script"
+            assert option not in BASH_COMPLETION_SCRIPT, (
+                f"Obsolete option '{option}' still in bash script"
+            )
 
     def test_fish_script_contains_simplified_options(self):
         """Test that Fish completion script contains simplified options."""
@@ -458,9 +460,9 @@ class TestCompletionScriptContent:
             "-l no-cleanup-session",
         ]
         for option in obsolete_options:
-            assert (
-                option not in FISH_COMPLETION_SCRIPT
-            ), f"Obsolete option '{option}' still in Fish script"
+            assert option not in FISH_COMPLETION_SCRIPT, (
+                f"Obsolete option '{option}' still in Fish script"
+            )
 
     def test_powershell_script_contains_simplified_options(self):
         """Test that PowerShell completion script contains simplified options."""
@@ -481,9 +483,9 @@ class TestCompletionScriptContent:
             "--no-cleanup-session",
         ]
         for option in obsolete_options:
-            assert (
-                option not in POWERSHELL_COMPLETION_SCRIPT
-            ), f"Obsolete option '{option}' still in PowerShell script"
+            assert option not in POWERSHELL_COMPLETION_SCRIPT, (
+                f"Obsolete option '{option}' still in PowerShell script"
+            )
 
 
 if __name__ == "__main__":

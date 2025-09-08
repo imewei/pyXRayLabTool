@@ -52,9 +52,9 @@ class TestSiO2Properties:
 
         for idx, expected_val in expected_dispersion:
             actual = sio2.Dispersion[idx]
-            assert np.isclose(
-                actual, expected_val, atol=DEFAULT_TOL
-            ), f"SiO2 Dispersion[{idx}]: expected {expected_val}, got {actual}"
+            assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
+                f"SiO2 Dispersion[{idx}]: expected {expected_val}, got {actual}"
+            )
 
     def test_sio2_f1_values(self):
         """Test SiO2 f1 values."""
@@ -70,9 +70,9 @@ class TestSiO2Properties:
 
         for idx, expected_val in expected_f1:
             actual = sio2.f1[idx]
-            assert np.isclose(
-                actual, expected_val, atol=DEFAULT_TOL
-            ), f"SiO2 f1[{idx}]: expected {expected_val}, got {actual}"
+            assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
+                f"SiO2 f1[{idx}]: expected {expected_val}, got {actual}"
+            )
 
     def test_sio2_resld_values(self):
         """Test SiO2 reSLD values."""
@@ -87,9 +87,9 @@ class TestSiO2Properties:
 
         for idx, expected_val in expected_reSLD:
             actual = sio2.reSLD[idx]
-            assert np.isclose(
-                actual, expected_val, atol=DEFAULT_TOL
-            ), f"SiO2 reSLD[{idx}]: expected {expected_val}, got {actual}"
+            assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
+                f"SiO2 reSLD[{idx}]: expected {expected_val}, got {actual}"
+            )
 
 
 class TestH2OProperties:
@@ -108,9 +108,9 @@ class TestH2OProperties:
 
         for idx, expected_val in expected_dispersion:
             actual = h2o.Dispersion[idx]
-            assert np.isclose(
-                actual, expected_val, atol=DEFAULT_TOL
-            ), f"H2O Dispersion[{idx}]: expected {expected_val}, got {actual}"
+            assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
+                f"H2O Dispersion[{idx}]: expected {expected_val}, got {actual}"
+            )
 
     def test_h2o_f1_values(self):
         """Test H2O f1 values."""
@@ -126,9 +126,9 @@ class TestH2OProperties:
 
         for idx, expected_val in expected_f1:
             actual = h2o.f1[idx]
-            assert np.isclose(
-                actual, expected_val, atol=DEFAULT_TOL
-            ), f"H2O f1[{idx}]: expected {expected_val}, got {actual}"
+            assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
+                f"H2O f1[{idx}]: expected {expected_val}, got {actual}"
+            )
 
     def test_h2o_resld_values(self):
         """Test H2O reSLD values."""
@@ -143,9 +143,9 @@ class TestH2OProperties:
 
         for idx, expected_val in expected_reSLD:
             actual = h2o.reSLD[idx]
-            assert np.isclose(
-                actual, expected_val, atol=DEFAULT_TOL
-            ), f"H2O reSLD[{idx}]: expected {expected_val}, got {actual}"
+            assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
+                f"H2O reSLD[{idx}]: expected {expected_val}, got {actual}"
+            )
 
 
 class TestSubRefracSiliconProperties:
@@ -166,9 +166,9 @@ class TestSubRefracSiliconProperties:
 
         for property_name, idx, expected_val in expected_values:
             actual_val = getattr(si, property_name)[idx]
-            assert np.isclose(
-                actual_val, expected_val, atol=DEFAULT_TOL
-            ), f"Silicon {property_name}[{idx}]: expected {expected_val}, got {actual_val}"
+            assert np.isclose(actual_val, expected_val, atol=DEFAULT_TOL), (
+                f"Silicon {property_name}[{idx}]: expected {expected_val}, got {actual_val}"
+            )
 
 
 class TestEdgeCasesAndErrorHandling:

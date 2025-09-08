@@ -15,7 +15,7 @@ import pandas as pd
 def format_xray_result(
     result: Any,
     format_type: str = "table",
-    fields: Union[list[str], None] = None,
+    fields: list[str] | None = None,
     precision: int = 6,
 ) -> str:
     """
