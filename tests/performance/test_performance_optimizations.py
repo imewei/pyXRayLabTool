@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 import xraylabtool as xlt
-from tests.base_test import BasePerformanceTest
+from tests.test_base import BasePerformanceTest
 from xraylabtool.calculators.core import (
     _AVAILABLE_ELEMENTS,
     _initialize_element_paths,
