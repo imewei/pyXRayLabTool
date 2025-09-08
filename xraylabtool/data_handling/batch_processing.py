@@ -9,15 +9,19 @@ import concurrent.futures
 import gc
 import os
 import warnings
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import psutil
 
-from .core import XRayResult, calculate_single_material_properties
+from xraylabtool.calculators.core import (
+    XRayResult,
+    calculate_single_material_properties,
+)
 
 
 @dataclass
@@ -33,7 +37,7 @@ class BatchConfig:
         cache_results: Whether to cache intermediate results
     """
 
-    max_workers: Optional[int] = None
+    max_workers: int | None = None
     chunk_size: int = 100
     memory_limit_gb: float = 4.0
     enable_progress: bool = True
@@ -46,6 +50,17 @@ class BatchConfig:
             cpu_count = os.cpu_count() or 1
             # Use 75% of available CPUs, but cap at 8 for memory efficiency
             self.max_workers = min(max(1, int(cpu_count * 0.75)), 8)
+
+        # Adjust memory limit based on available system memory if needed
+        if self.memory_limit_gb > 0:
+            try:
+                available_memory_gb = psutil.virtual_memory().available / (1024**3)
+                # Don't use more than 50% of available memory
+                max_recommended = available_memory_gb * 0.5
+                if self.memory_limit_gb > max_recommended:
+                    self.memory_limit_gb = max(1.0, max_recommended)
+            except Exception:
+                pass  # If memory detection fails, use original limit
 
 
 class MemoryMonitor:
@@ -83,13 +98,21 @@ class MemoryMonitor:
             return 0.0
 
     def force_gc(self) -> None:
-        """Force garbage collection to free memory."""
+        """Force garbage collection and clear caches to free memory."""
+        # Clear module-level caches from core module following existing pattern
+        try:
+            from xraylabtool.calculators.core import clear_scattering_factor_cache
+
+            clear_scattering_factor_cache()
+        except ImportError:
+            pass  # Cache clearing not available, continue with GC only
+
         gc.collect()
 
 
 def chunk_iterator(
-    data: List[Tuple[Any, ...]], chunk_size: int
-) -> Iterator[List[Tuple[Any, ...]]]:
+    data: list[tuple[Any, ...]], chunk_size: int
+) -> Iterator[list[tuple[Any, ...]]]:
     """
     Yield successive chunks of data.
 
@@ -106,7 +129,7 @@ def chunk_iterator(
 
 def process_single_calculation(
     formula: str, energies: np.ndarray, density: float
-) -> Tuple[str, Optional[XRayResult]]:
+) -> tuple[str, XRayResult | None]:
     """
     Process a single X-ray calculation.
 
@@ -122,13 +145,15 @@ def process_single_calculation(
         result = calculate_single_material_properties(formula, energies, density)
         return (formula, result)
     except Exception as e:
-        warnings.warn(f"Failed to process formula '{formula}': {e}")
+        # Use structured error handling instead of generic warnings
+        error_msg = f"Failed to process formula '{formula}': {e}"
+        warnings.warn(error_msg, stacklevel=2)
         return (formula, None)
 
 
 def process_batch_chunk(
-    chunk: List[Tuple[str, np.ndarray, float]], config: BatchConfig
-) -> List[Tuple[str, Optional[XRayResult]]]:
+    chunk: list[tuple[str, np.ndarray, float]], config: BatchConfig
+) -> list[tuple[str, XRayResult | None]]:
     """
     Process a chunk of calculations in parallel.
 
@@ -169,16 +194,19 @@ def process_batch_chunk(
                     memory_monitor.force_gc()
 
             except concurrent.futures.TimeoutError:
-                warnings.warn(f"Timeout processing formula '{formula}'")
+                error_msg = f"Timeout processing formula '{formula}'"
+                warnings.warn(error_msg, stacklevel=2)
                 results.append((formula, None))
             except Exception as e:
-                warnings.warn(f"Error processing formula '{formula}': {e}")
+                # Use structured error handling following existing exception patterns
+                error_msg = f"Error processing formula '{formula}': {e}"
+                warnings.warn(error_msg, stacklevel=2)
                 results.append((formula, None))
 
     return results
 
 
-def _validate_batch_inputs(formulas: List[str], densities: List[float]) -> None:
+def _validate_batch_inputs(formulas: list[str], densities: list[float]) -> None:
     """Validate batch processing inputs."""
     if len(formulas) != len(densities):
         raise ValueError("Number of formulas must match number of densities")
@@ -187,7 +215,7 @@ def _validate_batch_inputs(formulas: List[str], densities: List[float]) -> None:
 
 
 def _prepare_energies_array(
-    energies: Union[float, List[float], np.ndarray],
+    energies: float | list[float] | np.ndarray,
 ) -> np.ndarray:
     """Convert energies to numpy array and validate."""
     if np.isscalar(energies):
@@ -195,7 +223,7 @@ def _prepare_energies_array(
         if isinstance(energies, complex):
             energies_array = np.array([float(energies.real)], dtype=np.float64)
         else:
-            energies_array = np.array([float(energies)], dtype=np.float64)  # type: ignore[arg-type]
+            energies_array = np.array([float(energies)], dtype=np.float64)
     else:
         energies_array = np.array(energies, dtype=np.float64)
 
@@ -218,21 +246,21 @@ def _initialize_progress_bar(config: BatchConfig, total: int) -> Any:
         return tqdm(total=total, desc="Processing materials")
     except ImportError:
         config.enable_progress = False
-        warnings.warn("tqdm not available, progress tracking disabled")
+        warnings.warn("tqdm not available, progress tracking disabled", stacklevel=2)
         return None
 
 
 def _process_chunks(
-    calculation_data: List[Tuple[str, np.ndarray, float]],
+    calculation_data: list[tuple[str, np.ndarray, float]],
     config: BatchConfig,
     progress_bar: Any,
-) -> Dict[str, Optional[XRayResult]]:
+) -> dict[str, XRayResult | None]:
     """Process data chunks and collect results."""
     all_results = {}
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
 
-    for chunk in chunk_iterator(calculation_data, config.chunk_size):  # type: ignore[arg-type]
-        chunk_results = process_batch_chunk(chunk, config)  # type: ignore[arg-type]
+    for chunk in chunk_iterator(calculation_data, config.chunk_size):
+        chunk_results = process_batch_chunk(chunk, config)
 
         for formula, result in chunk_results:
             all_results[formula] = result
@@ -247,11 +275,11 @@ def _process_chunks(
 
 
 def calculate_batch_properties(
-    formulas: List[str],
-    energies: Union[float, List[float], np.ndarray],
-    densities: List[float],
-    config: Optional[BatchConfig] = None,
-) -> Dict[str, Optional[XRayResult]]:
+    formulas: list[str],
+    energies: float | list[float] | np.ndarray,
+    densities: list[float],
+    config: BatchConfig | None = None,
+) -> dict[str, XRayResult | None]:
     """
     Calculate X-ray properties for multiple materials with optimized batch processing.
 
@@ -285,7 +313,7 @@ def calculate_batch_properties(
 
     calculation_data = [
         (formula, energies_array, density)
-        for formula, density in zip(formulas, densities)
+        for formula, density in zip(formulas, densities, strict=False)
     ]
 
     progress_bar = _initialize_progress_bar(config, len(formulas))
@@ -297,11 +325,11 @@ def calculate_batch_properties(
             progress_bar.close()
 
 
-def _prepare_result_data(valid_results: Dict[str, XRayResult]) -> List[Dict[str, Any]]:
+def _prepare_result_data(valid_results: dict[str, XRayResult]) -> list[dict[str, Any]]:
     """Prepare result data for export."""
     data_rows = []
 
-    for formula, result in valid_results.items():
+    for _formula, result in valid_results.items():
         base_data = {
             "formula": result.formula,
             "molecular_weight_g_mol": result.molecular_weight_g_mol,
@@ -318,7 +346,7 @@ def _prepare_result_data(valid_results: Dict[str, XRayResult]) -> List[Dict[str,
     return data_rows
 
 
-def _get_energy_point_data(result: XRayResult, index: int) -> Dict[str, Any]:
+def _get_energy_point_data(result: XRayResult, index: int) -> dict[str, Any]:
     """Get data for a specific energy point."""
     return {
         "energy_kev": result.energy_kev[index],
@@ -335,7 +363,7 @@ def _get_energy_point_data(result: XRayResult, index: int) -> Dict[str, Any]:
 
 
 def _filter_dataframe_fields(
-    df: pd.DataFrame, fields: Optional[List[str]]
+    df: pd.DataFrame, fields: list[str] | None
 ) -> pd.DataFrame:
     """Filter DataFrame columns based on requested fields."""
     if fields is None:
@@ -346,7 +374,7 @@ def _filter_dataframe_fields(
     missing_fields = requested_fields - available_fields
 
     if missing_fields:
-        warnings.warn(f"Requested fields not found: {missing_fields}")
+        warnings.warn(f"Requested fields not found: {missing_fields}", stacklevel=2)
 
     valid_fields = [f for f in fields if f in available_fields]
     return df[valid_fields] if valid_fields else df
@@ -363,17 +391,17 @@ def _save_dataframe(df: pd.DataFrame, output_path: Path, format: str) -> None:
     elif format_lower == "parquet":
         try:
             df.to_parquet(output_path, index=False)
-        except ImportError:
-            raise ValueError("Parquet format requires pyarrow or fastparquet")
+        except ImportError as e:
+            raise ValueError("Parquet format requires pyarrow or fastparquet") from e
     else:
         raise ValueError(f"Unsupported format: {format}")
 
 
 def save_batch_results(
-    results: Dict[str, Optional[XRayResult]],
-    output_file: Union[str, Path],
+    results: dict[str, XRayResult | None],
+    output_file: str | Path,
     format: str = "csv",
-    fields: Optional[List[str]] = None,
+    fields: list[str] | None = None,
 ) -> None:
     """
     Save batch calculation results to file.
@@ -404,11 +432,11 @@ def save_batch_results(
 
 
 def load_batch_input(
-    input_file: Union[str, Path],
+    input_file: str | Path,
     formula_column: str = "formula",
     density_column: str = "density",
-    energy_column: Optional[str] = None,
-) -> Tuple[List[str], List[float], Optional[List[np.ndarray]]]:
+    energy_column: str | None = None,
+) -> tuple[list[str], list[float], list[np.ndarray] | None]:
     """
     Load batch input data from file.
 

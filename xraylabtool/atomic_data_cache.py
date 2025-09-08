@@ -5,10 +5,10 @@ This module provides a pre-populated cache of atomic data for common elements
 to eliminate expensive database queries to the Mendeleev library during runtime.
 """
 
+import types
 from functools import lru_cache
-from typing import Dict, List, Tuple
 
-from .utils import UnknownElementError
+from xraylabtool.exceptions import UnknownElementError
 
 # Pre-populated atomic data for the 50 most common elements in materials science
 # This eliminates the need for expensive Mendeleev database queries
@@ -108,10 +108,10 @@ _ATOMIC_DATA_PRELOADED = {
 }
 
 # Runtime cache for elements not in the preloaded data
-_RUNTIME_CACHE: Dict[str, Dict[str, float]] = {}
+_RUNTIME_CACHE: dict[str, dict[str, float]] = {}
 
 
-def get_atomic_data_fast(element: str) -> Dict[str, float]:
+def get_atomic_data_fast(element: str) -> types.MappingProxyType[str, float]:
     """
     Fast atomic data lookup with preloaded cache and fallback to Mendeleev.
 
@@ -129,13 +129,13 @@ def get_atomic_data_fast(element: str) -> Dict[str, float]:
     """
     element_key = element.capitalize()
 
-    # Check preloaded cache first (fastest)
+    # Check preloaded cache first (fastest) - use immutable view to avoid copying
     if element_key in _ATOMIC_DATA_PRELOADED:
-        return _ATOMIC_DATA_PRELOADED[element_key].copy()
+        return types.MappingProxyType(_ATOMIC_DATA_PRELOADED[element_key])
 
-    # Check runtime cache second
+    # Check runtime cache second - use immutable view to avoid copying
     if element_key in _RUNTIME_CACHE:
-        return _RUNTIME_CACHE[element_key].copy()
+        return types.MappingProxyType(_RUNTIME_CACHE[element_key])
 
     # Fall back to Mendeleev (slowest)
     try:
@@ -146,21 +146,23 @@ def get_atomic_data_fast(element: str) -> Dict[str, float]:
             "atomic_weight": get_atomic_weight(element),
         }
 
-        # Cache for future use
-        _RUNTIME_CACHE[element_key] = atomic_data.copy()
-        return atomic_data
+        # Cache for future use - store the actual dict in cache
+        _RUNTIME_CACHE[element_key] = atomic_data
+        return types.MappingProxyType(atomic_data)
 
     except UnknownElementError:
         # Re-raise UnknownElementError without wrapping
         raise
     except Exception as e:
-        raise ValueError(f"Cannot retrieve atomic data for element '{element}': {e}")
+        raise ValueError(
+            f"Cannot retrieve atomic data for element '{element}': {e}"
+        ) from e
 
 
 @lru_cache(maxsize=256)
 def get_bulk_atomic_data_fast(
-    elements_tuple: Tuple[str, ...],
-) -> Dict[str, Dict[str, float]]:
+    elements_tuple: tuple[str, ...],
+) -> dict[str, types.MappingProxyType[str, float]]:
     """
     High-performance bulk atomic data loader with caching.
 
@@ -171,7 +173,7 @@ def get_bulk_atomic_data_fast(
         elements_tuple: Tuple of element symbols
 
     Returns:
-        Dictionary mapping element symbols to their atomic data
+        Dictionary mapping element symbols to their atomic data (as immutable views)
     """
     result = {}
     for element in elements_tuple:
@@ -179,7 +181,7 @@ def get_bulk_atomic_data_fast(
     return result
 
 
-def warm_up_cache(elements: List[str]) -> None:
+def warm_up_cache(elements: list[str]) -> None:
     """
     Pre-warm the cache with specific elements.
 
@@ -193,7 +195,7 @@ def warm_up_cache(elements: List[str]) -> None:
             pass  # Skip elements that can't be loaded
 
 
-def get_cache_stats() -> Dict[str, int]:
+def get_cache_stats() -> dict[str, int]:
     """
     Get cache statistics for monitoring.
 

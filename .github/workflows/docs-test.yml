@@ -1,0 +1,453 @@
+name: Documentation Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - 'xraylabtool/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'notebooks/**'
+      - '.github/workflows/docs-test.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'xraylabtool/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'notebooks/**'
+      - '.github/workflows/docs-test.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  doctest:
+    name: Documentation Code Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Cache docs dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: docs-test-deps-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt') }}
+        restore-keys: |
+          docs-test-deps-${{ runner.os }}-py${{ matrix.python-version }}-
+
+    - name: Install package with docs dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Run doctests in docstrings
+      run: |
+        echo "🧪 Testing code examples in docstrings..."
+        python -m sphinx -b doctest docs/source docs/_build/doctest
+      continue-on-error: false
+
+    - name: Run doctests in RST files
+      run: |
+        echo "📖 Testing code examples in documentation files..."
+        python -c "
+        import doctest
+        import glob
+        import sys
+
+        failed_count = 0
+        for rst_file in glob.glob('docs/source/**/*.rst', recursive=True):
+            print(f'Testing {rst_file}...')
+            try:
+                result = doctest.testfile(rst_file, verbose=True, optionflags=doctest.ELLIPSIS)
+                if result.failed > 0:
+                    failed_count += result.failed
+                    print(f'❌ {result.failed} failures in {rst_file}')
+            except Exception as e:
+                print(f'⚠️ Skipping {rst_file}: {e}')
+
+        if failed_count > 0:
+            print(f'❌ Total doctest failures: {failed_count}')
+            sys.exit(1)
+        else:
+            print('✅ All doctests passed!')
+        "
+      continue-on-error: true
+
+    - name: Test README code examples
+      run: |
+        echo "📋 Testing README.md code examples..."
+        python -c "
+        import re
+        import subprocess
+        import sys
+        import tempfile
+        import os
+
+        # Read README.md
+        with open('README.md', 'r') as f:
+            content = f.read()
+
+        # Extract Python code blocks
+        code_blocks = re.findall(r'```python\n(.*?)\n```', content, re.DOTALL)
+
+        failed_tests = 0
+        for i, code in enumerate(code_blocks):
+            # Skip code blocks with placeholders or comments only
+            if '...' in code or code.strip().startswith('#') or len(code.strip()) < 10:
+                continue
+
+            print(f'Testing README code block {i+1}...')
+
+            # Create temporary file
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+                # Add necessary imports
+                f.write('import sys\\nsys.path.insert(0, \".\")\\n')
+                f.write(code)
+                temp_file = f.name
+
+            try:
+                # Run the code
+                result = subprocess.run(['python', temp_file],
+                                      capture_output=True, text=True, timeout=30)
+                if result.returncode != 0:
+                    print(f'❌ Code block {i+1} failed:')
+                    print(result.stderr)
+                    failed_tests += 1
+                else:
+                    print(f'✅ Code block {i+1} passed')
+            except subprocess.TimeoutExpired:
+                print(f'⏰ Code block {i+1} timed out')
+                failed_tests += 1
+            except Exception as e:
+                print(f'⚠️ Error testing code block {i+1}: {e}')
+                failed_tests += 1
+            finally:
+                os.unlink(temp_file)
+
+        if failed_tests > 0:
+            print(f'❌ {failed_tests} README code examples failed')
+            sys.exit(1)
+        else:
+            print('✅ All README code examples passed!')
+        "
+      continue-on-error: true
+
+    - name: Upload doctest results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: doctest-results-${{ matrix.python-version }}
+        path: docs/_build/doctest/
+        retention-days: 7
+
+  linkcheck:
+    name: Documentation Link Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Install package with docs dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Check external links
+      run: |
+        echo "🔗 Checking external links in documentation..."
+        python -m sphinx -b linkcheck docs/source docs/_build/linkcheck
+      continue-on-error: true
+
+    - name: Generate link check report
+      if: always()
+      run: |
+        echo "📊 Link Check Summary" > link_report.txt
+        echo "===================" >> link_report.txt
+
+        if [ -f "docs/_build/linkcheck/output.txt" ]; then
+          echo "" >> link_report.txt
+          echo "🔗 Link Check Results:" >> link_report.txt
+          cat docs/_build/linkcheck/output.txt >> link_report.txt
+        fi
+
+        if [ -f "docs/_build/linkcheck/broken.txt" ]; then
+          echo "" >> link_report.txt
+          echo "❌ Broken Links:" >> link_report.txt
+          cat docs/_build/linkcheck/broken.txt >> link_report.txt
+        fi
+
+        cat link_report.txt
+
+    - name: Upload link check results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: linkcheck-results
+        path: docs/_build/linkcheck/
+        retention-days: 7
+
+  coverage:
+    name: Documentation Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Install package with docs dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install -e .[docs]
+
+    - name: Check documentation coverage
+      run: |
+        echo "📊 Checking documentation coverage..."
+        python -m sphinx -b coverage docs/source docs/_build/coverage
+
+        echo "📋 Documentation Coverage Report:"
+        if [ -f "docs/_build/coverage/python.txt" ]; then
+          cat docs/_build/coverage/python.txt
+        else
+          echo "No coverage report generated"
+        fi
+
+    - name: Generate coverage summary
+      run: |
+        echo "📊 Documentation Coverage Summary" > coverage_report.txt
+        echo "=================================" >> coverage_report.txt
+
+        if [ -f "docs/_build/coverage/python.txt" ]; then
+          echo "" >> coverage_report.txt
+          echo "Coverage Details:" >> coverage_report.txt
+          cat docs/_build/coverage/python.txt >> coverage_report.txt
+
+          # Count documented vs undocumented
+          documented=$(grep -c "documented" docs/_build/coverage/python.txt || echo "0")
+          undocumented=$(grep -c "undocumented" docs/_build/coverage/python.txt || echo "0")
+          total=$((documented + undocumented))
+
+          if [ $total -gt 0 ]; then
+            percentage=$((documented * 100 / total))
+            echo "" >> coverage_report.txt
+            echo "📊 Summary:" >> coverage_report.txt
+            echo "  Documented: $documented" >> coverage_report.txt
+            echo "  Undocumented: $undocumented" >> coverage_report.txt
+            echo "  Total: $total" >> coverage_report.txt
+            echo "  Coverage: $percentage%" >> coverage_report.txt
+          fi
+        fi
+
+        cat coverage_report.txt
+
+    - name: Upload coverage results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: documentation-coverage
+        path: docs/_build/coverage/
+        retention-days: 7
+
+  notebook-test:
+    name: Notebook Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+
+    - name: Install test dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install nbconvert jupyter matplotlib seaborn
+
+    - name: Test notebooks can be executed
+      run: |
+        echo "📓 Testing Jupyter notebooks..."
+
+        # Check if notebooks directory exists
+        if [ -d "notebooks" ]; then
+          for notebook in notebooks/*.ipynb; do
+            if [ -f "$notebook" ]; then
+              echo "Testing $notebook..."
+              # Convert notebook to Python script and test syntax
+              jupyter nbconvert --to python --stdout "$notebook" > /tmp/test_notebook.py
+              python -m py_compile /tmp/test_notebook.py
+              echo "✅ $notebook syntax is valid"
+            fi
+          done
+        else
+          echo "📓 No notebooks directory found"
+        fi
+      continue-on-error: true
+
+  accessibility:
+    name: Documentation Accessibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+
+    - name: Install package with docs dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -e .[docs]
+
+    - name: Build documentation
+      run: |
+        python -m sphinx -b html docs/source docs/_build/html
+
+    - name: Check accessibility basics
+      run: |
+        echo "♿ Checking documentation accessibility..."
+
+        # Check for alt text in images
+        echo "🖼️ Checking image alt text..."
+        missing_alt=$(find docs/_build/html -name "*.html" -exec grep -l "<img[^>]*>" {} \; | xargs grep -l "<img[^>]*src=[^>]*>" | xargs grep -L "alt=" || true)
+
+        if [ -n "$missing_alt" ]; then
+          echo "⚠️ Files with images missing alt text:"
+          echo "$missing_alt"
+        else
+          echo "✅ All images have alt text"
+        fi
+
+        # Check for heading structure
+        echo "📑 Checking heading structure..."
+        find docs/_build/html -name "*.html" -exec python3 -c "
+import sys
+import re
+from pathlib import Path
+
+html_file = sys.argv[1]
+content = Path(html_file).read_text()
+
+# Extract headings
+headings = re.findall(r'<h([1-6])[^>]*>(.*?)</h[1-6]>', content, re.IGNORECASE)
+if headings:
+    print(f'📄 {html_file}:')
+    for level, text in headings[:5]:  # Show first 5 headings
+        indent = '  ' * (int(level) - 1)
+        clean_text = re.sub(r'<[^>]+>', '', text).strip()[:50]
+        print(f'{indent}H{level}: {clean_text}')
+    print()
+        " {} \; 2>/dev/null || true
+
+  style-check:
+    name: Documentation Style Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+
+    - name: Install style checkers
+      run: |
+        python -m pip install --upgrade pip
+        pip install doc8 rstcheck sphinx-lint
+
+    - name: Check RST syntax
+      run: |
+        echo "📝 Checking reStructuredText syntax..."
+        find docs -name "*.rst" -exec rstcheck --report-level warning {} \;
+      continue-on-error: true
+
+    - name: Check documentation style
+      run: |
+        echo "🎨 Checking documentation style..."
+        doc8 docs/source --ignore-path docs/source/_build --max-line-length 100
+      continue-on-error: true
+
+    - name: Sphinx lint check
+      run: |
+        echo "🔍 Running Sphinx linting..."
+        sphinx-lint docs/source/
+      continue-on-error: true

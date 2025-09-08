@@ -1,10 +1,57 @@
-Usage Examples
-===============
+Usage Examples & Interactive Tutorials
+=======================================
 
-**Comprehensive Examples Showcasing XRayLabTool's High-Performance Capabilities**
+**Comprehensive Examples Showcasing XRayLabTool's High-Performance
+Capabilities**
 
-This page provides practical examples for both the Python API and CLI usage of XRayLabTool,
-including performance optimization examples that demonstrate the package's advanced capabilities.
+This page provides practical examples for both the Python API and CLI usage of
+XRayLabTool, including performance optimization examples that demonstrate the
+package's advanced capabilities.
+
+.. grid:: 2
+
+    .. grid-item-card:: 🚀 Interactive Jupyter Notebook
+        :link: https://mybinder.org/v2/gh/imewei/pyXRayLabTool/HEAD?labpath=notebooks%2Fgetting_started.ipynb
+        :link-type: url
+        :class-title: text-center
+
+        **Try XRayLabTool in your browser!**
+
+        Complete hands-on tutorial with live code execution,
+        interactive plots, and performance demonstrations.
+
+        +++
+
+        .. button-link:: https://mybinder.org/v2/gh/imewei/pyXRayLabTool/HEAD?labpath=notebooks%2Fgetting_started.ipynb
+            :color: primary
+            :outline:
+            :expand:
+
+            Launch Interactive Notebook
+
+    .. grid-item-card:: 📊 Google Colab Version
+        :link: https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/notebooks/getting_started.ipynb
+        :link-type: url
+        :class-title: text-center
+
+        **Run on Google Colab with GPU acceleration**
+
+        Same interactive tutorial optimized for Google Colab
+        environment with enhanced performance.
+
+        +++
+
+        .. button-link:: https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/notebooks/getting_started.ipynb
+            :color: info
+            :outline:
+            :expand:
+
+            Open in Colab
+
+.. attention::
+   **🎯 New to XRayLabTool?** Start with the interactive notebook above for a
+   hands-on introduction with live code execution, visualizations, and
+   real-world examples!
 
 Python API Examples
 -------------------
@@ -12,19 +59,39 @@ Python API Examples
 Basic Single Material Calculation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: python
+.. tabs::
 
-   import xraylabtool as xlt
-   import numpy as np
+   .. tab:: Python Code
 
-   # Calculate properties for quartz at 10 keV
-   result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
+      .. code-block:: python
+         :linenos:
 
-   # Using new descriptive field names (recommended)
-   print(f"Formula: {result.formula}")
-   print(f"Molecular Weight: {result.molecular_weight_g_mol:.2f} g/mol")
-   print(f"Critical Angle: {result.critical_angle_degrees[0]:.3f}°")
-   print(f"Attenuation Length: {result.attenuation_length_cm[0]:.2f} cm")
+         import xraylabtool as xlt
+         import numpy as np
+
+         # Calculate properties for quartz at 10 keV
+         result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
+
+         # Using new descriptive field names (recommended)
+         print(f"Formula: {result.formula}")
+         print(f"Molecular Weight: {result.molecular_weight_g_mol:.2f} g/mol")
+         print(f"Critical Angle: {result.critical_angle_degrees[0]:.3f}°")
+         print(f"Attenuation Length: {result.attenuation_length_cm[0]:.2f} cm")
+
+   .. tab:: Expected Output
+
+      .. code-block:: text
+
+         Formula: SiO2
+         Molecular Weight: 60.08 g/mol
+         Critical Angle: 0.223°
+         Attenuation Length: 12.5 cm
+
+   .. tab:: CLI Equivalent
+
+      .. code-block:: bash
+
+         xraylabtool calc SiO2 -e 10.0 -d 2.2 --fields formula,molecular_weight_g_mol,critical_angle_degrees,attenuation_length_cm
 
 Multiple Materials Comparison
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,6 +164,140 @@ Plotting with Matplotlib
 
    plt.tight_layout()
    plt.show()
+
+Performance and Cache Examples
+------------------------------
+
+Cache Status Interactive Demo
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. tabs::
+
+   .. tab:: Check Cache Status
+
+      .. code-block:: python
+         :linenos:
+
+         from xraylabtool.atomic_data_cache import get_cache_stats, is_element_preloaded
+
+         # Check overall cache statistics
+         stats = get_cache_stats()
+         print(f"Cache Statistics:")
+         print(f"  Preloaded elements: {stats['preloaded_elements']}")
+         print(f"  Runtime cached: {stats['runtime_cached_elements']}")
+         print(f"  Total cached: {stats['total_cached_elements']}")
+
+         # Check specific elements
+         elements = ["H", "Si", "O", "Al", "Fe", "Au", "U"]
+         print(f"\nElement Cache Status:")
+         for element in elements:
+             status = "✓ Preloaded" if is_element_preloaded(element) else "○ Runtime"
+             print(f"  {element:2}: {status}")
+
+   .. tab:: Expected Output
+
+      .. code-block:: text
+
+         Cache Statistics:
+           Preloaded elements: 92
+           Runtime cached: 0
+           Total cached: 92
+
+         Element Cache Status:
+           H : ✓ Preloaded
+           Si: ✓ Preloaded
+           O : ✓ Preloaded
+           Al: ✓ Preloaded
+           Fe: ✓ Preloaded
+           Au: ✓ Preloaded
+           U : ✓ Preloaded
+
+Material Properties Comparison Table
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table:: Common X-ray Optics Materials at 10 keV
+   :widths: 20 15 20 25 20
+   :header-rows: 1
+   :class: material-properties
+
+   * - Formula
+     - Density (g/cm³)
+     - Critical Angle (°)
+     - Atten. Length (cm)
+     - Cache Status
+   * - :class:`chemical-formula` SiO₂
+     - 2.20
+     - 0.223
+     - 12.5
+     - :class:`cache-status preloaded` ✓ Preloaded
+   * - :class:`chemical-formula` Si
+     - 2.33
+     - 0.158
+     - 15.2
+     - :class:`cache-status preloaded` ✓ Preloaded
+   * - :class:`chemical-formula` Al₂O₃
+     - 3.95
+     - 0.182
+     - 8.9
+     - :class:`cache-status preloaded` ✓ Preloaded
+   * - :class:`chemical-formula` C
+     - 3.52
+     - 0.112
+     - 18.7
+     - :class:`cache-status preloaded` ✓ Preloaded
+   * - :class:`chemical-formula` Au
+     - 19.32
+     - 0.418
+     - 0.23
+     - :class:`cache-status preloaded` ✓ Preloaded
+
+Interactive Energy Range Example
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. tabs::
+
+   .. tab:: Single Energy
+
+      .. code-block:: python
+
+         import xraylabtool as xlt
+
+         # Single energy calculation
+         result = xlt.calculate_single_material_properties("Si", 10.0, 2.33)
+         print(f"Single energy result:")
+         print(f"  Energy: {result.energy_kev[0]:.1f} keV")
+         print(f"  Critical angle: {result.critical_angle_degrees[0]:.3f}°")
+
+   .. tab:: Energy List
+
+      .. code-block:: python
+
+         import xraylabtool as xlt
+
+         # Multiple discrete energies
+         energies = [5.0, 10.0, 15.0, 20.0]
+         result = xlt.calculate_single_material_properties("Si", energies, 2.33)
+
+         print(f"Multiple energies result:")
+         for i, e in enumerate(result.energy_kev):
+             print(f"  {e:.1f} keV: θc = {result.critical_angle_degrees[i]:.3f}°")
+
+   .. tab:: Energy Range
+
+      .. code-block:: python
+
+         import xraylabtool as xlt
+         import numpy as np
+
+         # Energy range (logarithmic spacing)
+         energies = np.logspace(np.log10(1), np.log10(30), 50)
+         result = xlt.calculate_single_material_properties("Si", energies, 2.33)
+
+         print(f"Energy range result:")
+         print(f"  Range: {result.energy_kev[0]:.1f} - {result.energy_kev[-1]:.1f} keV")
+         print(f"  Points: {len(result.energy_kev)}")
+         print(f"  Min θc: {result.critical_angle_degrees.min():.3f}°")
+         print(f"  Max θc: {result.critical_angle_degrees.max():.3f}°")
 
 Utility Functions
 ~~~~~~~~~~~~~~~~~

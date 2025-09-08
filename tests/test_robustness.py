@@ -14,7 +14,9 @@ import pytest
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from xraylabtool.core import calculate_single_material_properties  # noqa: E402
+from xraylabtool.calculators.core import (  # noqa: E402
+    calculate_single_material_properties,
+)
 from xraylabtool.utils import get_atomic_number, get_atomic_weight  # noqa: E402
 
 
@@ -65,7 +67,7 @@ class TestAtomicDataRobustness:
         test_elements = ["H", "He", "Li", "C", "N", "O", "Si", "Fe"]
         expected_numbers = [1, 2, 3, 6, 7, 8, 14, 26]
 
-        for element, expected in zip(test_elements, expected_numbers):
+        for element, expected in zip(test_elements, expected_numbers, strict=False):
             result = get_atomic_number(element)
             assert isinstance(result, int)
             assert result == expected

@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 
 try:
-    from xraylabtool.core import (
+    from xraylabtool.calculators.core import (
         AtomicScatteringFactor,
         clear_scattering_factor_cache,
         create_scattering_factor_interpolators,
@@ -25,7 +25,7 @@ try:
 except ImportError:
     # Add parent directory to path to import xraylabtool
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    from xraylabtool.core import (
+    from xraylabtool.calculators.core import (
         AtomicScatteringFactor,
         clear_scattering_factor_cache,
         create_scattering_factor_interpolators,
@@ -260,8 +260,8 @@ class TestPCHIPInterpolators:
             f2_val = f2_interp(energy)
 
             # Values should be real numbers (may be numpy scalars or arrays)
-            assert isinstance(f1_val, (int, float, np.number, np.ndarray))
-            assert isinstance(f2_val, (int, float, np.number, np.ndarray))
+            assert isinstance(f1_val, int | float | np.number | np.ndarray)
+            assert isinstance(f2_val, int | float | np.number | np.ndarray)
             assert (
                 not np.isnan(f1_val).any()
                 if hasattr(f1_val, "any")

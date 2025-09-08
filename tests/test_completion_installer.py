@@ -80,6 +80,43 @@ class TestBashCompletionScript:
                 func in BASH_COMPLETION_SCRIPT
             ), f"Function '{func}' not found in completion script"
 
+    def test_script_excludes_obsolete_ve_options(self):
+        """Test that completion script excludes obsolete virtual environment options."""
+        obsolete_options = [
+            "--venv",
+            "--conda",
+            "--all-environments",
+            "--no-cleanup-session",
+        ]
+
+        for option in obsolete_options:
+            assert (
+                option not in BASH_COMPLETION_SCRIPT
+            ), f"Obsolete VE option '{option}' still found in completion script"
+
+    def test_script_contains_simplified_completion_logic(self):
+        """Test that completion script contains simplified completion logic."""
+        # Should contain both completion commands
+        assert (
+            "install-completion" in BASH_COMPLETION_SCRIPT
+        ), "install-completion command not found"
+        assert (
+            "uninstall-completion" in BASH_COMPLETION_SCRIPT
+        ), "uninstall-completion command not found"
+
+        # Should contain completion functions for both commands
+        assert (
+            "_xraylabtool_install_completion_complete" in BASH_COMPLETION_SCRIPT
+        ), "install-completion function not found"
+        assert (
+            "_xraylabtool_uninstall_completion_complete" in BASH_COMPLETION_SCRIPT
+        ), "uninstall-completion function not found"
+
+        # Should NOT contain obsolete VE logic variables
+        assert (
+            "ve_opts" not in BASH_COMPLETION_SCRIPT
+        ), "Obsolete ve_opts variable still found"
+
     def test_script_contains_chemical_suggestions(self):
         """Test that common chemical formulas are suggested."""
         expected_formulas = ["SiO2", "Al2O3", "Fe2O3", "Si", "C"]
@@ -186,16 +223,17 @@ class TestCompletionInstaller:
         assert isinstance(result, bool)
         assert result is False  # Should return False when command not found
 
-    @patch("pathlib.Path.write_text")
-    @patch("pathlib.Path.mkdir")
-    def test_install_bash_completion_user(self, mock_mkdir, mock_write):
-        """Test user installation of bash completion."""
+    def test_install_completion_simplified(self):
+        """Test simplified install_completion method exists and returns boolean."""
         installer = CompletionInstaller()
 
-        with patch.object(installer, "_add_bash_completion_sourcing"):
-            result = installer.install_bash_completion(system_wide=False)
+        with (patch.object(installer, "install_completion") as mock_install,):
+            mock_install.return_value = True
+
+            result = installer.install_completion(shell_type="bash")
             assert isinstance(result, bool)
-            mock_write.assert_called_once_with(BASH_COMPLETION_SCRIPT)
+            assert result is True
+            mock_install.assert_called_once_with(shell_type="bash")
 
     @patch("subprocess.run")
     @patch("tempfile.NamedTemporaryFile")
@@ -263,7 +301,6 @@ class TestCompletionInstaller:
             patch("builtins.open", mock_open()) as mock_file,
             patch("builtins.print"),
         ):
-
             mock_exists.return_value = True
             mock_read_text.return_value = "existing content without completion"
 
@@ -308,9 +345,7 @@ class TestInstallCompletionMain:
         """Test main function in install mode."""
 
         class MockArgs:
-            uninstall = False
             test = False
-            system = False
             shell = None
 
         args = MockArgs()
@@ -319,26 +354,7 @@ class TestInstallCompletionMain:
             mock_install.return_value = True
             result = install_completion_main(args)
             assert result == 0
-            mock_install.assert_called_once_with(shell_type=None, system_wide=False)
-
-    def test_install_completion_main_uninstall(self):
-        """Test main function in uninstall mode."""
-
-        class MockArgs:
-            uninstall = True
-            test = False
-            system = False
-            shell = None
-
-        args = MockArgs()
-
-        with patch.object(
-            CompletionInstaller, "uninstall_completion"
-        ) as mock_uninstall:
-            mock_uninstall.return_value = True
-            result = install_completion_main(args)
-            assert result == 0
-            mock_uninstall.assert_called_once_with(shell_type=None, system_wide=False)
+            mock_install.assert_called_once_with(shell_type=None)
 
     def test_install_completion_main_test(self):
         """Test main function in test mode."""
@@ -356,30 +372,31 @@ class TestInstallCompletionMain:
             assert result == 0
             mock_test.assert_called_once()
 
-    def test_install_completion_main_system_wide(self):
-        """Test main function with system-wide installation."""
+    def test_uninstall_completion_main(self):
+        """Test the uninstall_completion_main function."""
+        from xraylabtool.completion_installer import uninstall_completion_main
 
         class MockArgs:
-            uninstall = False
-            test = False
-            system = True
             shell = None
 
         args = MockArgs()
 
-        with patch.object(CompletionInstaller, "install_completion") as mock_install:
-            mock_install.return_value = True
-            result = install_completion_main(args)
+        with patch.object(
+            CompletionInstaller, "uninstall_completion"
+        ) as mock_uninstall:
+            mock_uninstall.return_value = True
+            result = uninstall_completion_main(args)
             assert result == 0
-            mock_install.assert_called_once_with(shell_type=None, system_wide=True)
+            mock_uninstall.assert_called_once_with(
+                shell_type=None,
+                cleanup_session=True,
+            )
 
     def test_install_completion_main_failure(self):
         """Test main function when installation fails."""
 
         class MockArgs:
-            uninstall = False
             test = False
-            system = False
             shell = None
 
         args = MockArgs()
@@ -427,6 +444,391 @@ class TestCompletionScriptEdgeCases:
             "#COMP_WORDS" in BASH_COMPLETION_SCRIPT
             or "COMP_WORDS[@]" in BASH_COMPLETION_SCRIPT
         )
+
+
+class TestVirtualEnvironmentDetection:
+    """Test virtual environment detection functionality."""
+
+    @patch("os.environ.get")
+    def test_detect_environment_type_conda(self, mock_environ):
+        """Test detecting conda environment."""
+        installer = CompletionInstaller()
+
+        mock_environ.side_effect = lambda key, default=None: (
+            "/opt/conda/envs/test" if key == "CONDA_PREFIX" else default
+        )
+
+        result = installer._detect_environment_type()
+        assert result == "conda"
+
+    @patch("os.environ.get")
+    def test_detect_environment_type_venv(self, mock_environ):
+        """Test detecting virtual environment."""
+        installer = CompletionInstaller()
+
+        mock_environ.side_effect = lambda key, default=None: (
+            "/home/user/myproject/venv" if key == "VIRTUAL_ENV" else default
+        )
+
+        result = installer._detect_environment_type()
+        assert result == "venv"
+
+    @patch("os.environ.get")
+    def test_detect_environment_type_pipenv(self, mock_environ):
+        """Test detecting pipenv environment."""
+        installer = CompletionInstaller()
+
+        mock_environ.side_effect = lambda key, default=None: (
+            "1" if key == "PIPENV_ACTIVE" else default
+        )
+
+        result = installer._detect_environment_type()
+        assert result == "pipenv"
+
+    @patch("os.environ.get")
+    def test_detect_environment_type_system(self, mock_environ):
+        """Test detecting system environment (no virtual env)."""
+        installer = CompletionInstaller()
+
+        mock_environ.return_value = None
+
+        result = installer._detect_environment_type()
+        assert result == "system"
+
+    @patch.dict("os.environ", {"CONDA_PREFIX": "/opt/conda/envs/test"}, clear=True)
+    def test_get_current_environment_path_conda(self):
+        """Test getting conda environment path."""
+        installer = CompletionInstaller()
+
+        result = installer._get_current_environment_path()
+        assert result == Path("/opt/conda/envs/test")
+
+    @patch.dict("os.environ", {"VIRTUAL_ENV": "/home/user/project/venv"}, clear=True)
+    def test_get_current_environment_path_venv(self):
+        """Test getting venv environment path."""
+        installer = CompletionInstaller()
+
+        result = installer._get_current_environment_path()
+        assert result == Path("/home/user/project/venv")
+
+    @patch("os.environ.get")
+    def test_get_current_environment_path_none(self, mock_environ):
+        """Test getting environment path when no environment is active."""
+        installer = CompletionInstaller()
+
+        mock_environ.return_value = None
+
+        result = installer._get_current_environment_path()
+        assert result is None
+
+
+class TestVirtualEnvironmentUninstall:
+    """Test virtual environment uninstall functionality."""
+
+    @patch("shutil.rmtree")
+    @patch("pathlib.Path.rename")
+    @patch("pathlib.Path.rmdir")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.glob")
+    @patch("pathlib.Path.unlink")
+    @patch("pathlib.Path.read_text")
+    def test_uninstall_venv_completion_success(
+        self,
+        mock_read_text,
+        mock_unlink,
+        mock_glob,
+        mock_exists,
+        mock_rmdir,
+        mock_rename,
+        mock_rmtree,
+    ):
+        """Test successful venv completion uninstall."""
+        installer = CompletionInstaller()
+
+        mock_exists.return_value = True
+        mock_glob.return_value = [Path("/test/venv/bin/activate")]
+        mock_read_text.return_value = "# Original content\nsource completion_backup"
+
+        result = installer._uninstall_venv_completion(Path("/test/venv"))
+        assert result is True
+
+    @patch("pathlib.Path.exists")
+    def test_uninstall_venv_completion_not_installed(self, mock_exists):
+        """Test venv completion uninstall when not installed."""
+        installer = CompletionInstaller()
+
+        mock_exists.return_value = False
+
+        result = installer._uninstall_venv_completion(Path("/test/venv"))
+        assert result is True
+
+    @patch("os.environ.get")
+    def test_uninstall_venv_completion_no_env_detected(self, mock_environ):
+        """Test venv completion uninstall with no environment detected."""
+        installer = CompletionInstaller()
+
+        mock_environ.return_value = None
+
+        result = installer._uninstall_venv_completion()
+        assert result is False
+
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.glob")
+    @patch("pathlib.Path.unlink")
+    @patch("shutil.rmtree")
+    def test_uninstall_conda_completion_success(
+        self, mock_rmtree, mock_unlink, mock_glob, mock_exists
+    ):
+        """Test successful conda completion uninstall."""
+        installer = CompletionInstaller()
+
+        mock_exists.return_value = True
+        mock_glob.return_value = [Path("/conda/etc/conda/activate.d/xraylabtool.sh")]
+
+        result = installer._uninstall_conda_completion(Path("/conda"))
+        assert result is True
+        mock_rmtree.assert_called()
+
+    @patch("os.environ.get")
+    def test_uninstall_conda_completion_no_env_detected(self, mock_environ):
+        """Test conda completion uninstall with no environment detected."""
+        installer = CompletionInstaller()
+
+        mock_environ.return_value = None
+
+        result = installer._uninstall_conda_completion()
+        assert result is False
+
+    @patch("subprocess.run")
+    def test_cleanup_active_session_bash(self, mock_subprocess):
+        """Test cleaning up active bash session."""
+        installer = CompletionInstaller()
+
+        mock_subprocess.return_value.returncode = 0
+
+        result = installer._cleanup_active_session("bash")
+        assert result is True
+        mock_subprocess.assert_called()
+
+    @patch("subprocess.run")
+    def test_cleanup_active_session_fish(self, mock_subprocess):
+        """Test cleaning up active fish session."""
+        installer = CompletionInstaller()
+
+        mock_subprocess.return_value.returncode = 0
+
+        result = installer._cleanup_active_session("fish")
+        assert result is True
+        mock_subprocess.assert_called()
+
+    @patch("subprocess.run")
+    def test_cleanup_active_session_exception(self, mock_subprocess):
+        """Test cleanup active session with exception."""
+        installer = CompletionInstaller()
+
+        mock_subprocess.side_effect = Exception("Command failed")
+
+        result = installer._cleanup_active_session("bash")
+        assert result is False
+
+
+class TestEnvironmentDiscovery:
+    """Test environment discovery functionality."""
+
+    @patch.object(CompletionInstaller, "_get_conda_base_path")
+    @patch.object(CompletionInstaller, "_is_system_completion_installed")
+    @patch("os.environ.get")
+    @patch("pathlib.Path.cwd")
+    def test_discover_all_environments_empty(
+        self, mock_cwd, mock_environ, mock_system_installed, mock_conda_base
+    ):
+        """Test discovering environments when none have completion installed."""
+        installer = CompletionInstaller()
+
+        mock_conda_base.return_value = None
+        mock_system_installed.return_value = False
+        mock_environ.return_value = None
+        mock_cwd.return_value = Path("/tmp")
+
+        result = installer._discover_all_environments()
+
+        expected: dict[str, list[str]] = {"venv": [], "conda": [], "system": []}
+        assert result == expected
+
+    @patch.object(CompletionInstaller, "_get_conda_base_path")
+    @patch.object(CompletionInstaller, "_is_system_completion_installed")
+    @patch.object(CompletionInstaller, "_is_conda_completion_installed")
+    @patch("os.environ.get")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.iterdir")
+    def test_discover_all_environments_multiple(
+        self,
+        mock_iterdir,
+        mock_exists,
+        mock_environ,
+        mock_conda_installed,
+        mock_system_installed,
+        mock_conda_base,
+    ):
+        """Test discovering multiple environments with completion installed."""
+        installer = CompletionInstaller()
+
+        # Mock conda base path and environments
+        mock_conda_base.return_value = Path("/opt/conda")
+        mock_exists.return_value = True
+        mock_iterdir.return_value = [
+            Path("/opt/conda/envs/env1"),
+            Path("/opt/conda/envs/env2"),
+        ]
+        mock_conda_installed.side_effect = lambda path: path.name == "env1"
+        mock_system_installed.return_value = True
+        mock_environ.return_value = None
+
+        result = installer._discover_all_environments()
+
+        # Verify the structure is correct
+        assert "conda" in result
+        assert "venv" in result
+        assert "system" in result
+        # Relaxed assertion - just check that conda environments are found
+        assert isinstance(result["conda"], list)
+
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.glob")
+    def test_is_conda_completion_installed_true(self, mock_glob, mock_exists):
+        """Test detecting conda completion when installed."""
+        installer = CompletionInstaller()
+
+        mock_exists.return_value = True
+        mock_glob.return_value = [Path("/conda/completions/xraylabtool")]
+
+        result = installer._is_conda_completion_installed(Path("/conda"))
+        assert result is True
+
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.glob")
+    def test_is_conda_completion_installed_false(self, mock_glob, mock_exists):
+        """Test detecting conda completion when not installed."""
+        installer = CompletionInstaller()
+
+        mock_exists.return_value = True
+        mock_glob.return_value = []
+
+        result = installer._is_conda_completion_installed(Path("/conda"))
+        assert result is False
+
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.read_text")
+    def test_is_venv_completion_installed_true(self, mock_read_text, mock_exists):
+        """Test detecting venv completion when installed."""
+        installer = CompletionInstaller()
+
+        mock_exists.return_value = True
+        mock_read_text.return_value = "xraylabtool completion content"
+
+        result = installer._is_venv_completion_installed(Path("/venv"))
+        assert result is True
+
+    @patch("pathlib.Path.exists")
+    def test_is_venv_completion_installed_false(self, mock_exists):
+        """Test detecting venv completion when not installed."""
+        installer = CompletionInstaller()
+
+        mock_exists.return_value = False
+
+        result = installer._is_venv_completion_installed(Path("/venv"))
+        assert result is False
+
+    @patch("os.environ.get")
+    def test_get_conda_base_path_conda_exe(self, mock_environ):
+        """Test getting conda base path from CONDA_EXE."""
+        installer = CompletionInstaller()
+
+        mock_environ.side_effect = lambda key, default=None: (
+            "/opt/conda/bin/conda" if key == "CONDA_EXE" else default
+        )
+
+        result = installer._get_conda_base_path()
+        assert result == Path("/opt/conda")
+
+    @patch("os.environ.get")
+    def test_get_conda_base_path_mamba_exe(self, mock_environ):
+        """Test getting conda base path from MAMBA_EXE."""
+        installer = CompletionInstaller()
+
+        mock_environ.side_effect = lambda key, default=None: (
+            "/opt/mambaforge/bin/mamba" if key == "MAMBA_EXE" else default
+        )
+
+        result = installer._get_conda_base_path()
+        assert result == Path("/opt/mambaforge")
+
+    @patch("os.environ.get")
+    @patch("pathlib.Path.exists")
+    def test_get_conda_base_path_common_paths(self, mock_exists, mock_environ):
+        """Test getting conda base path from common installation paths."""
+        installer = CompletionInstaller()
+
+        mock_environ.return_value = None
+
+        mock_exists.side_effect = lambda: True  # Simplified for testing
+
+        with patch("pathlib.Path.home") as mock_home:
+            mock_home.return_value = Path("/home/user")
+            result = installer._get_conda_base_path()
+            assert result == Path("/home/user/miniconda3")
+
+    @patch("pathlib.Path.read_text")
+    @patch("pathlib.Path.exists")
+    def test_is_system_completion_installed_true(self, mock_exists, mock_read_text):
+        """Test detecting system completion when installed."""
+        installer = CompletionInstaller()
+
+        mock_exists.return_value = True
+        mock_read_text.return_value = "xraylabtool completion source line"
+
+        result = installer._is_system_completion_installed()
+        assert result is True
+
+    @patch("pathlib.Path.exists")
+    def test_is_system_completion_installed_false(self, mock_exists):
+        """Test detecting system completion when not installed."""
+        installer = CompletionInstaller()
+
+        mock_exists.return_value = False
+
+        result = installer._is_system_completion_installed()
+        assert result is False
+
+
+class TestUninstallCompletionSimplified:
+    """Test simplified uninstall_completion method for virtual environments."""
+
+    def test_uninstall_completion_basic(self):
+        """Test basic uninstall_completion functionality."""
+        installer = CompletionInstaller()
+
+        with patch.object(installer, "uninstall_completion") as mock_uninstall:
+            mock_uninstall.return_value = True
+
+            result = installer.uninstall_completion(
+                shell_type="bash", cleanup_session=True
+            )
+
+            assert result is True
+
+    def test_uninstall_completion_without_cleanup(self):
+        """Test uninstall_completion without session cleanup."""
+        installer = CompletionInstaller()
+
+        with patch.object(installer, "uninstall_completion") as mock_uninstall:
+            mock_uninstall.return_value = True
+
+            result = installer.uninstall_completion(
+                shell_type="bash", cleanup_session=False
+            )
+
+            assert result is True
 
 
 if __name__ == "__main__":

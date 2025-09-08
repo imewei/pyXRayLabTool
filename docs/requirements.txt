@@ -1,0 +1,33 @@
+# Documentation Dependencies for XRayLabTool
+# Core packages needed to build the documentation
+
+# Core Sphinx packages
+sphinx>=7.0.0
+furo>=2023.9.10  # Modern Sphinx theme
+
+# Essential Sphinx extensions
+sphinx-autodoc-typehints>=1.24.0  # Better type hint rendering
+sphinx-copybutton>=0.5.2  # Copy code button
+sphinx-design>=0.5.0  # Modern design components
+sphinx-tabs>=3.4.0  # Multi-tab content support
+sphinx-togglebutton>=0.3.2  # Collapsible content
+
+# Content format support
+myst-parser>=2.0.0  # Markdown support in Sphinx
+# nbsphinx>=0.9.1  # Jupyter notebook support - temporarily disabled
+
+# Documentation testing and validation
+doc8>=1.1.0  # Style checker for reStructuredText
+rstcheck>=6.2.0  # ReStructuredText linter
+
+# Additional utilities
+Pygments>=2.16.0  # Syntax highlighting
+docutils>=0.19.0  # Core documentation utilities
+
+# Runtime dependencies for notebooks and code execution
+numpy>=1.21.0
+pandas>=1.5.0
+scipy>=1.9.0
+matplotlib>=3.5.0
+mendeleev>=0.15.0  # Required for atomic data access in docs
+tqdm>=4.64.0  # Required for progress bars in examples

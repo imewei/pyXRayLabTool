@@ -1,0 +1,151 @@
+{
+  "description": "Sample materials for testing xraylabtool calculations",
+  "version": "1.0",
+  "materials": {
+    "common_oxides": [
+      {
+        "formula": "SiO2",
+        "name": "Silicon Dioxide (Quartz)",
+        "density": 2.2,
+        "category": "oxide",
+        "common_use": "optical_components",
+        "energy_range_kev": [1.0, 30.0]
+      },
+      {
+        "formula": "Al2O3",
+        "name": "Aluminum Oxide (Alumina)",
+        "density": 3.95,
+        "category": "oxide",
+        "common_use": "substrates",
+        "energy_range_kev": [1.0, 30.0]
+      },
+      {
+        "formula": "Fe2O3",
+        "name": "Iron(III) Oxide",
+        "density": 5.24,
+        "category": "oxide",
+        "common_use": "magnetic_materials",
+        "energy_range_kev": [1.0, 30.0]
+      },
+      {
+        "formula": "TiO2",
+        "name": "Titanium Dioxide",
+        "density": 4.23,
+        "category": "oxide",
+        "common_use": "optical_coatings",
+        "energy_range_kev": [1.0, 30.0]
+      },
+      {
+        "formula": "ZnO",
+        "name": "Zinc Oxide",
+        "density": 5.61,
+        "category": "oxide",
+        "common_use": "semiconductors",
+        "energy_range_kev": [1.0, 30.0]
+      }
+    ],
+    "pure_elements": [
+      {
+        "formula": "Si",
+        "name": "Silicon",
+        "density": 2.33,
+        "category": "semiconductor",
+        "common_use": "wafers",
+        "energy_range_kev": [1.0, 30.0]
+      },
+      {
+        "formula": "Au",
+        "name": "Gold",
+        "density": 19.32,
+        "category": "metal",
+        "common_use": "coatings",
+        "energy_range_kev": [1.0, 30.0]
+      },
+      {
+        "formula": "C",
+        "name": "Carbon (Diamond)",
+        "density": 3.52,
+        "category": "carbon",
+        "common_use": "windows",
+        "energy_range_kev": [1.0, 30.0]
+      },
+      {
+        "formula": "Cu",
+        "name": "Copper",
+        "density": 8.96,
+        "category": "metal",
+        "common_use": "electrodes",
+        "energy_range_kev": [1.0, 30.0]
+      },
+      {
+        "formula": "Pt",
+        "name": "Platinum",
+        "density": 21.45,
+        "category": "metal",
+        "common_use": "coatings",
+        "energy_range_kev": [1.0, 30.0]
+      }
+    ],
+    "complex_compounds": [
+      {
+        "formula": "CaCO3",
+        "name": "Calcium Carbonate",
+        "density": 2.71,
+        "category": "carbonate",
+        "common_use": "calibration_standard",
+        "energy_range_kev": [1.0, 30.0]
+      },
+      {
+        "formula": "BaF2",
+        "name": "Barium Fluoride",
+        "density": 4.89,
+        "category": "fluoride",
+        "common_use": "optical_windows",
+        "energy_range_kev": [0.1, 30.0]
+      },
+      {
+        "formula": "CaF2",
+        "name": "Calcium Fluoride",
+        "density": 3.18,
+        "category": "fluoride",
+        "common_use": "optical_windows",
+        "energy_range_kev": [0.1, 30.0]
+      }
+    ]
+  },
+  "test_configurations": {
+    "quick_test": {
+      "materials": ["SiO2", "Si", "Au"],
+      "energies": [8.0, 10.0, 12.0],
+      "expected_runtime_seconds": 1
+    },
+    "comprehensive_test": {
+      "materials": ["SiO2", "Al2O3", "Fe2O3", "Si", "Au", "C"],
+      "energies": [1.0, 5.0, 10.0, 15.0, 20.0],
+      "expected_runtime_seconds": 5
+    },
+    "edge_case_test": {
+      "materials": ["BaF2", "CaF2"],
+      "energies": [0.03, 0.1, 30.0],
+      "expected_runtime_seconds": 2,
+      "notes": "Tests energy range boundaries"
+    }
+  },
+  "reference_values": {
+    "SiO2_10keV": {
+      "critical_angle_degrees": 0.162,
+      "tolerance": 0.001,
+      "source": "calculated_reference"
+    },
+    "Si_10keV": {
+      "critical_angle_degrees": 0.142,
+      "tolerance": 0.001,
+      "source": "calculated_reference"
+    },
+    "Au_10keV": {
+      "critical_angle_degrees": 0.394,
+      "tolerance": 0.001,
+      "source": "calculated_reference"
+    }
+  }
+}

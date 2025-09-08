@@ -6,11 +6,14 @@ mathematical operations, and other common tasks in X-ray analysis.
 """
 
 import re
+from collections.abc import Iterator
 from functools import lru_cache
-from typing import Any, Dict, Iterator, List, NoReturn, Tuple, Union
+from typing import Any, NoReturn
 
 import numpy as np
 from scipy import constants
+
+from xraylabtool.validation.exceptions import AtomicDataError, UnknownElementError
 
 # Physical constants
 PLANCK_CONSTANT: float = float(constants.h)  # J⋅s
@@ -39,8 +42,8 @@ __all__ = [
     "get_atomic_weight",
     "get_atomic_data",
     "load_atomic_data",  # Backward compatibility
-    "AtomicDataError",
-    "UnknownElementError",
+    # Note: AtomicDataError and UnknownElementError are imported for internal use
+    # but not exported to avoid duplicate documentation
 ]
 
 
@@ -213,7 +216,9 @@ def angle_from_q(q: float, wavelength: float) -> float:
     return float(two_theta_deg)
 
 
-def smooth_data(x: np.ndarray, y: np.ndarray, window_size: int = 5) -> np.ndarray:
+def smooth_data(
+    x: np.ndarray, y: np.ndarray, window_size: int = 5
+) -> np.ndarray:  # noqa: ARG001
     """
     Apply moving average smoothing to data using optimized NumPy convolution.
 
@@ -248,7 +253,7 @@ def smooth_data(x: np.ndarray, y: np.ndarray, window_size: int = 5) -> np.ndarra
 
 def find_peaks(
     x: np.ndarray, y: np.ndarray, prominence: float = 0.1, distance: int = 10
-) -> Tuple[np.ndarray, Dict[str, Any]]:
+) -> tuple[np.ndarray, dict[str, Any]]:
     """
     Find peaks in diffraction data.
 
@@ -272,7 +277,7 @@ def find_peaks(
     return peaks, properties
 
 
-def background_subtraction(
+def background_subtraction(  # noqa: ARG001
     x: np.ndarray, y: np.ndarray, method: str = "linear"
 ) -> np.ndarray:
     """
@@ -320,7 +325,7 @@ def normalize_intensity(y: np.ndarray, method: str = "max") -> np.ndarray:
         raise ValueError("Method must be 'max', 'area', or 'standard'")
 
 
-def progress_bar(iterable: Any, desc: str = "Processing") -> Union[Any, Iterator[Any]]:
+def progress_bar(iterable: Any, desc: str = "Processing") -> Any | Iterator[Any]:
     """
     Create a progress bar for iterations.
 
@@ -359,7 +364,7 @@ def save_processed_data(
     np.savetxt(filename, data, header=header, fmt="%.6f")
 
 
-def parse_formula(formula_str: str) -> Tuple[List[str], List[float]]:
+def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
     """
     Parse a chemical formula string into element symbols and their counts.
 
@@ -415,14 +420,10 @@ def parse_formula(formula_str: str) -> Tuple[List[str], List[float]]:
     return element_symbols, element_counts
 
 
-# Import exceptions from centralized module
-from .exceptions import AtomicDataError, UnknownElementError
-
-
 def _convert_atomic_number_to_int(atomic_num: Any) -> int:
     """Convert atomic number to integer, handling various types."""
     try:
-        if isinstance(atomic_num, (int, float)):
+        if isinstance(atomic_num, int | float):
             return int(atomic_num)
         return int(str(atomic_num))
     except (ValueError, TypeError):
@@ -431,7 +432,7 @@ def _convert_atomic_number_to_int(atomic_num: Any) -> int:
         except (ValueError, TypeError) as e:
             raise AtomicDataError(
                 f"Could not convert atomic number to int: {atomic_num}, error: {e}"
-            )
+            ) from e
 
 
 def _handle_mendeleev_error(e: Exception, element_symbol: str) -> NoReturn:
@@ -457,8 +458,10 @@ def get_atomic_number(element_symbol: str) -> int:
         Atomic number as integer
 
     Raises:
-        UnknownElementError: If element symbol is not recognized
-        AtomicDataError: If there's an issue loading atomic data
+        ~xraylabtool.validation.exceptions.UnknownElementError: If element
+            symbol is not recognized
+        ~xraylabtool.validation.exceptions.AtomicDataError: If there's an
+            issue loading atomic data
 
     Examples:
         >>> get_atomic_number('H')
@@ -473,8 +476,8 @@ def get_atomic_number(element_symbol: str) -> int:
 
         elem = get_element(element_symbol)
         return int(_convert_atomic_number_to_int(elem.atomic_number))
-    except ImportError:
-        raise AtomicDataError("mendeleev package is required for atomic data")
+    except ImportError as e:
+        raise AtomicDataError("mendeleev package is required for atomic data") from e
     except ValueError as e:
         _handle_mendeleev_error(e, element_symbol)
         # This line should never be reached as _handle_mendeleev_error always raises
@@ -483,7 +486,7 @@ def get_atomic_number(element_symbol: str) -> int:
         raise AtomicDataError(
             f"Unexpected error loading atomic number for element "
             f"'{element_symbol}': {e}"
-        )
+        ) from e
 
 
 @lru_cache(maxsize=128)
@@ -498,8 +501,10 @@ def get_atomic_weight(element_symbol: str) -> float:
         Atomic weight in u (atomic mass units)
 
     Raises:
-        UnknownElementError: If element symbol is not recognized
-        AtomicDataError: If there's an issue loading atomic data
+        ~xraylabtool.validation.exceptions.UnknownElementError: If element
+            symbol is not recognized
+        ~xraylabtool.validation.exceptions.AtomicDataError: If there's an
+            issue loading atomic data
 
     Examples:
         >>> round(get_atomic_weight('H'), 3)
@@ -521,18 +526,17 @@ def get_atomic_weight(element_symbol: str) -> float:
         # Handle Column type from mendeleev by converting to string first
         try:
             # Try direct conversion for normal types
-            if isinstance(atomic_weight, (int, float)):
+            if isinstance(atomic_weight, int | float):
                 return float(atomic_weight)
             # For Column types and other objects, convert to string then to
             # float
             return float(str(atomic_weight))
         except (ValueError, TypeError) as e:
             raise AtomicDataError(
-                f"Could not convert atomic weight to float: "
-                f"{atomic_weight}, error: {e}"
-            )
-    except ImportError:
-        raise AtomicDataError("mendeleev package is required for atomic data")
+                f"Could not convert atomic weight to float: {atomic_weight}, error: {e}"
+            ) from e
+    except ImportError as e:
+        raise AtomicDataError("mendeleev package is required for atomic data") from e
     except ValueError as e:
         # mendeleev raises ValueError for unknown elements
         if "not found" in str(e).lower() or "unknown" in str(e).lower():
@@ -540,16 +544,16 @@ def get_atomic_weight(element_symbol: str) -> float:
         else:
             raise AtomicDataError(
                 f"Could not load atomic weight for element '{element_symbol}': {e}"
-            )
+            ) from e
     except Exception as e:
         raise AtomicDataError(
             f"Unexpected error loading atomic weight for element "
             f"'{element_symbol}': {e}"
-        )
+        ) from e
 
 
 @lru_cache(maxsize=128)
-def get_atomic_data(element_symbol: str) -> Dict[str, Any]:
+def get_atomic_data(element_symbol: str) -> dict[str, Any]:
     """
     Get comprehensive atomic data for given element symbol with LRU caching.
 
@@ -565,8 +569,10 @@ def get_atomic_data(element_symbol: str) -> Dict[str, Any]:
         - density: Density in g/cm³ (if available)
 
     Raises:
-        UnknownElementError: If element symbol is not recognized
-        AtomicDataError: If there's an issue loading atomic data
+        ~xraylabtool.validation.exceptions.UnknownElementError: If element
+            symbol is not recognized
+        ~xraylabtool.validation.exceptions.AtomicDataError: If there's an
+            issue loading atomic data
 
     Examples:
         >>> data = get_atomic_data('Si')
@@ -587,20 +593,20 @@ def get_atomic_data(element_symbol: str) -> Dict[str, Any]:
             "name": elem.name,
             "density": elem.density,  # May be None for some elements
         }
-    except ImportError:
-        raise AtomicDataError("mendeleev package is required for atomic data")
+    except ImportError as e:
+        raise AtomicDataError("mendeleev package is required for atomic data") from e
     except ValueError as e:
         # mendeleev raises ValueError for unknown elements
         if "not found" in str(e).lower() or "unknown" in str(e).lower():
             raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
         else:
             raise AtomicDataError(
-                f"Could not load atomic data for element " f"'{element_symbol}': {e}"
-            )
+                f"Could not load atomic data for element '{element_symbol}': {e}"
+            ) from e
     except Exception as e:
         raise AtomicDataError(
             f"Unexpected error loading atomic data for element '{element_symbol}': {e}"
-        )
+        ) from e
 
 
 # Backward compatibility alias

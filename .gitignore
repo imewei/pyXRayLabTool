@@ -42,6 +42,7 @@ htmlcov/
 .nox/
 .coverage
 .coverage.*
+coverage.json
 .cache
 nosetests.xml
 coverage.xml
@@ -177,3 +178,4 @@ Thumbs.db
 *.temp
 RELEASE_GUIDE.md
 WARP.md
+CLAUDE.md

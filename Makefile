@@ -2,7 +2,7 @@
 # Provides convenient commands for testing, development, and CI
 # Supports both Python API and CLI functionality
 
-.PHONY: help install install-docs dev-setup version-check test test-fast test-integration test-benchmarks test-coverage test-all cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-serve docs-clean docs-linkcheck docs-pdf clean clean-all dev validate ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test
+.PHONY: help install install-docs dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all dev validate ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test
 
 # Colors for output
 RED=\033[0;31m
@@ -24,10 +24,21 @@ help:
 	@echo "$(YELLOW)🧪 Testing:$(NC)"
 	@echo "  test             Run all tests with coverage"
 	@echo "  test-fast        Run tests without coverage (faster)"
+	@echo "  test-unit        Run unit tests only"
 	@echo "  test-integration Run integration tests only"
+	@echo "  test-performance Run performance tests only"
+	@echo "  test-memory      Run memory management tests only"
+	@echo "  test-stability   Run numerical stability tests only"
 	@echo "  test-benchmarks  Run performance benchmarks only"
+	@echo "  test-regression  Run regression tests only"
+	@echo "  test-optimization Run optimization validation tests only"
 	@echo "  test-coverage    Run tests and generate HTML coverage report"
+	@echo "  test-parallel    Run tests in parallel for faster execution"
 	@echo "  test-all         Run comprehensive test suite using run_tests.py"
+	@echo "  test-smoke       Run basic smoke tests (quick validation)"
+	@echo "  test-edge        Run edge case tests"
+	@echo "  test-ci          Run CI-focused test suite"
+	@echo "  test-nightly     Run nightly/extended test suite"
 	@echo "  cli-test         Test CLI functionality"
 	@echo ""
 	@echo "$(YELLOW)🔧 Code Quality:$(NC)"
@@ -39,8 +50,13 @@ help:
 	@echo "$(YELLOW)📚 Documentation:$(NC)"
 	@echo "  docs             Build Sphinx documentation"
 	@echo "  docs-serve       Build and serve documentation locally"
+	@echo "  docs-autobuild   Live server with auto-rebuild on changes"
 	@echo "  docs-clean       Clean documentation build files"
 	@echo "  docs-linkcheck   Check documentation links"
+	@echo "  docs-pdf         Build PDF documentation (requires LaTeX)"
+	@echo "  docs-test        Test documentation build with warnings as errors"
+	@echo "  docs-test-all    Comprehensive documentation testing (examples, links, coverage)"
+	@echo "  docs-doctest     Test code examples in docstrings and RST files"
 	@echo ""
 	@echo "$(YELLOW)⚡ CLI Tools:$(NC)"
 	@echo "  cli-help         Show CLI help and available commands"
@@ -74,7 +90,7 @@ install:
 
 install-docs:
 	@echo "$(YELLOW)Installing documentation dependencies...$(NC)"
-	pip install sphinx sphinx-rtd-theme
+	pip install -r docs/requirements.txt
 	@echo "$(GREEN)✅ Documentation dependencies installed$(NC)"
 
 dev-setup: install install-docs
@@ -103,20 +119,78 @@ test-fast:
 	pytest tests/ -v
 	@echo "$(GREEN)✅ Fast tests completed$(NC)"
 
+# Core test categories
+test-unit:
+	@echo "$(YELLOW)Running unit tests...$(NC)"
+	pytest tests/ -m "unit" -v
+	@echo "$(GREEN)✅ Unit tests completed$(NC)"
+
 test-integration:
 	@echo "$(YELLOW)Running integration tests...$(NC)"
-	pytest tests/test_integration.py -v
+	pytest tests/ -m "integration" -v
 	@echo "$(GREEN)✅ Integration tests completed$(NC)"
+
+# Performance and optimization tests
+test-performance:
+	@echo "$(YELLOW)Running performance tests...$(NC)"
+	pytest tests/ -m "performance" -v --tb=short
+	@echo "$(GREEN)✅ Performance tests completed$(NC)"
+
+test-memory:
+	@echo "$(YELLOW)Running memory management tests...$(NC)"
+	pytest tests/ -m "memory" -v --tb=short
+	@echo "$(GREEN)✅ Memory tests completed$(NC)"
+
+test-stability:
+	@echo "$(YELLOW)Running numerical stability tests...$(NC)"
+	pytest tests/ -m "stability" -v --tb=short
+	@echo "$(GREEN)✅ Stability tests completed$(NC)"
 
 test-benchmarks:
 	@echo "$(YELLOW)Running performance benchmarks...$(NC)"
-	pytest tests/test_integration.py::TestPerformanceBenchmarks --benchmark-only -v
+	pytest tests/ -m "benchmark" --benchmark-only -v
 	@echo "$(GREEN)✅ Benchmarks completed$(NC)"
 
+test-regression:
+	@echo "$(YELLOW)Running regression tests...$(NC)"
+	pytest tests/ -m "regression" -v --tb=short
+	@echo "$(GREEN)✅ Regression tests completed$(NC)"
+
+test-optimization:
+	@echo "$(YELLOW)Running optimization validation tests...$(NC)"
+	pytest tests/ -m "optimization" -v --tb=short
+	@echo "$(GREEN)✅ Optimization tests completed$(NC)"
+
+# Test execution modes
 test-coverage:
 	@echo "$(YELLOW)Running tests with detailed coverage...$(NC)"
 	pytest tests/ --cov=xraylabtool --cov-report=html --cov-report=xml --cov-report=term-missing
 	@echo "$(GREEN)✅ Coverage report generated in htmlcov/$(NC)"
+
+test-parallel:
+	@echo "$(YELLOW)Running tests in parallel...$(NC)"
+	@command -v pytest-xdist >/dev/null 2>&1 && pytest tests/ -n auto -v --tb=short || (echo "$(BLUE)pytest-xdist not available, running sequentially$(NC)" && pytest tests/ -v --tb=short)
+	@echo "$(GREEN)✅ Parallel tests completed$(NC)"
+
+test-smoke:
+	@echo "$(YELLOW)Running smoke tests...$(NC)"
+	pytest tests/ -m "smoke" -v --tb=line
+	@echo "$(GREEN)✅ Smoke tests completed$(NC)"
+
+test-edge:
+	@echo "$(YELLOW)Running edge case tests...$(NC)"
+	pytest tests/ -m "edge_case" -v --tb=short
+	@echo "$(GREEN)✅ Edge case tests completed$(NC)"
+
+test-ci:
+	@echo "$(YELLOW)Running CI test suite...$(NC)"
+	pytest tests/ -m "ci or (unit and not slow)" -v --tb=short --maxfail=5
+	@echo "$(GREEN)✅ CI tests completed$(NC)"
+
+test-nightly:
+	@echo "$(YELLOW)Running nightly test suite...$(NC)"
+	pytest tests/ -m "nightly or (performance and memory and stability)" -v --tb=short
+	@echo "$(GREEN)✅ Nightly tests completed$(NC)"
 
 test-all:
 	@echo "$(YELLOW)Running comprehensive test suite...$(NC)"
@@ -200,18 +274,20 @@ type-check:
 # Documentation
 docs:
 	@echo "$(YELLOW)Building Sphinx documentation...$(NC)"
-	sphinx-build -b html docs/source docs/build/html
-	@echo "$(GREEN)✅ Documentation built successfully in docs/build/html/$(NC)"
+	sphinx-build -b html docs/source docs/build
+	@echo "$(GREEN)✅ Documentation built successfully in docs/build/$(NC)"
+	@echo "$(BLUE)📖 View at: file://$(shell pwd)/docs/build/index.html$(NC)"
 
 docs-serve: docs
 	@echo "$(YELLOW)Serving documentation locally...$(NC)"
 	@echo "$(BLUE)Documentation server starting at http://localhost:8000$(NC)"
 	@echo "$(BLUE)Press Ctrl+C to stop the server$(NC)"
-	cd docs/build/html && python -m http.server 8000
+	cd docs/build && python -m http.server 8000
 
 docs-clean:
 	@echo "$(YELLOW)Cleaning documentation build files...$(NC)"
 	rm -rf docs/build/
+	rm -rf docs/source/api/generated/
 	@echo "$(GREEN)✅ Documentation cleaned$(NC)"
 
 docs-linkcheck:
@@ -222,8 +298,34 @@ docs-linkcheck:
 docs-pdf:
 	@echo "$(YELLOW)Building PDF documentation...$(NC)"
 	sphinx-build -b latex docs/source docs/build/latex
-	cd docs/build/latex && pdflatex XRayLabTool.tex
-	@echo "$(GREEN)✅ PDF documentation built$(NC)"
+	cd docs/build/latex && pdflatex XRayLabTool.tex || echo "$(BLUE)LaTeX not available, PDF build skipped$(NC)"
+	@echo "$(GREEN)✅ PDF documentation build attempted$(NC)"
+
+docs-test:
+	@echo "$(YELLOW)Testing documentation build with warnings as errors...$(NC)"
+	sphinx-build -W -b html docs/source docs/build/test
+	@echo "$(GREEN)✅ Documentation test build completed$(NC)"
+
+docs-doctest:
+	@echo "$(YELLOW)Testing code examples in docstrings and documentation...$(NC)"
+	sphinx-build -b doctest docs/source docs/build/doctest
+	@echo "$(GREEN)✅ Documentation code examples tested$(NC)"
+
+docs-test-all:
+	@echo "$(YELLOW)Running comprehensive documentation testing...$(NC)"
+	@command -v python scripts/test_docs.py >/dev/null 2>&1 && \
+		python scripts/test_docs.py || \
+		(echo "$(BLUE)Documentation testing script not found. Running basic tests...$(NC)" && \
+		 $(MAKE) docs-test && $(MAKE) docs-doctest && $(MAKE) docs-linkcheck)
+	@echo "$(GREEN)✅ Comprehensive documentation testing completed$(NC)"
+
+docs-autobuild:
+	@echo "$(YELLOW)Starting live documentation server with auto-rebuild...$(NC)"
+	@command -v sphinx-autobuild >/dev/null 2>&1 && \
+		(echo "$(BLUE)Live server at http://localhost:8000 (auto-reloads on changes)$(NC)" && \
+		 sphinx-autobuild docs/source docs/build --host 0.0.0.0 --port 8000) || \
+		(echo "$(BLUE)sphinx-autobuild not available. Install with: pip install sphinx-autobuild$(NC)" && \
+		 echo "$(BLUE)Using regular build and serve instead...$(NC)" && make docs-serve)
 
 # Cleanup
 clean:
@@ -238,8 +340,11 @@ clean:
 	rm -rf .pytest_cache/
 	rm -rf benchmark.json
 	rm -rf .benchmarks
+	rm -rf bandit-report.json
+	rm -rf bandit_report.json
 	rm -rf .tox/
 	rm -rf .mypy_cache/
+	rm -rf .ruff_cache/
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 	@echo "$(GREEN)✅ Cleanup completed (virtual environments preserved)$(NC)"
@@ -257,10 +362,10 @@ clean-all: clean docs-clean
 dev: check-format lint test-fast
 	@echo "$(GREEN)✅ Quick development cycle completed$(NC)"
 
-validate: format lint test-coverage test-benchmarks cli-test
+validate: format lint test-coverage test-benchmarks cli-test docs-test-all
 	@echo "$(GREEN)✅ Full validation completed - ready for commit!$(NC)"
 
-ci-test: clean install version-check lint type-check test-coverage test-benchmarks cli-test docs
+ci-test: clean install version-check lint type-check test-coverage test-benchmarks cli-test docs-test
 	@echo "$(GREEN)✅ CI simulation completed successfully$(NC)"
 
 release-check: clean dev-setup version-check validate docs docs-linkcheck build

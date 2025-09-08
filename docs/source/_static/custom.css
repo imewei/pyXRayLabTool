@@ -1,0 +1,276 @@
+/* Custom CSS for XRayLabTool Scientific Documentation */
+
+/* Scientific notation and units styling */
+.scientific-value {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.units {
+    font-size: 0.9em;
+    color: #7f8c8d;
+    font-weight: normal;
+}
+
+/* Formula and chemical notation */
+.chemical-formula {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-weight: 600;
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* X-ray energy ranges */
+.energy-range {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    background: rgba(52, 152, 219, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #2980b9;
+}
+
+/* Material properties tables */
+.material-properties table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.material-properties th,
+.material-properties td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.material-properties th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.material-properties .formula-col {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-weight: 600;
+    color: #e74c3c;
+}
+
+.material-properties .value-col {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    text-align: right;
+}
+
+/* Performance indicators */
+.performance-indicator {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin: 2px;
+}
+
+.performance-indicator::before {
+    content: "⚡";
+    margin-right: 4px;
+}
+
+/* Cache status indicators */
+.cache-status {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.cache-status.preloaded {
+    background: #d5f4e6;
+    color: #27ae60;
+}
+
+.cache-status.cached {
+    background: #fdeaa7;
+    color: #fdcb6e;
+}
+
+.cache-status.not-cached {
+    background: #fab1a0;
+    color: #e17055;
+}
+
+/* API function signatures */
+.api-signature {
+    background: #f8f9fa;
+    border-left: 4px solid #3498db;
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    border-radius: 0 4px 4px 0;
+}
+
+.api-signature .function-name {
+    color: #8e44ad;
+    font-weight: 600;
+}
+
+.api-signature .parameter {
+    color: #2980b9;
+}
+
+.api-signature .type-hint {
+    color: #27ae60;
+    font-style: italic;
+}
+
+/* Interactive examples */
+.interactive-example {
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    margin: 16px 0;
+    overflow: hidden;
+}
+
+.interactive-example .example-header {
+    background: #f7f9fa;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e1e8ed;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.interactive-example .example-content {
+    padding: 16px;
+}
+
+/* Code block enhancements for scientific data */
+.highlight .nb {
+    color: #8e44ad; /* Built-in functions like numpy functions */
+}
+
+.highlight .nf {
+    color: #2980b9; /* Function names */
+}
+
+.highlight .mi,
+.highlight .mf {
+    color: #e67e22; /* Numbers (scientific values) */
+}
+
+.highlight .s1,
+.highlight .s2 {
+    color: #27ae60; /* Strings (chemical formulas) */
+}
+
+/* Mobile responsiveness for scientific content */
+@media (max-width: 768px) {
+    .material-properties table {
+        font-size: 0.9em;
+    }
+
+    .material-properties th,
+    .material-properties td {
+        padding: 6px 8px;
+    }
+
+    .api-signature {
+        padding: 8px 12px;
+        font-size: 0.9em;
+    }
+
+    .scientific-value {
+        font-size: 0.9em;
+    }
+}
+
+/* Dark mode adaptations */
+[data-theme="dark"] .scientific-value {
+    color: #ecf0f1;
+}
+
+[data-theme="dark"] .material-properties th {
+    background-color: #34495e;
+    color: #ecf0f1;
+}
+
+[data-theme="dark"] .material-properties td {
+    border-bottom-color: #34495e;
+}
+
+[data-theme="dark"] .api-signature {
+    background: #2c3e50;
+    border-left-color: #3498db;
+}
+
+[data-theme="dark"] .interactive-example {
+    border-color: #34495e;
+}
+
+[data-theme="dark"] .interactive-example .example-header {
+    background: #2c3e50;
+    border-bottom-color: #34495e;
+    color: #ecf0f1;
+}
+
+/* Accessibility improvements */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.skip-link:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    background: #2980b9;
+    color: white;
+    padding: 8px 12px;
+    text-decoration: none;
+    border-radius: 4px;
+    margin: 8px;
+    display: inline-block;
+}
+
+/* Focus indicators for better accessibility */
+.material-properties table:focus,
+.api-signature:focus,
+.interactive-example:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* Print styles for scientific documentation */
+@media print {
+    .material-properties table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .material-properties th,
+    .material-properties td {
+        border: 1px solid #000;
+        padding: 4px;
+    }
+
+    .performance-indicator,
+    .cache-status {
+        background: transparent !important;
+        color: #000 !important;
+        border: 1px solid #000;
+    }
+
+    .chemical-formula,
+    .energy-range {
+        background: transparent !important;
+        border: 1px solid #000;
+    }
+}

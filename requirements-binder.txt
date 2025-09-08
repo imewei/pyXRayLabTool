@@ -1,0 +1,22 @@
+# Binder requirements for XRayLabTool notebooks
+# Minimal requirements for running interactive notebooks
+
+# Core XRayLabTool dependencies
+numpy>=1.21.0
+pandas>=1.5.0
+scipy>=1.9.0
+matplotlib>=3.5.0
+mendeleev>=0.15.0
+tqdm>=4.64.0
+
+# Install XRayLabTool from PyPI
+xraylabtool
+
+# Jupyter notebook enhancements
+jupyter>=1.0.0
+jupyterlab>=3.0.0
+ipywidgets>=7.6.0
+plotly>=5.0.0
+
+# Scientific plotting enhancements
+seaborn>=0.11.0

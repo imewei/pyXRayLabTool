@@ -1,25 +1,72 @@
 # 🔬 XRayLabTool
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+> **High-Performance X-ray Optical Properties Calculator for Materials Science & Synchrotron Research**
+
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/xraylabtool.svg)](https://badge.fury.io/py/xraylabtool)
+[![PyPI downloads](https://img.shields.io/pypi/dm/xraylabtool.svg)](https://pypistats.org/packages/xraylabtool)
+[![Total downloads](https://static.pepy.tech/personalized-badge/xraylabtool?period=total&units=international_system&left_color=grey&right_color=orange&left_text=Total%20Downloads)](https://pepy.tech/project/xraylabtool)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/imewei/pyXRayLabTool/workflows/Tests/badge.svg)](https://github.com/imewei/pyXRayLabTool/actions)
+[![CI](https://github.com/imewei/pyXRayLabTool/workflows/CI/badge.svg)](https://github.com/imewei/pyXRayLabTool/actions/workflows/ci.yml)
+[![Documentation Status](https://readthedocs.org/projects/pyxraylabtool/badge/?version=latest)](https://pyxraylabtool.readthedocs.io/en/latest/?badge=latest)
+[![Coverage](https://img.shields.io/codecov/c/github/imewei/pyXRayLabTool.svg)](https://codecov.io/gh/imewei/pyXRayLabTool)
+[![GitHub issues](https://img.shields.io/github/issues/imewei/pyXRayLabTool.svg)](https://github.com/imewei/pyXRayLabTool/issues)
+[![GitHub stars](https://img.shields.io/github/stars/imewei/pyXRayLabTool.svg)](https://github.com/imewei/pyXRayLabTool/stargazers)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
+[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-**High-Performance X-ray Optical Properties Calculator for Materials Science**
+**XRayLabTool** is a comprehensive **Python package** and **command-line tool** for calculating X-ray optical properties of materials based on their chemical formulas and densities. Designed for **synchrotron scientists**, **materials researchers**, and **X-ray optics developers**, it provides **ultra-fast**, accurate calculations using **CXRO/NIST atomic scattering factor data**.
 
-XRayLabTool is a comprehensive Python package and command-line tool for calculating X-ray optical properties of materials based on their chemical formulas and densities. Designed for synchrotron scientists, materials researchers, and X-ray optics developers, it provides fast, accurate calculations using CXRO/NIST atomic scattering factor data.
+**🎯 Key Applications**: X-ray diffraction • Synchrotron beamline design • Materials characterization • Reflectivity analysis • Critical angle calculations • X-ray optics design
+
+**⚡ Performance**: 150,000+ calculations/second with 350x speed improvement over conventional tools
+
+## 📋 Table of Contents
+
+- [🎯 Key Features](#-key-features)
+- [📦 Installation](#-installation)
+- [🚀 Quick Start](#-quick-start)
+- [🖥️ Command-Line Interface (CLI)](#-command-line-interface-cli)
+- [📥 Input Parameters](#-input-parameters)
+- [📤 Output: XRayResult Dataclass](#-output-xrayresult-dataclass)
+- [💡 Usage Examples](#-usage-examples)
+- [🔄 Migration Guide](#-migration-guide)
+- [🧮 Supported Calculations](#-supported-calculations)
+- [🎯 Application Areas](#-application-areas)
+- [⚡ Performance Features](#-performance-features--optimizations)
+- [🧪 Testing and Validation](#-testing-and-validation)
+- [📚 API Reference](#-api-reference)
+- [📞 Documentation & Support](#-documentation--support)
+- [📈 Citation](#-citation)
 
 ## 🎯 Key Features
 
-- **🐍 Python API**: Complete programmatic access with descriptive field names
-- **⚡ Command-Line Interface**: Powerful CLI for batch processing and quick calculations
-- **📆 Multiple Output Formats**: Table, CSV, and JSON output options
-- **🚀 Ultra-High Performance**: 150,000+ calculations/second with advanced optimizations
-- **🏁 Smart Caching**: Preloaded atomic data for 92 elements (10-50x speed boost)
-- **🔬 Scientific Accuracy**: CXRO/NIST atomic scattering factor databases
-- **🎨 Flexible Input**: Support for energy ranges, multiple materials, and batch processing
-- **📊 Memory Efficient**: Optimized for large-scale calculations with intelligent memory management
-- **⌨️ Shell Completion**: Intelligent bash completion for enhanced CLI productivity
+### 🚀 **Ultra-High Performance X-ray Calculations**
+- **150,000+ calculations/second**: Industry-leading performance for X-ray property calculations
+- **350x speed improvement**: Dramatically faster than conventional tools
+- **Smart atomic data caching**: Preloaded data for 92 elements (H-U) with 10-50x speed boost
+- **Vectorized mathematical operations**: Optimized NumPy/SciPy-based computations
+
+### 🔬 **Scientific Accuracy & Data**
+- **CXRO/NIST databases**: Authoritative atomic scattering factor data
+- **Comprehensive X-ray properties**: δ, β, f1, f2, critical angles, attenuation lengths
+- **Energy range**: 0.03-30 keV (covers most X-ray applications)
+- **Chemical formula parsing**: Support for complex molecular formulas
+
+### 🐍 **Python API & CLI Tools**
+- **Complete Python API**: Programmatic access with descriptive field names
+- **Powerful command-line interface**: 8 specialized commands for various X-ray calculations
+- **Multiple output formats**: Table, CSV, JSON for different workflows
+- **Batch processing**: Handle large datasets with parallel processing
+
+### ⚡ **Advanced Features**
+- **Memory-efficient processing**: Handle datasets larger than RAM
+- **Cross-platform shell completion**: Bash, Zsh, Fish, PowerShell support
+- **Flexible input formats**: Energy ranges, multiple materials, various units
+- **Real-time progress tracking**: Visual feedback for long-running calculations
 ---
 
 ## 📦 Installation
@@ -86,6 +133,25 @@ Restart your shell or source your config file after installation.
 - **Mendeleev** ≥ 0.10.0
 - **tqdm** ≥ 4.60.0
 - **matplotlib** ≥ 3.4.0 (optional, for plotting)
+
+---
+
+## ⚡ Quick Start: X-ray Properties in 30 Seconds
+
+Get started with **X-ray optical property calculations** immediately:
+
+```bash
+# Install from PyPI
+pip install xraylabtool
+
+# Calculate X-ray properties for silicon at 10 keV (Cu Kα)
+python -c "import xraylabtool as xlt; result = xlt.calculate_single_material_properties('Si', 10.0, 2.33); print(f'Critical angle: {result.critical_angle_degrees[0]:.3f}°')"
+
+# Or use the command-line interface
+xraylabtool calc Si -e 10.0 -d 2.33
+```
+
+**Output**: Critical angle, attenuation length, dispersion (δ), absorption (β), and more X-ray optical constants
 
 ---
 
@@ -237,6 +303,11 @@ xraylabtool install-completion bash --uninstall
 xraylabtool install-completion zsh --system --test
 xraylabtool install-completion fish --user
 xraylabtool install-completion powershell --test
+
+# NEW: Virtual environment integration
+xraylabtool install-completion --uninstall --venv          # Remove from virtual env
+xraylabtool install-completion --uninstall --conda         # Remove from conda/mamba
+xraylabtool install-completion --uninstall --all-environments  # Clean up everywhere
 ```
 
 ### Output Formats
@@ -279,6 +350,7 @@ The CLI reference includes:
 Complete documentation for installing and using shell completion:
 - Installation instructions for Bash, Zsh, Fish, and PowerShell
 - Tab completion features and examples for all supported shells
+- **NEW:** Virtual environment integration (venv, conda, mamba)
 - Cross-platform setup (Windows, macOS, Linux)
 - Troubleshooting and configuration options
 
@@ -501,14 +573,37 @@ with warnings.catch_warnings():
 
 ---
 
-## 🎯 Application Areas
+## 🎯 Scientific Applications & Use Cases
 
-- **Synchrotron Beamline Design**: Mirror and monochromator calculations
-- **X-ray Optics**: Reflectivity and transmission analysis
-- **Materials Science**: Characterization of thin films and multilayers
-- **Crystallography**: Structure factor calculations
-- **Small-Angle Scattering**: Contrast calculations
-- **Medical Imaging**: Tissue contrast optimization
+### 🏗️ **Synchrotron & Beamline Applications**
+- **Beamline design and optimization**: Mirror and monochromator reflectivity calculations
+- **Synchrotron optics**: X-ray focusing elements and beam conditioning
+- **Beamline commissioning**: Critical angle measurements and alignment
+- **Synchrotron radiation research**: Materials characterization at X-ray facilities
+
+### 🔬 **Materials Science & Engineering**
+- **Thin film characterization**: Multilayer reflectivity and interface analysis
+- **X-ray reflectometry (XRR)**: Layer thickness and roughness determination
+- **Materials characterization**: Optical constant measurements
+- **Nanostructure analysis**: Critical dimensions and composition studies
+
+### 🧬 **X-ray Crystallography & Diffraction**
+- **Structure factor calculations**: Atomic scattering factor analysis
+- **Diffraction pattern modeling**: Intensity calculations and phase analysis
+- **Crystal structure refinement**: Atomic form factor corrections
+- **Powder diffraction analysis**: Quantitative phase analysis
+
+### 🔬 **Advanced X-ray Techniques**
+- **Small-angle X-ray scattering (SAXS)**: Contrast calculations and modeling
+- **X-ray absorption spectroscopy**: Edge jump and absorption analysis
+- **Coherent X-ray imaging**: Phase contrast and holography
+- **X-ray tomography**: Attenuation coefficient calculations
+
+### 🏥 **Medical & Industrial Applications**
+- **Medical X-ray imaging**: Tissue contrast optimization
+- **Industrial radiography**: Material identification and quality control
+- **Security screening**: Material discrimination and threat detection
+- **Non-destructive testing**: Defect detection and material analysis
 
 ---
 
@@ -786,4 +881,28 @@ If you use XRayLabTool in your research, please cite:
 
 ---
 
+## 🔍 Keywords & Search Terms
+
+**Core Technologies**: Python X-ray calculations • X-ray optical properties • Atomic scattering factors • CXRO database • NIST data • X-ray optics • Synchrotron science
+
+**X-ray Techniques**: X-ray reflectometry (XRR) • Small-angle X-ray scattering (SAXS) • X-ray diffraction (XRD) • X-ray absorption spectroscopy (XAS) • Grazing incidence X-ray scattering (GIXS)
+
+**Materials Analysis**: Thin film analysis • Multilayer characterization • Crystal structure analysis • Materials science calculations • Optical constants • Refractive index • Critical angle
+
+**Scientific Computing**: High-performance Python • Scientific Python • NumPy calculations • SciPy optimization • Vectorized computations • Batch processing • CLI tools
+
+**Research Fields**: Synchrotron radiation • Materials science • Crystallography • X-ray physics • Condensed matter physics • Nanotechnology • Medical imaging
+
+---
+
 *Made with ❤️ for the X-ray science community*
+
+<!-- SEO Meta Tags -->
+<!--
+Primary Keywords: X-ray optical properties, atomic scattering factors, synchrotron calculations, Python X-ray tools
+Secondary Keywords: CXRO NIST database, X-ray reflectometry, materials characterization, critical angle calculator
+Long-tail Keywords: high-performance X-ray property calculator, Python synchrotron beamline tools, X-ray diffraction analysis software
+-->
+
+<!-- GitHub Topics for Discovery -->
+<!-- Topics: xray, synchrotron, crystallography, materials-science, optics, physics, scientific-computing, python-package, cli-tool -->

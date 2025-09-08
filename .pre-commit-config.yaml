@@ -58,6 +58,33 @@ repos:
         args: ['-r', 'xraylabtool/']
         exclude: tests/
 
+  # Documentation quality
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.6.7
+    hooks:
+      - id: sphinx-lint
+        files: ^docs/source/.*\.(rst|md)$
+        args: ['--enable=all']
+
+  # RST format checking
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+
+  # Documentation link checking (local only)
+  - repo: local
+    hooks:
+      - id: docs-linkcheck
+        name: Check documentation links
+        entry: bash
+        args: [-c, 'if command -v sphinx-build &> /dev/null; then sphinx-build -b linkcheck docs/source docs/_build/linkcheck; else echo "sphinx-build not found, skipping linkcheck"; fi']
+        language: system
+        files: ^docs/
+        pass_filenames: false
+
 # CI configuration
 ci:
   autofix_commit_msg: |

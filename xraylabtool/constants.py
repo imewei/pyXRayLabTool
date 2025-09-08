@@ -394,7 +394,7 @@ if __name__ != "__main__":
     except ValueError as e:
         import warnings
 
-        warnings.warn(f"Constants validation failed: {e}", UserWarning)
+        warnings.warn(f"Constants validation failed: {e}", UserWarning, stacklevel=2)
 
 
 # =====================================================================================

@@ -1,31 +1,79 @@
-# Read the Docs configuration file for XRayLabTool
+# ReadTheDocs configuration file for XRayLabTool
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
+# Required
 version: 2
 
-# Set the version of Python and other tools you might need
+# Build configuration
 build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
   jobs:
-    post_create_environment:
-      # Install poetry if using it, or just use pip
+    pre_create_environment:
+      # Install system dependencies if needed
+      - echo "Installing system dependencies..."
+      - apt-get update
+      - apt-get install -y graphviz  # For inheritance diagrams
+    pre_build:
+      # Ensure we have the latest pip and build tools
       - pip install --upgrade pip setuptools wheel
-    post_install:
-      # Install dependencies for docs
-      - pip install -e .[docs]
+      # Install build dependencies
+      - pip install sphinx-autobuild
+    post_build:
+      # Clean up build artifacts and run validation
+      - echo "Running documentation validation..."
+      - python -m sphinx -b linkcheck docs/source docs/_build/linkcheck || echo "Some links may be broken"
+      - echo "Build completed successfully"
 
-# Build documentation in the docs/ directory with Sphinx
-sphinx:
-  builder: html
-  configuration: docs/source/conf.py
-  fail_on_warning: false
-
-# Optionally declare the Python requirements required to build your docs
+# Python configuration
 python:
   install:
+    - requirements: docs/requirements.txt
     - method: pip
       path: .
       extra_requirements:
         - docs
+
+# Sphinx configuration
+sphinx:
+  configuration: docs/source/conf.py
+  builder: html
+  fail_on_warning: false
+
+# Optional but recommended formats for download
+formats:
+  - pdf
+  - epub
+  - htmlzip
+
+# Search configuration with enhanced ranking
+search:
+  ranking:
+    # Boost user-facing content
+    quickstart.html: 10
+    installation.html: 8
+    tutorials/: 5
+    examples.html: 4
+    cli_guide.html: 3
+    howto/: 2
+    faq.html: 1
+    # Reduce API reference prominence in search
+    api/: -1
+  ignore:
+    # Exclude certain patterns from search indexing
+    - "_build"
+    - "*.js"
+    - "*.css"
+
+# Social cards and preview configuration
+# These help with link previews on social media
+submodules:
+  include: []
+
+# Additional ReadTheDocs features
+features:
+  # Enable analytics if available
+  - analytics
+  # Enable search ranking if available
+  - search.ranking

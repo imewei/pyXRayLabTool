@@ -3,10 +3,11 @@ XRayLabTool Documentation
 
 **High-Performance X-ray Optical Properties Calculator for Materials Science**
 
-XRayLabTool is a comprehensive Python package and command-line tool for calculating X-ray optical
-properties of materials based on their chemical formulas and densities. Designed for synchrotron
-scientists, materials researchers, and X-ray optics developers, it provides fast, accurate
-calculations using CXRO/NIST atomic scattering factor data.
+XRayLabTool is a comprehensive Python package and command-line tool for calculating
+X-ray optical properties of materials based on their chemical formulas and densities.
+Designed for synchrotron scientists, materials researchers, and X-ray optics
+developers, it provides fast, accurate calculations using CXRO/NIST atomic scattering
+factor data.
 
 Key Features
 ------------
@@ -19,10 +20,12 @@ Key Features
 
 ⚡ **Command-Line Interface**
    - Powerful CLI for batch processing and quick calculations
-   - 8 subcommands: calc, batch, convert, formula, atomic, bragg, list, install-completion
+   - 8 subcommands: calc, batch, convert, formula, atomic, bragg, list,
+     install-completion
    - Multiple output formats: Table, CSV, and JSON
    - Flexible energy input formats and parallel processing
-   - Multi-shell completion: Bash, Zsh, Fish, and PowerShell with context-aware suggestions
+   - Multi-shell completion: Bash, Zsh, Fish, and PowerShell with context-aware
+     suggestions
 
 🔬 **Scientific Accuracy**
    - Based on CXRO/NIST atomic scattering factor databases
@@ -116,23 +119,36 @@ Documentation Contents
 
 .. toctree::
    :maxdepth: 2
+   :caption: Getting Started:
+
+   installation
+   quickstart
+   examples
+
+.. toctree::
+   :maxdepth: 2
    :caption: User Guides:
 
-   examples
    cli_guide
+   tutorials/index
+   notebooks/index
+   howto/index
    performance_guide
-   migration_guide
+   faq
 
 .. toctree::
    :maxdepth: 2
    :caption: API Reference:
 
+   api/index
    api/modules
 
 .. toctree::
    :maxdepth: 1
-   :caption: Additional Resources:
+   :caption: Development:
 
+   contributing
+   migration_guide
    license
 
 

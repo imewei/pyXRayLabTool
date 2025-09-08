@@ -9,7 +9,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 class CompletionInstaller:
@@ -20,7 +19,7 @@ class CompletionInstaller:
         self.script_dir = Path(__file__).parent
         self.completion_script = self.script_dir / "_xraylabtool_completion.bash"
 
-    def get_bash_completion_dir(self) -> Optional[Path]:
+    def get_bash_completion_dir(self) -> Path | None:
         """Find the appropriate bash completion directory."""
         # Common bash completion directories in order of preference
         candidates = [
@@ -152,6 +151,7 @@ class CompletionInstaller:
             # Try to check if completion is loaded (this is approximate)
             result = subprocess.run(
                 ["bash", "-c", "complete -p xraylabtool"],
+                check=False,
                 capture_output=True,
                 text=True,
             )

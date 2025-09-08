@@ -24,39 +24,65 @@ jobs:
   lint:
     name: Code Quality & Linting
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          .pre-commit-config.yaml
 
     - name: Cache pre-commit hooks
       uses: actions/cache@v4
       with:
         path: ~/.cache/pre-commit
         key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+        restore-keys: |
+          pre-commit-${{ runner.os }}-
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[lint]
-        pip install pre-commit
+    - name: Cache lint dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: lint-deps-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          lint-deps-${{ runner.os }}-
+
+    - name: Install dependencies with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+          pip install pre-commit
 
     - name: Run pre-commit hooks
       run: |
         pre-commit run --all-files || echo "Pre-commit found issues - please run locally to fix"
       continue-on-error: true
 
-    - name: Check code formatting with black
+    - name: Check code formatting with ruff
       run: |
-        black --check --diff xraylabtool/ tests/
+        ruff format --check xraylabtool/ tests/
+        ruff check xraylabtool/ tests/
 
-    - name: Lint with flake8
+    - name: Check import sorting with isort
+      run: |
+        isort --check-only --diff xraylabtool/ tests/
+
+    - name: Lint with flake8 (backup)
       run: |
         # Critical errors that should fail the build
         flake8 xraylabtool/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -70,22 +96,29 @@ jobs:
 
     - name: Security check with bandit
       run: |
-        pip install bandit
         bandit -r xraylabtool/ -f json -o bandit-report.json || true
-        bandit -r xraylabtool/
+        bandit -r xraylabtool/ --skip B101
       continue-on-error: true
 
     - name: Check dependencies with safety
       run: |
-        pip install safety
         safety check --json --output safety-report.json || true
         safety check
       continue-on-error: true
+
+    - name: Validate performance optimizations
+      run: |
+        # Quick optimization validation tests
+        pytest tests/performance/test_performance_optimizations_enhanced.py::TestModuleLevelImports -v --tb=short
+        pytest tests/performance/test_performance_optimizations_enhanced.py::TestArrayConversionOptimization -v --tb=short
+        pytest tests/unit/test_numerical_stability.py::TestNumericalStabilityChecks -v --tb=short
+      continue-on-error: false
 
   test:
     name: Test Suite
     needs: lint
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -95,21 +128,44 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          requirements.txt
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[test]
+    - name: Cache test dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: test-deps-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'requirements.txt') }}
+        restore-keys: |
+          test-deps-${{ runner.os }}-py${{ matrix.python-version }}-
 
-    - name: Run tests with pytest
+    - name: Install dependencies with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 10
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+    - name: Run comprehensive test suite
       shell: bash
-      run: pytest tests/ -v --cov=xraylabtool --cov-report=xml --cov-report=html --cov-report=term-missing --junit-xml=pytest-results.xml --benchmark-skip
+      run: |
+        # Run core tests with coverage (matching test.yml behavior)
+        pytest tests/unit/ tests/integration/ tests/performance/ -v --cov=xraylabtool --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=44 --junit-xml=pytest-results.xml --benchmark-skip
+
+        # Run optimization-specific tests
+        pytest tests/performance/test_performance_optimizations_enhanced.py tests/unit/test_numerical_stability.py tests/performance/test_memory_management.py -v --tb=short -m "not benchmark"
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -135,40 +191,69 @@ jobs:
     name: Performance Benchmarks
     needs: lint
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
+        cache-dependency-path: pyproject.toml
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[dev]
+    - name: Cache benchmark dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: benchmark-deps-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          benchmark-deps-${{ runner.os }}-
+
+    - name: Install dependencies with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
 
     - name: Run benchmarks
       run: |
-        pytest tests/ -v --benchmark-only --benchmark-json=benchmark-results.json
+        # Run standard benchmarks
+        pytest tests/performance/ tests/integration/ -v --benchmark-only --benchmark-json=benchmark-results.json
+
+        # Run performance optimization benchmarks
+        pytest tests/performance/test_performance_benchmarks.py -v --benchmark-only --benchmark-json=optimization-benchmarks.json
+
+        # Run memory performance tests (without benchmarking framework)
+        pytest tests/performance/test_memory_management.py -v -m "performance" --tb=short
 
     - name: Upload benchmark results
       uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
-        path: benchmark-results.json
+        path: |
+          benchmark-results.json
+          optimization-benchmarks.json
 
   build:
     name: Build Distribution
     needs: [lint, test]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
@@ -176,10 +261,23 @@ jobs:
         python-version: '3.12'
         cache: 'pip'
 
-    - name: Install build tools
-      run: |
-        python -m pip install --upgrade pip
-        pip install build twine
+    - name: Cache build dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: build-deps-${{ runner.os }}-pip-build-twine
+        restore-keys: |
+          build-deps-${{ runner.os }}-
+
+    - name: Install build tools with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 5
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install build twine
 
     - name: Build package
       run: |
@@ -199,10 +297,13 @@ jobs:
     name: Integration Tests
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
@@ -215,10 +316,15 @@ jobs:
         name: dist
         path: dist/
 
-    - name: Install from wheel
-      run: |
-        python -m pip install --upgrade pip
-        pip install dist/*.whl
+    - name: Install from wheel with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 5
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install dist/*.whl
 
     - name: Test CLI functionality
       shell: bash

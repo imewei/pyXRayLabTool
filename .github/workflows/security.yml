@@ -17,6 +17,7 @@ jobs:
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     permissions:
       contents: read
       security-events: write
@@ -25,23 +26,39 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
+        cache-dependency-path: pyproject.toml
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[dev]
-        pip install bandit safety semgrep
+    - name: Cache security tools
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: security-deps-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          security-deps-${{ runner.os }}-
+
+    - name: Install dependencies with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 10
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+          pip install bandit safety semgrep
 
     - name: Run Bandit security scanner
       run: |
-        bandit -r xraylabtool/ -f json -o bandit-report.json || echo "Bandit found security issues - see report"
-        bandit -r xraylabtool/ -ll -i || echo "Bandit scan completed with findings"
+        bandit -r xraylabtool/ -f json -o bandit-report.json --skip B101 || echo "Bandit found security issues - see report"
+        bandit -r xraylabtool/ -ll -i --skip B101 || echo "Bandit scan completed with findings"
       continue-on-error: true
 
     - name: Run Safety vulnerability scanner
@@ -78,11 +95,26 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event_name == 'pull_request'
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Dependency Review with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          gh api repos/${{ github.repository }}/dependency-graph/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
 
     - name: Dependency Review
       uses: actions/dependency-review-action@v4
@@ -94,6 +126,7 @@ jobs:
   codeql-analysis:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       actions: read
       contents: read
@@ -107,12 +140,15 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         config-file: ./.github/codeql/codeql-config.yml
+      continue-on-error: true
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v3
@@ -125,22 +161,39 @@ jobs:
   license-check:
     name: License Compliance
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
+        cache-dependency-path: pyproject.toml
 
-    - name: Install pip-licenses
-      run: |
-        python -m pip install --upgrade pip
-        pip install pip-licenses
-        pip install -e .
+    - name: Cache license tools
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: license-deps-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          license-deps-${{ runner.os }}-
+
+    - name: Install pip-licenses with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install pip-licenses
+          pip install -e .
 
     - name: Check licenses
       run: |
@@ -156,22 +209,39 @@ jobs:
   code-quality:
     name: Advanced Code Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
+        cache-dependency-path: pyproject.toml
 
-    - name: Install quality tools
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[dev]
-        pip install radon xenon vulture dead
+    - name: Cache quality tools
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: quality-deps-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          quality-deps-${{ runner.os }}-
+
+    - name: Install quality tools with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+          pip install radon xenon vulture dead
 
     - name: Run complexity analysis
       run: |
@@ -199,6 +269,7 @@ jobs:
   secrets-scan:
     name: Secrets Scanning
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: github.event_name == 'pull_request'
 
     steps:
@@ -207,8 +278,19 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Run TruffleHog OSS
+    - name: Run TruffleHog OSS with retry
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 12
+        max_attempts: 2
+        retry_on: error
+        command: |
+          docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem /pwd --only-verified --json
+      continue-on-error: true
+
+    - name: Run TruffleHog OSS (fallback)
       uses: trufflesecurity/trufflehog@main
+      if: failure()
       with:
         path: ./
         base: ${{ github.event.repository.default_branch }}

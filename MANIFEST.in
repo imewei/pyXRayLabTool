@@ -7,27 +7,42 @@
 include README.md
 include LICENSE
 include CHANGELOG.md
-include CLI_REFERENCE.md
-include SHELL_COMPLETION.md
+include CONTRIBUTING.md
+include SECURITY.md
+include CLAUDE.md
 
 # Configuration and setup files
 include pyproject.toml
-include setup.py
 include requirements*.txt
 include MANIFEST.in
 include Makefile
+include run_tests.py
+include install_completion.py
 
 # Package data (atomic scattering factor files)
 recursive-include xraylabtool/data *.nff
 
-# Shell completion scripts
-include _xraylabtool_completion.bash
-include install_completion.py
-# Note: Fish and PowerShell completions are generated dynamically by completion_installer.py
+# Sub-package structure
+recursive-include xraylabtool/calculators *.py
+recursive-include xraylabtool/data_handling *.py
+recursive-include xraylabtool/interfaces *.py
+recursive-include xraylabtool/io *.py
+recursive-include xraylabtool/validation *.py
+
+# Shell completion scripts (generated dynamically by completion installer)
+# Note: All completion scripts are generated at runtime by xraylabtool/completion_installer.py
+# for bash, zsh, fish, and PowerShell shells
 
 # Test files (for source distributions and development)
 recursive-include tests *.py
-include tests/README.md
+recursive-include tests/unit *.py
+recursive-include tests/integration *.py
+recursive-include tests/performance *.py
+recursive-include tests/fixtures *.py
+recursive-include tests/data *
+include tests/conftest.py
+include tests/base_test.py
+include tests/utils.py
 
 # Documentation source files
 recursive-include docs *.rst *.md *.py *.txt

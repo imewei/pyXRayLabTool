@@ -3,13 +3,15 @@ Performance Guide
 
 **Unlock the Full Performance Potential of XRayLabTool**
 
-XRayLabTool has been extensively optimized for high-performance X-ray calculations. This guide covers
-all performance features and best practices to help you achieve maximum speed and efficiency.
+XRayLabTool has been extensively optimized for high-performance X-ray calculations.
+This guide covers all performance features and best practices to help you achieve
+maximum speed and efficiency.
 
 🚀 Performance Overview
 -----------------------
 
-XRayLabTool delivers exceptional performance through multiple optimization layers:
+XRayLabTool delivers exceptional performance through multiple optimization
+layers:
 
 **Key Performance Metrics:**
 
@@ -27,18 +29,67 @@ Preloaded Atomic Data Cache
 
 The biggest performance breakthrough is our preloaded atomic data cache:
 
-.. code-block:: python
+.. tabs::
 
-   from xraylabtool.atomic_data_cache import get_cache_stats, is_element_preloaded
+   .. tab:: Check Cache Status
 
-   # Check cache statistics
-   print(get_cache_stats())
-   # {'preloaded_elements': 92, 'runtime_cached_elements': 0, 'total_cached_elements': 92}
+      .. code-block:: python
 
-   # Check if specific elements are preloaded
-   print(f"Silicon preloaded: {is_element_preloaded('Si')}")      # True
-   print(f"Gold preloaded: {is_element_preloaded('Au')}")         # True
-   print(f"Unobtainium preloaded: {is_element_preloaded('Uo')}")  # False
+         from xraylabtool.atomic_data_cache import get_cache_stats, is_element_preloaded
+
+         # Check overall cache statistics
+         stats = get_cache_stats()
+         print(f"Cache Statistics: {stats}")
+
+         # Check if specific elements are preloaded
+         elements = ["Si", "Au", "Fe", "C", "O", "H"]
+         print(f"\nElement Preload Status:")
+         for element in elements:
+             preloaded = is_element_preloaded(element)
+             status = "✓ Preloaded" if preloaded else "○ Runtime"
+             print(f"  {element:2}: {status}")
+
+   .. tab:: Performance Measurement
+
+      .. code-block:: python
+
+         import time
+         import xraylabtool as xlt
+
+         # Compare performance: preloaded vs runtime elements
+         def time_calculation(formula, energy, density, label):
+             start = time.perf_counter()
+             result = xlt.calculate_single_material_properties(formula, energy, density)
+             elapsed = (time.perf_counter() - start) * 1000  # Convert to ms
+             print(f"{label}: {elapsed:.2f} ms")
+             return result, elapsed
+
+         # Test preloaded element (Si)
+         result_si, time_si = time_calculation("Si", 10.0, 2.33, "Silicon (preloaded)")
+
+         # Test common compound (SiO2) - all preloaded elements
+         result_sio2, time_sio2 = time_calculation("SiO2", 10.0, 2.2, "SiO2 (preloaded)")
+
+         print(f"\nPerformance benefit: {time_sio2/time_si:.1f}x speed consistency")
+
+   .. tab:: Expected Output
+
+      .. code-block:: text
+
+         Cache Statistics: {'preloaded_elements': 92, 'runtime_cached_elements': 0, 'total_cached_elements': 92}
+
+         Element Preload Status:
+           Si: ✓ Preloaded
+           Au: ✓ Preloaded
+           Fe: ✓ Preloaded
+           C : ✓ Preloaded
+           O : ✓ Preloaded
+           H : ✓ Preloaded
+
+         Silicon (preloaded): 0.85 ms
+         SiO2 (preloaded): 1.23 ms
+
+         Performance benefit: 1.4x speed consistency
 
 **Performance Benefits:**
 

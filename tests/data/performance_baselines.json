@@ -1,0 +1,253 @@
+{
+  "version": "1.0",
+  "created": "2024-01-01",
+  "description": "Performance baselines for xraylabtool optimization tests",
+  "system_info": {
+    "note": "Baselines are system-dependent and should be updated for new environments"
+  },
+  "baselines": {
+    "single_calculation_ms": {
+      "description": "Time for single material calculation with standard parameters",
+      "baseline": 1.0,
+      "tolerance_percent": 20,
+      "test_parameters": {
+        "formula": "SiO2",
+        "energy": 10.0,
+        "density": 2.2
+      }
+    },
+    "batch_calculation_per_item_ms": {
+      "description": "Average time per item in batch calculations",
+      "baseline": 0.5,
+      "tolerance_percent": 25,
+      "test_parameters": {
+        "batch_size": 10,
+        "energy_points": 50
+      }
+    },
+    "large_energy_array_ms": {
+      "description": "Time for calculation with large energy array",
+      "baseline": 5.0,
+      "tolerance_percent": 30,
+      "test_parameters": {
+        "formula": "Si",
+        "energy_points": 1000,
+        "density": 2.33
+      }
+    },
+    "cache_lookup_ms": {
+      "description": "Time for atomic data cache lookup",
+      "baseline": 0.01,
+      "tolerance_percent": 50,
+      "test_parameters": {
+        "element": "Si"
+      }
+    },
+    "scattering_factor_calculation_ms": {
+      "description": "Time for scattering factor calculation",
+      "baseline": 0.1,
+      "tolerance_percent": 30,
+      "test_parameters": {
+        "formula": "SiO2",
+        "energy_points": 100
+      }
+    },
+    "numerical_precision_relative_error": {
+      "description": "Maximum relative error in numerical calculations",
+      "baseline": 1e-10,
+      "tolerance_percent": 100,
+      "test_parameters": {
+        "comparison": "reference_values"
+      }
+    }
+  },
+  "memory_baselines": {
+    "single_calculation_mb": {
+      "description": "Memory increase for single calculation",
+      "baseline": 5.0,
+      "tolerance_percent": 50,
+      "test_parameters": {
+        "formula": "SiO2",
+        "energy": 10.0,
+        "density": 2.2
+      }
+    },
+    "batch_calculation_mb": {
+      "description": "Memory increase for batch calculation",
+      "baseline": 20.0,
+      "tolerance_percent": 50,
+      "test_parameters": {
+        "batch_size": 50,
+        "energy_points": 100
+      }
+    },
+    "large_array_mb": {
+      "description": "Memory usage for large array calculations",
+      "baseline": 50.0,
+      "tolerance_percent": 50,
+      "test_parameters": {
+        "energy_points": 10000
+      }
+    },
+    "memory_leak_threshold_mb": {
+      "description": "Maximum acceptable memory increase after repeated operations",
+      "baseline": 10.0,
+      "tolerance_percent": 100,
+      "test_parameters": {
+        "repetitions": 100
+      }
+    }
+  },
+  "optimization_baselines": {
+    "array_conversion_overhead_percent": {
+      "description": "Performance overhead from unnecessary array conversions",
+      "baseline": 5.0,
+      "tolerance_percent": 100,
+      "test_parameters": {
+        "note": "Should be minimized by optimization"
+      }
+    },
+    "cache_hit_rate_percent": {
+      "description": "Expected cache hit rate for repeated calculations",
+      "baseline": 90.0,
+      "tolerance_percent": 10,
+      "test_parameters": {
+        "repeated_calculations": true
+      }
+    },
+    "vectorization_speedup_factor": {
+      "description": "Expected speedup from vectorized operations",
+      "baseline": 2.0,
+      "tolerance_percent": 50,
+      "test_parameters": {
+        "comparison": "scalar_vs_vectorized"
+      }
+    }
+  },
+  "stability_baselines": {
+    "numerical_warnings_count": {
+      "description": "Maximum acceptable numerical warnings",
+      "baseline": 0,
+      "tolerance_percent": 0,
+      "test_parameters": {
+        "energy_range": "full_spectrum"
+      }
+    },
+    "nan_values_count": {
+      "description": "Maximum acceptable NaN values in results",
+      "baseline": 0,
+      "tolerance_percent": 0,
+      "test_parameters": {
+        "all_calculations": true
+      }
+    },
+    "infinite_values_count": {
+      "description": "Maximum acceptable infinite values in results",
+      "baseline": 0,
+      "tolerance_percent": 0,
+      "test_parameters": {
+        "all_calculations": true
+      }
+    }
+  },
+  "benchmark_configurations": {
+    "standard_benchmark": {
+      "description": "Standard benchmark configuration for regular testing",
+      "parameters": {
+        "materials": ["SiO2", "Al2O3", "Si", "Fe", "Au"],
+        "energy_points": 100,
+        "repetitions": 10,
+        "warmup_runs": 3
+      }
+    },
+    "comprehensive_benchmark": {
+      "description": "Comprehensive benchmark for detailed performance analysis",
+      "parameters": {
+        "materials": ["SiO2", "Al2O3", "Fe2O3", "Si", "Au", "C", "TiO2", "ZnO"],
+        "energy_points": 500,
+        "repetitions": 50,
+        "warmup_runs": 10
+      }
+    },
+    "regression_benchmark": {
+      "description": "Regression testing benchmark configuration",
+      "parameters": {
+        "materials": ["SiO2", "Al2O3", "Si"],
+        "energy_points": 200,
+        "repetitions": 20,
+        "warmup_runs": 5,
+        "statistical_analysis": true
+      }
+    }
+  },
+  "test_data_configurations": {
+    "small_dataset": {
+      "description": "Small dataset for quick tests",
+      "materials_count": 3,
+      "energy_points": 10,
+      "expected_runtime_seconds": 1
+    },
+    "medium_dataset": {
+      "description": "Medium dataset for standard tests",
+      "materials_count": 10,
+      "energy_points": 100,
+      "expected_runtime_seconds": 10
+    },
+    "large_dataset": {
+      "description": "Large dataset for performance tests",
+      "materials_count": 50,
+      "energy_points": 1000,
+      "expected_runtime_seconds": 300,
+      "memory_requirements_mb": 100
+    }
+  },
+  "ci_configurations": {
+    "quick_validation": {
+      "description": "Quick validation for CI pipelines",
+      "max_runtime_seconds": 60,
+      "test_markers": ["ci", "smoke"],
+      "coverage_threshold": 80
+    },
+    "full_validation": {
+      "description": "Full validation for merge requests",
+      "max_runtime_seconds": 300,
+      "test_markers": ["unit", "integration", "performance"],
+      "coverage_threshold": 90
+    },
+    "nightly_validation": {
+      "description": "Comprehensive nightly validation",
+      "max_runtime_seconds": 1800,
+      "test_markers": ["all"],
+      "coverage_threshold": 95,
+      "performance_regression_check": true
+    }
+  },
+  "update_policy": {
+    "automatic_update": {
+      "enabled": true,
+      "conditions": [
+        "significant_performance_improvement",
+        "system_upgrade",
+        "optimization_implementation"
+      ]
+    },
+    "manual_review": {
+      "required_for": [
+        "performance_degradation",
+        "baseline_changes_over_threshold"
+      ],
+      "threshold_percent": 20
+    }
+  },
+  "metadata": {
+    "format_version": "1.0",
+    "last_updated": null,
+    "generated_by": "xraylabtool_test_configuration",
+    "notes": [
+      "Baselines are established during first test run if not present",
+      "Values should be updated when hardware or optimization changes",
+      "Tolerance percentages account for system variability",
+      "Memory baselines are particularly system-dependent"
+    ]
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "description": "Standard energy arrays for testing xraylabtool calculations",
+  "version": "1.0",
+  "energy_arrays": {
+    "single_point": {
+      "values": [10.0],
+      "description": "Single energy point for basic tests",
+      "use_case": "quick_validation"
+    },
+    "three_point": {
+      "values": [5.0, 10.0, 15.0],
+      "description": "Three energy points for standard tests",
+      "use_case": "regression_testing"
+    },
+    "common_edges": {
+      "values": [8.048, 8.333, 11.564, 11.867],
+      "description": "Common X-ray absorption edges (Cu K, Ni K, Au L3, Au L2)",
+      "use_case": "edge_structure_analysis"
+    },
+    "linear_small": {
+      "start": 1.0,
+      "stop": 20.0,
+      "count": 20,
+      "description": "Small linear energy range",
+      "use_case": "performance_testing"
+    },
+    "linear_medium": {
+      "start": 1.0,
+      "stop": 20.0,
+      "count": 100,
+      "description": "Medium linear energy range",
+      "use_case": "standard_calculations"
+    },
+    "linear_large": {
+      "start": 0.1,
+      "stop": 30.0,
+      "count": 1000,
+      "description": "Large linear energy range",
+      "use_case": "comprehensive_analysis"
+    },
+    "logarithmic": {
+      "start": 0.1,
+      "stop": 30.0,
+      "count": 100,
+      "spacing": "logarithmic",
+      "description": "Logarithmically spaced energies",
+      "use_case": "wide_range_analysis"
+    },
+    "edge_cases": {
+      "values": [0.03, 0.05, 0.1, 29.9, 30.0],
+      "description": "Energy values at calculation boundaries",
+      "use_case": "boundary_testing",
+      "notes": "Tests minimum and maximum energy limits"
+    },
+    "high_resolution": {
+      "start": 8.0,
+      "stop": 12.0,
+      "count": 1000,
+      "description": "High resolution energy scan",
+      "use_case": "fine_structure_analysis"
+    },
+    "synchrotron_beamlines": {
+      "values": [
+        6.0, 8.0, 10.0, 12.0, 15.0, 17.0, 20.0, 25.0
+      ],
+      "description": "Common synchrotron beamline energies",
+      "use_case": "experimental_validation"
+    }
+  },
+  "special_configurations": {
+    "performance_benchmark": {
+      "small_array": {
+        "count": 10,
+        "expected_time_ms": 50
+      },
+      "medium_array": {
+        "count": 100,
+        "expected_time_ms": 200
+      },
+      "large_array": {
+        "count": 1000,
+        "expected_time_ms": 1000
+      }
+    },
+    "memory_testing": {
+      "small_memory": {
+        "count": 100,
+        "expected_memory_mb": 1
+      },
+      "medium_memory": {
+        "count": 1000,
+        "expected_memory_mb": 5
+      },
+      "large_memory": {
+        "count": 10000,
+        "expected_memory_mb": 50
+      }
+    }
+  },
+  "validation_ranges": {
+    "full_spectrum": {
+      "min_energy_kev": 0.03,
+      "max_energy_kev": 30.0,
+      "typical_range": [1.0, 25.0],
+      "notes": "Full calculation range supported by xraylabtool"
+    },
+    "common_lab_sources": {
+      "cu_ka": 8.048,
+      "mo_ka": 17.479,
+      "ag_ka": 22.163,
+      "description": "Common laboratory X-ray sources"
+    },
+    "synchrotron_typical": {
+      "soft_xray": [0.1, 2.0],
+      "tender_xray": [2.0, 10.0],
+      "hard_xray": [10.0, 30.0],
+      "description": "Typical synchrotron energy ranges"
+    }
+  },
+  "error_testing": {
+    "invalid_energies": {
+      "negative": [-1.0, -5.0],
+      "zero": [0.0],
+      "too_low": [0.01, 0.02],
+      "too_high": [50.0, 100.0],
+      "description": "Energy values that should raise errors"
+    },
+    "edge_boundary": {
+      "just_below_min": [0.029],
+      "just_above_max": [30.001],
+      "description": "Energy values just outside valid range"
+    }
+  }
+}

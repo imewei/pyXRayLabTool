@@ -5,3 +5,4 @@ xraylabtool.constants module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:

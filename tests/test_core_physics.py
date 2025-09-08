@@ -7,7 +7,8 @@ and derived quantity calculations that were ported from Julia.
 
 import os
 import sys
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 import pytest
@@ -15,8 +16,7 @@ import pytest
 # Add parent directory to path to import xraylabtool
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from xraylabtool.constants import ENERGY_TO_WAVELENGTH_FACTOR  # noqa: E402
-from xraylabtool.core import (  # noqa: E402
+from xraylabtool.calculators.core import (  # noqa: E402
     XRayResult,
     calculate_derived_quantities,
     calculate_multiple_xray_properties,
@@ -25,6 +25,7 @@ from xraylabtool.core import (  # noqa: E402
     clear_scattering_factor_cache,
     create_scattering_factor_interpolators,
 )
+from xraylabtool.constants import ENERGY_TO_WAVELENGTH_FACTOR  # noqa: E402
 
 
 class TestCalculateScatteringFactors:
@@ -171,7 +172,7 @@ class TestCalculateDerivedQuantities:
         )
 
         # Verify types and values
-        assert isinstance(electron_density, (float, np.floating))
+        assert isinstance(electron_density, float | np.floating)
         assert isinstance(critical_angle, np.ndarray)
         assert isinstance(attenuation_length, np.ndarray)
         assert isinstance(re_sld, np.ndarray)
@@ -238,8 +239,8 @@ class TestCalculateXrayProperties:
 
             # Verify basic attributes
             assert result.Formula == "SiO2"
-            assert isinstance(result.MW, (float, np.floating))
-            assert isinstance(result.Number_Of_Electrons, (float, np.floating))
+            assert isinstance(result.MW, float | np.floating)
+            assert isinstance(result.Number_Of_Electrons, float | np.floating)
             assert result.Density == 2.2
 
             # Arrays should have length 1 for single energy
@@ -341,7 +342,7 @@ class TestCalculateMultipleXrayProperties:
                 if formula in results:
                     result = results[formula]
                     assert result["formula"] == formula
-                    assert isinstance(result["molecular_weight"], (float, np.floating))
+                    assert isinstance(result["molecular_weight"], float | np.floating)
                     assert result["molecular_weight"] > 0
 
         except FileNotFoundError:

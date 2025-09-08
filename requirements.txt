@@ -1,52 +1,19 @@
-# Complete dependencies for XRayLabTool
+# XRayLabTool Requirements
+# ========================
 #
-# This file contains ALL dependencies needed for XRayLabTool including:
-# - Core production dependencies
-# - Development and testing tools
-# - Documentation building tools
-# - Type stubs for better development experience
+# For complete dependency management, see pyproject.toml
+# This file provides a simplified requirements list for quick installation.
 #
-# Install with: pip install -r requirements.txt
-# Alternative: pip install -e .[all]
+# Install options:
+# - Core only: pip install -r requirements.txt
+# - Development: pip install -e .[dev]
+# - All features: pip install -e .[all]
 
-# Core production dependencies
-# ===========================
-
-# Data manipulation and scientific computing
-pandas>=1.5.0
+# Core runtime dependencies only
+# These are the minimal dependencies required to run XRayLabTool
 numpy>=1.21.0
+pandas>=1.5.0
 scipy>=1.9.0
-
-# Atomic data and periodic table
-mendeleev>=0.15.0
-
-# Progress bars for CLI operations
-tqdm>=4.64.0
-
-# Plotting support
 matplotlib>=3.5.0
-
-# Development and testing dependencies
-# ====================================
-
-# Testing framework and coverage
-pytest>=7.0.0
-pytest-cov>=4.0.0
-pytest-benchmark>=4.0.0
-
-# Code formatting and linting
-black>=23.0.0
-flake8>=6.0.0
-mypy>=1.0.0
-
-# Type stubs for external libraries
-pandas-stubs>=2.0.0
-types-psutil>=5.9.0
-
-# Documentation dependencies
-# ==========================
-
-# Sphinx documentation framework
-sphinx>=7.0.0
-sphinx-rtd-theme>=2.0.0
-sphinxcontrib-napoleon>=0.7.0
+mendeleev>=0.15.0
+tqdm>=4.64.0

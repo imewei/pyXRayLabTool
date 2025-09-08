@@ -1,7 +1,8 @@
 Command-Line Interface Guide
 =============================
 
-XRayLabTool provides a comprehensive command-line interface for quick calculations, batch processing, and integration into workflows.
+XRayLabTool provides a comprehensive command-line interface for quick
+calculations, batch processing, and integration into workflows.
 
 Installation & Verification
 ----------------------------
@@ -159,28 +160,62 @@ Calculate X-ray optical properties for a single material composition.
 
 **Examples:**
 
-.. code-block:: bash
+.. tabs::
 
-   # Basic calculation
-   xraylabtool calc SiO2 -e 10.0 -d 2.2
+   .. tab:: Basic Usage
 
-   # Multiple energies
-   xraylabtool calc Si -e 5.0,10.0,15.0,20.0 -d 2.33
+      .. code-block:: bash
 
-   # Energy range (linear)
-   xraylabtool calc Al2O3 -e 5-15:11 -d 3.95
+         # Single energy calculation
+         xraylabtool calc SiO2 -e 10.0 -d 2.2
 
-   # Energy range (logarithmic)
-   xraylabtool calc C -e 1-30:100:log -d 3.52
+         # Multiple discrete energies
+         xraylabtool calc Si -e 5.0,10.0,15.0,20.0 -d 2.33
 
-   # CSV output with selected fields
-   xraylabtool calc SiO2 -e 8.0,10.0,12.0 -d 2.2 \
-     --fields formula,energy_kev,dispersion_delta,critical_angle_degrees \
-     -o results.csv
+         # Show specific fields only
+         xraylabtool calc Al2O3 -e 8.0 -d 3.95 --fields formula,critical_angle_degrees
 
-   # Table output with selected fields
-   xraylabtool calc Si -e 10.0 -d 2.33 \
-     --fields energy_kev,wavelength_angstrom,dispersion_delta
+   .. tab:: Energy Ranges
+
+      .. code-block:: bash
+
+         # Linear energy range: 11 points from 5 to 15 keV
+         xraylabtool calc Al2O3 -e 5-15:11 -d 3.95
+
+         # Logarithmic energy range: 100 points from 1 to 30 keV
+         xraylabtool calc C -e 1-30:100:log -d 3.52
+
+         # Fine energy scan around absorption edge
+         xraylabtool calc Fe -e 7.0-7.2:101 -d 7.87
+
+   .. tab:: Output Formats
+
+      .. code-block:: bash
+
+         # CSV output with selected fields
+         xraylabtool calc SiO2 -e 8.0,10.0,12.0 -d 2.2 \
+           --fields formula,energy_kev,dispersion_delta,critical_angle_degrees \
+           -o results.csv
+
+         # JSON output with all fields
+         xraylabtool calc Si -e 10.0 -d 2.33 -o silicon_props.json
+
+         # Table format with custom precision
+         xraylabtool calc Au -e 8.048 -d 19.32 --precision 8
+
+   .. tab:: Scientific Use Cases
+
+      .. code-block:: bash
+
+         # Cu Kα energy (common X-ray source)
+         xraylabtool calc Si -e 8.048 -d 2.33
+
+         # Synchrotron energy range analysis
+         xraylabtool calc "CaCO3" -e 3-30:200:log -d 2.71 -o calcite_scan.csv
+
+         # Compare materials at same energy
+         xraylabtool calc SiO2 -e 10.0 -d 2.2 --fields formula,critical_angle_degrees
+         xraylabtool calc Al2O3 -e 10.0 -d 3.95 --fields formula,critical_angle_degrees
 
 batch - Batch Processing
 ------------------------

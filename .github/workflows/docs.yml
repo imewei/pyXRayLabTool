@@ -1,0 +1,302 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - 'xraylabtool/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'pyproject.toml'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'xraylabtool/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'pyproject.toml'
+      - '.github/workflows/docs.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Cache docs dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: docs-deps-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt') }}
+        restore-keys: |
+          docs-deps-${{ runner.os }}-py${{ matrix.python-version }}-
+
+    - name: Install package with docs dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Build Sphinx documentation
+      run: |
+        sphinx-build -W --keep-going -b html docs/source docs/_build/html
+
+    - name: Check documentation coverage
+      run: |
+        sphinx-build -b coverage docs/source docs/_build/coverage
+        echo "Documentation Coverage Report:"
+        cat docs/_build/coverage/python.txt || echo "No coverage report generated"
+
+    - name: Upload documentation artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: documentation-${{ matrix.python-version }}
+        path: docs/_build/html/
+        retention-days: 30
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: documentation-coverage-${{ matrix.python-version }}
+        path: docs/_build/coverage/
+        retention-days: 7
+
+  linkcheck:
+    name: Check Links
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build-docs
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Cache docs dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: docs-deps-${{ runner.os }}-py3.12-${{ hashFiles('pyproject.toml', 'docs/requirements.txt') }}
+        restore-keys: |
+          docs-deps-${{ runner.os }}-py3.12-
+
+    - name: Install package with docs dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Check external links
+      run: |
+        sphinx-build -W --keep-going -b linkcheck docs/source docs/_build/linkcheck
+      continue-on-error: true
+
+    - name: Upload linkcheck results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: linkcheck-results
+        path: docs/_build/linkcheck/
+        retention-days: 7
+
+  doctest:
+    name: Test Documentation Examples
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build-docs
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Cache docs dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: docs-deps-${{ runner.os }}-py3.12-${{ hashFiles('pyproject.toml', 'docs/requirements.txt') }}
+        restore-keys: |
+          docs-deps-${{ runner.os }}-py3.12-
+
+    - name: Install package with docs dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Test documentation examples
+      run: |
+        sphinx-build -W --keep-going -b doctest docs/source docs/_build/doctest
+
+    - name: Upload doctest results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: doctest-results
+        path: docs/_build/doctest/
+        retention-days: 7
+
+  docs-quality:
+    name: Documentation Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+
+    - name: Cache doc quality tools
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: doc-quality-deps-${{ runner.os }}-doc8-rstcheck
+        restore-keys: |
+          doc-quality-deps-${{ runner.os }}-
+
+    - name: Install doc quality tools
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 5
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install doc8 rstcheck
+
+    - name: Check RST syntax
+      run: |
+        find docs -name "*.rst" -exec rstcheck --report-level warning {} \;
+      continue-on-error: true
+
+    - name: Check documentation style
+      run: |
+        doc8 docs/source --ignore-path docs/source/_build --max-line-length 100
+      continue-on-error: true
+
+  deploy-docs:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build-docs, linkcheck, doctest, docs-quality]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Cache docs dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: docs-deps-${{ runner.os }}-py3.12-${{ hashFiles('pyproject.toml', 'docs/requirements.txt') }}
+        restore-keys: |
+          docs-deps-${{ runner.os }}-py3.12-
+
+    - name: Install package with docs dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Build documentation for deployment
+      run: |
+        sphinx-build -b html docs/source docs/_build/html
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs/_build/html
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

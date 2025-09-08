@@ -60,7 +60,7 @@ class TestCLICompletionIntegration:
                     if call.args
                 ]
                 help_text = "".join(stdout_calls)
-                assert "Install or manage shell completion" in help_text
+                assert "Install shell completion" in help_text
 
     @patch("builtins.print")
     def test_install_completion_test_integration(self, mock_print):
@@ -94,7 +94,7 @@ class TestCLICompletionIntegration:
         # Test that the command exists in the command handlers
         with patch("sys.argv", ["xraylabtool", "install-completion", "--test"]):
             # Mock the completion installer to avoid actual system interaction
-            with patch("xraylabtool.cli.cmd_install_completion") as mock_cmd:
+            with patch("xraylabtool.interfaces.cli.cmd_install_completion") as mock_cmd:
                 mock_cmd.return_value = 0
 
                 result = main()
@@ -105,7 +105,9 @@ class TestCLICompletionIntegration:
 class TestCompletionScriptIntegration:
     """Test integration of the bash completion script."""
 
-    @pytest.mark.skipif(platform.system() == "Windows", reason="Bash not available on Windows CI")
+    @pytest.mark.skipif(
+        platform.system() == "Windows", reason="Bash not available on Windows CI"
+    )
     def test_completion_script_syntax(self):
         """Test that completion script has valid bash syntax."""
         # Create a temporary script file
@@ -118,7 +120,10 @@ class TestCompletionScriptIntegration:
             try:
                 # Test bash syntax with 'bash -n'
                 result = subprocess.run(
-                    ["bash", "-n", temp_file.name], capture_output=True, text=True
+                    ["bash", "-n", temp_file.name],
+                    check=False,
+                    capture_output=True,
+                    text=True,
                 )
 
                 # Should have no syntax errors
@@ -127,7 +132,9 @@ class TestCompletionScriptIntegration:
             finally:
                 os.unlink(temp_file.name)
 
-    @pytest.mark.skipif(platform.system() == "Windows", reason="Bash not available on Windows CI")
+    @pytest.mark.skipif(
+        platform.system() == "Windows", reason="Bash not available on Windows CI"
+    )
     def test_completion_script_function_loading(self):
         """Test that completion script functions can be loaded."""
         bash_command = """
@@ -138,6 +145,7 @@ class TestCompletionScriptIntegration:
         try:
             result = subprocess.run(
                 ["bash", "-c", bash_command],
+                check=False,
                 input=BASH_COMPLETION_SCRIPT,
                 capture_output=True,
                 text=True,
@@ -151,7 +159,9 @@ class TestCompletionScriptIntegration:
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pytest.skip("Bash not available or timeout occurred")
 
-    @pytest.mark.skipif(platform.system() == "Windows", reason="Bash not available on Windows CI")
+    @pytest.mark.skipif(
+        platform.system() == "Windows", reason="Bash not available on Windows CI"
+    )
     def test_completion_script_registration(self):
         """Test that completion registration works."""
         bash_command = """
@@ -162,6 +172,7 @@ class TestCompletionScriptIntegration:
         try:
             result = subprocess.run(
                 ["bash", "-c", bash_command],
+                check=False,
                 input=BASH_COMPLETION_SCRIPT,
                 capture_output=True,
                 text=True,
@@ -181,22 +192,27 @@ class TestCompletionInstallationIntegration:
     """Test end-to-end completion installation."""
 
     def test_completion_installation_flow(self):
-        """Test complete installation workflow without system changes."""
-        # Create a temporary directory to simulate installation
+        """Test complete installation workflow in virtual environment."""
+        # Create a temporary directory to simulate virtual environment
         with tempfile.TemporaryDirectory() as temp_dir:
-            temp_completion_dir = Path(temp_dir) / ".bash_completion.d"
-            temp_completion_dir.mkdir()  # Create the directory
-            temp_completion_file = temp_completion_dir / "xraylabtool"
+            temp_venv = Path(temp_dir) / "test_venv"
+            temp_venv.mkdir()
 
-            # Mock the completion installer to use our temp directory
-            with patch(
-                "xraylabtool.completion_installer.CompletionInstaller.get_user_bash_completion_dir"
-            ) as mock_dir:
-                mock_dir.return_value = temp_completion_dir
+            # Create bin directory with activate script (simulate VE)
+            bin_dir = temp_venv / "bin"
+            bin_dir.mkdir()
+            activate_script = bin_dir / "activate"
+            activate_script.write_text(
+                "#!/bin/bash\n# Virtual environment activate script\n"
+            )
 
+            # Mock the virtual environment detection
+            with patch.dict(os.environ, {"VIRTUAL_ENV": str(temp_venv)}):
                 with patch(
-                    "xraylabtool.completion_installer.CompletionInstaller._add_bash_completion_sourcing"
-                ):
+                    "xraylabtool.completion_installer.CompletionInstaller._modify_venv_activation_scripts"
+                ) as mock_modify:
+                    mock_modify.return_value = True
+
                     # Test installation
                     with patch("sys.argv", ["xraylabtool", "install-completion"]):
                         with patch("builtins.print"):
@@ -205,43 +221,63 @@ class TestCompletionInstallationIntegration:
                             # Should succeed
                             assert result == 0
 
-                            # Should create completion file
-                            assert temp_completion_file.exists()
+                            # Should create virtual environment completion structure
+                            completion_dir = temp_venv / "xraylabtool-completion"
+                            assert completion_dir.exists()
+
+                            # Should create bash completion file
+                            bash_completion_file = (
+                                completion_dir / "bash" / "xraylabtool.bash"
+                            )
+                            assert bash_completion_file.exists()
 
                             # File should contain completion script
-                            content = temp_completion_file.read_text()
+                            content = bash_completion_file.read_text()
                             assert "_xraylabtool_complete" in content
                             assert "xraylabtool" in content
 
+                            # Should create activation script
+                            activation_script = (
+                                completion_dir / "activate-completion.sh"
+                            )
+                            assert activation_script.exists()
+
     def test_completion_uninstallation_flow(self):
-        """Test complete uninstallation workflow."""
+        """Test complete uninstallation workflow from virtual environment."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            temp_completion_dir = Path(temp_dir) / ".bash_completion.d"
-            temp_completion_dir.mkdir()
-            temp_completion_file = temp_completion_dir / "xraylabtool"
+            temp_venv = Path(temp_dir) / "test_venv"
+            temp_venv.mkdir()
 
-            # Create a fake completion file
-            temp_completion_file.write_text("fake completion content")
-            assert temp_completion_file.exists()
+            # Create bin directory with activate script (simulate VE)
+            bin_dir = temp_venv / "bin"
+            bin_dir.mkdir()
+            activate_script = bin_dir / "activate"
+            activate_script.write_text(
+                "#!/bin/bash\n# Virtual environment activate script\n"
+            )
 
-            # Mock the completion installer
-            with patch(
-                "xraylabtool.completion_installer.CompletionInstaller.get_user_bash_completion_dir"
-            ) as mock_dir:
-                mock_dir.return_value = temp_completion_dir
+            # Create fake completion structure
+            completion_dir = temp_venv / "xraylabtool-completion"
+            completion_dir.mkdir()
+            bash_dir = completion_dir / "bash"
+            bash_dir.mkdir()
+            bash_completion_file = bash_dir / "xraylabtool.bash"
+            bash_completion_file.write_text("fake completion content")
+            activation_script = completion_dir / "activate-completion.sh"
+            activation_script.write_text("fake activation content")
 
-                # Test uninstallation
-                with patch(
-                    "sys.argv", ["xraylabtool", "install-completion", "--uninstall"]
-                ):
+            # Mock the virtual environment detection
+            with patch.dict(os.environ, {"VIRTUAL_ENV": str(temp_venv)}):
+                # Test uninstallation using new separate command
+                with patch("sys.argv", ["xraylabtool", "uninstall-completion"]):
                     with patch("builtins.print"):
                         result = main()
 
                         # Should succeed
                         assert result == 0
 
-                        # Should remove completion file
-                        assert not temp_completion_file.exists()
+                        # Should remove completion directory
+                        assert not completion_dir.exists()
 
     @patch("subprocess.run")
     def test_completion_test_functionality(self, mock_subprocess):
@@ -316,12 +352,19 @@ class TestCompletionContentValidation:
                 option in BASH_COMPLETION_SCRIPT
             ), f"Batch option '{option}' missing from completion"
 
-        # Test install-completion command options
-        install_options = ["--user", "--system", "--test", "--uninstall"]
+        # Test install-completion command options (simplified system)
+        install_options = ["--test", "--help"]
         for option in install_options:
             assert (
                 option in BASH_COMPLETION_SCRIPT
             ), f"Install-completion option '{option}' missing from completion"
+
+        # Test that obsolete options are NOT present
+        obsolete_options = ["--user", "--system", "--uninstall"]
+        for option in obsolete_options:
+            assert (
+                option not in BASH_COMPLETION_SCRIPT
+            ), f"Obsolete install-completion option '{option}' still in completion"
 
     def test_completion_value_suggestions(self):
         """Test that completion suggests appropriate values."""
@@ -395,6 +438,292 @@ class TestCompletionRobustness:
             assert (
                 pattern in BASH_COMPLETION_SCRIPT
             ), f"Safe array pattern '{pattern}' not found"
+
+
+class TestSimplifiedVirtualEnvironmentIntegration:
+    """Test simplified virtual environment integration with shell completion."""
+
+    def test_uninstall_completion_command_integration(self):
+        """Test new uninstall-completion command."""
+        with (
+            patch("sys.argv", ["xraylabtool", "uninstall-completion", "bash"]),
+            patch("xraylabtool.interfaces.cli.cmd_uninstall_completion") as mock_cmd,
+        ):
+            mock_cmd.return_value = 0
+
+            result = main()
+            assert result == 0
+            mock_cmd.assert_called_once()
+
+    def test_install_completion_simplified_command(self):
+        """Test simplified install-completion command."""
+        with (
+            patch("sys.argv", ["xraylabtool", "install-completion", "bash"]),
+            patch("xraylabtool.interfaces.cli.cmd_install_completion") as mock_cmd,
+        ):
+            mock_cmd.return_value = 0
+
+            result = main()
+            assert result == 0
+            mock_cmd.assert_called_once()
+
+    def test_completion_commands_without_shell_type(self):
+        """Test completion commands without explicit shell type (auto-detection)."""
+        test_commands = ["install-completion", "uninstall-completion"]
+
+        for command in test_commands:
+            with (
+                patch("sys.argv", ["xraylabtool", command]),
+                patch(
+                    f"xraylabtool.interfaces.cli.cmd_{command.replace('-', '_')}"
+                ) as mock_cmd,
+            ):
+                mock_cmd.return_value = 0
+
+                result = main()
+                assert result == 0
+                mock_cmd.assert_called_once()
+
+    def test_deprecated_options_are_rejected(self):
+        """Test that deprecated VE options are properly rejected with error codes."""
+        # These commands should return error codes since the options don't exist
+        deprecated_commands = [
+            ["install-completion", "--uninstall", "--venv"],
+            ["install-completion", "--uninstall", "--conda"],
+            ["install-completion", "--uninstall", "--all-environments"],
+            ["install-completion", "--system"],
+            ["install-completion", "--user"],
+        ]
+
+        for cmd_args in deprecated_commands:
+            with patch("sys.argv", ["xraylabtool"] + cmd_args):
+                result = main()
+                # Should return non-zero exit code for unrecognized options
+                assert result != 0
+
+    @patch("builtins.print")
+    def test_uninstall_completion_integration_flow(self, mock_print):
+        """Test complete uninstall completion workflow integration."""
+        from xraylabtool.completion_installer import uninstall_completion_main
+
+        class MockArgs:
+            shell = "bash"
+
+        args = MockArgs()
+
+        with patch(
+            "xraylabtool.completion_installer.CompletionInstaller.uninstall_completion"
+        ) as mock_uninstall:
+            mock_uninstall.return_value = True
+
+            result = uninstall_completion_main(args)
+
+            assert result == 0
+            mock_uninstall.assert_called_once_with(
+                shell_type="bash",
+                cleanup_session=True,
+            )
+
+
+class TestCompletionScriptSimplifiedOptions:
+    """Test that completion scripts include simplified completion options."""
+
+    def test_bash_completion_excludes_obsolete_options(self):
+        """Test that bash completion script excludes obsolete VE options."""
+        from xraylabtool.completion_installer import BASH_COMPLETION_SCRIPT
+
+        # Should contain new commands
+        assert "install-completion" in BASH_COMPLETION_SCRIPT
+        assert "uninstall-completion" in BASH_COMPLETION_SCRIPT
+
+        # Should NOT contain obsolete VE options
+        obsolete_options = [
+            "--venv",
+            "--conda",
+            "--all-environments",
+            "--no-cleanup-session",
+        ]
+        for option in obsolete_options:
+            assert (
+                option not in BASH_COMPLETION_SCRIPT
+            ), f"Obsolete option '{option}' still in bash completion"
+
+    def test_fish_completion_excludes_obsolete_options(self):
+        """Test that Fish completion script excludes obsolete VE options."""
+        from xraylabtool.completion_installer import FISH_COMPLETION_SCRIPT
+
+        # Should contain new commands
+        assert "install-completion" in FISH_COMPLETION_SCRIPT
+        assert "uninstall-completion" in FISH_COMPLETION_SCRIPT
+
+        # Should NOT contain obsolete VE options
+        obsolete_options = [
+            "-l venv",
+            "-l conda",
+            "-l all-environments",
+            "-l no-cleanup-session",
+        ]
+        for option in obsolete_options:
+            assert (
+                option not in FISH_COMPLETION_SCRIPT
+            ), f"Obsolete option '{option}' still in Fish completion"
+
+    def test_powershell_completion_excludes_obsolete_options(self):
+        """Test that PowerShell completion script excludes obsolete VE options."""
+        from xraylabtool.completion_installer import POWERSHELL_COMPLETION_SCRIPT
+
+        # Should contain new commands
+        assert "install-completion" in POWERSHELL_COMPLETION_SCRIPT
+        assert "uninstall-completion" in POWERSHELL_COMPLETION_SCRIPT
+
+        # Should NOT contain obsolete VE options
+        obsolete_options = [
+            "--venv",
+            "--conda",
+            "--all-environments",
+            "--no-cleanup-session",
+        ]
+        for option in obsolete_options:
+            assert (
+                option not in POWERSHELL_COMPLETION_SCRIPT
+            ), f"Obsolete option '{option}' still in PowerShell completion"
+
+    def test_completion_script_simplified_logic(self):
+        """Test that completion scripts have simplified logic without obsolete VE options."""
+        from xraylabtool.completion_installer import BASH_COMPLETION_SCRIPT
+
+        # Should contain both completion commands and their functions
+        assert "_xraylabtool_install_completion_complete" in BASH_COMPLETION_SCRIPT
+        assert "_xraylabtool_uninstall_completion_complete" in BASH_COMPLETION_SCRIPT
+
+        # Should NOT contain obsolete VE option variables
+        assert "ve_opts" not in BASH_COMPLETION_SCRIPT
+
+
+class TestSimplifiedCompletionArguments:
+    """Test simplified completion command arguments."""
+
+    def test_uninstall_completion_main_basic_args(self):
+        """Test uninstall_completion_main handles basic arguments correctly."""
+        from xraylabtool.completion_installer import uninstall_completion_main
+
+        class MockArgs:
+            shell = "bash"
+
+        args = MockArgs()
+
+        with patch(
+            "xraylabtool.completion_installer.CompletionInstaller.uninstall_completion"
+        ) as mock_uninstall:
+            mock_uninstall.return_value = True
+
+            result = uninstall_completion_main(args)
+
+            assert result == 0
+            mock_uninstall.assert_called_once_with(
+                shell_type="bash",
+                cleanup_session=True,
+            )
+
+    def test_install_completion_main_simplified_args(self):
+        """Test install_completion_main handles simplified arguments correctly."""
+        from xraylabtool.completion_installer import install_completion_main
+
+        class MockArgs:
+            test = False
+            shell = None
+
+        args = MockArgs()
+
+        with patch(
+            "xraylabtool.completion_installer.CompletionInstaller.install_completion"
+        ) as mock_install:
+            mock_install.return_value = True
+
+            result = install_completion_main(args)
+
+            assert result == 0
+            mock_install.assert_called_once_with(shell_type=None)
+
+    def test_uninstall_completion_main_default_args(self):
+        """Test uninstall_completion_main handles default arguments correctly."""
+        from xraylabtool.completion_installer import uninstall_completion_main
+
+        class MockArgs:
+            shell = None
+
+        args = MockArgs()
+
+        with patch(
+            "xraylabtool.completion_installer.CompletionInstaller.uninstall_completion"
+        ) as mock_uninstall:
+            mock_uninstall.return_value = True
+
+            result = uninstall_completion_main(args)
+
+            assert result == 0
+            mock_uninstall.assert_called_once_with(
+                shell_type=None,
+                cleanup_session=True,
+            )
+
+
+class TestSimplifiedCompletionHelpIntegration:
+    """Test simplified completion help text."""
+
+    def test_install_completion_help_simplified(self):
+        """Test that install-completion help shows simplified options."""
+        with patch("sys.argv", ["xraylabtool", "install-completion", "--help"]):
+            with patch("sys.stdout") as mock_stdout:
+                with pytest.raises(SystemExit):
+                    main()
+
+                # Check help output contains simplified options
+                stdout_calls = [
+                    call.args[0]
+                    for call in mock_stdout.write.call_args_list
+                    if call.args
+                ]
+                help_text = "".join(stdout_calls)
+
+                # Should contain basic options
+                assert "--test" in help_text
+                assert "virtual environment" in help_text
+
+                # Should NOT contain obsolete options
+                obsolete_options = [
+                    "--venv",
+                    "--conda",
+                    "--all-environments",
+                    "--no-cleanup-session",
+                    "--system",
+                    "--user",
+                    "--uninstall",
+                ]
+                for option in obsolete_options:
+                    assert (
+                        option not in help_text
+                    ), f"Obsolete option '{option}' found in help text"
+
+    def test_uninstall_completion_help_exists(self):
+        """Test that uninstall-completion help is available."""
+        with patch("sys.argv", ["xraylabtool", "uninstall-completion", "--help"]):
+            with patch("sys.stdout") as mock_stdout:
+                with pytest.raises(SystemExit):
+                    main()
+
+                stdout_calls = [
+                    call.args[0]
+                    for call in mock_stdout.write.call_args_list
+                    if call.args
+                ]
+                help_text = "".join(stdout_calls)
+
+                # Should contain uninstall-specific content
+                assert (
+                    "Remove shell completion" in help_text
+                    or "uninstall" in help_text.lower()
+                )
 
 
 if __name__ == "__main__":
