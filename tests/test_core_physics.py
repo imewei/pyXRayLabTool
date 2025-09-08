@@ -132,9 +132,9 @@ class TestCalculateScatteringFactors:
         wavelength = np.array([ENERGY_TO_WAVELENGTH_FACTOR / 10.0])
         mass_density = 2.2
         molecular_weight = 60.08
-        element_data: list[
-            tuple[float, Callable[..., Any], Callable[..., Any]]
-        ] = []  # Empty
+        element_data: list[tuple[float, Callable[..., Any], Callable[..., Any]]] = (
+            []
+        )  # Empty
 
         dispersion, absorption, f1_total, f2_total = calculate_scattering_factors(
             energy_ev, wavelength, mass_density, molecular_weight, element_data

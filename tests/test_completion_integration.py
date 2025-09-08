@@ -325,9 +325,9 @@ class TestCompletionContentValidation:
         ]
 
         for cmd in expected_commands:
-            assert cmd in completion_commands, (
-                f"Command '{cmd}' missing from completion"
-            )
+            assert (
+                cmd in completion_commands
+            ), f"Command '{cmd}' missing from completion"
 
     def test_completion_options_coverage(self):
         """Test that completion covers major command options."""
@@ -341,53 +341,53 @@ class TestCompletionContentValidation:
             "--precision",
         ]
         for option in calc_options:
-            assert option in BASH_COMPLETION_SCRIPT, (
-                f"Calc option '{option}' missing from completion"
-            )
+            assert (
+                option in BASH_COMPLETION_SCRIPT
+            ), f"Calc option '{option}' missing from completion"
 
         # Test batch command options
         batch_options = ["--output", "--format", "--workers", "--fields"]
         for option in batch_options:
-            assert option in BASH_COMPLETION_SCRIPT, (
-                f"Batch option '{option}' missing from completion"
-            )
+            assert (
+                option in BASH_COMPLETION_SCRIPT
+            ), f"Batch option '{option}' missing from completion"
 
         # Test install-completion command options (simplified system)
         install_options = ["--test", "--help"]
         for option in install_options:
-            assert option in BASH_COMPLETION_SCRIPT, (
-                f"Install-completion option '{option}' missing from completion"
-            )
+            assert (
+                option in BASH_COMPLETION_SCRIPT
+            ), f"Install-completion option '{option}' missing from completion"
 
         # Test that obsolete options are NOT present
         obsolete_options = ["--user", "--system", "--uninstall"]
         for option in obsolete_options:
-            assert option not in BASH_COMPLETION_SCRIPT, (
-                f"Obsolete install-completion option '{option}' still in completion"
-            )
+            assert (
+                option not in BASH_COMPLETION_SCRIPT
+            ), f"Obsolete install-completion option '{option}' still in completion"
 
     def test_completion_value_suggestions(self):
         """Test that completion suggests appropriate values."""
         # Energy values
         energy_values = ["10.0", "8.048", "5.0,10.0,15.0", "5-15:11", "1-30:100:log"]
         for value in energy_values:
-            assert value in BASH_COMPLETION_SCRIPT, (
-                f"Energy value '{value}' missing from completion"
-            )
+            assert (
+                value in BASH_COMPLETION_SCRIPT
+            ), f"Energy value '{value}' missing from completion"
 
         # Format values
         format_values = ["table", "csv", "json"]
         for value in format_values:
-            assert value in BASH_COMPLETION_SCRIPT, (
-                f"Format value '{value}' missing from completion"
-            )
+            assert (
+                value in BASH_COMPLETION_SCRIPT
+            ), f"Format value '{value}' missing from completion"
 
         # Common chemical formulas
         formulas = ["SiO2", "Al2O3", "Fe2O3", "Si", "C"]
         for formula in formulas:
-            assert formula in BASH_COMPLETION_SCRIPT, (
-                f"Formula '{formula}' missing from completion"
-            )
+            assert (
+                formula in BASH_COMPLETION_SCRIPT
+            ), f"Formula '{formula}' missing from completion"
 
 
 class TestCompletionRobustness:
@@ -435,9 +435,9 @@ class TestCompletionRobustness:
         ]
 
         for pattern in safe_patterns:
-            assert pattern in BASH_COMPLETION_SCRIPT, (
-                f"Safe array pattern '{pattern}' not found"
-            )
+            assert (
+                pattern in BASH_COMPLETION_SCRIPT
+            ), f"Safe array pattern '{pattern}' not found"
 
 
 class TestSimplifiedVirtualEnvironmentIntegration:
@@ -544,9 +544,9 @@ class TestCompletionScriptSimplifiedOptions:
             "--no-cleanup-session",
         ]
         for option in obsolete_options:
-            assert option not in BASH_COMPLETION_SCRIPT, (
-                f"Obsolete option '{option}' still in bash completion"
-            )
+            assert (
+                option not in BASH_COMPLETION_SCRIPT
+            ), f"Obsolete option '{option}' still in bash completion"
 
     def test_fish_completion_excludes_obsolete_options(self):
         """Test that Fish completion script excludes obsolete VE options."""
@@ -564,9 +564,9 @@ class TestCompletionScriptSimplifiedOptions:
             "-l no-cleanup-session",
         ]
         for option in obsolete_options:
-            assert option not in FISH_COMPLETION_SCRIPT, (
-                f"Obsolete option '{option}' still in Fish completion"
-            )
+            assert (
+                option not in FISH_COMPLETION_SCRIPT
+            ), f"Obsolete option '{option}' still in Fish completion"
 
     def test_powershell_completion_excludes_obsolete_options(self):
         """Test that PowerShell completion script excludes obsolete VE options."""
@@ -584,9 +584,9 @@ class TestCompletionScriptSimplifiedOptions:
             "--no-cleanup-session",
         ]
         for option in obsolete_options:
-            assert option not in POWERSHELL_COMPLETION_SCRIPT, (
-                f"Obsolete option '{option}' still in PowerShell completion"
-            )
+            assert (
+                option not in POWERSHELL_COMPLETION_SCRIPT
+            ), f"Obsolete option '{option}' still in PowerShell completion"
 
     def test_completion_script_simplified_logic(self):
         """Test that completion scripts have simplified logic without obsolete VE options."""
@@ -701,9 +701,9 @@ class TestSimplifiedCompletionHelpIntegration:
                     "--uninstall",
                 ]
                 for option in obsolete_options:
-                    assert option not in help_text, (
-                        f"Obsolete option '{option}' found in help text"
-                    )
+                    assert (
+                        option not in help_text
+                    ), f"Obsolete option '{option}' found in help text"
 
     def test_uninstall_completion_help_exists(self):
         """Test that uninstall-completion help is available."""

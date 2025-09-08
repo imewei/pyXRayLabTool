@@ -288,7 +288,7 @@ class TestDataFactory:
         """Get list of test materials."""
         if count is None:
             return cls.COMMON_MATERIALS.copy()
-        return cls.COMMON_MATERIALS[ : count]
+        return cls.COMMON_MATERIALS[:count]
 
     @classmethod
     def get_material_formulas(cls, count: int = None) -> list[str]:

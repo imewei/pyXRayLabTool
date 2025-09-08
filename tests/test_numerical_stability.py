@@ -304,9 +304,9 @@ class TestPhysicalRealism:
         # Critical angle should generally decrease with increasing energy
         angles = result.critical_angle_degrees
         for i in range(len(angles) - 1):
-            assert angles[i] >= angles[i + 1], (
-                "Critical angle should decrease with energy"
-            )
+            assert (
+                angles[i] >= angles[i + 1]
+            ), "Critical angle should decrease with energy"
 
     def test_attenuation_length_positive(self):
         """Test that attenuation length is always positive."""
@@ -317,9 +317,9 @@ class TestPhysicalRealism:
             result = xlt.calculate_single_material_properties(
                 formula, energies, density
             )
-            assert np.all(result.attenuation_length_cm > 0), (
-                f"Attenuation length should be positive for {formula}"
-            )
+            assert np.all(
+                result.attenuation_length_cm > 0
+            ), f"Attenuation length should be positive for {formula}"
 
     def test_electron_density_consistency(self):
         """Test that electron density is consistent with formula and density."""
