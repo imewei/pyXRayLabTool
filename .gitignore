@@ -176,6 +176,10 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+*.bak
 RELEASE_GUIDE.md
 WARP.md
 CLAUDE.md
+
+# Security reports
+bandit-report.json

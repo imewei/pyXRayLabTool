@@ -35,7 +35,7 @@ class TestRunner:
             print()
 
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603
                 cmd, check=True, capture_output=not self.verbose, text=True
             )
 
@@ -133,7 +133,7 @@ class TestRunner:
         """Run performance benchmarks."""
         # Check if pytest-benchmark is available
         try:
-            subprocess.run(
+            subprocess.run(  # nosec B603
                 ["python", "-c", "import pytest_benchmark"],
                 check=True,
                 capture_output=True,
