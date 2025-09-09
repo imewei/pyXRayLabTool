@@ -13,8 +13,8 @@ import time
 import numpy as np
 import pytest
 
-from tests.test_base import BasePerformanceTest
 import xraylabtool as xlt
+from tests.fixtures.test_base import BasePerformanceTest
 from xraylabtool.calculators.core import (
     _AVAILABLE_ELEMENTS,
     _initialize_element_paths,
@@ -104,7 +104,7 @@ class TestInterpolatorCaching:
 
             # Should be the same objects (cached)
             assert f1_interp1 is f1_interp2
-            assert f2_interp2 is f2_interp2
+            assert f2_interp1 is f2_interp2
 
         except FileNotFoundError:
             pytest.skip("Silicon .nff file not available for interpolator testing")

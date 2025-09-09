@@ -685,7 +685,12 @@ def _format_multiple_energies(result: XRayResult, precision: int) -> list[str]:
 
 def _format_scalar_field(field: str, value: Any, precision: int) -> str:
     """Format a single scalar field."""
-    formatters = {
+    from collections.abc import Callable
+
+    def default_formatter(v: Any, p: int) -> str:
+        return ""
+
+    formatters: dict[str, Callable[[Any, int], str]] = {
         "formula": lambda v, p: f"  Formula: {v}",
         "molecular_weight_g_mol": lambda v, p: f"  Molecular Weight: {v: .{p}f} g/mol",
         "total_electrons": lambda v, p: f"  Total Electrons: {v: .{p}f}",
@@ -694,7 +699,8 @@ def _format_scalar_field(field: str, value: Any, precision: int) -> str:
             lambda v, p: f"  Electron Density: {v: .{p}e} electrons/Å³"
         ),  # noqa: E501
     }
-    return formatters.get(field, lambda v, p: "")(value, precision)
+    formatter = formatters.get(field, default_formatter)
+    return formatter(value, precision)
 
 
 def _format_array_field_single(field: str, value: float, precision: int) -> str:

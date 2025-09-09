@@ -51,6 +51,11 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+bandit_report.json
+bandit-report.json
+.benchmarks/
+.claude
+.ruff_cache/
 
 # Translations
 *.mo
@@ -180,6 +185,14 @@ Thumbs.db
 RELEASE_GUIDE.md
 WARP.md
 CLAUDE.md
+CLAUDE_COMMAND.md
 
 # Security reports
 bandit-report.json
+
+# Claude Code Quality Analysis artifacts
+bandit-claude-report.json
+coverage-claude.json
+CLAUDE_QUALITY_SUMMARY.json
+scripts/claude_quality_report.py
+scripts/claude_summary_display.py

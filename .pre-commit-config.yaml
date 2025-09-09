@@ -85,6 +85,19 @@ repos:
         files: ^docs/
         pass_filenames: false
 
+  # Claude Code Quality Analysis (comprehensive pre-commit check)
+  - repo: local
+    hooks:
+      - id: claude-quality-check
+        name: 🤖 Claude Code Quality Analysis
+        entry: bash
+        args: [-c, 'if command -v make &> /dev/null; then make claude; else echo "⚠️  Make not available. Run: pip install -e .[dev] && make claude"; exit 1; fi']
+        language: system
+        files: ^(xraylabtool/|tests/.*\.py$|.*\.py$)
+        pass_filenames: false
+        stages: [pre-commit, manual]
+        verbose: true
+
 # CI configuration
 ci:
   autofix_commit_msg: |

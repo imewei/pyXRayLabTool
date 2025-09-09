@@ -5,14 +5,14 @@ This module contains the main classes and functions for X-ray analysis,
 including atomic scattering factors and crystallographic calculations.
 """
 
-import concurrent.futures
-import types
-import warnings
 from collections.abc import Callable
+import concurrent.futures
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
+import types
 from typing import Any
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -565,9 +565,7 @@ class AtomicScatteringFactor:
         """
         return load_scattering_factor_data(element)
 
-    def get_scattering_factor(
-        self, element: str, q_values: np.ndarray
-    ) -> np.ndarray:  # noqa: ARG002
+    def get_scattering_factor(self, element: str, q_values: np.ndarray) -> np.ndarray:  # noqa: ARG002
         """
         Calculate scattering factors for given q values.
 
@@ -614,9 +612,7 @@ class CrystalStructure:
             {"element": element, "position": position, "occupancy": occupancy}
         )
 
-    def calculate_structure_factor(
-        self, hkl: tuple[int, int, int]
-    ) -> complex:  # noqa: ARG002
+    def calculate_structure_factor(self, hkl: tuple[int, int, int]) -> complex:  # noqa: ARG002
         """
         Calculate structure factor for given Miller indices.
 

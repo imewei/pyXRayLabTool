@@ -14,16 +14,14 @@ build:
       # Install system dependencies if needed
       - echo "Installing system dependencies..."
       - apt-get update
-      - apt-get install -y graphviz  # For inheritance diagrams
+      - apt-get install -y graphviz pandoc  # For inheritance diagrams and format conversion
     pre_build:
       # Ensure we have the latest pip and build tools
       - pip install --upgrade pip setuptools wheel
-      # Install build dependencies
-      - pip install sphinx-autobuild
     post_build:
-      # Clean up build artifacts and run validation
+      # Run documentation validation
       - echo "Running documentation validation..."
-      - python -m sphinx -b linkcheck docs/source docs/_build/linkcheck || echo "Some links may be broken"
+      - python -m sphinx -b linkcheck docs docs/_build/linkcheck || echo "Some links may be broken"
       - echo "Build completed successfully"
 
 # Python configuration
@@ -33,11 +31,11 @@ python:
     - method: pip
       path: .
       extra_requirements:
-        - docs
+        - dev
 
-# Sphinx configuration
+# Sphinx configuration  
 sphinx:
-  configuration: docs/source/conf.py
+  configuration: docs/conf.py
   builder: html
   fail_on_warning: false
 

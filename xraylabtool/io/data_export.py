@@ -6,7 +6,7 @@ in various formats suitable for different use cases.
 """
 
 import json
-from typing import Any, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -57,7 +57,7 @@ def _format_as_json(result: Any, fields: list[str] | None, precision: int) -> st
             if isinstance(value, np.ndarray):
                 # Convert numpy arrays to lists with proper precision
                 data[field] = np.round(value, precision).tolist()
-            elif isinstance(value, Union[float, np.floating]):
+            elif isinstance(value, (float, np.floating)):
                 data[field] = round(float(value), precision)
             else:
                 data[field] = value
@@ -81,19 +81,19 @@ def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str
             value = getattr(result, field)
             if isinstance(value, np.ndarray):
                 data[field] = np.round(value, precision)
-            elif isinstance(value, Union[float, np.floating]):
+            elif isinstance(value, (float, np.floating)):
                 data[field] = [round(float(value), precision)]
             else:
                 data[field] = (
-                    [value] if not isinstance(value, Union[list, np.ndarray]) else value
+                    [value] if not isinstance(value, (list, np.ndarray)) else value
                 )
 
     # Ensure all arrays have the same length
     max_length = max(
-        len(v) if isinstance(v, Union[list, np.ndarray]) else 1 for v in data.values()
+        len(v) if isinstance(v, (list, np.ndarray)) else 1 for v in data.values()
     )
     for key, value in data.items():
-        if not isinstance(value, Union[list, np.ndarray]):
+        if not isinstance(value, (list, np.ndarray)):
             data[key] = [value] * max_length
         elif len(value) == 1 and max_length > 1:
             data[key] = [value[0]] * max_length
@@ -128,7 +128,7 @@ def _format_as_table(result: Any, fields: list[str] | None, precision: int) -> s
                         f"{value.max():.{precision}f}"
                     )
                     lines.append(range_str)
-            elif isinstance(value, Union[float, np.floating]):
+            elif isinstance(value, (float, np.floating)):
                 lines.append(f"{field}: {value:.{precision}f}")
             else:
                 lines.append(f"{field}: {value}")

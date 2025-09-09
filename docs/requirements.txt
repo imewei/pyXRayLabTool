@@ -3,10 +3,10 @@
 
 # Core Sphinx packages
 sphinx>=7.0.0
-furo>=2023.9.10  # Modern Sphinx theme
+furo>=2024.1.29  # Modern Sphinx theme
 
 # Essential Sphinx extensions
-sphinx-autodoc-typehints>=1.24.0  # Better type hint rendering
+sphinx-autodoc-typehints>=1.25.0  # Better type hint rendering
 sphinx-copybutton>=0.5.2  # Copy code button
 sphinx-design>=0.5.0  # Modern design components
 sphinx-tabs>=3.4.0  # Multi-tab content support
@@ -14,7 +14,9 @@ sphinx-togglebutton>=0.3.2  # Collapsible content
 
 # Content format support
 myst-parser>=2.0.0  # Markdown support in Sphinx
-# nbsphinx>=0.9.1  # Jupyter notebook support - temporarily disabled
+nbsphinx>=0.9.0  # Jupyter notebook support
+jupyter>=1.0.0  # Jupyter notebook execution
+ipykernel>=6.0.0  # IPython kernel for notebook execution
 
 # Documentation testing and validation
 doc8>=1.1.0  # Style checker for reStructuredText

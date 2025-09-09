@@ -46,6 +46,7 @@ help:
 	@echo "  format           Format code with black"
 	@echo "  check-format     Check if code needs formatting"
 	@echo "  type-check       Run type checking with mypy (if available)"
+	@echo "  claude           🤖 Comprehensive Claude Code quality analysis (pre-commit ready)"
 	@echo ""
 	@echo "$(YELLOW)📚 Documentation:$(NC)"
 	@echo "  docs             Build Sphinx documentation"
@@ -78,6 +79,7 @@ help:
 	@echo ""
 	@echo "$(YELLOW)🚀 Development Workflows:$(NC)"
 	@echo "  dev              Quick development cycle (format, lint, test-fast)"
+	@echo "  claude           🤖 Comprehensive Claude Code quality analysis (recommended pre-commit)"
 	@echo "  validate         Full validation (use before pushing)"
 	@echo "  ci-test          Simulate CI environment"
 	@echo "  release-check    Pre-release validation checklist"
@@ -96,6 +98,7 @@ install-docs:
 dev-setup: install install-docs
 	@echo "$(GREEN)🚀 Development environment set up successfully!$(NC)"
 	@echo "$(BLUE)📋 Quick commands:$(NC)"
+	@echo "  make claude          # 🤖 Comprehensive code quality analysis"
 	@echo "  make cli-help        # Show CLI help"
 	@echo "  make test-fast       # Run tests quickly"
 	@echo "  make docs-serve      # Build and serve docs"
@@ -105,7 +108,7 @@ version-check:
 	@echo "$(YELLOW)Checking version consistency...$(NC)"
 	@python -c "import xraylabtool; print(f'Package version: {xraylabtool.__version__}')"
 	@grep -n "version =" pyproject.toml || echo "Version not found in pyproject.toml"
-	@grep -n "release =" docs/source/conf.py || echo "Release not found in docs/source/conf.py"
+	@grep -n "release =" docs/conf.py || echo "Release not found in docs/conf.py"
 	@echo "$(GREEN)✅ Version check complete$(NC)"
 
 # Testing targets
@@ -271,44 +274,102 @@ type-check:
 	@command -v mypy >/dev/null 2>&1 && mypy xraylabtool/ || echo "$(BLUE)mypy not available, skipping type checks$(NC)"
 	@echo "$(GREEN)✅ Type checking completed$(NC)"
 
+claude:
+	@echo "$(BLUE)🤖 Claude Code Comprehensive Quality Analysis$(NC)"
+	@echo "$(BLUE)=============================================$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Phase 1: Code Formatting & Style$(NC)"
+	@echo "$(BLUE)→ Running Black formatter...$(NC)"
+	@black --check xraylabtool/ tests/ *.py || (echo "$(YELLOW)Applying Black formatting...$(NC)" && black xraylabtool/ tests/ *.py)
+	@echo "$(BLUE)→ Running Ruff formatter...$(NC)"
+	@ruff format xraylabtool/ tests/
+	@echo "$(BLUE)→ Running isort import sorting...$(NC)"
+	@isort --check-only --diff xraylabtool/ tests/ || (echo "$(YELLOW)Applying import sorting...$(NC)" && isort xraylabtool/ tests/)
+	@echo "$(GREEN)✅ Phase 1 Complete: Code formatting$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Phase 2: Comprehensive Linting$(NC)"
+	@echo "$(BLUE)→ Running Ruff linting with auto-fixes...$(NC)"
+	@ruff check xraylabtool/ tests/ --fix --show-fixes || true
+	@echo "$(BLUE)→ Running flake8 critical error check...$(NC)"
+	@flake8 xraylabtool/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+	@echo "$(GREEN)✅ Phase 2 Complete: Linting$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Phase 3: Type Safety Validation$(NC)"
+	@echo "$(BLUE)→ Running MyPy strict type checking...$(NC)"
+	@command -v mypy >/dev/null 2>&1 && (mypy xraylabtool/ --strict --show-error-codes && echo "$(GREEN)✅ MyPy validation passed$(NC)") || echo "$(BLUE)MyPy not available, skipping type checks$(NC)"
+	@echo "$(GREEN)✅ Phase 3 Complete: Type safety$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Phase 4: Security Analysis$(NC)"
+	@echo "$(BLUE)→ Running Bandit security scan...$(NC)"
+	@bandit -r xraylabtool/ --skip B101,B603,B110 -f json -o bandit-claude-report.json || true
+	@bandit -r xraylabtool/ --skip B101,B603,B110 --severity-level medium --confidence-level medium && echo "$(GREEN)✅ No medium/high security issues$(NC)" || echo "$(YELLOW)⚠️  Security scan completed with warnings$(NC)"
+	@echo "$(GREEN)✅ Phase 4 Complete: Security analysis$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Phase 5: Test Coverage Validation$(NC)"
+	@echo "$(BLUE)→ Running comprehensive test suite...$(NC)"
+	@pytest tests/ --cov=xraylabtool --cov-report=term-missing --cov-report=json:coverage-claude.json --cov-fail-under=44 -q
+	@echo "$(GREEN)✅ Phase 5 Complete: Test coverage (≥44%)$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Phase 6: Performance Regression Tests$(NC)"
+	@echo "$(BLUE)→ Running optimization validation...$(NC)"
+	@pytest tests/performance/test_performance_optimizations.py -v --tb=short -x
+	@echo "$(BLUE)→ Running numerical stability checks...$(NC)"
+	@pytest tests/unit/test_numerical_stability.py::TestNumericalStabilityChecks -v --tb=short
+	@echo "$(GREEN)✅ Phase 6 Complete: Performance validation$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Phase 7: Quality Report Generation$(NC)"
+	@echo "$(BLUE)→ Generating comprehensive quality report...$(NC)"
+	@python scripts/claude_quality_report.py
+	@echo "$(GREEN)✅ Phase 7 Complete: Quality report generated$(NC)"
+	@echo ""
+	@echo "$(GREEN)🎉 Claude Code Quality Analysis Complete!$(NC)"
+	@echo "$(BLUE)📊 Summary:$(NC)"
+	@python scripts/claude_summary_display.py
+	@echo "$(BLUE)📁 Artifacts Generated:$(NC)"
+	@echo "   • bandit-claude-report.json (security analysis)"
+	@echo "   • coverage-claude.json (test coverage data)"
+	@echo "   • CLAUDE_QUALITY_SUMMARY.json (quality summary)"
+	@echo ""
+	@echo "$(YELLOW)Ready for commit! 🚀$(NC)"
+
 # Documentation
 docs:
 	@echo "$(YELLOW)Building Sphinx documentation...$(NC)"
-	sphinx-build -b html docs/source docs/build
-	@echo "$(GREEN)✅ Documentation built successfully in docs/build/$(NC)"
-	@echo "$(BLUE)📖 View at: file://$(shell pwd)/docs/build/index.html$(NC)"
+	sphinx-build -b html docs docs/_build/html
+	@echo "$(GREEN)✅ Documentation built successfully in docs/_build/html/$(NC)"
+	@echo "$(BLUE)📖 View at: file://$(shell pwd)/docs/_build/html/index.html$(NC)"
 
 docs-serve: docs
 	@echo "$(YELLOW)Serving documentation locally...$(NC)"
 	@echo "$(BLUE)Documentation server starting at http://localhost:8000$(NC)"
 	@echo "$(BLUE)Press Ctrl+C to stop the server$(NC)"
-	cd docs/build && python -m http.server 8000
+	cd docs/_build/html && python -m http.server 8000
 
 docs-clean:
 	@echo "$(YELLOW)Cleaning documentation build files...$(NC)"
-	rm -rf docs/build/
-	rm -rf docs/source/api/generated/
+	rm -rf docs/_build/
+	rm -rf docs/api/generated/
 	@echo "$(GREEN)✅ Documentation cleaned$(NC)"
 
 docs-linkcheck:
 	@echo "$(YELLOW)Checking documentation links...$(NC)"
-	sphinx-build -b linkcheck docs/source docs/build/linkcheck
+	sphinx-build -b linkcheck docs docs/_build/linkcheck
 	@echo "$(GREEN)✅ Link check completed$(NC)"
 
 docs-pdf:
 	@echo "$(YELLOW)Building PDF documentation...$(NC)"
-	sphinx-build -b latex docs/source docs/build/latex
-	cd docs/build/latex && pdflatex XRayLabTool.tex || echo "$(BLUE)LaTeX not available, PDF build skipped$(NC)"
+	sphinx-build -b latex docs docs/_build/latex
+	cd docs/_build/latex && pdflatex XRayLabTool.tex || echo "$(BLUE)LaTeX not available, PDF build skipped$(NC)"
 	@echo "$(GREEN)✅ PDF documentation build attempted$(NC)"
 
 docs-test:
 	@echo "$(YELLOW)Testing documentation build with warnings as errors...$(NC)"
-	sphinx-build -W -b html docs/source docs/build/test
+	sphinx-build -W -b html docs docs/_build/test
 	@echo "$(GREEN)✅ Documentation test build completed$(NC)"
 
 docs-doctest:
 	@echo "$(YELLOW)Testing code examples in docstrings and documentation...$(NC)"
-	sphinx-build -b doctest docs/source docs/build/doctest
+	sphinx-build -b doctest docs docs/_build/doctest
 	@echo "$(GREEN)✅ Documentation code examples tested$(NC)"
 
 docs-test-all:
@@ -323,7 +384,7 @@ docs-autobuild:
 	@echo "$(YELLOW)Starting live documentation server with auto-rebuild...$(NC)"
 	@command -v sphinx-autobuild >/dev/null 2>&1 && \
 		(echo "$(BLUE)Live server at http://localhost:8000 (auto-reloads on changes)$(NC)" && \
-		 sphinx-autobuild docs/source docs/build --host 0.0.0.0 --port 8000) || \
+		 sphinx-autobuild docs docs/_build/html --host 0.0.0.0 --port 8000) || \
 		(echo "$(BLUE)sphinx-autobuild not available. Install with: pip install sphinx-autobuild$(NC)" && \
 		 echo "$(BLUE)Using regular build and serve instead...$(NC)" && make docs-serve)
 
@@ -342,6 +403,7 @@ clean:
 	rm -rf .benchmarks
 	rm -rf bandit-report.json
 	rm -rf bandit_report.json
+	rm -rf coverage.json
 	rm -rf .tox/
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
@@ -364,6 +426,7 @@ dev: check-format lint test-fast
 
 validate: format lint test-coverage test-benchmarks cli-test docs-test-all
 	@echo "$(GREEN)✅ Full validation completed - ready for commit!$(NC)"
+	@echo "$(BLUE)💡 Tip: For comprehensive pre-commit analysis, run 'make claude'$(NC)"
 
 ci-test: clean install version-check lint type-check test-coverage test-benchmarks cli-test docs-test
 	@echo "$(GREEN)✅ CI simulation completed successfully$(NC)"

@@ -131,7 +131,6 @@ Documentation Contents
 
    cli_guide
    tutorials/index
-   notebooks/index
    howto/index
    performance_guide
    faq

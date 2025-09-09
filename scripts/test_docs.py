@@ -18,13 +18,12 @@ import argparse
 import doctest
 import glob
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 import tempfile
 import time
-from pathlib import Path
-from typing import Dict, List, Tuple
 
 
 # Colors for output
@@ -66,7 +65,7 @@ def print_status(message: str, status: str, details: str = None) -> None:
         print(f"   {details}")
 
 
-def test_doctests(verbose: bool = False) -> Tuple[int, int]:
+def test_doctests(verbose: bool = False) -> tuple[int, int]:
     """Test docstrings for code examples."""
     print_section("🧪 TESTING DOCSTRING EXAMPLES")
 
@@ -89,7 +88,7 @@ def test_doctests(verbose: bool = False) -> Tuple[int, int]:
             ],
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=300, check=False,
         )
 
         if result.returncode == 0:
@@ -108,7 +107,7 @@ def test_doctests(verbose: bool = False) -> Tuple[int, int]:
     return total_failures, total_tests
 
 
-def test_rst_code_examples(verbose: bool = False) -> Tuple[int, int]:
+def test_rst_code_examples(verbose: bool = False) -> tuple[int, int]:
     """Test code examples in RST documentation files."""
     print_section("📖 TESTING RST CODE EXAMPLES")
 
@@ -146,7 +145,7 @@ def test_rst_code_examples(verbose: bool = False) -> Tuple[int, int]:
     return total_failures, total_tests
 
 
-def test_readme_examples(verbose: bool = False) -> Tuple[int, int]:
+def test_readme_examples(verbose: bool = False) -> tuple[int, int]:
     """Test code examples in README.md."""
     print_section("📋 TESTING README CODE EXAMPLES")
 
@@ -154,7 +153,7 @@ def test_readme_examples(verbose: bool = False) -> Tuple[int, int]:
     total_tests = 0
 
     try:
-        with open("README.md", "r") as f:
+        with open("README.md") as f:
             content = f.read()
     except FileNotFoundError:
         print_status("README.md not found", "FAIL")
@@ -195,7 +194,7 @@ def test_readme_examples(verbose: bool = False) -> Tuple[int, int]:
         try:
             # Run the code
             result = subprocess.run(
-                ["python", temp_file], capture_output=True, text=True, timeout=30
+                ["python", temp_file], capture_output=True, text=True, timeout=30, check=False
             )
 
             if result.returncode == 0:
@@ -221,7 +220,7 @@ def test_readme_examples(verbose: bool = False) -> Tuple[int, int]:
     return total_failures, total_tests
 
 
-def test_links(verbose: bool = False) -> Tuple[int, int]:
+def test_links(verbose: bool = False) -> tuple[int, int]:
     """Test documentation links."""
     print_section("🔗 TESTING DOCUMENTATION LINKS")
 
@@ -231,7 +230,7 @@ def test_links(verbose: bool = False) -> Tuple[int, int]:
     print_status("Running Sphinx linkcheck...", "INFO")
 
     try:
-        result = subprocess.run(
+        subprocess.run(
             [
                 "python",
                 "-m",
@@ -243,7 +242,7 @@ def test_links(verbose: bool = False) -> Tuple[int, int]:
             ],
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=600, check=False,
         )
 
         # Check for broken links file
@@ -268,7 +267,7 @@ def test_links(verbose: bool = False) -> Tuple[int, int]:
     return total_failures, total_tests
 
 
-def check_documentation_coverage(verbose: bool = False) -> Dict[str, int]:
+def check_documentation_coverage(verbose: bool = False) -> dict[str, int]:
     """Check documentation coverage."""
     print_section("📊 DOCUMENTATION COVERAGE ANALYSIS")
 
@@ -277,7 +276,7 @@ def check_documentation_coverage(verbose: bool = False) -> Dict[str, int]:
     print_status("Running Sphinx coverage check...", "INFO")
 
     try:
-        result = subprocess.run(
+        subprocess.run(
             [
                 "python",
                 "-m",
@@ -289,7 +288,7 @@ def check_documentation_coverage(verbose: bool = False) -> Dict[str, int]:
             ],
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=300, check=False,
         )
 
         coverage_file = Path("docs/_build/coverage/python.txt")
@@ -332,7 +331,7 @@ def check_documentation_coverage(verbose: bool = False) -> Dict[str, int]:
     return coverage_stats
 
 
-def check_accessibility(verbose: bool = False) -> Tuple[int, int]:
+def check_accessibility(verbose: bool = False) -> tuple[int, int]:
     """Basic accessibility checks."""
     print_section("♿ ACCESSIBILITY CHECKS")
 
@@ -347,7 +346,7 @@ def check_accessibility(verbose: bool = False) -> Tuple[int, int]:
             ["python", "-m", "sphinx", "-b", "html", "docs/source", "docs/_build/html"],
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=300, check=False,
         )
     except Exception as e:
         print_status("HTML build", "FAIL", f"Error: {e}")
@@ -393,7 +392,7 @@ def check_accessibility(verbose: bool = False) -> Tuple[int, int]:
     return total_failures, total_tests
 
 
-def run_style_checks(verbose: bool = False) -> Tuple[int, int]:
+def run_style_checks(verbose: bool = False) -> tuple[int, int]:
     """Run documentation style checks."""
     print_section("🎨 DOCUMENTATION STYLE CHECKS")
 
@@ -409,7 +408,7 @@ def run_style_checks(verbose: bool = False) -> Tuple[int, int]:
             ["rstcheck", "--report-level", "warning"]
             + glob.glob("docs/**/*.rst", recursive=True),
             capture_output=True,
-            text=True,
+            text=True, check=False,
         )
 
         if result.returncode == 0:
@@ -440,7 +439,7 @@ def run_style_checks(verbose: bool = False) -> Tuple[int, int]:
                 "100",
             ],
             capture_output=True,
-            text=True,
+            text=True, check=False,
         )
 
         if result.returncode == 0:

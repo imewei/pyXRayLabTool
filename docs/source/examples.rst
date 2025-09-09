@@ -11,7 +11,7 @@ package's advanced capabilities.
 .. grid:: 2
 
     .. grid-item-card:: 🚀 Interactive Jupyter Notebook
-        :link: https://mybinder.org/v2/gh/imewei/pyXRayLabTool/HEAD?labpath=notebooks%2Fgetting_started.ipynb
+        :link: https://mybinder.org/v2/gh/imewei/pyXRayLabTool/HEAD?labpath=docs%2Fexamples%2Fgetting_started.ipynb
         :link-type: url
         :class-title: text-center
 
@@ -22,7 +22,7 @@ package's advanced capabilities.
 
         +++
 
-        .. button-link:: https://mybinder.org/v2/gh/imewei/pyXRayLabTool/HEAD?labpath=notebooks%2Fgetting_started.ipynb
+        .. button-link:: https://mybinder.org/v2/gh/imewei/pyXRayLabTool/HEAD?labpath=docs%2Fexamples%2Fgetting_started.ipynb
             :color: primary
             :outline:
             :expand:
@@ -30,7 +30,7 @@ package's advanced capabilities.
             Launch Interactive Notebook
 
     .. grid-item-card:: 📊 Google Colab Version
-        :link: https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/notebooks/getting_started.ipynb
+        :link: https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/docs/examples/getting_started.ipynb
         :link-type: url
         :class-title: text-center
 
@@ -41,7 +41,7 @@ package's advanced capabilities.
 
         +++
 
-        .. button-link:: https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/notebooks/getting_started.ipynb
+        .. button-link:: https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/docs/examples/getting_started.ipynb
             :color: info
             :outline:
             :expand:

@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import xraylabtool as xlt
-from tests.test_base import BaseIntegrationTest
+from tests.fixtures.test_base import BaseIntegrationTest
 from xraylabtool.cli import (
     cmd_atomic,
     cmd_batch,

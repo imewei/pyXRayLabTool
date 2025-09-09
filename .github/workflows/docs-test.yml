@@ -8,7 +8,7 @@ on:
       - 'xraylabtool/**'
       - 'README.md'
       - 'CHANGELOG.md'
-      - 'notebooks/**'
+      - 'docs/examples/**'
       - '.github/workflows/docs-test.yml'
   pull_request:
     branches: [ main ]
@@ -17,7 +17,7 @@ on:
       - 'xraylabtool/**'
       - 'README.md'
       - 'CHANGELOG.md'
-      - 'notebooks/**'
+      - 'docs/examples/**'
       - '.github/workflows/docs-test.yml'
 
 concurrency:
@@ -334,9 +334,9 @@ jobs:
       run: |
         echo "📓 Testing Jupyter notebooks..."
 
-        # Check if notebooks directory exists
-        if [ -d "notebooks" ]; then
-          for notebook in notebooks/*.ipynb; do
+        # Check if docs/examples directory exists
+        if [ -d "docs/examples" ]; then
+          for notebook in docs/examples/*.ipynb; do
             if [ -f "$notebook" ]; then
               echo "Testing $notebook..."
               # Convert notebook to Python script and test syntax
@@ -346,7 +346,7 @@ jobs:
             fi
           done
         else
-          echo "📓 No notebooks directory found"
+          echo "📓 No docs/examples directory found"
         fi
       continue-on-error: true
 

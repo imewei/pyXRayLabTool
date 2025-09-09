@@ -5,10 +5,10 @@ A lightweight installer for shell completion functionality.
 Supports Bash completion with automatic detection and installation.
 """
 
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 
 class CompletionInstaller:

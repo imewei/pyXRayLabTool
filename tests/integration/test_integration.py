@@ -9,8 +9,8 @@ Uses numpy.isclose assertions for numerical comparisons as requested.
 import numpy as np
 import pytest
 
-from tests.test_base import BaseIntegrationTest
-from tests.test_config import NUMERICAL_TOLERANCES
+from tests.fixtures.test_base import BaseIntegrationTest
+from tests.fixtures.test_config import NUMERICAL_TOLERANCES
 from xraylabtool import calculate_single_material_properties, calculate_xray_properties
 
 # Test constants (matching Julia test constants)

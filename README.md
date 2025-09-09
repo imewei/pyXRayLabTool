@@ -45,44 +45,45 @@ cd pyXRayLabTool
 pip install -e .
 ```
 
-### Shell Completion Setup
+### Bash Completion Setup
 
-After installation, enable intelligent tab completion for enhanced CLI productivity:
+After installation, enable tab completion for enhanced CLI productivity:
 
 ```bash
-# Auto-detect current shell and install completion
+# Install bash completion (recommended)
+xraylabtool install-completion
+
+# Alternative: using flag syntax
 xraylabtool --install-completion
 
-# Or install for specific shell
-xraylabtool --install-completion bash
-xraylabtool --install-completion zsh
-xraylabtool --install-completion fish
-xraylabtool --install-completion powershell
+# Test if completion is working
+xraylabtool install-completion --test
 ```
 
 **Prerequisites for Bash users:**
 ```bash
-# Install bash-completion for full functionality
+# Install bash-completion for full functionality (macOS)
 brew install bash-completion@2
 
-# Add to ~/.bash_profile:
+# Add to ~/.bash_profile or ~/.bashrc:
 [[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"
+
+# On Linux (Ubuntu/Debian):
+sudo apt install bash-completion
+
+# On Linux (RHEL/CentOS):
+sudo yum install bash-completion
 ```
 
-**Prerequisites for PowerShell users:**
-```powershell
-# PowerShell 5.1+ or PowerShell Core 7+ required
-# Check version: $PSVersionTable.PSVersion
-
-# Install PowerShell completion
-xraylabtool --install-completion powershell
-
-# After installation, the module is automatically configured
-# Restart PowerShell to enable tab completion
-# Manual import (if needed): Import-Module XRayLabTool
+**Uninstalling completion:**
+```bash
+# Remove bash completion
+xraylabtool uninstall-completion
 ```
 
 Restart your shell or source your config file after installation.
+
+> **Note**: Currently only Bash completion is supported. Support for other shells (zsh, fish, PowerShell) is planned for future releases.
 
 ### Requirements
 
@@ -180,11 +181,11 @@ pip install xraylabtool
 # Verify CLI installation
 xraylabtool --version
 
-# Install shell completion (recommended)
-xraylabtool --install-completion
+# Install bash completion (recommended)
+xraylabtool install-completion
 
-# Test completion is working
-xraylabtool --install-completion --test
+# Test completion is working  
+xraylabtool install-completion --test
 ```
 
 ### Quick CLI Examples
@@ -236,6 +237,8 @@ xraylabtool bragg -d 3.14,2.45,1.92 -e 8.048
 
 ### Available CLI Commands
 
+XRayLabTool provides **9 comprehensive commands** for X-ray analysis:
+
 | Command | Purpose | Example |
 |---------|---------|--------|
 | `calc` | Single material calculations | `xraylabtool calc SiO2 -e 10.0 -d 2.2` |
@@ -245,30 +248,29 @@ xraylabtool bragg -d 3.14,2.45,1.92 -e 8.048
 | `atomic` | Atomic data lookup | `xraylabtool atomic Si,Al,Fe` |
 | `bragg` | Diffraction angle calculations | `xraylabtool bragg -d 3.14 -e 8.0` |
 | `list` | Show constants/fields/examples | `xraylabtool list constants` |
-| `install-completion` | Install shell completion | `xraylabtool install-completion zsh` |
+| `install-completion` | Install bash completion | `xraylabtool install-completion` |
+| `uninstall-completion` | Remove bash completion | `xraylabtool uninstall-completion` |
 
-### Shell Completion Commands
+### Bash Completion Usage
 
-Both syntaxes are supported for shell completion:
+Both command and flag syntaxes are supported:
 
 ```bash
-# Flag syntax (recommended for basic use)
-xraylabtool --install-completion bash
-xraylabtool --install-completion zsh --test
-xraylabtool --install-completion fish --system
-xraylabtool --install-completion powershell
+# Subcommand syntax (recommended)
+xraylabtool install-completion           # Install bash completion
+xraylabtool install-completion --test    # Test installation
+xraylabtool uninstall-completion         # Remove completion
 
-# Subcommand syntax (supports all advanced options)
-xraylabtool install-completion bash --uninstall
-xraylabtool install-completion zsh --system --test
-xraylabtool install-completion fish --user
-xraylabtool install-completion powershell --test
-
-# NEW: Virtual environment integration
-xraylabtool install-completion --uninstall --venv          # Remove from virtual env
-xraylabtool install-completion --uninstall --conda         # Remove from conda/mamba
-xraylabtool install-completion --uninstall --all-environments  # Clean up everywhere
+# Flag syntax (alternative)
+xraylabtool --install-completion         # Install bash completion
 ```
+
+**Tab Completion Features:**
+- **Command completion**: Auto-complete all 9 available commands
+- **Option completion**: Complete command-line options and flags
+- **File path completion**: Automatic file path completion for input/output files
+- **Chemical formulas**: Suggestions for common chemical formulas
+- **Energy values**: Common X-ray energy suggestions (8.048, 10.0, 12.4 keV)
 
 ### Output Formats
 
@@ -283,36 +285,37 @@ xraylabtool install-completion --uninstall --all-environments  # Clean up everyw
 - **Field Selection**: Choose specific output fields with `--fields`
 - **Precision Control**: Set decimal places with `--precision`
 - **File Output**: Save results to CSV or JSON files
-- **Multi-Shell Completion**: Intelligent tab completion for Bash, Zsh, Fish, and PowerShell
+- **Bash Tab Completion**: Intelligent completion for enhanced productivity
   - **Context-aware**: Suggests appropriate values based on current command
   - **File completion**: Automatic file path completion for input/output files
   - **Chemical formulas**: Common materials and element suggestions
-  - **Energy values**: Typical X-ray energy suggestions
-  - **Cross-platform**: Works on Windows PowerShell 5.1+, PowerShell Core 7+, and Unix shells
+  - **Energy values**: Typical X-ray energy suggestions (Cu Kα, Mo Kα, etc.)
+  - **Cross-platform**: Works on macOS, Linux, and Windows (with WSL/Cygwin)
 
-### 📖 Complete CLI Documentation
+### 📖 CLI Help and Documentation
 
-For comprehensive CLI documentation with detailed examples, parameters, and use cases, see:
+Get comprehensive help for any command:
 
-**👉 [CLI_REFERENCE.md](CLI_REFERENCE.md) - Complete Command-Line Interface Guide**
+```bash
+# General help
+xraylabtool --help
 
-The CLI reference includes:
-- Detailed syntax for all 8 commands (including install-completion)
-- Energy input format examples
-- Batch processing workflows
-- Output format specifications
-- Shell completion setup and usage
-- Common use cases and best practices
-- Performance optimization tips
+# Command-specific help
+xraylabtool calc --help
+xraylabtool batch --help
+xraylabtool install-completion --help
 
-**👉 [SHELL_COMPLETION.md](SHELL_COMPLETION.md) - Shell Completion Setup Guide**
+# List available options and examples
+xraylabtool list --help
+```
 
-Complete documentation for installing and using shell completion:
-- Installation instructions for Bash, Zsh, Fish, and PowerShell
-- Tab completion features and examples for all supported shells
-- **NEW:** Virtual environment integration (venv, conda, mamba)
-- Cross-platform setup (Windows, macOS, Linux)
-- Troubleshooting and configuration options
+**CLI Features Summary:**
+- **9 commands**: Complete X-ray analysis workflow coverage
+- **Energy input formats**: Single values, ranges, lists, and logarithmic spacing
+- **Batch processing**: CSV file processing with parallel execution
+- **Multiple output formats**: Table, CSV, and JSON output
+- **Bash completion**: Tab completion for commands, options, and common values
+- **Cross-platform**: Works on Windows, macOS, and Linux
 
 ---
 
