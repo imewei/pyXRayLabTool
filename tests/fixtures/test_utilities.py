@@ -5,13 +5,13 @@ This module provides utility functions, decorators, and classes
 to support testing across the xraylabtool test suite.
 """
 
-from collections.abc import Callable
-from contextlib import contextmanager
 import functools
 import gc
 import time
-from typing import Any
 import warnings
+from collections.abc import Callable
+from contextlib import contextmanager
+from typing import Any
 
 import numpy as np
 import psutil

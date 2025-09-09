@@ -6,8 +6,8 @@ for the command-line interface to ensure robustness.
 """
 
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -230,9 +230,11 @@ class TestCLIErrorHandling:
         parser = cli.create_parser()
 
         # Test invalid command
-        with pytest.raises(SystemExit):
-            with patch("sys.stderr"):  # Suppress error output
-                parser.parse_args(["invalid_command"])
+        with (
+            pytest.raises(SystemExit),
+            patch("sys.stderr"),  # Suppress error output
+        ):
+            parser.parse_args(["invalid_command"])
 
         # Test missing required arguments
         with pytest.raises(SystemExit), patch("sys.stderr"):

@@ -5,14 +5,14 @@ This module contains the main classes and functions for X-ray analysis,
 including atomic scattering factors and crystallographic calculations.
 """
 
-from collections.abc import Callable
 import concurrent.futures
+import types
+import warnings
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
-import types
 from typing import Any
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -86,11 +86,11 @@ class XRayResult:
 
         >>> import xraylabtool as xlt
         >>> result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
-        >>> print(f"Material: {{result.formula}}")
+        >>> print(f"Material: {result.formula}")
         Material: SiO2
-        >>> print(f"MW: {{result.molecular_weight_g_mol:.2f}} g/mol")
+        >>> print(f"MW: {result.molecular_weight_g_mol:.2f} g/mol")
         MW: 60.08 g/mol
-        >>> print(f"Critical angle: {{result.critical_angle_degrees[0]:.3f}}°")
+        >>> print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
         Critical angle: 0.178°
 
         Array Properties for Energy Scans:
@@ -98,23 +98,23 @@ class XRayResult:
         >>> import numpy as np
         >>> energies = np.linspace(8, 12, 5)
         >>> result = xlt.calculate_single_material_properties("Si", energies, 2.33)
-        >>> print(f"Energies: {{result.energy_kev}}")
+        >>> print(f"Energies: {result.energy_kev}")
         Energies: [ 8.  9. 10. 11. 12.]
-        >>> print(f"Wavelengths: {{result.wavelength_angstrom}}")
+        >>> print(f"Wavelengths: {result.wavelength_angstrom}")
         Wavelengths: [1.550 1.378 1.240 1.127 1.033]
 
         Optical Constants Analysis:
 
-        >>> print(f"δ range: {{result.dispersion_delta.min():.2e}} to {{result.dispersion_delta.max():.2e}}")
+        >>> print(f"δ range: {result.dispersion_delta.min():.2e} to {result.dispersion_delta.max():.2e}")
         δ range: 3.21e-06 to 5.15e-06
-        >>> print(f"β range: {{result.absorption_beta.min():.2e}} to {{result.absorption_beta.max():.2e}}")
+        >>> print(f"β range: {result.absorption_beta.min():.2e} to {result.absorption_beta.max():.2e}")
         β range: 1.23e-08 to 2.45e-08
 
         Derived Quantities:
 
-        >>> print(f"Critical angles: {{result.critical_angle_degrees}}")
+        >>> print(f"Critical angles: {result.critical_angle_degrees}")
         Critical angles: [0.103 0.115 0.127 0.140 0.152]
-        >>> print(f"Attenuation lengths: {{result.attenuation_length_cm}}")
+        >>> print(f"Attenuation lengths: {result.attenuation_length_cm}")
         Attenuation lengths: [ 850.2  650.4  420.8  310.2  245.1]
 
     Note:
@@ -565,7 +565,9 @@ class AtomicScatteringFactor:
         """
         return load_scattering_factor_data(element)
 
-    def get_scattering_factor(self, element: str, q_values: np.ndarray) -> np.ndarray:  # noqa: ARG002
+    def get_scattering_factor(
+        self, element: str, q_values: np.ndarray
+    ) -> np.ndarray:  # noqa: ARG002
         """
         Calculate scattering factors for given q values.
 
@@ -612,7 +614,9 @@ class CrystalStructure:
             {"element": element, "position": position, "occupancy": occupancy}
         )
 
-    def calculate_structure_factor(self, hkl: tuple[int, int, int]) -> complex:  # noqa: ARG002
+    def calculate_structure_factor(
+        self, hkl: tuple[int, int, int]
+    ) -> complex:  # noqa: ARG002
         """
         Calculate structure factor for given Miller indices.
 
@@ -1144,7 +1148,7 @@ def calculate_multiple_xray_properties(
         >>> densities = [2.2, 3.95, 5.24]
         >>> results = calculate_multiple_xray_properties(formulas, energies, densities)
         >>> sio2_result = results["SiO2"]
-        >>> print(f"SiO2 molecular weight: {{sio2_result['molecular_weight']:.2f}}")
+        >>> print(f"SiO2 molecular weight: {sio2_result['molecular_weight']:.2f}")
     """
     # Input validation
     if len(formula_list) != len(mass_density_list):
@@ -1282,11 +1286,11 @@ def calculate_single_material_properties(
 
         >>> import xraylabtool as xlt
         >>> result = xlt.calculate_single_material_properties("SiO2", 8.0, 2.2)
-        >>> print(f"Formula: {{result.formula}}")
+        >>> print(f"Formula: {result.formula}")
         Formula: SiO2
-        >>> print(f"Molecular weight: {{result.molecular_weight_g_mol:.2f}} g/mol")
+        >>> print(f"Molecular weight: {result.molecular_weight_g_mol:.2f} g/mol")
         Molecular weight: 60.08 g/mol
-        >>> print(f"Critical angle: {{result.critical_angle_degrees[0]:.3f}}°")
+        >>> print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
         Critical angle: 0.223°
 
         **Multiple Energies:**
@@ -1294,9 +1298,9 @@ def calculate_single_material_properties(
         >>> result = xlt.calculate_single_material_properties(
         ...     "Al2O3", [8.0, 10.0, 12.0], 3.95
         ... )
-        >>> print(f"Energies: {{result.energy_kev}}")
+        >>> print(f"Energies: {result.energy_kev}")
         Energies: [ 8. 10. 12.]
-        >>> print(f"Critical angles: {{result.critical_angle_degrees}}")
+        >>> print(f"Critical angles: {result.critical_angle_degrees}")
         Critical angles: [0.301 0.240 0.200]
 
         **Energy Range Analysis:**
@@ -1304,9 +1308,9 @@ def calculate_single_material_properties(
         >>> import numpy as np
         >>> energies = np.linspace(5.0, 15.0, 11)  # 5-15 keV range
         >>> result = xlt.calculate_single_material_properties("Fe2O3", energies, 5.24)
-        >>> print(f"Energy range: {{result.energy_kev[0]:.1f}} - {{result.energy_kev[-1]:.1f}} keV")
+        >>> print(f"Energy range: {result.energy_kev[0]:.1f} - {result.energy_kev[-1]:.1f} keV")
         Energy range: 5.0 - 15.0 keV
-        >>> print(f"Attenuation range: {{result.attenuation_length_cm.min():.2f}} - {{result.attenuation_length_cm.max():.2f}} cm")
+        >>> print(f"Attenuation range: {result.attenuation_length_cm.min():.2f} - {result.attenuation_length_cm.max():.2f} cm")
         Attenuation range: 0.23 - 1.45 cm
 
         **Performance Note:**
@@ -1533,9 +1537,9 @@ def calculate_xray_properties(
         >>>
         >>> # Access results by formula
         >>> sio2 = results["SiO2"]
-        >>> print(f"SiO2 MW: {{sio2.molecular_weight_g_mol:.2f}} g/mol")
+        >>> print(f"SiO2 MW: {sio2.molecular_weight_g_mol:.2f} g/mol")
         SiO2 MW: 60.08 g/mol
-        >>> print(f"SiO2 critical angles: {{sio2.critical_angle_degrees}}")
+        >>> print(f"SiO2 critical angles: {sio2.critical_angle_degrees}")
         SiO2 critical angles: [0.223 0.178 0.149]
 
         **Single Energy for Multiple Materials:**
@@ -1545,7 +1549,7 @@ def calculate_xray_properties(
         ... )
         >>> for formula, result in results.items():
         ...     θc = result.critical_angle_degrees[0]
-        ...     print(f"{{formula:6}}: θc = {{θc:.3f}}°")
+        ...     print(f"{formula:6}: θc = {θc:.3f}°")
         SiO2  : θc = 0.178°
         Al2O3 : θc = 0.215°
         C     : θc = 0.141°
@@ -1564,7 +1568,7 @@ def calculate_xray_properties(
         ...     # Find closest energy to 10 keV
         ...     idx = np.argmin(np.abs(result.energy_kev - 10.0))
         ...     atten = result.attenuation_length_cm[idx]
-        ...     print(f"{{formula:6}}: {{atten:.2f}} cm at ~10 keV")
+        ...     print(f"{formula:6}: {atten:.2f} cm at ~10 keV")
 
         **Performance Comparison:**
 
