@@ -7,8 +7,14 @@
 
 import os
 import sys
+import warnings
 
 sys.path.insert(0, os.path.abspath(".."))
+
+# Suppress Jupyter config warnings and set safe defaults
+os.environ.setdefault("JUPYTER_CONFIG_DIR", os.path.expanduser("~/.jupyter"))
+os.environ.setdefault("JUPYTER_DATA_DIR", os.path.expanduser("~/.jupyter"))
+warnings.filterwarnings("ignore", message=".*jupyter.*")
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -46,9 +52,17 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx_copybutton",
     "myst_parser",
-    "nbsphinx",
     "sphinx_autodoc_typehints",
 ]
+
+# Try to import nbsphinx safely - skip if Jupyter config issues
+try:
+    import nbsphinx
+
+    extensions.append("nbsphinx")
+except (ImportError, PermissionError, OSError):
+    # Skip nbsphinx if there are Jupyter configuration issues
+    pass
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
@@ -159,6 +173,10 @@ todo_include_todos = True
 # -- Options for nbsphinx extension ------------------------------------------
 nbsphinx_execute = "never"
 nbsphinx_allow_errors = True
+nbsphinx_kernel_name = "python3"
+nbsphinx_requirejs_path = ""
+
+# Additional nbsphinx configuration to handle Jupyter path issues gracefully
 
 # -- Options for copybutton extension ----------------------------------------
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
