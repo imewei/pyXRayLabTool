@@ -8,9 +8,9 @@ content.
 """
 
 import os
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest

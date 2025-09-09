@@ -7,8 +7,8 @@ including conda/mamba support, environment switching, and edge cases.
 """
 
 import os
-import sys
 from pathlib import Path
+import sys
 from unittest.mock import patch
 
 import pytest

@@ -93,6 +93,7 @@ dependencies = [
     "matplotlib>=3.5.0",
     "mendeleev>=0.15.0",
     "tqdm>=4.64.0",
+    "psutil>=5.9.0",  # Memory monitoring for batch processing
 ]
 
 [project.optional-dependencies]

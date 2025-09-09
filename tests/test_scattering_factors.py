@@ -6,8 +6,8 @@ functionality implemented in Step 5.
 """
 
 import os
-import sys
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd

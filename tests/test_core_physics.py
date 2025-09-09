@@ -5,9 +5,9 @@ This module tests the vectorized calculate_scattering_factors function
 and derived quantity calculations that were ported from Julia.
 """
 
+from collections.abc import Callable
 import os
 import sys
-from collections.abc import Callable
 from typing import Any
 
 import numpy as np

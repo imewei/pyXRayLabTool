@@ -5,14 +5,14 @@ This module provides optimized batch processing capabilities with memory managem
 parallel execution, and progress tracking for large-scale X-ray property calculations.
 """
 
+from collections.abc import Iterator
 import concurrent.futures
+from dataclasses import dataclass
 import gc
 import os
-import warnings
-from collections.abc import Iterator
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import warnings
 
 import numpy as np
 import pandas as pd

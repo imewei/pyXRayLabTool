@@ -5,14 +5,14 @@ This module contains the main classes and functions for X-ray analysis,
 including atomic scattering factors and crystallographic calculations.
 """
 
-import concurrent.futures
-import types
-import warnings
 from collections.abc import Callable
+import concurrent.futures
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
+import types
 from typing import Any
+import warnings
 
 import numpy as np
 import pandas as pd

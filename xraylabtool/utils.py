@@ -5,9 +5,9 @@ This module contains helper functions for data processing, unit conversions,
 mathematical operations, and other common tasks in X-ray analysis.
 """
 
-import re
 from collections.abc import Iterator
 from functools import lru_cache
+import re
 from typing import Any, NoReturn
 
 import numpy as np
