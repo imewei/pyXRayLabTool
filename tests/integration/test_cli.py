@@ -9,15 +9,15 @@ edge cases.
 
 import csv
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tests.test_base import BaseIntegrationTest
 import xraylabtool as xlt
+from tests.test_base import BaseIntegrationTest
 from xraylabtool.cli import (
     cmd_atomic,
     cmd_batch,
@@ -740,14 +740,16 @@ class TestInstallCompletionCommand:
             assert hasattr(installer, "uninstall_completion")
 
             # Test that uninstall-completion command exists in CLI
-            with patch("sys.argv", ["xraylabtool", "uninstall-completion", "--help"]):
-                with patch("sys.stdout") as mock_stdout:
-                    with pytest.raises(SystemExit) as excinfo:
-                        main()
-                    assert excinfo.value.code == 0
+            with (
+                patch("sys.argv", ["xraylabtool", "uninstall-completion", "--help"]),
+                patch("sys.stdout") as mock_stdout,
+            ):
+                with pytest.raises(SystemExit) as excinfo:
+                    main()
+                assert excinfo.value.code == 0
 
-                    # Check that stdout was written to (help was displayed)
-                    assert mock_stdout.write.called
+                # Check that stdout was written to (help was displayed)
+                assert mock_stdout.write.called
 
         except ImportError:
             pytest.skip("completion_installer module not available")
@@ -862,10 +864,10 @@ class TestInstallCompletionCommand:
             patch("sys.argv", ["xraylabtool", "--help"]),
             patch("sys.stdout") as mock_stdout,
         ):
-            try:
+            from contextlib import suppress
+
+            with suppress(SystemExit):
                 main()
-            except SystemExit:
-                pass  # Expected for --help
 
             # Check if install-completion appears in help output
             help_calls = [str(call) for call in mock_stdout.write.call_args_list]
