@@ -75,6 +75,7 @@ jobs:
 
     - name: Check code formatting with ruff
       run: |
+        pip install ruff==0.7.1  # Pin ruff version for consistency
         ruff format --check xraylabtool/ tests/
         ruff check xraylabtool/ tests/
 
