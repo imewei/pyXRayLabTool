@@ -140,9 +140,9 @@ class BaseXRayLabToolTest(ABC):
 
         for field in array_fields:
             field_value = getattr(result, field)
-            assert isinstance(field_value, np.ndarray), (
-                f"Field {field} should be numpy array, got {type(field_value)}"
-            )
+            assert isinstance(
+                field_value, np.ndarray
+            ), f"Field {field} should be numpy array, got {type(field_value)}"
 
     @staticmethod
     def validate_reference_values(

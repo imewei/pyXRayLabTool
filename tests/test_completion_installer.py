@@ -57,9 +57,9 @@ class TestBashCompletionScript:
         ]
 
         for command in expected_commands:
-            assert command in BASH_COMPLETION_SCRIPT, (
-                f"Command '{command}' not found in completion script"
-            )
+            assert (
+                command in BASH_COMPLETION_SCRIPT
+            ), f"Command '{command}' not found in completion script"
 
     def test_script_contains_completion_functions(self):
         """Test that all major completion functions are present."""
@@ -76,9 +76,9 @@ class TestBashCompletionScript:
         ]
 
         for func in expected_functions:
-            assert func in BASH_COMPLETION_SCRIPT, (
-                f"Function '{func}' not found in completion script"
-            )
+            assert (
+                func in BASH_COMPLETION_SCRIPT
+            ), f"Function '{func}' not found in completion script"
 
     def test_script_excludes_obsolete_ve_options(self):
         """Test that completion script excludes obsolete virtual environment options."""
@@ -90,32 +90,32 @@ class TestBashCompletionScript:
         ]
 
         for option in obsolete_options:
-            assert option not in BASH_COMPLETION_SCRIPT, (
-                f"Obsolete VE option '{option}' still found in completion script"
-            )
+            assert (
+                option not in BASH_COMPLETION_SCRIPT
+            ), f"Obsolete VE option '{option}' still found in completion script"
 
     def test_script_contains_simplified_completion_logic(self):
         """Test that completion script contains simplified completion logic."""
         # Should contain both completion commands
-        assert "install-completion" in BASH_COMPLETION_SCRIPT, (
-            "install-completion command not found"
-        )
-        assert "uninstall-completion" in BASH_COMPLETION_SCRIPT, (
-            "uninstall-completion command not found"
-        )
+        assert (
+            "install-completion" in BASH_COMPLETION_SCRIPT
+        ), "install-completion command not found"
+        assert (
+            "uninstall-completion" in BASH_COMPLETION_SCRIPT
+        ), "uninstall-completion command not found"
 
         # Should contain completion functions for both commands
-        assert "_xraylabtool_install_completion_complete" in BASH_COMPLETION_SCRIPT, (
-            "install-completion function not found"
-        )
-        assert "_xraylabtool_uninstall_completion_complete" in BASH_COMPLETION_SCRIPT, (
-            "uninstall-completion function not found"
-        )
+        assert (
+            "_xraylabtool_install_completion_complete" in BASH_COMPLETION_SCRIPT
+        ), "install-completion function not found"
+        assert (
+            "_xraylabtool_uninstall_completion_complete" in BASH_COMPLETION_SCRIPT
+        ), "uninstall-completion function not found"
 
         # Should NOT contain obsolete VE logic variables
-        assert "ve_opts" not in BASH_COMPLETION_SCRIPT, (
-            "Obsolete ve_opts variable still found"
-        )
+        assert (
+            "ve_opts" not in BASH_COMPLETION_SCRIPT
+        ), "Obsolete ve_opts variable still found"
 
     def test_script_contains_chemical_suggestions(self):
         """Test that common chemical formulas are suggested."""
