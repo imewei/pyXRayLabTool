@@ -127,7 +127,7 @@ jobs:
             # Create temporary file
             with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
                 # Add necessary imports
-                f.write('import sys\\nsys.path.insert(0, \".\")\\n')
+                f.write('import sys\nsys.path.insert(0, \".\")\n')
                 f.write(code)
                 temp_file = f.name
 
@@ -394,23 +394,23 @@ jobs:
         # Check for heading structure
         echo "📑 Checking heading structure..."
         find docs/_build/html -name "*.html" -exec python3 -c "
-import sys
-import re
-from pathlib import Path
+        import sys
+        import re
+        from pathlib import Path
 
-html_file = sys.argv[1]
-content = Path(html_file).read_text()
+        html_file = sys.argv[1]
+        content = Path(html_file).read_text()
 
-# Extract headings
-headings = re.findall(r'<h([1-6])[^>]*>(.*?)</h[1-6]>', content, re.IGNORECASE)
-if headings:
-    print(f'📄 {html_file}:')
-    for level, text in headings[:5]:  # Show first 5 headings
-        indent = '  ' * (int(level) - 1)
-        clean_text = re.sub(r'<[^>]+>', '', text).strip()[:50]
-        print(f'{indent}H{level}: {clean_text}')
-    print()
-        " {} \; 2>/dev/null || true
+        # Extract headings
+        headings = re.findall(r'<h([1-6])[^>]*>(.*?)</h[1-6]>', content, re.IGNORECASE)
+        if headings:
+            print(f'📄 {html_file}:')
+            for level, text in headings[:5]:  # Show first 5 headings
+                indent = '  ' * (int(level) - 1)
+                clean_text = re.sub(r'<[^>]+>', '', text).strip()[:50]
+                print(f'{indent}H{level}: {clean_text}')
+            print()
+        " {} \\; 2>/dev/null || true
 
   style-check:
     name: Documentation Style Check
