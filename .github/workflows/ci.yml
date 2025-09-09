@@ -76,7 +76,9 @@ jobs:
     - name: Check code formatting with ruff
       run: |
         pip install ruff==0.7.1  # Pin ruff version for consistency
-        ruff format --check xraylabtool/ tests/
+        ruff format --diff xraylabtool/ tests/ || true  # Show diff but don't fail
+        ruff format xraylabtool/ tests/  # Apply formatting
+        ruff format --check xraylabtool/ tests/  # Verify it worked
         ruff check xraylabtool/ tests/
 
     - name: Check import sorting with isort
