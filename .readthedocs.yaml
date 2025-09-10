@@ -63,3 +63,10 @@ search:
     - "_build"
     - "*.js"
     - "*.css"
+
+# Social cards and preview configuration
+# These help with link previews on social media
+submodules:
+  include: []
+
+# Additional ReadTheDocs features are configured through the web interface
