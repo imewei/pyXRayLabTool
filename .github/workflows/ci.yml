@@ -83,7 +83,7 @@ jobs:
 
     - name: Check import sorting with isort
       run: |
-        isort --check-only --diff --profile=black xraylabtool/ tests/
+        isort --check-only --profile=black xraylabtool/ tests/
 
     - name: Lint with flake8 (backup)
       run: |
