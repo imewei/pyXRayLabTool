@@ -15,7 +15,7 @@ For X-rays, materials have a complex refractive index:
 Where:
 
 - **n**: Complex refractive index
-- **δ (delta)**: Real part of refractive index decrement  
+- **δ (delta)**: Real part of refractive index decrement
 - **β (beta)**: Imaginary part related to absorption
 - **i**: Imaginary unit
 
@@ -128,7 +128,7 @@ Intensity decreases exponentially with thickness:
 
 Where:
 - I₀: Initial intensity
-- t: Material thickness  
+- t: Material thickness
 - μ: Linear absorption coefficient
 
 Transmission and Reflection
@@ -191,7 +191,7 @@ Absorption Edges
 Near absorption edges, scattering factors show sharp changes:
 
 - **Pre-edge**: Smooth energy dependence
-- **Edge jump**: Sharp increase in f₂ (absorption)  
+- **Edge jump**: Sharp increase in f₂ (absorption)
 - **Post-edge**: EXAFS oscillations in both f₁ and f₂
 
 This creates opportunities and challenges:
@@ -265,7 +265,7 @@ Experimental Techniques
 
 **Energy Scans:**
 - Vary energy at fixed geometry
-- Map out absorption edge structure  
+- Map out absorption edge structure
 - Useful for identifying elemental composition
 
 Data Sources

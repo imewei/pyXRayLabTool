@@ -33,7 +33,7 @@ python:
       extra_requirements:
         - dev
 
-# Sphinx configuration  
+# Sphinx configuration
 sphinx:
   configuration: docs/conf.py
   builder: html

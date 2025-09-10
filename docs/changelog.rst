@@ -304,10 +304,10 @@ When submitting pull requests, include changelog entries:
 
    ## Added
    - New feature description with context
-   
-   ## Fixed  
+
+   ## Fixed
    - Bug fix description with issue reference (#123)
-   
+
    ## Changed
    - Breaking change with migration notes
 

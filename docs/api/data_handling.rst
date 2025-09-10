@@ -29,10 +29,10 @@ Usage Example
 .. code-block:: python
 
    from xraylabtool.data_handling.atomic_cache import get_atomic_scattering_factors
-   
+
    # Get scattering factors for silicon at 8 keV
    f1, f2 = get_atomic_scattering_factors("Si", 8000)
-   
+
    print(f"f1 (real): {f1}")
    print(f"f2 (imaginary): {f2}")
 
@@ -42,7 +42,7 @@ Cache Statistics
 .. code-block:: python
 
    from xraylabtool.data_handling.atomic_cache import get_cache_info
-   
+
    stats = get_cache_info()
    print(f"Cache hits: {stats['hits']}")
    print(f"Cache misses: {stats['misses']}")
@@ -70,15 +70,15 @@ Usage Example
 .. code-block:: python
 
    from xraylabtool.data_handling.batch_processing import process_batch
-   
+
    materials = [
        {"formula": "Si", "density": 2.33},
        {"formula": "Al", "density": 2.70},
        {"formula": "Cu", "density": 8.96}
    ]
-   
+
    energies = [5000, 8000, 10000, 12000]
-   
+
    results = process_batch(materials, energies, show_progress=True)
 
 Performance Benchmarks
@@ -121,10 +121,10 @@ Cache Management
 .. code-block:: python
 
    from xraylabtool.data_handling.atomic_cache import clear_cache, preload_elements
-   
+
    # Clear all cached data
    clear_cache()
-   
+
    # Preload specific elements for better performance
    preload_elements(["Si", "O", "Al", "Fe"])
 

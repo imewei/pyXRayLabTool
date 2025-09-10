@@ -18,7 +18,7 @@ Atomic scattering factors describe how X-rays scatter from atoms:
 Where:
 
 - **f₀**: Thomson scattering (classical, forward scattering)
-- **f'**: Dispersion correction (real part)  
+- **f'**: Dispersion correction (real part)
 - **f''**: Absorption (imaginary part)
 
 For X-ray optics calculations, we use:
@@ -91,10 +91,10 @@ Henke Tables
 **File Format:**
 Standard .nff format with columns:
 - Energy (eV)
-- f₁ (real part)  
+- f₁ (real part)
 - f₂ (imaginary part)
 
-CXRO Database  
+CXRO Database
 ~~~~~~~~~~~~~
 
 **Extended Henke Tables:**
@@ -184,7 +184,7 @@ Pre-edge Features
 
 Near absorption edges:
 - **White lines**: Sharp peaks just above edge
-- **XANES**: X-ray Absorption Near Edge Structure  
+- **XANES**: X-ray Absorption Near Edge Structure
 - **Pre-edge peaks**: Forbidden transitions
 
 These features contain chemical information but complicate optical calculations.
@@ -254,7 +254,7 @@ Caching Strategy
 XRayLabTool uses a multi-level caching system:
 
 1. **Preloaded cache**: 92 common elements loaded at startup
-2. **LRU cache**: Recently used interpolations cached  
+2. **LRU cache**: Recently used interpolations cached
 3. **Disk cache**: Computed values saved for reuse
 4. **Memory management**: Automatic cleanup of old entries
 
@@ -277,7 +277,7 @@ Error Estimation
 XRayLabTool provides error estimates based on:
 
 1. **Interpolation error**: From data spacing
-2. **Experimental uncertainty**: From literature values  
+2. **Experimental uncertainty**: From literature values
 3. **Model limitations**: Isolated atom approximation
 4. **Numerical precision**: Machine epsilon effects
 
