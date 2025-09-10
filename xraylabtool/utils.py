@@ -216,9 +216,7 @@ def angle_from_q(q: float, wavelength: float) -> float:
     return float(two_theta_deg)
 
 
-def smooth_data(
-    x: np.ndarray, y: np.ndarray, window_size: int = 5
-) -> np.ndarray:  # noqa: ARG001
+def smooth_data(x: np.ndarray, y: np.ndarray, window_size: int = 5) -> np.ndarray:  # noqa: ARG001
     """
     Apply moving average smoothing to data using optimized NumPy convolution.
 
