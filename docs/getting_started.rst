@@ -303,7 +303,7 @@ If you encounter issues:
    import xraylabtool as xrt
    help(xrt.calculate_single_material_properties)
 
-.. code-block:: ipython
+.. code-block:: python
 
    # Or in IPython/Jupyter
    xrt.calculate_single_material_properties?
