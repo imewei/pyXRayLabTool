@@ -33,7 +33,7 @@ Available Commands:
    * - ``list``
      - Display reference information and constants
    * - ``install-completion``
-     - Install shell completion (Bash only)
+     - Install shell completion (bash, zsh, fish, PowerShell)
    * - ``uninstall-completion``
      - Remove shell completion
 
@@ -82,7 +82,7 @@ Calculate X-ray optical properties for a single material.
 .. option:: --energy ENERGY_SPEC
 
    X-ray energy specification. Can be:
-   
+
    - Single value: ``8000``
    - Multiple values: ``5000,8000,10000``
    - Range: ``1000-20000:1000`` (start-stop:step)
@@ -108,16 +108,16 @@ Calculate X-ray optical properties for a single material.
 
    # Basic calculation
    xraylabtool calc Si --density 2.33 --energy 8000
-   
+
    # Multiple energies
    xraylabtool calc SiO2 --density 2.20 --energy 5000,8000,10000
-   
+
    # Energy range
    xraylabtool calc Al --density 2.70 --energy 1000-20000:1000
-   
+
    # Save to CSV
    xraylabtool calc Cu --density 8.96 --energy 8000 --output csv --save copper_8keV.csv
-   
+
    # JSON output with high precision
    xraylabtool calc Si --density 2.33 --energy 8000 --output json --precision 6
 
@@ -127,7 +127,7 @@ Calculate X-ray optical properties for a single material.
 
    Material: Si (density = 2.33 g/cm³)
    Energy: 8000.0 eV (λ = 1.550 Å)
-   
+
    Property                          Value        Unit
    ────────────────────────────────────────────────────
    Delta (δ)                        1.234e-05    -
@@ -192,7 +192,7 @@ The input CSV file should contain columns for Formula, Density, and optionally E
 **Alternative column names are supported:**
 
 - **Formula**: "formula", "Formula", "material", "Material"
-- **Density**: "density", "Density", "rho", "ρ"  
+- **Density**: "density", "Density", "rho", "ρ"
 - **Energy**: "energy", "Energy", "E", "keV" (with automatic unit conversion)
 
 **Examples:**
@@ -201,13 +201,13 @@ The input CSV file should contain columns for Formula, Density, and optionally E
 
    # Basic batch processing
    xraylabtool batch materials.csv --output results.csv
-   
+
    # JSON output with progress
    xraylabtool batch large_dataset.csv --format json --show-progress --output results.json
-   
+
    # Custom energy column
    xraylabtool batch data.csv --energy-column "Energy (keV)" --output results.csv
-   
+
    # Process in smaller chunks
    xraylabtool batch huge_dataset.csv --chunk-size 500 --show-progress
 
@@ -228,7 +228,7 @@ Convert between X-ray energy and wavelength units.
 
    Energy value(s) in eV. Can be single value or comma-separated list.
 
-.. option:: --wavelength FLOAT_LIST  
+.. option:: --wavelength FLOAT_LIST
 
    Wavelength value(s) in Angstroms. Can be single value or comma-separated list.
 
@@ -247,11 +247,11 @@ Convert between X-ray energy and wavelength units.
    # Energy to wavelength
    xraylabtool convert --energy 8000 --to wavelength
    # Output: 8000.0 eV = 1.5498 Å
-   
-   # Wavelength to energy  
+
+   # Wavelength to energy
    xraylabtool convert --wavelength 1.55 --to energy
    # Output: 1.55 Å = 8000.3 eV
-   
+
    # Multiple values
    xraylabtool convert --energy 5000,8000,10000 --to wavelength
    # Output:
@@ -299,14 +299,14 @@ Parse and analyze chemical formulas.
    # Output:
    # Formula: SiO2
    # Elements: Si (1), O (2)
-   
+
    # With molecular weight
    xraylabtool formula "Ca5(PO4)3F" --molecular-weight
    # Output:
    # Formula: Ca5(PO4)3F
-   # Elements: Ca (5), P (3), O (12), F (1)  
+   # Elements: Ca (5), P (3), O (12), F (1)
    # Molecular weight: 504.30 g/mol
-   
+
    # Complex hydrated compound
    xraylabtool formula "CuSO4·5H2O" --composition
    # Output:
@@ -359,17 +359,17 @@ Look up atomic scattering factor data and element information.
    # Element: Silicon (Si)
    # Atomic number: 14
    # Atomic weight: 28.0855 g/mol
-   
+
    # Scattering factors at specific energy
    xraylabtool atomic Si --energy 8000
    # Output:
    # Element: Si at 8000.0 eV
    # f1 (real part): 12.234
    # f2 (imaginary part): 0.456
-   
+
    # Multiple elements
    xraylabtool atomic Si,O,Al --energy 8000 --info
-   
+
    # Energy range
    xraylabtool atomic Si --range 5000 15000 1000
 
@@ -412,13 +412,13 @@ Calculate Bragg diffraction angles for crystallographic analysis.
    # d-spacing: 3.14 Å
    # Energy: 8000.0 eV (λ = 1.550 Å)
    # Bragg angle (2θ): 29.4°
-   
+
    # Multiple reflections
    xraylabtool bragg --d-spacing 3.14,1.92,1.64 --energy 8000
-   
+
    # Using wavelength instead of energy
    xraylabtool bragg --d-spacing 3.14 --wavelength 1.55
-   
+
    # Higher order reflection
    xraylabtool bragg --d-spacing 3.14 --energy 8000 --order 2
 
@@ -457,13 +457,13 @@ Display reference information, constants, and examples.
 
    # List supported elements
    xraylabtool list elements
-   
+
    # Show physical constants
    xraylabtool list constants
-   
+
    # Example materials
    xraylabtool list examples
-   
+
    # Unit information
    xraylabtool list units
 
@@ -490,7 +490,7 @@ Install Bash shell completion for improved command-line experience.
 
 .. option:: --shell {bash}
 
-   Shell type (currently only Bash is supported).
+   Shell type (bash, zsh, fish, powershell). Auto-detected if not specified.
 
 **Examples:**
 
@@ -498,10 +498,10 @@ Install Bash shell completion for improved command-line experience.
 
    # Install for current user
    xraylabtool install-completion
-   
+
    # Install system-wide
    sudo xraylabtool install-completion --system
-   
+
    # Custom path
    xraylabtool install-completion --path ~/.local/share/bash-completion
 
@@ -530,7 +530,7 @@ Remove previously installed shell completion.
 
 .. option:: --shell {bash}
 
-   Shell type (currently only Bash is supported).
+   Shell type (bash, zsh, fish, powershell). Auto-detected if not specified.
 
 **Examples:**
 
@@ -538,8 +538,8 @@ Remove previously installed shell completion.
 
    # Remove user installation
    xraylabtool uninstall-completion
-   
-   # Remove system-wide installation  
+
+   # Remove system-wide installation
    sudo xraylabtool uninstall-completion --system
 
 Output Formats
@@ -577,11 +577,11 @@ XRayLabTool provides clear error messages with suggestions:
    $ xraylabtool calc XYZ --density 1.0 --energy 8000
    Error: Unknown element 'XYZ' in formula
    Suggestion: Check element symbols (case-sensitive: Si, not si)
-   
+
    $ xraylabtool calc Si --energy 8000
    Error: --density is required
    Usage: xraylabtool calc FORMULA --density FLOAT --energy ENERGY_SPEC
-   
+
    $ xraylabtool calc Si --density 2.33 --energy -1000
    Error: Energy must be positive
    Supported range: 10 eV to 100,000 eV
@@ -594,7 +594,7 @@ Integration Examples
 .. code-block:: bash
 
    #!/bin/bash
-   
+
    # Process multiple materials
    for material in Si Al Cu; do
        echo "Processing $material..."
@@ -607,15 +607,15 @@ Integration Examples
 
    import subprocess
    import json
-   
+
    # Call CLI from Python
    result = subprocess.run([
        "xraylabtool", "calc", "Si",
-       "--density", "2.33", 
+       "--density", "2.33",
        "--energy", "8000",
        "--output", "json"
    ], capture_output=True, text=True)
-   
+
    if result.returncode == 0:
        data = json.loads(result.stdout)
        print(f"Critical angle: {data[0]['critical_angle_degrees']}")
@@ -629,7 +629,7 @@ Integration Examples
    # Calculate properties for common materials
    results.csv: materials.csv
    	xraylabtool batch materials.csv --output results.csv --show-progress
-   
+
    clean:
    	rm -f results.csv
 

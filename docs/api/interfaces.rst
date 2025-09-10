@@ -39,7 +39,7 @@ XRayLabTool provides 9 comprehensive CLI commands:
    * - ``list``
      - Display reference information and constants
    * - ``install-completion``
-     - Install shell completion (Bash only)
+     - Install shell completion (bash, zsh, fish, PowerShell)
    * - ``uninstall-completion``
      - Remove shell completion
 
@@ -52,13 +52,13 @@ Command Examples
 
    # Basic calculation
    xraylabtool calc Si --density 2.33 --energy 8000
-   
+
    # Multiple energies
    xraylabtool calc SiO2 --density 2.20 --energy 5000,8000,10000
-   
+
    # Energy range
    xraylabtool calc Al --density 2.70 --energy 1000-20000:100
-   
+
    # Different output formats
    xraylabtool calc Si --density 2.33 --energy 8000 --output csv
    xraylabtool calc Si --density 2.33 --energy 8000 --output json
@@ -69,10 +69,10 @@ Command Examples
 
    # Process CSV file
    xraylabtool batch materials.csv --output results.csv
-   
+
    # Specify energy column
    xraylabtool batch data.csv --energy-column "Energy (eV)"
-   
+
    # JSON output
    xraylabtool batch materials.csv --output results.json --format json
 
@@ -82,10 +82,10 @@ Command Examples
 
    # Energy to wavelength
    xraylabtool convert --energy 8000 --to wavelength
-   
+
    # Wavelength to energy
    xraylabtool convert --wavelength 1.55 --to energy
-   
+
    # Multiple values
    xraylabtool convert --energy 5000,8000,10000 --to wavelength
 
@@ -95,10 +95,10 @@ Command Examples
 
    # Parse chemical formula
    xraylabtool formula SiO2
-   
+
    # Complex formula
    xraylabtool formula "Ca5(PO4)3F"
-   
+
    # With molecular weight
    xraylabtool formula SiO2 --molecular-weight
 
@@ -108,10 +108,10 @@ Command Examples
 
    # Element information
    xraylabtool atomic Si
-   
+
    # Scattering factors at specific energy
    xraylabtool atomic Si --energy 8000
-   
+
    # Multiple elements
    xraylabtool atomic Si,Al,O --energy 8000
 
@@ -121,7 +121,7 @@ Command Examples
 
    # Calculate Bragg angle
    xraylabtool bragg --d-spacing 3.14 --energy 8000
-   
+
    # Multiple reflections
    xraylabtool bragg --d-spacing 3.14,1.92,1.64 --energy 8000
 
@@ -131,10 +131,10 @@ Command Examples
 
    # List supported elements
    xraylabtool list elements
-   
+
    # Physical constants
    xraylabtool list constants
-   
+
    # Example formulas
    xraylabtool list examples
 
@@ -173,10 +173,10 @@ Installation
 
    # Install completion for current user
    xraylabtool install-completion
-   
+
    # Install system-wide (requires sudo)
    sudo xraylabtool install-completion --system
-   
+
    # Custom completion script location
    xraylabtool install-completion --path /custom/path
 
@@ -198,19 +198,19 @@ Uninstallation
 
    # Remove completion
    xraylabtool uninstall-completion
-   
+
    # Remove system-wide completion
    sudo xraylabtool uninstall-completion --system
 
 Platform Support
 ~~~~~~~~~~~~~~~~
 
-Shell completion is currently supported for:
+Shell completion is supported for:
 
-- **Bash**: Full support on Linux and macOS
-- **Zsh**: Planned for future releases
-- **Fish**: Planned for future releases
-- **PowerShell**: Planned for Windows support
+- **Bash**: Full support on Linux and macOS (requires bash-completion)
+- **Zsh**: Full support on Linux and macOS (requires zsh-completions)
+- **Fish**: Native support with built-in completion system
+- **PowerShell**: Full support on Windows, macOS, and Linux
 
 Error Handling
 --------------
@@ -222,11 +222,11 @@ The CLI provides comprehensive error handling with helpful messages:
    # Invalid formula
    $ xraylabtool calc XYZ --density 1.0 --energy 8000
    Error: Unknown element 'XYZ' in formula
-   
+
    # Missing required parameter
    $ xraylabtool calc Si --energy 8000
    Error: --density is required
-   
+
    # Invalid energy range
    $ xraylabtool calc Si --density 2.33 --energy 0
    Error: Energy must be positive
@@ -240,15 +240,15 @@ Integration Examples
 
    import subprocess
    import json
-   
+
    # Call CLI from Python
    result = subprocess.run([
-       "xraylabtool", "calc", "Si", 
-       "--density", "2.33", 
-       "--energy", "8000", 
+       "xraylabtool", "calc", "Si",
+       "--density", "2.33",
+       "--energy", "8000",
        "--output", "json"
    ], capture_output=True, text=True)
-   
+
    data = json.loads(result.stdout)
    print(f"Critical angle: {data[0]['critical_angle_degrees']}")
 
@@ -257,7 +257,7 @@ Integration Examples
 .. code-block:: bash
 
    #!/bin/bash
-   
+
    # Process multiple materials
    for material in Si Al Cu; do
        echo "Processing $material..."
