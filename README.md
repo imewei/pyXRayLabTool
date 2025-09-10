@@ -60,20 +60,45 @@ xraylabtool --install-completion
 xraylabtool install-completion --test
 ```
 
-**Prerequisites for Bash/Zsh users:**
+**Prerequisites by Shell:**
+
+**Bash users:**
 ```bash
-# Install bash-completion for full functionality (macOS)
+# macOS (Homebrew)
 brew install bash-completion@2
 
 # Add to ~/.bash_profile or ~/.bashrc:
 [[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"
 
-# On Linux (Ubuntu/Debian):
+# Linux (Ubuntu/Debian)
 sudo apt install bash-completion
 
-# On Linux (RHEL/CentOS):
+# Linux (RHEL/CentOS)
 sudo yum install bash-completion
 ```
+
+**Zsh users:**
+```bash
+# macOS (Homebrew)
+brew install zsh-completions
+
+# Add to ~/.zshrc:
+if type brew &>/dev/null; then
+  FPATH="$(brew --prefix)/share/zsh-completions:${FPATH}"
+  autoload -U compinit
+  compinit
+fi
+
+# Linux (Ubuntu/Debian)
+sudo apt install zsh-autosuggestions zsh-syntax-highlighting
+
+# Linux (RHEL/CentOS)
+sudo yum install zsh-autosuggestions
+```
+
+**Fish and PowerShell users:**
+- Fish: No additional prerequisites (built-in completion system)
+- PowerShell: No additional prerequisites (built-in completion system)
 
 **Uninstalling completion:**
 ```bash
@@ -266,10 +291,12 @@ xraylabtool --install-completion         # Install shell completion (auto-detect
 
 # Install for specific shells
 xraylabtool install-completion bash      # Bash completion
-xraylabtool install-completion zsh       # Zsh completion
+xraylabtool install-completion zsh       # Zsh completion (requires zsh-completions)
 xraylabtool install-completion fish      # Fish completion
 xraylabtool install-completion powershell # PowerShell completion
 ```
+
+> **💡 Shell Requirements**: Make sure to install the shell-specific prerequisites above before installing completion. Zsh users especially need `zsh-completions` for proper functionality.
 
 **Tab Completion Features:**
 - **Command completion**: Auto-complete all 9 available commands
