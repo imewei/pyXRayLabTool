@@ -22,8 +22,8 @@ precision control, and comprehensive shell completion for enhanced usability.
 
 import argparse
 import json
-import sys
 from pathlib import Path
+import sys
 from textwrap import dedent
 from typing import Any
 
@@ -1123,10 +1123,12 @@ def cmd_convert(args: Any) -> int:
         # Format output
         if args.output:
             # Save to CSV
-            df = pd.DataFrame({
-                f"{args.from_unit}": values,
-                f"{args.to_unit} ({unit_label})": converted,
-            })
+            df = pd.DataFrame(
+                {
+                    f"{args.from_unit}": values,
+                    f"{args.to_unit} ({unit_label})": converted,
+                }
+            )
             df.to_csv(args.output, index=False)
             print(f"Conversion results saved to {args.output}")
         else:
@@ -1148,11 +1150,13 @@ def _get_atomic_data(elements: list[str]) -> list[dict[str, Any]]:
     atomic_data = []
     for element in elements:
         try:
-            atomic_data.append({
-                "element": element,
-                "atomic_number": get_atomic_number(element),
-                "atomic_weight": get_atomic_weight(element),
-            })
+            atomic_data.append(
+                {
+                    "element": element,
+                    "atomic_number": get_atomic_number(element),
+                    "atomic_weight": get_atomic_weight(element),
+                }
+            )
         except Exception as e:
             print(f"Warning: Could not get atomic data for {element}: {e}")
     return atomic_data
@@ -1299,13 +1303,15 @@ def cmd_bragg(args: Any) -> int:
         for d_spacing in d_spacings:
             try:
                 angle = bragg_angle(d_spacing, wavelength, args.order)
-                results.append({
-                    "d_spacing_angstrom": d_spacing,
-                    "wavelength_angstrom": wavelength,
-                    "order": args.order,
-                    "bragg_angle_degrees": angle,
-                    "two_theta_degrees": 2 * angle,
-                })
+                results.append(
+                    {
+                        "d_spacing_angstrom": d_spacing,
+                        "wavelength_angstrom": wavelength,
+                        "order": args.order,
+                        "bragg_angle_degrees": angle,
+                        "two_theta_degrees": 2 * angle,
+                    }
+                )
             except Exception as e:
                 print(
                     f"Warning: Could not calculate Bragg angle for d={d_spacing}: {e}"
