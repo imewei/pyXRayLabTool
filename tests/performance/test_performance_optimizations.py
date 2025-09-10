@@ -13,8 +13,8 @@ import time
 import numpy as np
 import pytest
 
-import xraylabtool as xlt
 from tests.fixtures.test_base import BasePerformanceTest
+import xraylabtool as xlt
 from xraylabtool.calculators.core import (
     _AVAILABLE_ELEMENTS,
     _initialize_element_paths,

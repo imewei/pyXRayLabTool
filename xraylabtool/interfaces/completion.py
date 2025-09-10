@@ -7,8 +7,8 @@ Supports Bash completion with automatic detection and installation.
 
 import argparse
 import os
-import subprocess
 from pathlib import Path
+import subprocess
 from typing import Any
 
 # Bash completion script content

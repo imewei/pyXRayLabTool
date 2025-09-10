@@ -5,8 +5,8 @@ This module provides a pre-populated cache of atomic data for common elements
 to eliminate expensive database queries to the Mendeleev library during runtime.
 """
 
-import types
 from functools import lru_cache
+import types
 
 from xraylabtool.exceptions import UnknownElementError
 
