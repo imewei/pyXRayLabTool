@@ -7,8 +7,8 @@ Supports Bash completion with automatic detection and installation.
 
 import argparse
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from typing import Any
 
 # Bash completion script content
@@ -2154,25 +2154,21 @@ source ~/.bash_completion.d/xraylabtool"""
             if env_type == "conda" and self._is_conda_completion_installed(
                 current_path
             ):
-                environments["conda"].append(
-                    {
-                        "type": "conda",
-                        "path": current_path,
-                        "name": current_path.name,
-                        "current": True,
-                    }
-                )
+                environments["conda"].append({
+                    "type": "conda",
+                    "path": current_path,
+                    "name": current_path.name,
+                    "current": True,
+                })
             elif env_type in ["venv", "pipenv"] and self._is_venv_completion_installed(
                 current_path
             ):
-                environments["venv"].append(
-                    {
-                        "type": env_type,
-                        "path": current_path,
-                        "name": current_path.name,
-                        "current": True,
-                    }
-                )
+                environments["venv"].append({
+                    "type": env_type,
+                    "path": current_path,
+                    "name": current_path.name,
+                    "current": True,
+                })
 
         # TODO: Add scanning for other environments in common locations
         # This would scan places like ~/envs/, ~/.conda/envs/, etc.
@@ -2325,14 +2321,12 @@ source ~/.bash_completion.d/xraylabtool"""
                     if env_dir.is_dir() and self._is_conda_completion_installed(
                         env_dir
                     ):
-                        environments["conda"].append(
-                            {
-                                "type": "conda",
-                                "path": env_dir,
-                                "name": env_dir.name,
-                                "current": False,
-                            }
-                        )
+                        environments["conda"].append({
+                            "type": "conda",
+                            "path": env_dir,
+                            "name": env_dir.name,
+                            "current": False,
+                        })
 
         # Find virtual environments (this is more challenging as they can be anywhere)
         # We'll check common locations and recently activated environments
@@ -2353,25 +2347,21 @@ source ~/.bash_completion.d/xraylabtool"""
         # Check if any venvs have completion installed
         for venv_path in venv_candidates:
             if self._is_venv_completion_installed(venv_path):
-                environments["venv"].append(
-                    {
-                        "type": "venv",
-                        "path": venv_path,
-                        "name": venv_path.name,
-                        "current": False,
-                    }
-                )
+                environments["venv"].append({
+                    "type": "venv",
+                    "path": venv_path,
+                    "name": venv_path.name,
+                    "current": False,
+                })
 
         # Check system shell config files
         if self._is_system_completion_installed():
-            environments["system"].append(
-                {
-                    "type": "system",
-                    "path": "system",
-                    "name": "system",
-                    "current": True,
-                }
-            )
+            environments["system"].append({
+                "type": "system",
+                "path": "system",
+                "name": "system",
+                "current": True,
+            })
 
         return environments
 
