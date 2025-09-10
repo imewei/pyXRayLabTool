@@ -63,8 +63,3 @@ search:
     - "_build"
     - "*.js"
     - "*.css"
-
-# Social cards and preview configuration
-# These help with link previews on social media
-submodules:
-  include: []
