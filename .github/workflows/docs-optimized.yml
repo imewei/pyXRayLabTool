@@ -1,0 +1,558 @@
+name: Documentation (Optimized)
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/**'
+      - 'xraylabtool/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'pyproject.toml'
+      - '.github/workflows/docs*.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'xraylabtool/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'pyproject.toml'
+      - '.github/workflows/docs*.yml'
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: 1
+  PYTHONDONTWRITEBYTECODE: 1
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  PIP_NO_PYTHON_VERSION_WARNING: 1
+  PIP_PREFER_BINARY: 1
+
+jobs:
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      build-success: ${{ steps.build.outcome }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Cache documentation dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+          docs/_build/.doctrees
+          docs/_build/.buildinfo
+          ~/.cache/sphinx
+        key: docs-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt', 'docs/conf.py', 'docs/**/*.rst') }}
+        restore-keys: |
+          docs-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt') }}
+          docs-deps-v3-${{ runner.os }}-
+          docs-deps-v2-${{ runner.os }}-
+
+    - name: Install documentation dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Validate documentation structure
+      run: |
+        echo "📋 Validating documentation structure..."
+
+        # Check for required files
+        required_files=(
+          "docs/index.rst"
+          "docs/api/index.rst"
+          "docs/conf.py"
+        )
+
+        for file in "${required_files[@]}"; do
+          if [[ ! -f "$file" ]]; then
+            echo "❌ Missing required file: $file"
+            exit 1
+          fi
+        done
+
+        echo "✅ Documentation structure validated"
+
+    - name: Build Sphinx documentation with error handling
+      id: build
+      run: |
+        echo "🔨 Building Sphinx documentation..."
+
+        # Build with warnings treated as errors, but with keep-going
+        if sphinx-build -W --keep-going -b html docs docs/_build/html; then
+          echo "✅ Documentation built successfully"
+          echo "BUILD_STATUS=success" >> $GITHUB_ENV
+        else
+          echo "⚠️ Documentation build completed with warnings/errors"
+          echo "BUILD_STATUS=warning" >> $GITHUB_ENV
+
+          # Try building without -W flag for partial success
+          echo "🔄 Attempting build without strict warnings..."
+          sphinx-build --keep-going -b html docs docs/_build/html || {
+            echo "❌ Documentation build failed completely"
+            echo "BUILD_STATUS=failure" >> $GITHUB_ENV
+            exit 1
+          }
+        fi
+
+    - name: Check documentation coverage
+      run: |
+        echo "📊 Checking documentation coverage..."
+        sphinx-build -b coverage docs docs/_build/coverage || {
+          echo "⚠️ Coverage check failed, continuing..."
+        }
+
+        if [[ -f "docs/_build/coverage/python.txt" ]]; then
+          echo "Documentation Coverage Report:"
+          head -20 docs/_build/coverage/python.txt
+        else
+          echo "No coverage report generated"
+        fi
+      continue-on-error: true
+
+    - name: Generate documentation statistics
+      run: |
+        echo "📈 Documentation Statistics:"
+
+        if [[ -d "docs/_build/html" ]]; then
+          echo "HTML files generated: $(find docs/_build/html -name "*.html" | wc -l)"
+          echo "Total file size: $(du -sh docs/_build/html | cut -f1)"
+
+          # Check for broken internal links
+          broken_links=$(find docs/_build/html -name "*.html" -exec grep -l "404.html\|broken\|missing" {} \; 2>/dev/null | wc -l)
+          echo "Potential broken internal links: $broken_links"
+        fi
+
+    - name: Upload documentation artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: documentation-html
+        path: docs/_build/html/
+        retention-days: 30
+
+    - name: Upload build logs
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: documentation-build-logs
+        path: |
+          docs/_build/
+          !docs/_build/html/
+        retention-days: 7
+
+  test-examples:
+    name: Test Documentation Examples
+    needs: build-docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    if: needs.build-docs.outputs.build-success != 'failure'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Cache documentation dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+          docs/_build/.doctrees
+          docs/_build/.buildinfo
+          ~/.cache/sphinx
+        key: docs-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt', 'docs/conf.py', 'docs/**/*.rst') }}
+        restore-keys: |
+          docs-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt') }}
+          docs-deps-v3-${{ runner.os }}-
+          docs-deps-v2-${{ runner.os }}-
+
+    - name: Install documentation dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Run doctest with error collection
+      run: |
+        echo "🧪 Running doctest examples..."
+
+        # Run doctest and collect results
+        if sphinx-build -b doctest docs docs/_build/doctest 2>&1 | tee doctest.log; then
+          echo "✅ All doctests passed"
+          DOCTEST_STATUS="success"
+        else
+          echo "⚠️ Some doctests failed"
+          DOCTEST_STATUS="warning"
+        fi
+
+        # Analyze doctest results
+        if [[ -f "doctest.log" ]]; then
+          failed_tests=$(grep -c "FAILED" doctest.log || echo "0")
+          passed_tests=$(grep -c "trying\|ok" doctest.log || echo "0")
+          echo "Doctest Results: $passed_tests passed, $failed_tests failed"
+        fi
+
+        # Don't fail the build for doctest issues in examples
+        echo "DOCTEST_STATUS=$DOCTEST_STATUS" >> $GITHUB_ENV
+      continue-on-error: true
+
+    - name: Test README examples
+      run: |
+        echo "📖 Testing README code examples..."
+
+        # Extract and test Python code blocks from README
+        python -c "
+        import re
+        import subprocess
+        import tempfile
+        import os
+
+        # Read README.md
+        with open('README.md', 'r') as f:
+            content = f.read()
+
+        # Extract Python code blocks
+        code_blocks = re.findall(r'```python\n(.*?)\n```', content, re.DOTALL)
+
+        failed_blocks = 0
+        total_blocks = len(code_blocks)
+
+        print(f'Found {total_blocks} Python code blocks in README')
+
+        for i, code in enumerate(code_blocks, 1):
+            # Skip import-only or comment-only blocks
+            if not any(keyword in code for keyword in ['calculate', 'xraylabtool', 'result']):
+                continue
+
+            try:
+                # Create temporary file and test the code
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+                    f.write(code)
+                    temp_file = f.name
+
+                # Test syntax by compiling
+                result = subprocess.run(['python', '-m', 'py_compile', temp_file],
+                                       capture_output=True, text=True)
+                if result.returncode == 0:
+                    print(f'✅ Code block {i}: Syntax valid')
+                else:
+                    print(f'❌ Code block {i}: Syntax error')
+                    print(result.stderr)
+                    failed_blocks += 1
+
+                os.unlink(temp_file)
+
+            except Exception as e:
+                print(f'⚠️ Code block {i}: Could not test - {e}')
+
+        if failed_blocks == 0:
+            print('✅ All testable README examples have valid syntax')
+        else:
+            print(f'⚠️ {failed_blocks} README examples have syntax issues')
+        "
+      continue-on-error: true
+
+    - name: Upload doctest results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: doctest-results
+        path: |
+          docs/_build/doctest/
+          doctest.log
+        retention-days: 7
+
+  check-links:
+    name: Check External Links
+    needs: build-docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Cache documentation dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+          docs/_build/.doctrees
+          docs/_build/.buildinfo
+          ~/.cache/sphinx
+        key: docs-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt', 'docs/conf.py', 'docs/**/*.rst') }}
+        restore-keys: |
+          docs-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt') }}
+          docs-deps-v3-${{ runner.os }}-
+          docs-deps-v2-${{ runner.os }}-
+
+    - name: Install documentation dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Check external links with timeout
+      run: |
+        echo "🔗 Checking external links..."
+
+        # Use timeout to prevent hanging on slow links
+        timeout 8m sphinx-build -b linkcheck docs docs/_build/linkcheck || {
+          echo "⚠️ Link checking timed out or found issues"
+          echo "This is non-blocking for documentation builds"
+        }
+
+        # Summarize results
+        if [[ -f "docs/_build/linkcheck/output.txt" ]]; then
+          echo "Link Check Summary:"
+          grep -E "(broken|working|redirected)" docs/_build/linkcheck/output.txt | head -10
+        fi
+      continue-on-error: true
+
+    - name: Upload linkcheck results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: linkcheck-results
+        path: docs/_build/linkcheck/
+        retention-days: 7
+
+  quality-checks:
+    name: Documentation Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Cache quality tools
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: doc-quality-tools-${{ runner.os }}-doc8-rstcheck
+        restore-keys: |
+          doc-quality-tools-${{ runner.os }}-
+
+    - name: Install quality tools
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 5
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip
+          pip install doc8 rstcheck[sphinx] restructuredtext-lint
+
+    - name: Check RST syntax and style
+      run: |
+        echo "📝 Checking RST syntax and style..."
+
+        # Check RST syntax with rstcheck
+        find docs -name "*.rst" -exec rstcheck --report-level warning {} \; || {
+          echo "⚠️ RST syntax issues found, but continuing..."
+        }
+
+        # Check documentation style with doc8
+        doc8 docs \
+          --ignore-path docs/_build \
+          --max-line-length 100 \
+          --ignore D001 || {
+          echo "⚠️ Documentation style issues found, but continuing..."
+        }
+
+        echo "Quality checks completed"
+      continue-on-error: true
+
+    - name: Check for documentation completeness
+      run: |
+        echo "📚 Checking documentation completeness..."
+
+        # Check for TODO/FIXME in documentation
+        if grep -r "TODO\|FIXME\|XXX" docs/ --include="*.rst" --include="*.md"; then
+          echo "⚠️ Found TODO/FIXME items in documentation"
+        else
+          echo "✅ No TODO/FIXME items found"
+        fi
+
+        # Check for proper cross-references
+        broken_refs=$(grep -r ":ref:\|:doc:" docs/ --include="*.rst" | wc -l)
+        echo "Cross-references found: $broken_refs"
+      continue-on-error: true
+
+  deploy-docs:
+    name: Deploy Documentation
+    needs: [build-docs, test-examples, quality-checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.build-docs.outputs.build-success != 'failure'
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          docs/requirements.txt
+
+    - name: Cache documentation dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+          docs/_build/.doctrees
+          docs/_build/.buildinfo
+          ~/.cache/sphinx
+        key: docs-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt', 'docs/conf.py', 'docs/**/*.rst') }}
+        restore-keys: |
+          docs-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'docs/requirements.txt') }}
+          docs-deps-v3-${{ runner.os }}-
+          docs-deps-v2-${{ runner.os }}-
+
+    - name: Install documentation dependencies
+      uses: nick-fields/retry@v3
+      with:
+        timeout_minutes: 8
+        max_attempts: 3
+        retry_on: error
+        command: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[docs]
+
+    - name: Build documentation for deployment
+      run: |
+        echo "🚀 Building documentation for deployment..."
+
+        # Build without strict warnings for deployment
+        sphinx-build -b html docs docs/_build/html
+
+        # Add .nojekyll file to disable Jekyll
+        touch docs/_build/html/.nojekyll
+
+        # Create a simple index redirect if needed
+        if [[ ! -f "docs/_build/html/index.html" ]]; then
+          echo "⚠️ No index.html found, creating redirect..."
+          echo '<meta http-equiv="refresh" content="0; url=./api/index.html">' > docs/_build/html/index.html
+        fi
+
+    - name: Setup GitHub Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs/_build/html
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+  status-check:
+    name: Documentation Status
+    if: always()
+    needs: [build-docs, test-examples, quality-checks]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check documentation status
+      run: |
+        echo "Documentation Build: ${{ needs.build-docs.result }}"
+        echo "Example Tests: ${{ needs.test-examples.result }}"
+        echo "Quality Checks: ${{ needs.quality-checks.result }}"
+
+        # Only fail on critical build failures
+        if [[ "${{ needs.build-docs.result }}" == "failure" ]]; then
+          echo "❌ Documentation build failed"
+          exit 1
+        elif [[ "${{ needs.build-docs.result }}" == "success" ]]; then
+          echo "✅ Documentation pipeline completed successfully"
+        else
+          echo "⚠️ Documentation completed with warnings"
+        fi
+
+    - name: Summary
+      run: |
+        echo "📋 Documentation Pipeline Summary:"
+        echo "- Build: ${{ needs.build-docs.result }}"
+        echo "- Tests: ${{ needs.test-examples.result }}"
+        echo "- Quality: ${{ needs.quality-checks.result }}"

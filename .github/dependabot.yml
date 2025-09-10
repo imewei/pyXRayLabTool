@@ -1,0 +1,62 @@
+version: 2
+updates:
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "06:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "b80985"
+    assignees:
+      - "b80985"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+
+  # Enable version updates for Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "b80985"
+    assignees:
+      - "b80985"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    # Group related updates
+    groups:
+      testing:
+        patterns:
+          - "pytest*"
+          - "coverage*"
+          - "tox*"
+      linting:
+        patterns:
+          - "ruff*"
+          - "black*"
+          - "isort*"
+          - "mypy*"
+          - "flake8*"
+      docs:
+        patterns:
+          - "sphinx*"
+          - "furo*"
+          - "myst-parser*"
+      security:
+        patterns:
+          - "bandit*"
+          - "safety*"
+    # Ignore major version updates for stability
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
