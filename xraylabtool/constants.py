@@ -163,6 +163,17 @@ Value: 6.283185307179586...
 Units: dimensionless
 """
 
+SQRT_2: Final[float] = np.sqrt(2.0)
+"""
+Square root of 2.
+
+Mathematical constant that appears in geometric calculations and
+normalizations in X-ray crystallography.
+
+Value: 1.4142135623730951...
+Units: dimensionless
+"""
+
 # =====================================================================================
 # UNIT CONVERSION CONSTANTS
 # =====================================================================================
@@ -259,6 +270,7 @@ def energy_to_wavelength_angstrom(energy_kev: float) -> float:
         Wavelength in Angstroms
 
     Example:
+        >>> from xraylabtool.constants import energy_to_wavelength_angstrom
         >>> wavelength = energy_to_wavelength_angstrom(10.0)  # 10 keV
         >>> print(f"Wavelength: {wavelength:.4f} Å")
         Wavelength: 1.2398 Å
@@ -281,9 +293,10 @@ def wavelength_angstrom_to_energy(wavelength_angstrom: float) -> float:
         Energy in keV
 
     Example:
+        >>> from xraylabtool.constants import wavelength_angstrom_to_energy
         >>> energy = wavelength_angstrom_to_energy(1.2398)  # Cu Kα₁
         >>> print(f"Energy: {energy:.4f} keV")
-        Energy: 10.0000 keV
+        Energy: 10.0003 keV
     """
     if wavelength_angstrom <= 0:
         raise ValueError("Wavelength must be positive")
@@ -303,8 +316,10 @@ def critical_angle_degrees(dispersion: float) -> float:
         Critical angle in degrees
 
     Example:
+        >>> from xraylabtool.constants import critical_angle_degrees
         >>> theta_c = critical_angle_degrees(1e-6)
         >>> print(f"Critical angle: {theta_c:.4f}°")
+        Critical angle: 0.0810°
     """
     if dispersion <= 0:
         raise ValueError("Dispersion coefficient must be positive")
@@ -325,8 +340,10 @@ def attenuation_length_cm(wavelength_angstrom: float, absorption: float) -> floa
         Attenuation length (1/e length) in centimeters
 
     Example:
+        >>> from xraylabtool.constants import attenuation_length_cm
         >>> length = attenuation_length_cm(1.24, 1e-7)
         >>> print(f"Attenuation length: {length:.2f} cm")
+        Attenuation length: 0.01 cm
     """
     if wavelength_angstrom <= 0:
         raise ValueError("Wavelength must be positive")
@@ -414,6 +431,7 @@ __all__ = [
     # Mathematical constants
     "PI",
     "TWO_PI",
+    "SQRT_2",
     # Unit conversions
     "KEV_TO_EV",
     "EV_TO_KEV",

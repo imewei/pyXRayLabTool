@@ -18,12 +18,12 @@ import argparse
 import doctest
 import glob
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
 import tempfile
 import time
+from pathlib import Path
 
 
 # Colors for output
@@ -78,7 +78,7 @@ def test_doctests(verbose: bool = False) -> tuple[int, int]:
     try:
         result = subprocess.run(
             [
-                "python",
+                "python3",
                 "-m",
                 "sphinx",
                 "-b",
@@ -88,7 +88,8 @@ def test_doctests(verbose: bool = False) -> tuple[int, int]:
             ],
             capture_output=True,
             text=True,
-            timeout=300, check=False,
+            timeout=300,
+            check=False,
         )
 
         if result.returncode == 0:
@@ -122,9 +123,19 @@ def test_rst_code_examples(verbose: bool = False) -> tuple[int, int]:
 
         try:
             # Use doctest to test the RST file
+            # Make sure we're in the project root directory for relative paths
+            import os
+
+            original_cwd = os.getcwd()
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            os.chdir(project_root)
+
             result = doctest.testfile(
                 rst_file, verbose=verbose, optionflags=doctest.ELLIPSIS
             )
+
+            # Change back to original directory
+            os.chdir(original_cwd)
 
             if result.failed == 0:
                 print_status(
@@ -140,6 +151,8 @@ def test_rst_code_examples(verbose: bool = False) -> tuple[int, int]:
                 )
                 total_failures += 1
         except Exception as e:
+            # Make sure we change back to original directory even on error
+            os.chdir(original_cwd)
             print_status(f"  {os.path.basename(rst_file)}", "WARN", f"Skipped: {e}")
 
     return total_failures, total_tests
@@ -194,7 +207,11 @@ def test_readme_examples(verbose: bool = False) -> tuple[int, int]:
         try:
             # Run the code
             result = subprocess.run(
-                ["python", temp_file], capture_output=True, text=True, timeout=30, check=False
+                ["python3", temp_file],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
             )
 
             if result.returncode == 0:
@@ -232,7 +249,7 @@ def test_links(verbose: bool = False) -> tuple[int, int]:
     try:
         subprocess.run(
             [
-                "python",
+                "python3",
                 "-m",
                 "sphinx",
                 "-b",
@@ -242,7 +259,8 @@ def test_links(verbose: bool = False) -> tuple[int, int]:
             ],
             capture_output=True,
             text=True,
-            timeout=600, check=False,
+            timeout=600,
+            check=False,
         )
 
         # Check for broken links file
@@ -278,7 +296,7 @@ def check_documentation_coverage(verbose: bool = False) -> dict[str, int]:
     try:
         subprocess.run(
             [
-                "python",
+                "python3",
                 "-m",
                 "sphinx",
                 "-b",
@@ -288,29 +306,59 @@ def check_documentation_coverage(verbose: bool = False) -> dict[str, int]:
             ],
             capture_output=True,
             text=True,
-            timeout=300, check=False,
+            timeout=300,
+            check=False,
         )
 
         coverage_file = Path("docs/_build/coverage/python.txt")
         if coverage_file.exists():
             content = coverage_file.read_text()
 
-            # Parse coverage results
-            documented = len(re.findall(r"documented", content, re.IGNORECASE))
-            undocumented = len(re.findall(r"undocumented", content, re.IGNORECASE))
-            total = documented + undocumented
+            # Parse coverage results from the table
+            # Look for the TOTAL row in the coverage table
+            total_match = re.search(r"TOTAL\s*\|\s*(\d+)\s*\|\s*(\d+)", content)
+            coverage_pct = None
+            if total_match:
+                coverage_pct = int(total_match.group(1))
+                undocumented_count = int(total_match.group(2))
+                if coverage_pct == 100:
+                    documented = 100  # Represent as percentage when 100%
+                    undocumented = 0
+                    total = 100
+                else:
+                    # Calculate actual numbers from percentage
+                    total = (
+                        undocumented_count * 100 // (100 - coverage_pct)
+                        if coverage_pct < 100
+                        else undocumented_count
+                    )
+                    documented = total - undocumented_count
+                    undocumented = undocumented_count
+            else:
+                # Fallback to old method
+                documented = len(re.findall(r"documented", content, re.IGNORECASE))
+                undocumented = len(re.findall(r"undocumented", content, re.IGNORECASE))
+                total = documented + undocumented
 
             coverage_stats.update(
                 {"documented": documented, "undocumented": undocumented, "total": total}
             )
 
             if total > 0:
-                percentage = (documented * 100) // total
-                print_status(
-                    "Documentation coverage",
-                    "INFO",
-                    f"{percentage}% ({documented}/{total} items documented)",
-                )
+                if coverage_pct == 100:
+                    percentage = 100
+                    print_status(
+                        "Documentation coverage",
+                        "INFO",
+                        f"{percentage}% (complete coverage)",
+                    )
+                else:
+                    percentage = (documented * 100) // total
+                    print_status(
+                        "Documentation coverage",
+                        "INFO",
+                        f"{percentage}% ({documented}/{total} items documented)",
+                    )
 
                 if percentage < 80:
                     print_status(
@@ -343,10 +391,19 @@ def check_accessibility(verbose: bool = False) -> tuple[int, int]:
 
     try:
         subprocess.run(
-            ["python", "-m", "sphinx", "-b", "html", "docs/source", "docs/_build/html"],
+            [
+                "python3",
+                "-m",
+                "sphinx",
+                "-b",
+                "html",
+                "docs/source",
+                "docs/_build/html",
+            ],
             capture_output=True,
             text=True,
-            timeout=300, check=False,
+            timeout=300,
+            check=False,
         )
     except Exception as e:
         print_status("HTML build", "FAIL", f"Error: {e}")
@@ -408,7 +465,8 @@ def run_style_checks(verbose: bool = False) -> tuple[int, int]:
             ["rstcheck", "--report-level", "warning"]
             + glob.glob("docs/**/*.rst", recursive=True),
             capture_output=True,
-            text=True, check=False,
+            text=True,
+            check=False,
         )
 
         if result.returncode == 0:
@@ -439,7 +497,8 @@ def run_style_checks(verbose: bool = False) -> tuple[int, int]:
                 "100",
             ],
             capture_output=True,
-            text=True, check=False,
+            text=True,
+            check=False,
         )
 
         if result.returncode == 0:

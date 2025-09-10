@@ -4,7 +4,7 @@ XRayLabTool Validation Module.
 This module contains data validation, error handling, and exception classes.
 """
 
-from xraylabtool.validation.exceptions import (
+from xraylabtool.exceptions import (
     AtomicDataError,
     BatchProcessingError,
     CalculationError,

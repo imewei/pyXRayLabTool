@@ -3,7 +3,10 @@ I/O Operations Module
 
 The I/O module handles file operations, data import/export, and format conversions.
 
-.. currentmodule:: xraylabtool.io
+.. automodule:: xraylabtool.io
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 File Operations
 ---------------
@@ -12,289 +15,145 @@ File Operations
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
-Supported File Formats
-~~~~~~~~~~~~~~~~~~~~~~
-
-**Input Formats:**
-- **CSV**: Comma-separated values with flexible column mapping
-- **JSON**: Structured data format with full feature support
-- **Excel**: .xlsx files with multiple sheet support (optional dependency)
-
-**Output Formats:**
-- **CSV**: Standard comma-separated format
-- **JSON**: Pretty-printed JSON with metadata
-- **HDF5**: High-performance binary format for large datasets (optional)
-
-CSV File Handling
-~~~~~~~~~~~~~~~~~
-
-.. autofunction:: xraylabtool.io.file_operations.load_materials_csv
-
-   Load material specifications from CSV file.
-
-   **Expected CSV Format:**
-
-   .. code-block:: text
-
-      Formula,Density,Energy
-      Si,2.33,8000
-      SiO2,2.20,8000
-      Al,2.70,5000
-
-   **Flexible Column Names:**
-   - Formula: "formula", "Formula", "material", "Material"
-   - Density: "density", "Density", "rho", "ρ" 
-   - Energy: "energy", "Energy", "E", "keV" (with automatic unit conversion)
-
-   **Example:**
-
-   .. code-block:: python
-
-      from xraylabtool.io.file_operations import load_materials_csv
-      
-      materials = load_materials_csv("materials.csv")
-      for material in materials:
-          print(f"{material['formula']}: ρ = {material['density']} g/cm³")
-
-.. autofunction:: xraylabtool.io.file_operations.save_results_csv
-
-   Save calculation results to CSV format.
-
-   **Example:**
-
-   .. code-block:: python
-
-      from xraylabtool.io.file_operations import save_results_csv
-      
-      # Calculate results
-      results = calculate_xray_properties(materials, energies)
-      
-      # Save to CSV
-      save_results_csv(results, "output.csv")
-
-JSON File Handling
-~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: xraylabtool.io.file_operations.load_materials_json
-
-   Load materials from JSON file with full parameter support.
-
-   **Expected JSON Format:**
-
-   .. code-block:: json
-
-      [
-          {
-              "formula": "Si",
-              "density": 2.33,
-              "energy": 8000,
-              "metadata": {
-                  "source": "experimental",
-                  "temperature": 300
-              }
-          }
-      ]
-
-.. autofunction:: xraylabtool.io.file_operations.save_results_json
-
-   Save results in JSON format with metadata preservation.
-
-Data Export
------------
+Data Export and Formatting
+---------------------------
 
 .. automodule:: xraylabtool.io.data_export
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
+
+Available Functions
+-------------------
+
+File Loading and Saving
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: xraylabtool.io.file_operations.load_data_file
+
+   Load data file with error handling.
+
+   **Example:**
+
+   .. code-block:: python
+
+      from xraylabtool.io.file_operations import load_data_file
+
+      data = load_data_file("atomic_data.nff")
+      print(data.head())
+
+.. autofunction:: xraylabtool.io.file_operations.save_calculation_results
+
+   Save calculation results to file.
+
+   **Example:**
+
+   .. code-block:: python
+
+      from xraylabtool.io.file_operations import save_calculation_results
+
+      # Save as CSV
+      save_calculation_results(results, "output.csv", format_type="csv")
+
+      # Save as JSON
+      save_calculation_results(results, "output.json", format_type="json")
 
 Export Functions
 ~~~~~~~~~~~~~~~~
 
-.. autofunction:: xraylabtool.io.data_export.export_to_format
+.. autofunction:: xraylabtool.io.file_operations.export_to_csv
 
-   Universal export function supporting multiple formats.
-
-   **Parameters:**
-   - ``results``: List of XRayResult objects
-   - ``format``: Output format ('csv', 'json', 'excel', 'hdf5')
-   - ``filename``: Output file path
-   - ``options``: Format-specific options
+   Export data to CSV format.
 
    **Example:**
 
    .. code-block:: python
 
-      from xraylabtool.io.data_export import export_to_format
-      
-      # Export to different formats
-      export_to_format(results, 'csv', 'data.csv')
-      export_to_format(results, 'json', 'data.json', 
-                      options={'pretty': True, 'include_metadata': True})
-      export_to_format(results, 'excel', 'data.xlsx', 
-                      options={'sheet_name': 'XRay_Properties'})
+      from xraylabtool.io.file_operations import export_to_csv
 
-Excel Integration
-~~~~~~~~~~~~~~~~~
+      export_to_csv(calculation_results, "results.csv")
 
-.. autofunction:: xraylabtool.io.data_export.export_to_excel
+.. autofunction:: xraylabtool.io.file_operations.export_to_json
 
-   Export results to Excel with advanced formatting.
-
-   **Features:**
-   - Multiple sheets for different material groups
-   - Formatted tables with proper headers
-   - Conditional formatting for critical values
-   - Charts and plots (optional)
+   Export data to JSON format.
 
    **Example:**
 
    .. code-block:: python
 
-      from xraylabtool.io.data_export import export_to_excel
-      
-      export_to_excel(results, "analysis.xlsx", options={
-          'sheet_name': 'Materials_Analysis',
-          'include_charts': True,
-          'format_numbers': True,
-          'freeze_panes': (1, 0)
-      })
+      from xraylabtool.io.file_operations import export_to_json
 
-HDF5 Support
-~~~~~~~~~~~~
+      export_to_json(calculation_results, "results.json")
 
-.. autofunction:: xraylabtool.io.data_export.export_to_hdf5
+Data Formatting
+~~~~~~~~~~~~~~~
 
-   Export large datasets to HDF5 format for high-performance access.
+.. autofunction:: xraylabtool.io.data_export.format_xray_result
 
-   **Use Cases:**
-   - Large batch calculations (>10,000 materials)
-   - Time-series or parametric studies
-   - Integration with scientific computing workflows
+   Format XRayResult for display or export.
 
    **Example:**
 
    .. code-block:: python
 
-      from xraylabtool.io.data_export import export_to_hdf5
-      
-      # Export large dataset
-      export_to_hdf5(results, "large_dataset.h5", options={
-          'compression': 'gzip',
-          'group_by': 'formula',
-          'include_metadata': True
-      })
+      from xraylabtool.io.data_export import format_xray_result
 
-Format Conversion
------------------
+      # Format as table
+      table_output = format_xray_result(result, format_type="table")
+      print(table_output)
 
-.. autofunction:: xraylabtool.io.data_export.convert_format
+      # Format as JSON
+      json_output = format_xray_result(result, format_type="json")
 
-   Convert between different file formats.
+      # Format as CSV
+      csv_output = format_xray_result(result, format_type="csv")
 
-   **Example:**
+.. autofunction:: xraylabtool.io.data_export.format_calculation_summary
 
-   .. code-block:: python
-
-      from xraylabtool.io.data_export import convert_format
-      
-      # Convert CSV to JSON
-      convert_format("data.csv", "data.json", 
-                    source_format="csv", target_format="json")
-      
-      # Convert JSON to Excel
-      convert_format("data.json", "analysis.xlsx",
-                    source_format="json", target_format="excel")
-
-Batch File Processing
----------------------
-
-.. autofunction:: xraylabtool.io.file_operations.process_directory
-
-   Process all files in a directory with pattern matching.
+   Format a summary of multiple calculation results.
 
    **Example:**
 
    .. code-block:: python
 
-      from xraylabtool.io.file_operations import process_directory
-      
-      # Process all CSV files in a directory
-      results = process_directory("/data/materials/", 
-                                pattern="*.csv",
-                                output_dir="/results/")
+      from xraylabtool.io.data_export import format_calculation_summary
 
-Advanced I/O Features
----------------------
+      summary = format_calculation_summary(results_list, format_type="table")
+      print(summary)
 
-Template Generation
-~~~~~~~~~~~~~~~~~~~
+Supported File Formats
+-----------------------
 
-.. autofunction:: xraylabtool.io.file_operations.generate_template
+**Input Formats:**
+- **Space-separated (.nff)**: Atomic scattering factor data files
+- **CSV**: General comma-separated data files
 
-   Generate template files for batch processing.
+**Output Formats:**
+- **CSV**: Standard comma-separated format
+- **JSON**: Pretty-printed JSON with proper numeric precision
 
-   **Example:**
+Usage Examples
+--------------
 
-   .. code-block:: python
+**Basic File Operations:**
 
-      from xraylabtool.io.file_operations import generate_template
-      
-      # Generate CSV template
-      generate_template("csv", "materials_template.csv")
-      
-      # Generate JSON template with examples
-      generate_template("json", "materials_template.json", 
-                       include_examples=True)
+.. code-block:: python
 
-Validation and Repair
-~~~~~~~~~~~~~~~~~~~~~
+   from xraylabtool.io.file_operations import load_data_file, save_calculation_results
+   from xraylabtool.io.data_export import format_xray_result
 
-.. autofunction:: xraylabtool.io.file_operations.validate_file
+   # Load atomic data
+   atomic_data = load_data_file("element.nff")
 
-   Validate file format and content before processing.
+   # Save calculation results
+   save_calculation_results(results, "output.csv")
 
-   **Example:**
-
-   .. code-block:: python
-
-      from xraylabtool.io.file_operations import validate_file
-      
-      try:
-          is_valid, errors = validate_file("materials.csv")
-          if not is_valid:
-              print("File validation errors:")
-              for error in errors:
-                  print(f"  - {error}")
-      except Exception as e:
-          print(f"Cannot validate file: {e}")
-
-Metadata Handling
-~~~~~~~~~~~~~~~~~
-
-.. autofunction:: xraylabtool.io.data_export.add_metadata
-
-   Add metadata to exported files for traceability.
-
-   **Automatic Metadata:**
-   - Calculation timestamp
-   - XRayLabTool version
-   - Input parameters and settings
-   - System information
-
-   **Example:**
-
-   .. code-block:: python
-
-      from xraylabtool.io.data_export import add_metadata
-      
-      metadata = {
-          'project': 'Synchrotron Mirror Analysis',
-          'operator': 'Research Team',
-          'notes': 'Initial screening of candidate materials'
-      }
-      
-      save_results_json(results, "results.json", metadata=metadata)
+   # Format results for display
+   formatted_result = format_xray_result(result, format_type="table", precision=4)
+   print(formatted_result)
 
 Error Handling
 --------------
@@ -303,32 +162,27 @@ The I/O module provides comprehensive error handling:
 
 .. code-block:: python
 
-   from xraylabtool.io.file_operations import load_materials_csv
-   from xraylabtool.validation.exceptions import ValidationError
-   
+   from xraylabtool.io.file_operations import load_data_file
+   from xraylabtool.validation.exceptions import DataFileError
+
    try:
-       materials = load_materials_csv("materials.csv")
+       data = load_data_file("data.nff")
    except FileNotFoundError:
        print("Input file not found")
-   except ValidationError as e:
-       print(f"Invalid data in file: {e}")
+   except DataFileError as e:
+       print(f"Error loading data file: {e}")
    except Exception as e:
        print(f"Unexpected error: {e}")
 
 Performance Considerations
--------------------------
+--------------------------
 
-**Large Files:**
-- Use chunked processing for files >100MB
-- Consider HDF5 format for datasets >10,000 entries
-- Enable compression for storage efficiency
+**File Loading:**
+- Automatic detection of .nff format for space-separated data
+- Efficient pandas-based CSV parsing
+- Proper error handling for malformed files
 
-**Network Files:**
-- Cache frequently accessed files locally
-- Use progress bars for long downloads
-- Implement retry logic for network errors
-
-**Memory Management:**
-- Stream processing for very large datasets
-- Automatic cleanup of temporary files
-- Memory usage monitoring and warnings
+**Data Export:**
+- Configurable numeric precision for output formatting
+- Support for both single results and result collections
+- Memory-efficient processing for large datasets

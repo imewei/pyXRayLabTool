@@ -1,0 +1,100 @@
+WARNING: Failed to import xraylabtool.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.data_handling.atomic_cache.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.data_handling.batch_processing.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.constants.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.calculators.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.calculators.core.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.calculators.derived_quantities.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.validation.exceptions.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.validation.validators.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.completion_installer.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.atomic_data_cache.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.constants.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.io.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.io.data_export.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.io.file_operations.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.interfaces.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.interfaces.cli.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.interfaces.completion.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.exceptions.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.utils.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.cli.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.interfaces.cli.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.interfaces.completion.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.utils.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'
+WARNING: Failed to import xraylabtool.core.
+Possible hints:
+* KeyError: 'xraylabtool'
+* ModuleNotFoundError: No module named 'numpy'

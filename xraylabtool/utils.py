@@ -13,7 +13,7 @@ from typing import Any, NoReturn
 import numpy as np
 from scipy import constants
 
-from xraylabtool.validation.exceptions import AtomicDataError, UnknownElementError
+from xraylabtool.exceptions import AtomicDataError, UnknownElementError
 
 # Physical constants
 PLANCK_CONSTANT: float = float(constants.h)  # J⋅s
@@ -275,8 +275,10 @@ def find_peaks(
     return peaks, properties
 
 
-def background_subtraction(  # noqa: ARG001
-    x: np.ndarray, y: np.ndarray, method: str = "linear"
+def background_subtraction(
+    x: np.ndarray,
+    y: np.ndarray,
+    method: str = "linear",  # noqa: ARG001
 ) -> np.ndarray:
     """
     Perform background subtraction on diffraction data.
@@ -380,6 +382,7 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
         - element_counts: List of corresponding stoichiometric counts as floats
 
     Examples:
+        >>> from xraylabtool.utils import parse_formula
         >>> symbols, counts = parse_formula("SiO2")
         >>> print(symbols, counts)
         ['Si', 'O'] [1.0, 2.0]
@@ -462,6 +465,7 @@ def get_atomic_number(element_symbol: str) -> int:
             issue loading atomic data
 
     Examples:
+        >>> from xraylabtool.utils import get_atomic_number
         >>> get_atomic_number('H')
         1
         >>> get_atomic_number('C')
@@ -505,6 +509,7 @@ def get_atomic_weight(element_symbol: str) -> float:
             issue loading atomic data
 
     Examples:
+        >>> from xraylabtool.utils import get_atomic_weight
         >>> round(get_atomic_weight('H'), 3)
         1.008
         >>> round(get_atomic_weight('C'), 3)
@@ -538,7 +543,9 @@ def get_atomic_weight(element_symbol: str) -> float:
     except ValueError as e:
         # mendeleev raises ValueError for unknown elements
         if "not found" in str(e).lower() or "unknown" in str(e).lower():
-            raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
+            raise UnknownElementError(
+                f"Unknown element symbol: '{element_symbol}'"
+            ) from e
         else:
             raise AtomicDataError(
                 f"Could not load atomic weight for element '{element_symbol}': {e}"
@@ -573,6 +580,7 @@ def get_atomic_data(element_symbol: str) -> dict[str, Any]:
             issue loading atomic data
 
     Examples:
+        >>> from xraylabtool.utils import get_atomic_data
         >>> data = get_atomic_data('Si')
         >>> data['atomic_number']
         14
@@ -596,7 +604,9 @@ def get_atomic_data(element_symbol: str) -> dict[str, Any]:
     except ValueError as e:
         # mendeleev raises ValueError for unknown elements
         if "not found" in str(e).lower() or "unknown" in str(e).lower():
-            raise UnknownElementError(f"Unknown element symbol: '{element_symbol}'")
+            raise UnknownElementError(
+                f"Unknown element symbol: '{element_symbol}'"
+            ) from e
         else:
             raise AtomicDataError(
                 f"Could not load atomic data for element '{element_symbol}': {e}"

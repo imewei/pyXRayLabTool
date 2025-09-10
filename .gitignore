@@ -193,6 +193,9 @@ bandit-report.json
 # Claude Code Quality Analysis artifacts
 bandit-claude-report.json
 coverage-claude.json
+consistency_report.json
 CLAUDE_QUALITY_SUMMARY.json
 scripts/claude_quality_report.py
 scripts/claude_summary_display.py
+CLAUDE*.md
+CODE_QUALITY_REPORT.md

@@ -687,11 +687,11 @@ def _format_scalar_field(field: str, value: Any, precision: int) -> str:
     """Format a single scalar field."""
     from collections.abc import Callable
 
-    def default_formatter(v: Any, p: int) -> str:
+    def default_formatter(v: Any, p: int) -> str:  # noqa: ARG001
         return ""
 
     formatters: dict[str, Callable[[Any, int], str]] = {
-        "formula": lambda v, p: f"  Formula: {v}",
+        "formula": lambda v, _: f"  Formula: {v}",
         "molecular_weight_g_mol": lambda v, p: f"  Molecular Weight: {v: .{p}f} g/mol",
         "total_electrons": lambda v, p: f"  Total Electrons: {v: .{p}f}",
         "density_g_cm3": lambda v, p: f"  Density: {v: .{p}f} g/cm³",

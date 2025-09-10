@@ -13,8 +13,8 @@ import time
 import numpy as np
 import pytest
 
-import xraylabtool as xlt
 from tests.fixtures.test_base import BasePerformanceTest
+import xraylabtool as xlt
 from xraylabtool.calculators.core import (
     _AVAILABLE_ELEMENTS,
     _initialize_element_paths,
@@ -319,7 +319,7 @@ class TestNewOptimizations:
         """Test atomic data cache returns immutable proxy types."""
         import types
 
-        from xraylabtool.atomic_data_cache import get_atomic_data_fast
+        from xraylabtool.data_handling import get_atomic_data_fast
 
         data = get_atomic_data_fast("Si")
 

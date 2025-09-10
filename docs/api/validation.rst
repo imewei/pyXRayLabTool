@@ -12,6 +12,7 @@ Exception Hierarchy
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Base Exception
 ~~~~~~~~~~~~~~
@@ -19,6 +20,7 @@ Base Exception
 .. autoclass:: xraylabtool.validation.exceptions.XRayLabToolError
    :members:
    :show-inheritance:
+   :no-index:
 
    The base exception class for all XRayLabTool-specific errors. All custom exceptions inherit from this class, making it easy to catch any XRayLabTool-related error.
 
@@ -37,12 +39,14 @@ Specific Exceptions
 .. autoclass:: xraylabtool.validation.exceptions.ValidationError
    :members:
    :show-inheritance:
+   :no-index:
 
    Raised when input validation fails.
 
 .. autoclass:: xraylabtool.validation.exceptions.FormulaError
    :members:
    :show-inheritance:
+   :no-index:
 
    Raised when chemical formula parsing or validation fails.
 
@@ -64,6 +68,7 @@ Specific Exceptions
 .. autoclass:: xraylabtool.validation.exceptions.EnergyError
    :members:
    :show-inheritance:
+   :no-index:
 
    Raised when energy values are invalid or out of supported range.
 
@@ -84,6 +89,7 @@ Specific Exceptions
 .. autoclass:: xraylabtool.validation.exceptions.CalculationError
    :members:
    :show-inheritance:
+   :no-index:
 
    Raised when X-ray property calculations fail due to numerical issues or invalid parameters.
 
@@ -100,19 +106,53 @@ Input Validators
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Validation Functions
 ~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: xraylabtool.validation.validators.validate_formula
+.. autofunction:: xraylabtool.validation.validators.validate_energy_range
+   :no-index:
 
-   Validates chemical formula syntax and element availability.
+   Validate X-ray energy values.
 
    **Parameters:**
-   - ``formula`` (str): Chemical formula to validate
+   - ``energies`` (float or np.ndarray): Energy value(s) in keV
+   - ``min_energy`` (float): Minimum allowed energy in keV (default: 0.1)
+   - ``max_energy`` (float): Maximum allowed energy in keV (default: 100.0)
 
    **Returns:**
-   - ``bool``: True if valid
+   - ``np.ndarray``: Validated energy array
+
+   **Raises:**
+   - ``EnergyError``: If energies are invalid
+
+   **Example:**
+
+   .. code-block:: python
+
+      from xraylabtool.validation.validators import validate_energy_range
+      import numpy as np
+
+      # Valid energies
+      energies = validate_energy_range(8.0)  # Single energy
+      energies = validate_energy_range([5.0, 8.0, 10.0])  # Multiple energies
+      energies = validate_energy_range(np.array([1.0, 2.0, 3.0]))  # Array
+
+      # Invalid energies will raise EnergyError
+      # validate_energy_range(-1.0)  # Negative energy
+      # validate_energy_range(200.0)  # Above max energy
+
+.. autofunction:: xraylabtool.validation.validators.validate_chemical_formula
+   :no-index:
+
+   Validate and parse a chemical formula.
+
+   **Parameters:**
+   - ``formula`` (str): Chemical formula string (e.g., "SiO2", "Ca0.5Sr0.5TiO3")
+
+   **Returns:**
+   - ``dict``: Dictionary mapping element symbols to their quantities
 
    **Raises:**
    - ``FormulaError``: If formula is invalid
@@ -121,54 +161,31 @@ Validation Functions
 
    .. code-block:: python
 
-      from xraylabtool.validation.validators import validate_formula
-      
+      from xraylabtool.validation.validators import validate_chemical_formula
+
       # Valid formulas
-      validate_formula("Si")        # True
-      validate_formula("SiO2")      # True
-      validate_formula("Al2O3")     # True
-      
-      # Invalid formulas
-      validate_formula("XYZ")       # Raises FormulaError
-      validate_formula("Si-O2")     # Raises FormulaError (invalid syntax)
+      elements = validate_chemical_formula("SiO2")
+      print(elements)  # {'Si': 1.0, 'O': 2.0}
 
-.. autofunction:: xraylabtool.validation.validators.validate_energy
+      elements = validate_chemical_formula("Al2O3")
+      print(elements)  # {'Al': 2.0, 'O': 3.0}
 
-   Validates X-ray energy values and ranges.
-
-   **Parameters:**
-   - ``energy`` (float or array-like): Energy value(s) in eV
-
-   **Returns:**
-   - ``bool``: True if valid
-
-   **Raises:**
-   - ``EnergyError``: If energy is invalid
-
-   **Example:**
-
-   .. code-block:: python
-
-      from xraylabtool.validation.validators import validate_energy
-      
-      # Valid energies
-      validate_energy(8000)           # True
-      validate_energy([5000, 8000])   # True
-      validate_energy(range(1000, 10000, 1000))  # True
-      
-      # Invalid energies
-      validate_energy(-1000)          # Raises EnergyError
-      validate_energy(0)              # Raises EnergyError
+      # Fractional compositions
+      elements = validate_chemical_formula("Ca0.5Sr0.5TiO3")
+      print(elements)  # {'Ca': 0.5, 'Sr': 0.5, 'Ti': 1.0, 'O': 3.0}
 
 .. autofunction:: xraylabtool.validation.validators.validate_density
+   :no-index:
 
-   Validates material density values.
+   Validate material density value.
 
    **Parameters:**
    - ``density`` (float): Density in g/cm³
+   - ``min_density`` (float): Minimum allowed density (default: 0.001)
+   - ``max_density`` (float): Maximum allowed density (default: 30.0)
 
    **Returns:**
-   - ``bool``: True if valid
+   - ``float``: Validated density value
 
    **Raises:**
    - ``ValidationError``: If density is invalid
@@ -178,15 +195,43 @@ Validation Functions
    .. code-block:: python
 
       from xraylabtool.validation.validators import validate_density
-      
+
       # Valid densities
-      validate_density(2.33)     # Silicon
-      validate_density(8.96)     # Copper
-      validate_density(0.001)    # Gas-phase materials
-      
-      # Invalid densities
-      validate_density(-1.0)     # Raises ValidationError
-      validate_density(0)        # Raises ValidationError
+      density = validate_density(2.33)    # Silicon
+      density = validate_density(8.96)    # Copper
+      density = validate_density(0.001)   # Gas-phase materials
+
+      # Invalid densities will raise ValidationError
+      # validate_density(-1.0)     # Negative density
+      # validate_density(0.0)      # Zero density
+
+.. autofunction:: xraylabtool.validation.validators.validate_calculation_parameters
+   :no-index:
+
+   Validate all parameters for X-ray calculations.
+
+   **Parameters:**
+   - ``formula`` (str): Chemical formula
+   - ``energies`` (float or np.ndarray): Energy values in keV
+   - ``density`` (float): Material density in g/cm³
+
+   **Returns:**
+   - ``tuple``: Validated (formula, energies, density)
+
+   **Raises:**
+   - ``ValidationError``: If any parameters are invalid
+
+   **Example:**
+
+   .. code-block:: python
+
+      from xraylabtool.validation.validators import validate_calculation_parameters
+
+      # Validate all parameters at once
+      formula, energies, density = validate_calculation_parameters(
+          "SiO2", 8.0, 2.20
+      )
+      print(f"Formula: {formula}, Energy: {energies}, Density: {density}")
 
 Error Context and Suggestions
 -----------------------------
@@ -204,38 +249,13 @@ XRayLabTool exceptions provide detailed context and suggestions for resolution:
        # Error: Invalid formula 'Si123': numbers should follow elements
        # Suggestion: Use format like 'SiO2' or 'Al2O3'
 
-Validation Utilities
---------------------
+Internal Validation Utilities
+-----------------------------
 
-.. autofunction:: xraylabtool.validation.validators.is_valid_element
+The validation module also includes internal helper functions that are used by the main validation functions but are not part of the public API:
 
-   Check if a string represents a valid chemical element.
-
-   **Example:**
-
-   .. code-block:: python
-
-      from xraylabtool.validation.validators import is_valid_element
-      
-      is_valid_element("Si")    # True
-      is_valid_element("XYZ")   # False
-
-.. autofunction:: xraylabtool.validation.validators.get_supported_elements
-
-   Get list of all supported chemical elements.
-
-   **Returns:**
-   - ``list``: List of element symbols
-
-   **Example:**
-
-   .. code-block:: python
-
-      from xraylabtool.validation.validators import get_supported_elements
-      
-      elements = get_supported_elements()
-      print(f"Total supported elements: {len(elements)}")
-      print(f"First 10: {elements[:10]}")
+- ``_parse_formula()``: Internal formula parsing logic
+- ``_get_valid_element_symbols()``: Returns a set of valid element symbols for validation
 
 Best Practices
 --------------
@@ -244,11 +264,11 @@ Best Practices
 
 .. code-block:: python
 
-   from xraylabtool.validation.validators import validate_formula, validate_energy
-   
+   from xraylabtool.validation.validators import validate_chemical_formula, validate_energy_range
+
    def safe_calculation(formula, density, energy):
-       validate_formula(formula)
-       validate_energy(energy)
+       validate_chemical_formula(formula)
+       validate_energy_range(energy)
        # Proceed with calculation...
 
 **2. Handle Specific Exceptions:**
@@ -256,7 +276,7 @@ Best Practices
 .. code-block:: python
 
    from xraylabtool.validation.exceptions import FormulaError, EnergyError
-   
+
    try:
        result = calculate_single_material_properties(formula, density, energy)
    except FormulaError:
@@ -266,23 +286,31 @@ Best Practices
    except Exception as e:
        print(f"Unexpected error: {e}")
 
-**3. Use Validation Before Batch Processing:**
+**3. Use Complete Parameter Validation:**
 
 .. code-block:: python
+
+   from xraylabtool.validation.validators import validate_calculation_parameters
 
    materials = [
        {"formula": "Si", "density": 2.33},
        {"formula": "InvalidElement", "density": 1.0}
    ]
-   
+
    # Validate all materials first
    valid_materials = []
    for material in materials:
        try:
-           validate_formula(material["formula"])
-           valid_materials.append(material)
-       except FormulaError as e:
+           formula, energies, density = validate_calculation_parameters(
+               material["formula"], 8.0, material["density"]
+           )
+           valid_materials.append({
+               "formula": formula,
+               "density": density,
+               "energies": energies
+           })
+       except (FormulaError, ValidationError) as e:
            print(f"Skipping invalid material: {e}")
-   
+
    # Process only valid materials
    results = calculate_xray_properties(valid_materials, energy=8000)

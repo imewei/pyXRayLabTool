@@ -35,6 +35,7 @@ help:
 	@echo "  test-coverage    Run tests and generate HTML coverage report"
 	@echo "  test-parallel    Run tests in parallel for faster execution"
 	@echo "  test-all         Run comprehensive test suite using run_tests.py"
+	@echo "  test-all-log     Run comprehensive test suite with output logged to test_results.log"
 	@echo "  test-smoke       Run basic smoke tests (quick validation)"
 	@echo "  test-edge        Run edge case tests"
 	@echo "  test-ci          Run CI-focused test suite"
@@ -50,6 +51,7 @@ help:
 	@echo ""
 	@echo "$(YELLOW)📚 Documentation:$(NC)"
 	@echo "  docs             Build Sphinx documentation"
+	@echo "  docs-log         Build Sphinx documentation with output logged to docs_build.log"
 	@echo "  docs-serve       Build and serve documentation locally"
 	@echo "  docs-autobuild   Live server with auto-rebuild on changes"
 	@echo "  docs-clean       Clean documentation build files"
@@ -200,6 +202,24 @@ test-all:
 	python run_tests.py
 	@echo "$(GREEN)✅ All tests completed$(NC)"
 
+test-all-log:
+	@echo "$(YELLOW)Running comprehensive test suite with logging...$(NC)"
+	@echo "$(BLUE)📝 Output will be saved to test_results.log$(NC)"
+	@echo "$(BLUE)🕒 Test suite started at: $$(date)$(NC)" | tee test_results.log
+	@echo "$(BLUE)📁 Working directory: $$(pwd)$(NC)" | tee -a test_results.log
+	@echo "$(BLUE)🐍 Python version: $$(python --version 2>&1)$(NC)" | tee -a test_results.log
+	@echo "" >> test_results.log
+	@if python run_tests.py 2>&1 | tee -a test_results.log; then \
+		echo "" >> test_results.log; \
+		echo "$(BLUE)🕒 Test suite completed successfully at: $$(date)$(NC)" | tee -a test_results.log; \
+		echo "$(GREEN)✅ All tests completed successfully with full log in test_results.log$(NC)"; \
+	else \
+		echo "" >> test_results.log; \
+		echo "$(RED)❌ Test suite failed at: $$(date)$(NC)" | tee -a test_results.log; \
+		echo "$(RED)❌ Test suite failed - check test_results.log for details$(NC)"; \
+		exit 1; \
+	fi
+
 # CLI Testing
 cli-test:
 	@echo "$(YELLOW)Testing CLI functionality...$(NC)"
@@ -339,6 +359,24 @@ docs:
 	@echo "$(GREEN)✅ Documentation built successfully in docs/_build/html/$(NC)"
 	@echo "$(BLUE)📖 View at: file://$(shell pwd)/docs/_build/html/index.html$(NC)"
 
+docs-log:
+	@echo "$(YELLOW)Building Sphinx documentation with logging...$(NC)"
+	@echo "$(BLUE)📝 Output will be saved to docs_build.log$(NC)"
+	@echo "$(BLUE)🕒 Build started at: $$(date)$(NC)" | tee docs_build.log
+	@echo "$(BLUE)📁 Working directory: $$(pwd)$(NC)" | tee -a docs_build.log
+	@echo "" >> docs_build.log
+	@if sphinx-build -b html docs docs/_build/html 2>&1 | tee -a docs_build.log; then \
+		echo "" >> docs_build.log; \
+		echo "$(BLUE)🕒 Build completed successfully at: $$(date)$(NC)" | tee -a docs_build.log; \
+		echo "$(GREEN)✅ Documentation built successfully with full log in docs_build.log$(NC)"; \
+		echo "$(BLUE)📖 View at: file://$(shell pwd)/docs/_build/html/index.html$(NC)"; \
+	else \
+		echo "" >> docs_build.log; \
+		echo "$(RED)❌ Build failed at: $$(date)$(NC)" | tee -a docs_build.log; \
+		echo "$(RED)❌ Documentation build failed - check docs_build.log for details$(NC)"; \
+		exit 1; \
+	fi
+
 docs-serve: docs
 	@echo "$(YELLOW)Serving documentation locally...$(NC)"
 	@echo "$(BLUE)Documentation server starting at http://localhost:8000$(NC)"
@@ -404,6 +442,13 @@ clean:
 	rm -rf bandit-report.json
 	rm -rf bandit_report.json
 	rm -rf coverage.json
+	rm -rf consistency_report.json
+	rm -rf CLAUDE_QUALITY_SUMMARY.json
+	rm -rf coverage-claude.json
+	rm -rf bandit-claude-report.json
+	rm -rf CODE_QUALITY_REPORT.md
+	rm -rf docs_build.log
+	rm -rf test_results.log
 	rm -rf .tox/
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/

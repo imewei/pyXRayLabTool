@@ -14,16 +14,16 @@ import numpy as np
 import pytest
 
 import xraylabtool as xlt
-from xraylabtool.atomic_data_cache import (
-    _RUNTIME_CACHE,
-    get_atomic_data_fast,
-    get_cache_stats,
-    is_element_preloaded,
-)
 from xraylabtool.calculators.core import (
     XRayResult,
     calculate_single_material_properties,
 )
+from xraylabtool.data_handling import (
+    get_atomic_data_fast,
+    get_cache_stats,
+    is_element_preloaded,
+)
+from xraylabtool.data_handling.atomic_cache import _RUNTIME_CACHE
 
 
 class TestDeprecationWarningOptimization:

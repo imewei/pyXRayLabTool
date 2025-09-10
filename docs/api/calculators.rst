@@ -12,21 +12,8 @@ Core Calculations
    :members:
    :undoc-members:
    :show-inheritance:
-
-Key Functions
-~~~~~~~~~~~~~
-
-.. autofunction:: xraylabtool.calculators.core.calculate_single_material_properties
-
-.. autofunction:: xraylabtool.calculators.core.calculate_xray_properties
-
-Result Data Structure
-~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: xraylabtool.calculators.core.XRayResult
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   :exclude-members: Formula, MW, Number_Of_Electrons, Density, Electron_Density, Energy, Wavelength, Dispersion, Absorption, f1, f2, Critical_Angle, Attenuation_Length, reSLD, imSLD
+   :no-index:
 
    **Field Descriptions:**
 
@@ -113,13 +100,13 @@ Usage Examples
 .. code-block:: python
 
    from xraylabtool.calculators.core import calculate_single_material_properties
-   
+
    result = calculate_single_material_properties(
        formula="Si",
        density=2.33,
        energy=8000
    )
-   
+
    print(f"Critical angle: {result.critical_angle_degrees:.3f}°")
    print(f"Attenuation length: {result.attenuation_length_cm:.2f} cm")
 
@@ -129,9 +116,9 @@ Usage Examples
 
    import numpy as np
    from xraylabtool.calculators.core import calculate_single_material_properties
-   
+
    energies = np.logspace(3, 5, 100)  # 1 keV to 100 keV
-   
+
    results = []
    for energy in energies:
        result = calculate_single_material_properties(
@@ -144,11 +131,11 @@ Usage Examples
 .. code-block:: python
 
    from xraylabtool.calculators.core import calculate_xray_properties
-   
+
    materials = [
        {"formula": "Si", "density": 2.33},
        {"formula": "SiO2", "density": 2.20},
        {"formula": "Al", "density": 2.70}
    ]
-   
+
    results = calculate_xray_properties(materials, energy=8000)

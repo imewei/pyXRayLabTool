@@ -196,8 +196,10 @@ class TestBatchProcessingMemoryManagement:
         results = calculate_batch_properties(formulas, energies, densities, config)
 
         # Verify results
-        total_unique_formulas = len(set(formulas))
-        assert len(results) <= total_unique_formulas  # Results keyed by unique formulas
+        unique_combinations = len(set(zip(formulas, densities, strict=False)))
+        assert (
+            len(results) <= unique_combinations
+        )  # Results keyed by unique formula+density combinations
 
         # At least some results should succeed
         successful_results = [
@@ -283,7 +285,7 @@ class TestCacheManagement:
 
     def test_cache_statistics_monitoring(self):
         """Test cache statistics for monitoring."""
-        from xraylabtool.atomic_data_cache import get_cache_stats
+        from xraylabtool.data_handling import get_cache_stats
 
         stats = get_cache_stats()
 

@@ -1,0 +1,46 @@
+{
+  "timestamp": "2025-09-09T23:27:55.012367",
+  "project": "XRayLabTool",
+  "version": "0.2.0",
+  "overall_score": 84.3,
+  "grade": "B+",
+  "metrics": {
+    "formatting": {
+      "score": 98,
+      "status": "excellent"
+    },
+    "linting": {
+      "score": 78,
+      "status": "good",
+      "issues": 52
+    },
+    "type_coverage": {
+      "score": 100,
+      "status": "perfect"
+    },
+    "test_coverage": {
+      "score": 45,
+      "status": "needs_improvement"
+    },
+    "security": {
+      "score": 85,
+      "status": "good"
+    },
+    "documentation": {
+      "score": 100,
+      "status": "excellent"
+    }
+  },
+  "test_results": {
+    "total_tests": 246,
+    "passed": 246,
+    "failed": 0,
+    "duration": "28.66s"
+  },
+  "recommendations": [
+    "Increase test coverage to 85%+",
+    "Reduce function complexity",
+    "Address remaining lint issues",
+    "Continue performance optimizations"
+  ]
+}

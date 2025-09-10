@@ -10,7 +10,7 @@ from typing import Any
 
 import pandas as pd
 
-from xraylabtool.validation.exceptions import DataFileError
+from xraylabtool.exceptions import DataFileError
 
 
 def load_data_file(filename: str) -> pd.DataFrame:
@@ -44,9 +44,11 @@ def load_data_file(filename: str) -> pd.DataFrame:
         return data
 
     except pd.errors.ParserError as e:
-        raise DataFileError(f"Error parsing file {filename}: {e}", filename)
+        raise DataFileError(f"Error parsing file {filename}: {e}", filename) from e
     except Exception as e:
-        raise DataFileError(f"Unexpected error loading file {filename}: {e}", filename)
+        raise DataFileError(
+            f"Unexpected error loading file {filename}: {e}", filename
+        ) from e
 
 
 def save_calculation_results(
@@ -82,11 +84,11 @@ def save_calculation_results(
         raise ValueError(f"Unsupported format type: {format_type}")
 
 
-def export_to_csv(data: Any, filename: str, **kwargs: Any) -> None:
+def export_to_csv(data: Any, filename: str, **kwargs: Any) -> None:  # noqa: ARG001
     """Export data to CSV format."""
     save_calculation_results(data, filename, format_type="csv")
 
 
-def export_to_json(data: Any, filename: str, **kwargs: Any) -> None:
+def export_to_json(data: Any, filename: str, **kwargs: Any) -> None:  # noqa: ARG001
     """Export data to JSON format."""
     save_calculation_results(data, filename, format_type="json")

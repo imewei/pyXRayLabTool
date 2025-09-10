@@ -3,15 +3,8 @@ Examples
 
 Real-world examples and use cases for XRayLabTool.
 
-.. toctree::
-   :maxdepth: 2
-
-   getting_started
-   basic_examples
-   synchrotron_applications
-   mirror_design
-   beamline_optimization
-   materials_screening
+.. note::
+   Interactive examples will be added in future releases.
 
 Interactive Examples
 --------------------
@@ -19,17 +12,17 @@ Interactive Examples
 These examples include downloadable Jupyter notebooks and Python scripts demonstrating practical applications of XRayLabTool.
 
 **Quick Start Examples:**
-- :doc:`getting_started` - Interactive tutorial with comprehensive examples
-- :doc:`basic_examples` - Simple calculations and common materials  
+- Interactive tutorial with comprehensive examples
+- Simple calculations and common materials
 - Single energy calculations
 - Energy range analysis
 - Formula parsing and validation
 
 **Application Examples:**
-- :doc:`synchrotron_applications` - Beamline design and optimization
-- :doc:`mirror_design` - X-ray optics and substrate selection
-- :doc:`beamline_optimization` - Component characterization
-- :doc:`materials_screening` - High-throughput property screening
+- Beamline design and optimization
+- X-ray optics and substrate selection
+- Component characterization
+- High-throughput property screening
 
 Example Categories
 ------------------
@@ -107,7 +100,7 @@ Example Data
 
 **Included Datasets:**
 - ``materials_database.csv`` - Common materials with densities
-- ``synchrotron_energies.csv`` - Typical beamline energy ranges  
+- ``synchrotron_energies.csv`` - Typical beamline energy ranges
 - ``mirror_substrates.csv`` - X-ray mirror material properties
 - ``test_compounds.csv`` - Chemical formulas for validation
 
@@ -169,22 +162,23 @@ We welcome community-contributed examples:
 4. **Documentation**: Explain the scientific context and methods
 
 **Example Template:**
-```python
-"""
-Example: [Title]
 
-Description: [Brief description of the example]
-Application: [Target application domain]
-Level: [Beginner/Intermediate/Advanced]
-Dependencies: [Required packages beyond XRayLabTool]
+.. code-block:: python
 
-Author: [Your name]
-Date: [Creation date]
-"""
+   """
+   Example: [Title]
 
-import xraylabtool as xrt
-# ... example code ...
-```
+   Description: [Brief description of the example]
+   Application: [Target application domain]
+   Level: [Beginner/Intermediate/Advanced]
+   Dependencies: [Required packages beyond XRayLabTool]
+
+   Author: [Your name]
+   Date: [Creation date]
+   """
+
+   import xraylabtool as xrt
+   # ... example code ...
 
 **Submission Process:**
 1. Fork the repository on GitHub

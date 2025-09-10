@@ -1,5 +1,5 @@
 Contributing Guide
-=================
+==================
 
 Welcome to XRayLabTool! We appreciate your interest in contributing to this high-performance X-ray optical properties calculator.
 
@@ -64,10 +64,10 @@ Install in development mode with all dependencies:
    # Create virtual environment
    python -m venv xraylabtool-dev
    source xraylabtool-dev/bin/activate  # On Windows: xraylabtool-dev\Scripts\activate
-   
+
    # Install in development mode
    pip install -e .[dev]
-   
+
    # Verify installation
    pytest tests/ -v
    xraylabtool --version
@@ -123,13 +123,13 @@ Make Your Changes
 
    # Format code
    black xraylabtool tests *.py
-   
+
    # Lint code
    ruff check xraylabtool tests
-   
+
    # Type check
    mypy xraylabtool
-   
+
    # Run tests
    pytest tests/ -v --cov=xraylabtool
 
@@ -142,7 +142,7 @@ Write clear, descriptive commit messages:
 
    git add .
    git commit -m "feat: add support for custom atomic data sources
-   
+
    - Add AtomicDataLoader class for custom data
    - Support multiple file formats (HDF5, CSV, JSON)
    - Include validation for custom atomic data
@@ -180,17 +180,17 @@ We follow PEP 8 with some modifications:
 
    def calculate_critical_angle(delta: float) -> tuple[float, float, float]:
        """Calculate critical angle from refractive index decrement.
-       
+
        Parameters
        ----------
        delta : float
            Real part of refractive index decrement.
-           
+
        Returns
        -------
        tuple[float, float, float]
            Critical angle in (radians, degrees, milliradians).
-           
+
        Examples
        --------
        >>> theta_rad, theta_deg, theta_mrad = calculate_critical_angle(1e-5)
@@ -198,11 +198,11 @@ We follow PEP 8 with some modifications:
        Critical angle: 0.162°
        """
        import numpy as np
-       
+
        theta_rad = np.sqrt(2 * delta)
        theta_deg = theta_rad * 180 / np.pi
        theta_mrad = theta_rad * 1000
-       
+
        return theta_rad, theta_deg, theta_mrad
 
 Error Handling
@@ -217,13 +217,13 @@ Use specific exceptions with helpful messages:
    def validate_inputs(formula: str, energy: float) -> None:
        if not formula.strip():
            raise FormulaError("Formula cannot be empty")
-       
+
        if energy <= 0:
            raise EnergyError(
                f"Energy must be positive, got {energy} eV",
                suggestion="Use energy values between 10 eV and 100 keV"
            )
-       
+
        if energy > 100_000:
            warnings.warn(
                f"Energy {energy} eV is above typical range, "
@@ -265,22 +265,22 @@ Writing Tests
 
    class TestSingleMaterialCalculations:
        """Test single material property calculations."""
-       
+
        def test_silicon_properties(self):
            """Test silicon properties at 8 keV."""
            result = calculate_single_material_properties("Si", 2.33, 8000)
-           
+
            assert result.formula == "Si"
            assert result.density_g_cm3 == 2.33
            assert result.energy_ev == 8000
            assert abs(result.critical_angle_degrees - 0.158) < 0.001
            assert result.attenuation_length_cm > 5  # Reasonable range
-       
+
        def test_invalid_formula(self):
            """Test error handling for invalid formulas."""
            with pytest.raises(FormulaError, match="Unknown element"):
                calculate_single_material_properties("XYZ", 1.0, 8000)
-       
+
        @pytest.mark.parametrize("energy", [0, -1000])
        def test_invalid_energy(self, energy):
            """Test error handling for invalid energies."""
@@ -302,7 +302,7 @@ Writing Tests
            "--energy", "8000",
            "--output", "json"
        ], capture_output=True, text=True)
-       
+
        assert result.returncode == 0
        data = json.loads(result.stdout)
        assert len(data) == 1
@@ -320,11 +320,11 @@ Writing Tests
        """Test that batch processing meets performance requirements."""
        materials = [{"formula": "Si", "density": 2.33}] * 1000
        energies = [8000]
-       
+
        start_time = time.time()
        results = calculate_xray_properties(materials, energies)
        end_time = time.time()
-       
+
        # Should process 1000 materials in under 50ms
        assert (end_time - start_time) < 0.05
        assert len(results) == 1000
@@ -336,15 +336,15 @@ Running Tests
 
    # Run all tests
    pytest tests/ -v
-   
+
    # Run specific test categories
    pytest tests/unit/ -v          # Unit tests only
    pytest tests/integration/ -v   # Integration tests only
    pytest tests/performance/ -v   # Performance tests only
-   
+
    # Run with coverage
    pytest tests/ --cov=xraylabtool --cov-report=html
-   
+
    # Run tests matching pattern
    pytest tests/ -k "test_silicon" -v
 
@@ -358,13 +358,13 @@ Use NumPy-style docstrings:
 
 .. code-block:: python
 
-   def complex_function(param1: str, param2: list[float], 
+   def complex_function(param1: str, param2: list[float],
                        param3: bool = True) -> dict:
        """One-line summary of the function.
-       
+
        Longer description explaining the purpose and behavior.
        Can span multiple paragraphs.
-       
+
        Parameters
        ----------
        param1 : str
@@ -373,33 +373,33 @@ Use NumPy-style docstrings:
            Description of second parameter.
        param3 : bool, optional
            Description of optional parameter. Default is True.
-           
+
        Returns
        -------
        dict
            Description of return value with keys and types.
-           
+
        Raises
        ------
        ValueError
            When parameter validation fails.
        FormulaError
            When chemical formula is invalid.
-           
+
        Examples
        --------
        >>> result = complex_function("H2O", [1.0, 2.0])
        >>> print(result["success"])
        True
-       
+
        See Also
        --------
        related_function : Related functionality
-       
+
        Notes
        -----
        Additional technical notes or implementation details.
-       
+
        References
        ----------
        .. [1] Author, "Title", Journal, Year.
@@ -415,7 +415,7 @@ All public APIs must be documented:
    # Good - documented public function
    def calculate_properties(formula: str) -> XRayResult:
        """Calculate X-ray properties for a material."""
-       
+
    # Private functions can have simpler docstrings
    def _internal_helper(data: np.ndarray) -> float:
        """Internal helper for data processing."""
@@ -457,12 +457,12 @@ Include benchmarks for performance-critical code:
    def benchmark_single_calculation():
        """Benchmark single material calculation."""
        n_iterations = 1000
-       
+
        start_time = time.time()
        for _ in range(n_iterations):
            calculate_single_material_properties("Si", 2.33, 8000)
        end_time = time.time()
-       
+
        avg_time = (end_time - start_time) / n_iterations
        print(f"Average time per calculation: {avg_time*1000:.3f} ms")
        assert avg_time < 0.0001  # < 0.1 ms requirement

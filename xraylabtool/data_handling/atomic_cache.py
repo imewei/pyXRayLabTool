@@ -8,7 +8,7 @@ to eliminate expensive database queries to the Mendeleev library during runtime.
 from functools import lru_cache
 import types
 
-from xraylabtool.validation.exceptions import UnknownElementError
+from xraylabtool.exceptions import UnknownElementError
 
 # Pre-populated atomic data for the 50 most common elements in materials science
 # This eliminates the need for expensive Mendeleev database queries

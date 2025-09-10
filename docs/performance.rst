@@ -141,7 +141,7 @@ Caching Optimization
 .. code-block:: python
 
    from xraylabtool.data_handling.atomic_cache import preload_elements
-   
+
    # Preload elements you'll use frequently
    common_elements = ["Si", "O", "Al", "Fe", "C", "N", "Ca", "Cu"]
    preload_elements(common_elements)
@@ -152,7 +152,7 @@ Caching Optimization
 
    # Enable disk caching for repeated runs
    import xraylabtool as xrt
-   
+
    xrt.configure_cache(
        disk_cache=True,
        cache_dir="~/.xraylabtool_cache",
@@ -178,7 +178,7 @@ Batch Processing Optimization
 
    # Good - efficient batch processing
    results = xrt.calculate_xray_properties(materials, energies)
-   
+
    # Less efficient - individual calculations
    results = []
    for material in materials:
@@ -194,7 +194,7 @@ Batch Processing Optimization
 
    # For very large datasets, adjust chunk size
    results = xrt.calculate_xray_properties(
-       large_materials_list, 
+       large_materials_list,
        energies,
        chunk_size=1000  # Balance memory vs speed
    )
@@ -205,16 +205,16 @@ Batch Processing Optimization
 
    from multiprocessing import Pool
    import numpy as np
-   
+
    def process_chunk(chunk):
        return xrt.calculate_xray_properties(chunk, energies)
-   
+
    # Split large dataset into chunks
    chunks = np.array_split(large_materials_list, 4)  # 4 processes
-   
+
    with Pool(4) as pool:
        chunk_results = pool.map(process_chunk, chunks)
-   
+
    # Combine results
    results = [item for sublist in chunk_results for item in sublist]
 
@@ -226,11 +226,11 @@ Energy Array Optimization
 .. code-block:: python
 
    import numpy as np
-   
+
    # Good - vectorized energy array
    energies = np.logspace(3, 5, 100)  # 1 keV to 100 keV
    results = xrt.calculate_single_material_properties("Si", 2.33, energies)
-   
+
    # Less efficient - Python list
    energies = [10**x for x in np.linspace(3, 5, 100)]
 
@@ -240,11 +240,11 @@ Energy Array Optimization
 
    # For smooth curves, logarithmic spacing is often better
    energies = np.logspace(3, 5, 50)  # Fewer points, still smooth
-   
+
    # For detailed analysis near edges, use adaptive spacing
    edge_region = np.linspace(7900, 8100, 200)  # Dense near Si K-edge
    far_region = np.logspace(3, 5, 50)  # Sparse elsewhere
-   energies = np.concatenate([far_region[far_region < 7900], 
+   energies = np.concatenate([far_region[far_region < 7900],
                              edge_region,
                              far_region[far_region > 8100]])
 
@@ -258,17 +258,17 @@ Memory Management
    def process_large_dataset(materials, energies, chunk_size=1000):
        """Process large datasets without memory issues."""
        results = []
-       
+
        for i in range(0, len(materials), chunk_size):
            chunk = materials[i:i+chunk_size]
            chunk_results = xrt.calculate_xray_properties(chunk, energies)
            results.extend(chunk_results)
-           
+
            # Optional: garbage collection
            if len(results) > 10000:
                import gc
                gc.collect()
-       
+
        return results
 
 **2. Use Generators:**
@@ -282,7 +282,7 @@ Memory Management
                yield xrt.calculate_single_material_properties(
                    material['formula'], material['density'], energy
                )
-   
+
    # Process without storing all results in memory
    for result in calculate_generator(materials, energies):
        # Process each result individually
@@ -299,13 +299,13 @@ XRayLabTool includes performance monitoring:
 .. code-block:: python
 
    import xraylabtool as xrt
-   
+
    # Enable performance monitoring
    xrt.enable_profiling()
-   
+
    # Run your calculations
    results = xrt.calculate_xray_properties(materials, energies)
-   
+
    # Get performance statistics
    stats = xrt.get_performance_stats()
    print(f"Total time: {stats['total_time']:.3f} s")
@@ -324,30 +324,30 @@ Custom Benchmarking
    def benchmark_calculation(func, *args, **kwargs):
        """Benchmark a calculation function."""
        process = psutil.Process(os.getpid())
-       
+
        # Measure memory before
        mem_before = process.memory_info().rss / 1024 / 1024
-       
+
        # Time the calculation
        start_time = time.time()
        result = func(*args, **kwargs)
        end_time = time.time()
-       
+
        # Measure memory after
        mem_after = process.memory_info().rss / 1024 / 1024
-       
+
        return {
            'result': result,
            'time': end_time - start_time,
            'memory_delta': mem_after - mem_before
        }
-   
+
    # Example usage
    benchmark = benchmark_calculation(
-       xrt.calculate_xray_properties, 
+       xrt.calculate_xray_properties,
        materials, energies
    )
-   
+
    print(f"Time: {benchmark['time']:.3f} s")
    print(f"Memory: {benchmark['memory_delta']:.1f} MB")
 
@@ -355,7 +355,7 @@ Platform-Specific Optimizations
 -------------------------------
 
 NumPy/BLAS Optimization
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 For best performance, ensure optimized NumPy:
 
@@ -363,10 +363,10 @@ For best performance, ensure optimized NumPy:
 
    # Check NumPy configuration
    python -c "import numpy; numpy.show_config()"
-   
+
    # Install optimized NumPy (Intel MKL)
    conda install numpy
-   
+
    # Or use OpenBLAS
    pip install numpy[openblas]
 
@@ -376,13 +376,13 @@ Multi-threading Control
 .. code-block:: python
 
    import os
-   
+
    # Control NumPy threading
    os.environ['OMP_NUM_THREADS'] = '4'
    os.environ['MKL_NUM_THREADS'] = '4'
-   
+
    import xraylabtool as xrt
-   
+
    # XRayLabTool will use these settings
 
 GPU Acceleration (Future)
@@ -430,13 +430,13 @@ Example 1: Optimizing Energy Scans
 
    # Inefficient - too many energy points
    energies_bad = np.linspace(1000, 30000, 10000)  # 10k points!
-   
+
    # Better - logarithmic spacing, fewer points
    energies_good = np.logspace(3, 4.5, 100)  # 100 points
-   
+
    # Best - adaptive spacing for specific needs
    low_e = np.logspace(3, 3.85, 30)      # 1-7 keV: 30 points
-   si_edge = np.linspace(1830, 1860, 50) # Si L-edge: 50 points  
+   si_edge = np.linspace(1830, 1860, 50) # Si L-edge: 50 points
    high_e = np.logspace(3.9, 4.5, 30)    # 8-32 keV: 30 points
    energies_adaptive = np.concatenate([low_e, si_edge, high_e])
 
@@ -448,28 +448,28 @@ Example 2: Memory-Efficient Large Datasets
    def process_huge_dataset(filename, output_filename):
        """Process dataset too large for memory."""
        import csv
-       
+
        with open(filename, 'r') as infile, open(output_filename, 'w') as outfile:
            reader = csv.DictReader(infile)
            writer = csv.writer(outfile)
-           
+
            # Write header
            writer.writerow(['formula', 'density', 'energy', 'critical_angle', 'att_length'])
-           
+
            # Process in batches
            batch = []
            batch_size = 1000
-           
+
            for row in reader:
                batch.append({
                    'formula': row['formula'],
                    'density': float(row['density'])
                })
-               
+
                if len(batch) >= batch_size:
                    # Process batch
                    results = xrt.calculate_xray_properties(batch, [8000])
-                   
+
                    # Write results
                    for result in results:
                        writer.writerow([
@@ -479,10 +479,10 @@ Example 2: Memory-Efficient Large Datasets
                            result.critical_angle_degrees,
                            result.attenuation_length_cm
                        ])
-                   
+
                    # Clear batch
                    batch = []
-           
+
            # Process remaining items
            if batch:
                results = xrt.calculate_xray_properties(batch, [8000])
@@ -544,7 +544,7 @@ Planned Enhancements
 - **Machine learning interpolation** for faster atomic data lookup
 
 Contributing Performance Improvements
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We welcome performance contributions:
 

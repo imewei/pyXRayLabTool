@@ -71,14 +71,14 @@ Basic Usage
 .. code-block:: python
 
    import xraylabtool as xrt
-   
+
    # Calculate X-ray properties for silicon at 8 keV
    result = xrt.calculate_single_material_properties(
-       formula="Si", 
-       density=2.33, 
+       formula="Si",
+       density=2.33,
        energy=8000
    )
-   
+
    print(f"Critical angle: {result.critical_angle_degrees:.3f}°")
    print(f"Attenuation length: {result.attenuation_length_cm:.2f} cm")
 
@@ -88,7 +88,7 @@ Basic Usage
 
    # Single material calculation
    xraylabtool calc Si --density 2.33 --energy 8000
-   
+
    # Batch processing
    xraylabtool batch materials.csv --output results.csv
 
@@ -117,10 +117,6 @@ Navigation
    :caption: API Reference
 
    api/index
-   api/calculators
-   api/data_handling
-   api/interfaces
-   api/validation
 
 .. toctree::
    :maxdepth: 2
@@ -140,7 +136,7 @@ Navigation
    Issue Tracker <https://github.com/b80985/pyXRayLabTool/issues>
 
 Performance Highlights
----------------------
+----------------------
 
 .. list-table::
    :header-rows: 1

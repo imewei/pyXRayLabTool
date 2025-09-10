@@ -9,7 +9,7 @@ import re
 
 import numpy as np
 
-from xraylabtool.validation.exceptions import EnergyError, FormulaError, ValidationError
+from xraylabtool.exceptions import EnergyError, FormulaError, ValidationError
 
 
 def validate_energy_range(

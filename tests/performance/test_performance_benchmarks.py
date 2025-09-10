@@ -13,8 +13,8 @@ import numpy as np
 import pytest
 
 import xraylabtool as xlt
-from xraylabtool.atomic_data_cache import get_atomic_data_fast
 from xraylabtool.calculators.core import calculate_single_material_properties
+from xraylabtool.data_handling import get_atomic_data_fast
 
 
 @contextmanager

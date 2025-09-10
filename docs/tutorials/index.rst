@@ -3,14 +3,8 @@ Tutorials
 
 Step-by-step tutorials for mastering XRayLabTool.
 
-.. toctree::
-   :maxdepth: 2
-
-   basic_calculations
-   batch_processing
-   advanced_materials
-   energy_analysis
-   cli_workflows
+.. note::
+   Additional tutorials will be added in future releases.
 
 Tutorial Overview
 -----------------
@@ -18,15 +12,15 @@ Tutorial Overview
 These tutorials are designed to take you from basic calculations to advanced analysis workflows:
 
 **Beginner Tutorials:**
-- :doc:`basic_calculations` - Single materials and simple compounds
-- :doc:`batch_processing` - Processing multiple materials efficiently
+- Single materials and simple compounds
+- Processing multiple materials efficiently
 
-**Intermediate Tutorials:**  
-- :doc:`advanced_materials` - Complex formulas and custom materials
-- :doc:`energy_analysis` - Energy-dependent properties and optimization
+**Intermediate Tutorials:**
+- Complex formulas and custom materials
+- Energy-dependent properties and optimization
 
 **Advanced Tutorials:**
-- :doc:`cli_workflows` - Automation and integration with other tools
+- Automation and integration with other tools
 
 Prerequisites
 -------------

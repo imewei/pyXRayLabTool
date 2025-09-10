@@ -134,7 +134,7 @@ autodoc_typehints_format = "short"
 autodoc_preserve_defaults = True
 
 # -- Options for autosummary extension ---------------------------------------
-autosummary_generate = True
+autosummary_generate = False
 
 # -- Options for Napoleon extension ------------------------------------------
 napoleon_google_docstring = True
@@ -164,7 +164,6 @@ doctest_global_setup = """
 import numpy as np
 import xraylabtool
 from xraylabtool import calculate_single_material_properties
-from xraylabtool.calculators.core import XRayResult
 """
 
 # -- Options for todo extension ----------------------------------------------

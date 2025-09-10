@@ -14,7 +14,6 @@ import warnings
 from xraylabtool.calculators.core import (
     XRayResult,
     calculate_derived_quantities,
-    calculate_multiple_xray_properties,
     calculate_scattering_factors,
     calculate_single_material_properties,
     calculate_xray_properties,
@@ -39,7 +38,6 @@ __all__ = [
     "XRayResult",
     "calculate_single_material_properties",
     "calculate_xray_properties",
-    "calculate_multiple_xray_properties",
     "calculate_scattering_factors",
     "calculate_derived_quantities",
     "load_scattering_factor_data",

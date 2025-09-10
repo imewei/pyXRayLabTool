@@ -256,14 +256,22 @@ def _process_chunks(
     progress_bar: Any,
 ) -> dict[str, XRayResult | None]:
     """Process data chunks and collect results."""
-    all_results = {}
+    all_results: dict[str, XRayResult | None] = {}
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
 
     for chunk in chunk_iterator(calculation_data, config.chunk_size):
         chunk_results = process_batch_chunk(chunk, config)
 
         for formula, result in chunk_results:
-            all_results[formula] = result
+            # Create composite key to preserve formula+density combinations
+            # This ensures different densities for same formula are not overwritten
+            if result is not None:
+                # Use both formula and density to create a unique key
+                key = f"{result.formula}@{result.density_g_cm3:.3f}"
+                all_results[key] = result
+            else:
+                # For failed calculations, use original formula as key
+                all_results[formula] = result
 
         if progress_bar is not None:
             progress_bar.update(len(chunk))
@@ -299,11 +307,14 @@ def calculate_batch_properties(
         ValueError: If input validation fails
 
     Examples:
-        >>> formulas = ["SiO2", "Al2O3", "Fe2O3"] * 100  # 300 materials
+        >>> import numpy as np
+        >>> from xraylabtool.data_handling.batch_processing import calculate_batch_properties
+        >>> formulas = ["SiO2", "SiO2", "Al2O3"]  # Same formula with different densities
         >>> energies = np.linspace(5, 15, 101)  # 101 energy points
-        >>> densities = [2.2, 3.95, 5.24] * 100
+        >>> densities = [2.2, 2.5, 3.95]  # Different densities for SiO2
         >>> results = calculate_batch_properties(formulas, energies, densities)
         >>> print(f"Processed {len(results)} materials")
+        Processed 3 materials
     """
     if config is None:
         config = BatchConfig()

@@ -16,6 +16,7 @@ with ultra-fast performance, comprehensive CLI tools, and scientific accuracy.
     >>> import xraylabtool as xlt
     >>> result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
     >>> print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
+    Critical angle: 0.174°
 
 **Main Functions:**
 - :func:`calculate_single_material_properties`: Single material calculations
@@ -146,7 +147,6 @@ __all__ = [
     "XRayResult",
     "calculate_single_material_properties",
     "calculate_xray_properties",
-    "calculate_multiple_xray_properties",
     # Core functionality - Advanced/Internal
     "load_scattering_factor_data",
     "get_cached_elements",
