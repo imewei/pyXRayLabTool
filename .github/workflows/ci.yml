@@ -89,7 +89,15 @@ jobs:
 
     - name: Check import sorting with isort
       run: |
-        isort --check-only --profile=black xraylabtool/ tests/
+        # Use isort without --profile=black flag to avoid CLI/config conflicts
+        # The black profile is properly configured in pyproject.toml [tool.isort]
+        # This approach matches the working CI-Optimized workflow and eliminates
+        # discrepancies between CLI flag precedence and configuration file settings
+        echo "Running isort import sorting check..."
+        isort --check-only xraylabtool/ tests/ || {
+          echo "❌ Import sorting issues found. Run locally: 'isort xraylabtool/ tests/'"
+          exit 1
+        }
 
     - name: Lint with flake8 (backup)
       run: |
