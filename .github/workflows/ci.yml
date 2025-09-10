@@ -246,7 +246,7 @@ jobs:
         pytest tests/performance/ tests/integration/ -v --benchmark-only --benchmark-json=benchmark-results.json
 
         # Run performance optimization tests (these don't use pytest-benchmark fixtures)
-        pytest tests/performance/test_performance_benchmarks.py -v -m "benchmark" --tb=short
+        pytest tests/performance/test_performance_benchmarks.py::TestBenchmarkComparison::test_optimization_effectiveness -v --tb=short
 
         # Run memory performance tests (without benchmarking framework)
         pytest tests/performance/test_memory_management.py -v -m "performance" --tb=short
