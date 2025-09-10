@@ -69,7 +69,7 @@ jobs:
     - name: Run doctests in docstrings
       run: |
         echo "🧪 Testing code examples in docstrings..."
-        python -m sphinx -b doctest docs/source docs/_build/doctest
+        python -m sphinx -b doctest docs docs/_build/doctest
       continue-on-error: false
 
     - name: Run doctests in RST files
@@ -81,7 +81,7 @@ jobs:
         import sys
 
         failed_count = 0
-        for rst_file in glob.glob('docs/source/**/*.rst', recursive=True):
+        for rst_file in glob.glob('docs/**/*.rst', recursive=True):
             print(f'Testing {rst_file}...')
             try:
                 result = doctest.testfile(rst_file, verbose=True, optionflags=doctest.ELLIPSIS)
@@ -199,7 +199,7 @@ jobs:
     - name: Check external links
       run: |
         echo "🔗 Checking external links in documentation..."
-        python -m sphinx -b linkcheck docs/source docs/_build/linkcheck
+        python -m sphinx -b linkcheck docs docs/_build/linkcheck
       continue-on-error: true
 
     - name: Generate link check report
@@ -262,7 +262,7 @@ jobs:
     - name: Check documentation coverage
       run: |
         echo "📊 Checking documentation coverage..."
-        python -m sphinx -b coverage docs/source docs/_build/coverage
+        python -m sphinx -b coverage docs docs/_build/coverage
 
         echo "📋 Documentation Coverage Report:"
         if [ -f "docs/_build/coverage/python.txt" ]; then
@@ -374,7 +374,7 @@ jobs:
 
     - name: Build documentation
       run: |
-        python -m sphinx -b html docs/source docs/_build/html
+        python -m sphinx -b html docs docs/_build/html
 
     - name: Check accessibility basics
       run: |
@@ -443,11 +443,11 @@ jobs:
     - name: Check documentation style
       run: |
         echo "🎨 Checking documentation style..."
-        doc8 docs/source --ignore-path docs/source/_build --max-line-length 100
+        doc8 docs --ignore-path docs/_build --max-line-length 100
       continue-on-error: true
 
     - name: Sphinx lint check
       run: |
         echo "🔍 Running Sphinx linting..."
-        sphinx-lint docs/source/
+        sphinx-lint docs/
       continue-on-error: true

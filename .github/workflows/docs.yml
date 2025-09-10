@@ -68,11 +68,11 @@ jobs:
 
     - name: Build Sphinx documentation
       run: |
-        sphinx-build -W --keep-going -b html docs/source docs/_build/html
+        sphinx-build -W --keep-going -b html docs docs/_build/html
 
     - name: Check documentation coverage
       run: |
-        sphinx-build -b coverage docs/source docs/_build/coverage
+        sphinx-build -b coverage docs docs/_build/coverage
         echo "Documentation Coverage Report:"
         cat docs/_build/coverage/python.txt || echo "No coverage report generated"
 
@@ -132,7 +132,7 @@ jobs:
 
     - name: Check external links
       run: |
-        sphinx-build -W --keep-going -b linkcheck docs/source docs/_build/linkcheck
+        sphinx-build -W --keep-going -b linkcheck docs docs/_build/linkcheck
       continue-on-error: true
 
     - name: Upload linkcheck results
@@ -183,7 +183,7 @@ jobs:
 
     - name: Test documentation examples
       run: |
-        sphinx-build -W --keep-going -b doctest docs/source docs/_build/doctest
+        sphinx-build -W --keep-going -b doctest docs docs/_build/doctest
 
     - name: Upload doctest results
       uses: actions/upload-artifact@v4
@@ -234,7 +234,7 @@ jobs:
 
     - name: Check documentation style
       run: |
-        doc8 docs/source --ignore-path docs/source/_build --max-line-length 100
+        doc8 docs --ignore-path docs/_build --max-line-length 100
       continue-on-error: true
 
   deploy-docs:
@@ -287,7 +287,7 @@ jobs:
 
     - name: Build documentation for deployment
       run: |
-        sphinx-build -b html docs/source docs/_build/html
+        sphinx-build -b html docs docs/_build/html
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
