@@ -6,8 +6,8 @@ for the command-line interface to ensure robustness.
 """
 
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np

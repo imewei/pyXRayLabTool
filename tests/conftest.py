@@ -7,13 +7,15 @@ for all test modules in the xraylabtool test suite.
 
 import gc
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 import psutil
 import pytest
+
+import xraylabtool as xlt
 
 # Import centralized test configuration
 from tests.fixtures.test_config import (
@@ -21,7 +23,6 @@ from tests.fixtures.test_config import (
     TEST_ENERGIES,
     TEST_MATERIALS,
 )
-import xraylabtool as xlt
 from xraylabtool.calculators.core import clear_scattering_factor_cache
 from xraylabtool.data_handling.batch_processing import BatchConfig, MemoryMonitor
 
