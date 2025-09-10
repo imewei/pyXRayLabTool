@@ -20,6 +20,11 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   PIP_NO_PYTHON_VERSION_WARNING: 1
 
+  # Consistent tool versions (match optimized CI)
+  RUFF_VERSION: "0.7.1"
+  BLACK_VERSION: "24.1.1"
+  ISORT_VERSION: "5.13.2"
+
 jobs:
   lint:
     name: Code Quality & Linting
@@ -75,7 +80,7 @@ jobs:
 
     - name: Check code formatting with ruff
       run: |
-        pip install ruff==0.7.1  # Pin ruff version for consistency
+        pip install ruff==${{ env.RUFF_VERSION }} isort==${{ env.ISORT_VERSION }}  # Pin versions for consistency
         ruff format --diff xraylabtool/ tests/ || true  # Show diff but don't fail
         ruff format xraylabtool/ tests/  # Apply formatting
         ruff format --check xraylabtool/ tests/  # Verify it worked
