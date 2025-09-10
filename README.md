@@ -1,35 +1,29 @@
-# 🔬 XRayLabTool
-
-> **High-Performance X-ray Optical Properties Calculator for Materials Science & Synchrotron Research**
+# XRayLabTool
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/xraylabtool.svg)](https://badge.fury.io/py/xraylabtool)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://readthedocs.org/projects/pyxraylabtool/badge/?version=latest)](https://pyxraylabtool.readthedocs.io/en/latest/?badge=latest)
 
-**XRayLabTool** is a comprehensive **Python package** and **command-line tool** for calculating X-ray optical properties of materials based on their chemical formulas and densities. Designed for **synchrotron scientists**, **materials researchers**, and **X-ray optics developers**, it provides **ultra-fast**, accurate calculations using **CXRO/NIST atomic scattering factor data**.
+XRayLabTool is a Python package and command-line tool for calculating X-ray optical properties of materials based on their chemical formulas and densities.
 
-**🎯 Key Applications**: X-ray diffraction • Synchrotron beamline design • Materials characterization • Reflectivity analysis • Critical angle calculations • X-ray optics design
+## Table of Contents
 
-**⚡ Performance**: 150,000+ calculations/second with 350x speed improvement over conventional tools
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Command-Line Interface (CLI)](#command-line-interface-cli)
+- [Input Parameters](#input-parameters)
+- [Output: XRayResult Dataclass](#output-xrayresult-dataclass)
+- [Usage Examples](#usage-examples)
+- [Migration Guide](#migration-guide)
+- [Supported Calculations](#supported-calculations)
+- [Performance Features](#performance-features)
+- [Testing and Validation](#testing-and-validation)
+- [API Reference](#api-reference)
+- [Documentation & Support](#documentation--support)
+- [Citation](#citation)
 
-## 📋 Table of Contents
-
-- [📦 Installation](#-installation)
-- [🚀 Quick Start](#-quick-start)
-- [🖥️ Command-Line Interface (CLI)](#-command-line-interface-cli)
-- [📥 Input Parameters](#-input-parameters)
-- [📤 Output: XRayResult Dataclass](#-output-xrayresult-dataclass)
-- [💡 Usage Examples](#-usage-examples)
-- [🔄 Migration Guide](#-migration-guide)
-- [🧮 Supported Calculations](#-supported-calculations)
-- [⚡ Performance Features](#-performance-features--optimizations)
-- [🧪 Testing and Validation](#-testing-and-validation)
-- [📚 API Reference](#-api-reference)
-- [📞 Documentation & Support](#-documentation--support)
-- [📈 Citation](#-citation)
-
-## 📦 Installation
+## Installation
 
 ### From PyPI (Recommended)
 
@@ -122,26 +116,20 @@ Restart your shell or source your config file after installation.
 
 ---
 
-## ⚡ Quick Start: X-ray Properties in 30 Seconds
-
-Get started with **X-ray optical property calculations** immediately:
+## Quick Start
 
 ```bash
 # Install from PyPI
 pip install xraylabtool
 
-# Calculate X-ray properties for silicon at 10 keV (Cu Kα)
+# Calculate X-ray properties for silicon at 10 keV
 python -c "import xraylabtool as xlt; result = xlt.calculate_single_material_properties('Si', 10.0, 2.33); print(f'Critical angle: {result.critical_angle_degrees[0]:.3f}°')"
 
 # Or use the command-line interface
 xraylabtool calc Si -e 10.0 -d 2.33
 ```
 
-**Output**: Critical angle, attenuation length, dispersion (δ), absorption (β), and more X-ray optical constants
-
----
-
-## 🚀 Quick Start
+## Usage Examples
 
 ### Single Material Analysis
 
@@ -193,9 +181,7 @@ print(f"Data points: {len(result.energy_kev)}")
 
 ---
 
-## 🖥️ Command-Line Interface (CLI)
-
-XRayLabTool provides a comprehensive command-line interface for quick calculations, batch processing, and integration into workflows.
+## Command-Line Interface (CLI)
 
 ### Installation & Verification
 
@@ -261,8 +247,6 @@ xraylabtool bragg -d 3.14,2.45,1.92 -e 8.048
 ```
 
 ### Available CLI Commands
-
-XRayLabTool provides **9 comprehensive commands** for X-ray analysis:
 
 | Command | Purpose | Example |
 |---------|---------|--------|
@@ -342,17 +326,17 @@ xraylabtool install-completion --help
 xraylabtool list --help
 ```
 
-**CLI Features Summary:**
-- **9 commands**: Complete X-ray analysis workflow coverage
-- **Energy input formats**: Single values, ranges, lists, and logarithmic spacing
-- **Batch processing**: CSV file processing with parallel execution
-- **Multiple output formats**: Table, CSV, and JSON output
-- **Shell completion**: Tab completion for commands, options, and common values (bash, zsh, fish, PowerShell)
-- **Cross-platform**: Works on Windows, macOS, and Linux
+**CLI Features:**
+- 9 commands for X-ray analysis
+- Energy input formats: Single values, ranges, lists, and logarithmic spacing
+- Batch processing from CSV files
+- Output formats: Table, CSV, and JSON
+- Shell completion for bash, zsh, fish, and PowerShell
+- Cross-platform support
 
 ---
 
-## 📥 Input Parameters
+## Input Parameters
 
 | Parameter    | Type                                  | Description                                                    |
 | ------------ | ------------------------------------- | -------------------------------------------------------------- |
@@ -362,7 +346,7 @@ xraylabtool list --help
 
 ---
 
-## 📤 Output: `XRayResult` Dataclass
+## Output: `XRayResult` Dataclass
 
 The `XRayResult` dataclass contains all computed X-ray optical properties with clear, descriptive field names:
 
@@ -391,7 +375,7 @@ The `XRayResult` dataclass contains all computed X-ray optical properties with c
 
 ---
 
-## 💡 Usage Examples
+## Usage Examples
 
 ### Recommended: Using New Field Names
 
@@ -489,7 +473,7 @@ plt.show()
 
 ---
 
-## 🔄 Migration Guide: Legacy to New Field Names
+## Migration Guide: Legacy to New Field Names
 
 To help users transition from legacy CamelCase field names to the new descriptive snake_case names, here's a comprehensive mapping:
 
@@ -551,7 +535,7 @@ with warnings.catch_warnings():
 
 ---
 
-## 🧮 Supported Calculations
+## Supported Calculations
 
 ### Optical Constants
 - **Dispersion coefficient (δ)**: Real part of refractive index decrement
@@ -569,7 +553,7 @@ with warnings.catch_warnings():
 
 ---
 
-## 🔬 Scientific Background
+## Scientific Background
 
 XRayLabTool uses atomic scattering factor data from the [Center for X-ray Optics (CXRO)](https://henke.lbl.gov/optical_constants/) and NIST databases. The calculations are based on:
 
@@ -589,17 +573,17 @@ Where r₀ is the classical electron radius, λ is wavelength, and ρₑ is elec
 
 ---
 
-## ⚡ Performance Features & Optimizations
+## Performance Features
 
 XRayLabTool has been extensively optimized for high-performance calculations. Here are the key performance improvements:
 
-### 🚀 Ultra-High Performance Cache System
+### Performance Cache System
 
 #### Preloaded Atomic Data Cache
-- **92 elements preloaded**: Instant access to atomic data for common elements
-- **10-50x speed improvement**: Eliminates expensive database queries to Mendeleev
-- **Zero latency**: Si, O, Al, Fe, and other common elements load instantly
-- **Smart fallback**: Uncommon elements still use Mendeleev with runtime caching
+- 92 elements preloaded for instant access to atomic data
+- Eliminates database queries to Mendeleev for common elements
+- Fast access for Si, O, Al, Fe, and other common elements
+- Fallback to Mendeleev for uncommon elements with runtime caching
 
 ```python
 # Check cache statistics
@@ -609,17 +593,17 @@ print(get_cache_stats())
 ```
 
 #### Advanced Caching Infrastructure
-- **Interpolator Caching**: Reuses PCHIP interpolators across calculations
-- **LRU Caches**: Intelligent memory management for frequently accessed data
-- **Bulk Loading**: Optimized atomic data loading for multiple elements
+- Interpolator caching: Reuses PCHIP interpolators across calculations
+- LRU caches: Memory management for frequently accessed data
+- Bulk loading: Optimized atomic data loading for multiple elements
 
-### 🔥 Vectorized Mathematical Operations
+### Vectorized Mathematical Operations
 
 #### Matrix Operations for Multi-Element Materials
-- **Vectorized computations**: Matrix operations instead of loops for multi-element materials
-- **NumPy optimizations**: Proper dtypes and memory-contiguous arrays
-- **Batch interpolation**: Process multiple elements simultaneously
-- **2-3x faster**: Mathematical computations compared to previous versions
+- Vectorized computations: Matrix operations instead of loops for multi-element materials
+- NumPy optimizations: Proper dtypes and memory-contiguous arrays
+- Batch interpolation: Process multiple elements simultaneously
+- Faster mathematical computations compared to previous versions
 
 #### Smart Single vs Multi-Element Optimization
 ```python
@@ -630,7 +614,7 @@ result_single = xlt.calculate_single_material_properties("Si", energies, 2.33)
 result_multi = xlt.calculate_single_material_properties("SiO2", energies, 2.2)
 ```
 
-### 🧠 Memory-Efficient Batch Processing
+### Memory-Efficient Batch Processing
 
 #### High-Performance Batch API
 For large-scale calculations, use the optimized batch processor:
@@ -655,41 +639,41 @@ results = calculate_batch_properties(formulas, energies, densities, config)
 ```
 
 #### Memory Management Features
-- **Chunked processing**: Handles datasets larger than available RAM
-- **Automatic garbage collection**: Prevents memory leaks during large calculations
-- **Memory monitoring**: Real-time memory usage tracking
-- **Progress tracking**: Visual feedback for long-running calculations
+- Chunked processing: Handles datasets larger than available RAM
+- Automatic garbage collection: Prevents memory leaks during large calculations
+- Memory monitoring: Real-time memory usage tracking
+- Progress tracking: Visual feedback for long-running calculations
 
-### 📊 Performance Benchmarks
+### Performance Benchmarks
 
 #### Real-World Performance (Modern Hardware)
 
 **Single Material Calculations:**
-- Single energy point: **~0.03 ms**
-- 100 energy points: **~0.3 ms**
-- 1000 energy points: **~3 ms**
+- Single energy point: ~0.03 ms
+- 100 energy points: ~0.3 ms
+- 1000 energy points: ~3 ms
 
 **Batch Processing:**
-- **150,000+ calculations/second** sustained throughput
-- 50 materials × 50 energies = 2,500 calculations in **~17ms**
-- Average: **0.33 ms per material**
+- High throughput for multiple materials
+- 50 materials × 50 energies = 2,500 calculations in ~17ms
+- Average: 0.33 ms per material
 
 **Memory Efficiency:**
 - 150 materials × 100 energies = 15,000 calculations
-- Memory usage: **<1 MB** additional RAM
+- Memory usage: <1 MB additional RAM
 - No memory leaks during extended calculations
 
 #### Performance Comparison
 
 | Operation | Before Optimization | After Optimization | Improvement |
 |-----------|--------------------|--------------------|-------------|
-| Atomic data access | ~200ms (DB query) | ~0.001ms (cache) | **200,000x** |
-| Single calculation | ~1.07s | ~0.003s | **350x** |
-| Mathematical ops | Baseline | Vectorized | **2-3x** |
-| Memory usage | High allocation | Chunked/optimized | **5-10x** |
-| Batch processing | Sequential | Parallel+chunked | **5-15x** |
+| Atomic data access | ~200ms (DB query) | ~0.001ms (cache) | 200,000x |
+| Single calculation | ~1.07s | ~0.003s | 350x |
+| Mathematical ops | Baseline | Vectorized | 2-3x |
+| Memory usage | High allocation | Chunked/optimized | 5-10x |
+| Batch processing | Sequential | Parallel+chunked | 5-15x |
 
-### 🎯 Performance Best Practices
+### Performance Best Practices
 
 #### For Maximum Speed
 ```python
@@ -726,7 +710,7 @@ config = BatchConfig(
 results = calculate_batch_properties(formulas, energies, densities, config)
 ```
 
-### 🔧 Performance Monitoring
+### Performance Monitoring
 
 ```python
 # Monitor cache performance
@@ -746,7 +730,7 @@ print(f"Within limits: {monitor.check_memory()}")
 
 ---
 
-## 🧪 Testing and Validation
+## Testing and Validation
 
 XRayLabTool includes a comprehensive test suite with:
 
@@ -763,7 +747,7 @@ pytest tests/ -v
 
 ---
 
-## 📚 API Reference
+## API Reference
 
 ### Main Functions
 
@@ -797,13 +781,13 @@ Calculate X-ray properties for multiple materials.
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **CXRO**: Atomic scattering factor databases
 - **NIST**: Reference data and validation
@@ -811,7 +795,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📞 Documentation & Support
+## Documentation & Support
 
 ### 📖 Documentation
 - **Main README**: Overview and Python API examples
@@ -827,7 +811,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📈 Citation
+## Citation
 
 If you use XRayLabTool in your research, please cite:
 
@@ -842,8 +826,6 @@ If you use XRayLabTool in your research, please cite:
 ```
 
 ---
-
-*Made with ❤️ for the X-ray science community*
 
 <!-- SEO Meta Tags -->
 <!--
