@@ -124,9 +124,9 @@ jobs:
 
     - name: Validate performance optimizations
       run: |
-        # Quick optimization validation tests
-        pytest tests/performance/test_performance_optimizations_enhanced.py::TestModuleLevelImports -v --tb=short
-        pytest tests/performance/test_performance_optimizations_enhanced.py::TestArrayConversionOptimization -v --tb=short
+        # Quick optimization validation tests with correct class names
+        pytest tests/performance/test_performance_optimizations_enhanced.py::TestDeprecationWarningOptimization -v --tb=short
+        pytest tests/performance/test_performance_optimizations_enhanced.py::TestArrayOptimization -v --tb=short
         pytest tests/unit/test_numerical_stability.py::TestNumericalStabilityChecks -v --tb=short
       continue-on-error: false
 
