@@ -68,10 +68,3 @@ search:
 # These help with link previews on social media
 submodules:
   include: []
-
-# Additional ReadTheDocs features
-features:
-  # Enable analytics if available
-  - analytics
-  # Enable search ranking if available
-  - search.ranking
