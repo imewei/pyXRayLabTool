@@ -49,5 +49,5 @@ Getting Help
 While working through tutorials:
 
 - Use ``xraylabtool --help`` for command information
-- Check the :doc:`../api/index` for detailed function documentation
-- Refer to :doc:`../getting_started` for installation and setup issues
+- Check the `API documentation <../api/index.rst>`_ for detailed function documentation
+- Refer to `getting started guide <../getting_started.rst>`_ for installation and setup issues

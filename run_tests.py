@@ -213,7 +213,7 @@ class TestRunner:
 
         return passed_phases == total_phases
 
-    def print_summary(self):
+    def print_summary(self) -> None:
         """Print test summary."""
         end_time = time.time()
         duration = end_time - self.start_time
@@ -246,7 +246,7 @@ class TestRunner:
         print(f"{'=' * 60}")
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Run comprehensive xraylabtool tests")
     parser.add_argument(

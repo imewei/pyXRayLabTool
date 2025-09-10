@@ -553,4 +553,4 @@ We welcome performance contributions:
 3. **Optimization**: Submit optimized algorithms
 4. **Testing**: Validate performance improvements
 
-See the :doc:`contributing` guide for details.
+See the `contributing guide <contributing.rst>`_ for details.

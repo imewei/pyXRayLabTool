@@ -43,6 +43,7 @@ The parser handles common errors:
    try:
        composition = parse_formula("XYZ")
    except FormulaError as e:
+       print(f"Error: {e}")
        # Error: Unknown element 'XYZ'
        # Suggestion: Check element symbols (case-sensitive)
 
@@ -53,6 +54,7 @@ The parser handles common errors:
    try:
        composition = parse_formula("Si-O2")
    except FormulaError as e:
+       print(f"Error: {e}")
        # Error: Invalid character '-' in formula
        # Suggestion: Use format like SiO2 or Al2O3
 

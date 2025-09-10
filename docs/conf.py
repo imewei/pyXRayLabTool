@@ -183,5 +183,5 @@ copybutton_prompt_is_regexp = True
 
 
 # -- Custom CSS and JS -------------------------------------------------------
-def setup(app):
+def setup(app) -> None:
     app.add_css_file("custom.css")

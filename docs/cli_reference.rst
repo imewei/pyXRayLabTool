@@ -576,7 +576,7 @@ XRayLabTool provides clear error messages with suggestions:
 
    $ xraylabtool calc XYZ --density 1.0 --energy 8000
    Error: Unknown element 'XYZ' in formula
-   Suggestion: Check element symbols (case-sensitive: Si, not si)
+   Suggestion: Check element symbols - case-sensitive Si, not si
 
    $ xraylabtool calc Si --energy 8000
    Error: --density is required

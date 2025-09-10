@@ -187,9 +187,9 @@ After installation, completion is available by pressing Tab:
 
 .. code-block:: bash
 
-   xraylabtool <Tab>          # Shows all commands
-   xraylabtool calc <Tab>     # Shows calc command options
-   xraylabtool atomic S<Tab>  # Completes to supported elements starting with 'S'
+   xraylabtool [TAB]          # Shows all commands
+   xraylabtool calc [TAB]     # Shows calc command options
+   xraylabtool atomic S[TAB]  # Completes to supported elements starting with 'S'
 
 Uninstallation
 ~~~~~~~~~~~~~~

@@ -271,11 +271,11 @@ Now that you're familiar with the basics, you can:
 
 Key Documentation Sections:
 
-- :doc:`tutorials/index` - Step-by-step guides for common tasks
-- :doc:`cli_reference` - Complete command-line interface documentation
-- :doc:`examples/index` - Real-world usage examples
-- :doc:`api/index` - Complete API reference
-- :doc:`physics/xray_optics` - X-ray physics background
+- `Tutorials <tutorials/index.rst>`_ - Step-by-step guides for common tasks
+- `CLI Reference <cli_reference.rst>`_ - Complete command-line interface documentation
+- `Examples <examples/index.rst>`_ - Real-world usage examples
+- `API Reference <api/index.rst>`_ - Complete API reference
+- `X-ray Physics <physics/xray_optics.rst>`_ - X-ray physics background
 
 Getting Help
 ------------
