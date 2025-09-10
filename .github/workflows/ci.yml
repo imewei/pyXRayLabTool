@@ -50,17 +50,17 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.cache/pre-commit
-        key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+        key: pre-commit-v3-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
         restore-keys: |
-          pre-commit-${{ runner.os }}-
+          pre-commit-v3-${{ runner.os }}-
 
     - name: Cache lint dependencies
       uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: lint-deps-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+        key: lint-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
         restore-keys: |
-          lint-deps-${{ runner.os }}-
+          lint-deps-v3-${{ runner.os }}-
 
     - name: Install dependencies with retry
       uses: nick-fields/retry@v3
