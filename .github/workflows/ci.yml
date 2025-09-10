@@ -242,11 +242,11 @@ jobs:
 
     - name: Run benchmarks
       run: |
-        # Run standard benchmarks
+        # Run standard benchmarks with pytest-benchmark framework
         pytest tests/performance/ tests/integration/ -v --benchmark-only --benchmark-json=benchmark-results.json
 
-        # Run performance optimization benchmarks
-        pytest tests/performance/test_performance_benchmarks.py -v --benchmark-only --benchmark-json=optimization-benchmarks.json
+        # Run performance optimization tests (these don't use pytest-benchmark fixtures)
+        pytest tests/performance/test_performance_benchmarks.py -v -m "benchmark" --tb=short
 
         # Run memory performance tests (without benchmarking framework)
         pytest tests/performance/test_memory_management.py -v -m "performance" --tb=short
