@@ -358,40 +358,12 @@ jobs:
           echo "⚠️ $missing_alt out of $total_images images missing alt text"
         fi
 
-        # Check heading structure with improved script
+        # Check heading structure (simplified)
         echo "📑 Checking heading structure..."
 
         if [[ ${#html_files[@]} -gt 0 ]]; then
-          python3 -c "
-import re
-import sys
-from pathlib import Path
-
-html_files = '''$html_files'''.strip().split()
-total_headings = 0
-files_checked = 0
-
-for html_file in html_files:
-    try:
-        content = Path(html_file).read_text(encoding='utf-8', errors='ignore')
-
-        # Extract headings
-        headings = re.findall(r'<h([1-6])[^>]*>(.*?)</h[1-6]>', content, re.IGNORECASE)
-
-        if headings:
-            files_checked += 1
-            print(f'📄 {html_file}:')
-            for level, text in headings[:3]:  # Show first 3 headings
-                indent = '  ' * (int(level) - 1)
-                clean_text = re.sub(r'<[^>]+>', '', text).strip()[:40]
-                if clean_text:
-                    print(f'{indent}H{level}: {clean_text}')
-                    total_headings += 1
-    except Exception as e:
-        print(f'⚠️ Could not process {html_file}: {e}')
-
-print(f'\\nHeading Summary: {total_headings} headings found in {files_checked} files')
-" 2>/dev/null || echo "Could not analyze heading structure"
+          heading_count=$(find docs/_build/html -name "*.html" -exec grep -c "<h[1-6]" {} \; 2>/dev/null | awk '{sum += $1} END {print sum}')
+          echo "Found approximately $heading_count headings in HTML files"
         fi
 
         # Check for accessibility landmarks
