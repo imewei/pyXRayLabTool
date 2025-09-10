@@ -8,7 +8,7 @@ The validation module provides input validation, error handling, and custom exce
 Exception Hierarchy
 --------------------
 
-.. automodule:: xraylabtool.validation.exceptions
+.. automodule:: xraylabtool.exceptions
    :members:
    :undoc-members:
    :show-inheritance:
@@ -17,7 +17,7 @@ Exception Hierarchy
 Base Exception
 ~~~~~~~~~~~~~~
 
-.. autoclass:: xraylabtool.validation.exceptions.XRayLabToolError
+.. autoclass:: xraylabtool.exceptions.XRayLabToolError
    :members:
    :show-inheritance:
    :no-index:
@@ -36,14 +36,14 @@ Base Exception
 Specific Exceptions
 ~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: xraylabtool.validation.exceptions.ValidationError
+.. autoclass:: xraylabtool.exceptions.ValidationError
    :members:
    :show-inheritance:
    :no-index:
 
    Raised when input validation fails.
 
-.. autoclass:: xraylabtool.validation.exceptions.FormulaError
+.. autoclass:: xraylabtool.exceptions.FormulaError
    :members:
    :show-inheritance:
    :no-index:
@@ -65,7 +65,7 @@ Specific Exceptions
       except FormulaError as e:
           print(f"Formula error: {e}")
 
-.. autoclass:: xraylabtool.validation.exceptions.EnergyError
+.. autoclass:: xraylabtool.exceptions.EnergyError
    :members:
    :show-inheritance:
    :no-index:
@@ -86,7 +86,7 @@ Specific Exceptions
       except EnergyError as e:
           print(f"Energy error: {e}")
 
-.. autoclass:: xraylabtool.validation.exceptions.CalculationError
+.. autoclass:: xraylabtool.exceptions.CalculationError
    :members:
    :show-inheritance:
    :no-index:
@@ -275,7 +275,7 @@ Best Practices
 
 .. code-block:: python
 
-   from xraylabtool.validation.exceptions import FormulaError, EnergyError
+   from xraylabtool.exceptions import FormulaError, EnergyError
 
    try:
        result = calculate_single_material_properties(formula, density, energy)

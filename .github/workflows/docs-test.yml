@@ -410,7 +410,7 @@ jobs:
                 clean_text = re.sub(r'<[^>]+>', '', text).strip()[:50]
                 print(f'{indent}H{level}: {clean_text}')
             print()
-        " {} \\; 2>/dev/null || true
+        " {} \; 2>/dev/null || true
 
   style-check:
     name: Documentation Style Check

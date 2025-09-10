@@ -188,11 +188,11 @@ def warm_up_cache(elements: list[str]) -> None:
     Args:
         elements: List of element symbols to preload
     """
+    import contextlib
+
     for element in elements:
-        try:
+        with contextlib.suppress(Exception):
             get_atomic_data_fast(element)
-        except Exception:
-            pass  # Skip elements that can't be loaded
 
 
 def get_cache_stats() -> dict[str, int]:

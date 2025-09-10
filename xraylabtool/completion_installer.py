@@ -1268,7 +1268,7 @@ if (Test-Path "$env:VIRTUAL_ENV/xraylabtool-completion/powershell/xraylabtool.ps
             return "zsh"
         elif "bash" in shell_env:
             return "bash"
-        elif os.environ.get("PSModulePath"):  # PowerShell indicator
+        elif os.environ.get("PSMODULEPATH"):  # PowerShell indicator
             return "powershell"
         else:
             return "bash"  # Default to bash
