@@ -45,12 +45,12 @@ cd pyXRayLabTool
 pip install -e .
 ```
 
-### Bash Completion Setup
+### Shell Completion Setup
 
 After installation, enable tab completion for enhanced CLI productivity:
 
 ```bash
-# Install bash completion (recommended)
+# Install shell completion (auto-detects shell)
 xraylabtool install-completion
 
 # Alternative: using flag syntax
@@ -60,7 +60,7 @@ xraylabtool --install-completion
 xraylabtool install-completion --test
 ```
 
-**Prerequisites for Bash users:**
+**Prerequisites for Bash/Zsh users:**
 ```bash
 # Install bash-completion for full functionality (macOS)
 brew install bash-completion@2
@@ -77,13 +77,13 @@ sudo yum install bash-completion
 
 **Uninstalling completion:**
 ```bash
-# Remove bash completion
+# Remove shell completion
 xraylabtool uninstall-completion
 ```
 
 Restart your shell or source your config file after installation.
 
-> **Note**: Currently only Bash completion is supported. Support for other shells (zsh, fish, PowerShell) is planned for future releases.
+> **Note**: Shell completion is supported for **bash, zsh, fish, and PowerShell**. Use `xraylabtool install-completion <shell>` to install completion for your preferred shell, or `xraylabtool install-completion` for auto-detection.
 
 ### Requirements
 
@@ -181,10 +181,10 @@ pip install xraylabtool
 # Verify CLI installation
 xraylabtool --version
 
-# Install bash completion (recommended)
+# Install shell completion (auto-detects shell)
 xraylabtool install-completion
 
-# Test completion is working  
+# Test completion is working
 xraylabtool install-completion --test
 ```
 
@@ -248,21 +248,27 @@ XRayLabTool provides **9 comprehensive commands** for X-ray analysis:
 | `atomic` | Atomic data lookup | `xraylabtool atomic Si,Al,Fe` |
 | `bragg` | Diffraction angle calculations | `xraylabtool bragg -d 3.14 -e 8.0` |
 | `list` | Show constants/fields/examples | `xraylabtool list constants` |
-| `install-completion` | Install bash completion | `xraylabtool install-completion` |
-| `uninstall-completion` | Remove bash completion | `xraylabtool uninstall-completion` |
+| `install-completion` | Install shell completion | `xraylabtool install-completion` |
+| `uninstall-completion` | Remove shell completion | `xraylabtool uninstall-completion` |
 
-### Bash Completion Usage
+### Shell Completion Usage
 
 Both command and flag syntaxes are supported:
 
 ```bash
 # Subcommand syntax (recommended)
-xraylabtool install-completion           # Install bash completion
+xraylabtool install-completion           # Install shell completion (auto-detect)
 xraylabtool install-completion --test    # Test installation
 xraylabtool uninstall-completion         # Remove completion
 
 # Flag syntax (alternative)
-xraylabtool --install-completion         # Install bash completion
+xraylabtool --install-completion         # Install shell completion (auto-detect)
+
+# Install for specific shells
+xraylabtool install-completion bash      # Bash completion
+xraylabtool install-completion zsh       # Zsh completion
+xraylabtool install-completion fish      # Fish completion
+xraylabtool install-completion powershell # PowerShell completion
 ```
 
 **Tab Completion Features:**
@@ -285,7 +291,7 @@ xraylabtool --install-completion         # Install bash completion
 - **Field Selection**: Choose specific output fields with `--fields`
 - **Precision Control**: Set decimal places with `--precision`
 - **File Output**: Save results to CSV or JSON files
-- **Bash Tab Completion**: Intelligent completion for enhanced productivity
+- **Multi-Shell Tab Completion**: Intelligent completion for bash, zsh, fish, and PowerShell
   - **Context-aware**: Suggests appropriate values based on current command
   - **File completion**: Automatic file path completion for input/output files
   - **Chemical formulas**: Common materials and element suggestions
@@ -314,7 +320,7 @@ xraylabtool list --help
 - **Energy input formats**: Single values, ranges, lists, and logarithmic spacing
 - **Batch processing**: CSV file processing with parallel execution
 - **Multiple output formats**: Table, CSV, and JSON output
-- **Bash completion**: Tab completion for commands, options, and common values
+- **Shell completion**: Tab completion for commands, options, and common values (bash, zsh, fish, PowerShell)
 - **Cross-platform**: Works on Windows, macOS, and Linux
 
 ---
