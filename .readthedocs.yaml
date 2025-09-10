@@ -10,19 +10,9 @@ build:
   tools:
     python: "3.12"
   jobs:
-    pre_create_environment:
-      # Install system dependencies if needed
-      - echo "Installing system dependencies..."
-      - apt-get update
-      - apt-get install -y graphviz pandoc  # For inheritance diagrams and format conversion
     pre_build:
       # Ensure we have the latest pip and build tools
       - pip install --upgrade pip setuptools wheel
-    post_build:
-      # Run documentation validation
-      - echo "Running documentation validation..."
-      - python -m sphinx -b linkcheck docs docs/_build/linkcheck || echo "Some links may be broken"
-      - echo "Build completed successfully"
 
 # Python configuration
 python:
