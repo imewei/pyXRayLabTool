@@ -7,8 +7,8 @@ including timing benchmarks, memory usage analysis, and regression testing.
 
 import time
 import types
-from unittest.mock import patch
 import warnings
+from unittest.mock import patch
 
 import numpy as np
 import pytest

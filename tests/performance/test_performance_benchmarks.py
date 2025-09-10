@@ -5,9 +5,9 @@ This test module provides comprehensive performance benchmarks to validate
 optimization improvements and detect performance regressions.
 """
 
-from contextlib import contextmanager
 import statistics
 import time
+from contextlib import contextmanager
 
 import numpy as np
 import pytest
