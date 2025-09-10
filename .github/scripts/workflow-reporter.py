@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 from collections import Counter, defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class WorkflowReporter:
@@ -67,7 +67,7 @@ class WorkflowReporter:
             print(f"❌ Failed to parse workflow data: {e}")
             return False
 
-    def analyze_workflow_performance(self) -> Dict[str, Any]:
+    def analyze_workflow_performance(self) -> dict[str, Any]:
         """Analyze workflow performance metrics."""
         print("📈 Analyzing workflow performance...")
 
@@ -152,7 +152,7 @@ class WorkflowReporter:
         else:
             return "critical"
 
-    def generate_failure_patterns(self) -> Dict[str, Any]:
+    def generate_failure_patterns(self) -> dict[str, Any]:
         """Analyze failure patterns and common issues."""
         print("🔍 Analyzing failure patterns...")
 
@@ -187,7 +187,7 @@ class WorkflowReporter:
 
         return failure_patterns
 
-    def generate_recommendations(self) -> List[str]:
+    def generate_recommendations(self) -> list[str]:
         """Generate actionable recommendations based on analysis."""
         print("💡 Generating recommendations...")
 
@@ -234,7 +234,7 @@ class WorkflowReporter:
         print("📝 Generating markdown report...")
 
         report_lines = [
-            f"# Workflow Analysis Report",
+            "# Workflow Analysis Report",
             f"*Generated on {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC*",
             f"*Analysis period: Last {self.days} days*",
             "",

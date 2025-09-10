@@ -278,7 +278,7 @@ def find_peaks(
 def background_subtraction(
     x: np.ndarray,
     y: np.ndarray,
-    method: str = "linear",  # noqa: ARG001
+    method: str = "linear",
 ) -> np.ndarray:
     """
     Perform background subtraction on diffraction data.
@@ -292,12 +292,16 @@ def background_subtraction(
         Background-subtracted y data
     """
     if method == "linear":
-        # Simple linear background between first and last points
+        # Linear background between first and last points
         background = np.linspace(y[0], y[-1], len(y))
     elif method == "polynomial":
-        # Fit polynomial to endpoints and minimum values
-        # This is a simplified implementation
-        background = np.full_like(y, np.min(y))
+        # Fit quadratic polynomial using x values
+        # Use endpoints and minimum point for fitting
+        min_idx = np.argmin(y)
+        x_points = np.array([x[0], x[min_idx], x[-1]])
+        y_points = np.array([y[0], y[min_idx], y[-1]])
+        coeffs = np.polyfit(x_points, y_points, 2)
+        background = np.polyval(coeffs, x)
     else:
         raise ValueError("Method must be 'linear' or 'polynomial'")
 

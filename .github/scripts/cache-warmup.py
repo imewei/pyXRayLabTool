@@ -10,10 +10,10 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
-def run_command(cmd: List[str], capture: bool = True) -> subprocess.CompletedProcess:
+def run_command(cmd: list[str], capture: bool = True) -> subprocess.CompletedProcess:
     """Run a command with error handling."""
     try:
         return subprocess.run(
@@ -149,7 +149,7 @@ def warm_tool_caches():
         print(f"  ⚠️ Ruff cache warming failed: {e}")
 
 
-def check_cache_health() -> Dict[str, Any]:
+def check_cache_health() -> dict[str, Any]:
     """Check the health of existing caches."""
     print("🔍 Checking cache health...")
 

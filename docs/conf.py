@@ -57,7 +57,7 @@ extensions = [
 
 # Try to import nbsphinx safely - skip if Jupyter config issues
 try:
-    import nbsphinx
+    import nbsphinx  # noqa: F401
 
     extensions.append("nbsphinx")
 except (ImportError, PermissionError, OSError):
