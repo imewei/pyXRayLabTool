@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-09-12
+
+### 🔧 Enhanced - CI/CD & Development Infrastructure
+- **Robust Workflow Health Analysis**: Enhanced GitHub workflow monitoring with intelligent authentication handling
+  - Added comprehensive GitHub CLI authentication verification and debugging capabilities
+  - Implemented intelligent fallback analysis mode for API access failures
+  - Added repository context validation and enhanced error handling
+  - Static workflow file analysis when live GitHub Actions data is unavailable
+  - Added proper `actions:read` permissions to workflow-monitoring.yml
+  - Generates detailed recommendations for both success and failure scenarios
+- **Improved Documentation Build**: Fixed ReadTheDocs configuration issues
+  - Removed problematic system dependency installations that caused build failures
+  - Cleaned up invalid features configuration for more reliable documentation builds
+  - Updated .readthedocs.yaml for better compatibility and performance
+
+### 🧹 Improved - Code Quality & Formatting  
+- **Pre-commit Integration**: Applied comprehensive code formatting across the entire codebase
+  - Standardized formatting with black, isort, and other pre-commit hooks
+  - Improved code consistency across test files and GitHub scripts
+  - Enhanced developer experience with automated formatting
+
+### 🛠️ Fixed - Infrastructure Reliability
+- **Workflow Monitoring**: Addressed GitHub Actions authentication failures
+  - Workflows now gracefully handle API access limitations
+  - Comprehensive fallback mechanisms ensure continuous monitoring
+  - Enhanced debugging capabilities for troubleshooting CI/CD issues
+- **Documentation Build Stability**: Resolved ReadTheDocs configuration conflicts
+  - More reliable documentation builds and deployments
+  - Better error handling in documentation workflows
+
+**Breaking Changes:** None - All changes are backward compatible
+
+**Migration Guide:** No migration required - all improvements are transparent to users
+
 ## [0.2.0] - 2025-09-10
 
 ### 🎉 Major Release: Modular Architecture & Professional Documentation
