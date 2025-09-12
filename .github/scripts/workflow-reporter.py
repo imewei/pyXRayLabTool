@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Enhanced workflow monitoring and reporting script.
+
 Provides detailed analysis and recommendations for GitHub Actions workflows.
 """
 
@@ -10,6 +11,7 @@ import os
 import subprocess
 import sys
 from collections import Counter, defaultdict
+from pathlib import Path
 from typing import Any
 
 
@@ -21,23 +23,73 @@ class WorkflowReporter:
         self.days = days
         self.workflows_data = []
         self.analysis_results = {}
+        self.repo_context = None
+        self.fallback_mode = False
+
+    def verify_github_cli_auth(self) -> bool:
+        """Verify GitHub CLI authentication and permissions."""
+        try:
+            print("🔐 Verifying GitHub CLI authentication...")
+
+            # Check if gh is authenticated
+            subprocess.run(
+                ["gh", "auth", "status"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            print("✅ GitHub CLI authenticated successfully")
+
+            # Get repository context
+            repo_result = subprocess.run(
+                ["gh", "repo", "view", "--json", "nameWithOwner"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            repo_data = json.loads(repo_result.stdout)
+            self.repo_context = repo_data["nameWithOwner"]
+            print(f"📂 Repository context: {self.repo_context}")
+
+            return True
+
+        except subprocess.CalledProcessError as e:
+            print(f"❌ GitHub CLI authentication failed: {e}")
+            print("🔄 Switching to fallback analysis mode...")
+            self.fallback_mode = True
+            return False
+        except json.JSONDecodeError as e:
+            print(f"❌ Failed to parse repository data: {e}")
+            print("🔄 Switching to fallback analysis mode...")
+            self.fallback_mode = True
+            return False
 
     def fetch_workflow_data(self) -> bool:
         """Fetch workflow run data from GitHub CLI."""
+        if self.fallback_mode:
+            print("⚠️ Skipping workflow data fetch due to authentication issues")
+            return False
+
         try:
             print(f"📊 Fetching workflow data for last {self.days} days...")
 
+            # Build command with repository context if available
+            cmd = ["gh", "run", "list", "--limit", "200"]
+
+            if self.repo_context:
+                cmd.extend(["--repo", self.repo_context])
+
+            json_fields = (
+                "status,conclusion,workflowName,createdAt,updatedAt,"
+                "durationMs,url,headBranch"
+            )
+            cmd.extend(["--json", json_fields])
+
             # Fetch recent workflow runs
             result = subprocess.run(
-                [
-                    "gh",
-                    "run",
-                    "list",
-                    "--limit",
-                    "200",
-                    "--json",
-                    "status,conclusion,workflowName,createdAt,updatedAt,durationMs,url,headBranch",
-                ],
+                cmd,
                 capture_output=True,
                 text=True,
                 check=True,
@@ -62,9 +114,13 @@ class WorkflowReporter:
 
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to fetch workflow data: {e}")
+            print("🔄 Switching to fallback analysis mode...")
+            self.fallback_mode = True
             return False
         except json.JSONDecodeError as e:
             print(f"❌ Failed to parse workflow data: {e}")
+            print("🔄 Switching to fallback analysis mode...")
+            self.fallback_mode = True
             return False
 
     def analyze_workflow_performance(self) -> dict[str, Any]:
@@ -187,11 +243,147 @@ class WorkflowReporter:
 
         return failure_patterns
 
+    def fallback_analysis(self) -> dict[str, Any]:
+        """Perform basic analysis when API access is unavailable."""
+        print("🔧 Running fallback workflow analysis...")
+
+        # Analyze workflow files directly
+        workflow_files = []
+        workflow_dir = Path(".github/workflows")
+
+        if workflow_dir.exists():
+            for workflow_file in workflow_dir.glob("*.yml"):
+                try:
+                    with open(workflow_file) as f:
+                        content = f.read()
+
+                    analysis = {
+                        "name": workflow_file.name,
+                        "path": str(workflow_file),
+                        "has_timeout": "timeout-minutes" in content,
+                        "has_retry": any(
+                            retry_term in content
+                            for retry_term in ["retry", "nick-fields/retry"]
+                        ),
+                        "has_caching": "actions/cache" in content,
+                        "has_continue_on_error": "continue-on-error: true" in content,
+                        "triggers": self._extract_triggers(content),
+                        "jobs_count": content.count("jobs:"),
+                    }
+
+                    workflow_files.append(analysis)
+
+                except Exception as e:
+                    print(f"⚠️ Error analyzing {workflow_file}: {e}")
+
+        # Generate basic health assessment
+        fallback_results = {
+            "total_workflow_files": len(workflow_files),
+            "workflows_with_timeout": sum(
+                1 for w in workflow_files if w["has_timeout"]
+            ),
+            "workflows_with_retry": sum(1 for w in workflow_files if w["has_retry"]),
+            "workflows_with_caching": sum(
+                1 for w in workflow_files if w["has_caching"]
+            ),
+            "workflow_details": workflow_files,
+        }
+
+        self.analysis_results = {
+            "fallback_analysis": fallback_results,
+            "mode": "fallback",
+        }
+
+        return fallback_results
+
+    def _extract_triggers(self, content: str) -> list[str]:
+        """Extract workflow triggers from content."""
+        triggers = []
+        lines = content.split("\n")
+        in_on_section = False
+
+        for line in lines:
+            line = line.strip()
+            if line.startswith("on:"):
+                in_on_section = True
+                continue
+            elif in_on_section:
+                if line and not line.startswith(" ") and not line.startswith("-"):
+                    break
+                elif line.startswith("- ") or ":" in line:
+                    trigger = line.replace("- ", "").split(":")[0].strip()
+                    if trigger:
+                        triggers.append(trigger)
+
+        return triggers
+
+    def _generate_fallback_recommendations(self) -> list[str]:
+        """Generate recommendations for fallback analysis mode."""
+        fallback_data = self.analysis_results["fallback_analysis"]
+        recommendations = [
+            "🔄 **Fallback Analysis Mode Active**",
+            "⚠️ GitHub CLI authentication failed - performing static workflow analysis",
+            "",
+            "📊 **Workflow File Analysis:**",
+            f"- Total workflow files: {fallback_data['total_workflow_files']}",
+            f"- With timeout settings: {fallback_data['workflows_with_timeout']}",
+            f"- With retry mechanisms: {fallback_data['workflows_with_retry']}",
+            f"- With caching: {fallback_data['workflows_with_caching']}",
+            "",
+            "💡 **Recommendations based on static analysis:**",
+        ]
+
+        # Analyze missing features
+        missing_timeout = (
+            fallback_data["total_workflow_files"]
+            - fallback_data["workflows_with_timeout"]
+        )
+        missing_retry = (
+            fallback_data["total_workflow_files"]
+            - fallback_data["workflows_with_retry"]
+        )
+        missing_cache = (
+            fallback_data["total_workflow_files"]
+            - fallback_data["workflows_with_caching"]
+        )
+
+        if missing_timeout > 0:
+            recommendations.append(
+                f"- 🕐 {missing_timeout} workflows missing timeout settings"
+            )
+
+        if missing_retry > 0:
+            recommendations.append(
+                f"- 🔄 {missing_retry} workflows could benefit from retry mechanisms"
+            )
+
+        if missing_cache > 0:
+            recommendations.append(
+                f"- 💾 {missing_cache} workflows could benefit from caching"
+            )
+
+        recommendations.extend(
+            [
+                "",
+                "🔧 **To fix GitHub CLI authentication issues:**",
+                "- Verify GITHUB_TOKEN has 'actions:read' permissions",
+                "- Check if repository context is correctly set",
+                "- Ensure GitHub CLI is properly authenticated",
+                "- Consider using a personal access token with broader permissions",
+            ]
+        )
+
+        return recommendations
+
     def generate_recommendations(self) -> list[str]:
         """Generate actionable recommendations based on analysis."""
         print("💡 Generating recommendations...")
 
         recommendations = []
+
+        # Handle fallback mode recommendations
+        if self.fallback_mode and "fallback_analysis" in self.analysis_results:
+            return self._generate_fallback_recommendations()
 
         for workflow, stats in self.analysis_results.items():
             if stats["health_status"] in ["warning", "critical"]:
@@ -201,14 +393,16 @@ class WorkflowReporter:
                 )
 
             if stats["avg_duration_minutes"] > 30:
+                duration = stats["avg_duration_minutes"]
                 recommendations.append(
-                    f"⚡ **{workflow}**: Average runtime is {stats['avg_duration_minutes']} minutes - "
+                    f"⚡ **{workflow}**: Average runtime is {duration} minutes - "
                     f"consider optimizing with better caching or parallel jobs"
                 )
 
             if stats["recent_failure_count"] >= 3:
+                failure_count = stats["recent_failure_count"]
                 recommendations.append(
-                    f"🚨 **{workflow}**: {stats['recent_failure_count']} recent failures - "
+                    f"🚨 **{workflow}**: {failure_count} recent failures - "
                     f"requires immediate attention"
                 )
 
@@ -229,6 +423,53 @@ class WorkflowReporter:
 
         return recommendations
 
+    def _generate_fallback_markdown_report(self, report_lines: list[str]) -> str:
+        """Generate markdown report for fallback mode."""
+        fallback_data = self.analysis_results["fallback_analysis"]
+
+        report_lines.extend(
+            [
+                "## 🔄 Fallback Analysis Mode",
+                "",
+                "⚠️ **GitHub CLI authentication failed - performing "
+                "static workflow analysis**",
+                "",
+                "## 📊 Workflow File Analysis",
+                "",
+                f"- **Total workflow files:** {fallback_data['total_workflow_files']}",
+                f"- **With timeout settings:** "
+                f"{fallback_data['workflows_with_timeout']}",
+                f"- **With retry mechanisms:** {fallback_data['workflows_with_retry']}",
+                f"- **With caching:** {fallback_data['workflows_with_caching']}",
+                "",
+                "## 📋 Workflow Details",
+                "",
+                "| File | Timeout | Retry | Caching | Triggers |",
+                "|------|---------|-------|---------|----------|",
+            ]
+        )
+
+        for workflow in fallback_data["workflow_details"]:
+            timeout_icon = "✅" if workflow["has_timeout"] else "❌"
+            retry_icon = "✅" if workflow["has_retry"] else "❌"
+            cache_icon = "✅" if workflow["has_caching"] else "❌"
+            triggers = ", ".join(workflow["triggers"][:3])  # Limit to first 3 triggers
+            if len(workflow["triggers"]) > 3:
+                triggers += "..."
+
+            line = (
+                f"| {workflow['name']} | {timeout_icon} | {retry_icon} | "
+                f"{cache_icon} | {triggers} |"
+            )
+            report_lines.append(line)
+
+        # Add recommendations
+        recommendations = self.generate_recommendations()
+        report_lines.extend(["", "## 💡 Recommendations", ""])
+        report_lines.extend(recommendations)
+
+        return "\n".join(report_lines)
+
     def generate_markdown_report(self) -> str:
         """Generate a comprehensive markdown report."""
         print("📝 Generating markdown report...")
@@ -238,13 +479,16 @@ class WorkflowReporter:
             f"*Generated on {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC*",
             f"*Analysis period: Last {self.days} days*",
             "",
-            "## 📊 Workflow Performance Summary",
-            "",
         ]
 
-        # Performance table
+        # Handle fallback mode differently
+        if self.fallback_mode:
+            return self._generate_fallback_markdown_report(report_lines)
+
         report_lines.extend(
             [
+                "## 📊 Workflow Performance Summary",
+                "",
                 "| Workflow | Runs | Success Rate | Avg Duration | Health Status |",
                 "|----------|------|--------------|--------------|---------------|",
             ]
@@ -258,10 +502,11 @@ class WorkflowReporter:
                 "critical": "🔴",
             }.get(stats["health_status"], "❓")
 
-            report_lines.append(
+            table_row = (
                 f"| {workflow} | {stats['total_runs']} | {stats['success_rate']}% | "
                 f"{stats['avg_duration_minutes']}m | {health_icon} {stats['health_status']} |"
             )
+            report_lines.append(table_row)
 
         # Failure analysis
         failure_patterns = self.generate_failure_patterns()
@@ -312,10 +557,20 @@ class WorkflowReporter:
         """Run complete workflow analysis."""
         print("🚀 Starting comprehensive workflow analysis...")
 
-        if not self.fetch_workflow_data():
-            return False
+        # First verify GitHub CLI authentication
+        auth_success = self.verify_github_cli_auth()
 
-        self.analyze_workflow_performance()
+        if auth_success:
+            # Try to fetch workflow data
+            data_success = self.fetch_workflow_data()
+            if data_success:
+                self.analyze_workflow_performance()
+            else:
+                # If data fetch fails, run fallback analysis
+                self.fallback_analysis()
+        else:
+            # Run fallback analysis if authentication fails
+            self.fallback_analysis()
 
         # Generate reports
         markdown_report = self.generate_markdown_report()
@@ -332,24 +587,37 @@ class WorkflowReporter:
         print("📋 WORKFLOW ANALYSIS SUMMARY")
         print("=" * 50)
 
-        for workflow, stats in self.analysis_results.items():
-            status_icon = {
-                "excellent": "🟢",
-                "good": "🟡",
-                "warning": "🟠",
-                "critical": "🔴",
-            }.get(stats["health_status"], "❓")
-
+        if self.fallback_mode:
+            fallback_data = self.analysis_results["fallback_analysis"]
+            print("🔄 **Fallback Analysis Mode Active**")
+            print(f"📊 Total workflow files: {fallback_data['total_workflow_files']}")
             print(
-                f"{status_icon} {workflow:30} | {stats['success_rate']:5.1f}% success | {stats['total_runs']:2d} runs"
+                f"🕐 With timeout settings: {fallback_data['workflows_with_timeout']}"
             )
+            print(f"🔄 With retry mechanisms: {fallback_data['workflows_with_retry']}")
+            print(f"💾 With caching: {fallback_data['workflows_with_caching']}")
+        else:
+            for workflow, stats in self.analysis_results.items():
+                status_icon = {
+                    "excellent": "🟢",
+                    "good": "🟡",
+                    "warning": "🟠",
+                    "critical": "🔴",
+                }.get(stats["health_status"], "❓")
+
+                success_rate = stats["success_rate"]
+                total_runs = stats["total_runs"]
+                print(
+                    f"{status_icon} {workflow:30} | {success_rate:5.1f}% "
+                    f"success | {total_runs:2d} runs"
+                )
 
         print("\n💡 Run 'cat workflow_analysis_report.md' for detailed recommendations")
         return True
 
 
 def main():
-    """Main function."""
+    """Run main workflow analysis function."""
     days = int(os.getenv("ANALYSIS_DAYS", "7"))
 
     reporter = WorkflowReporter(days=days)

@@ -12,6 +12,10 @@ on:
         default: '7'
         type: string
 
+permissions:
+  actions: read
+  contents: read
+
 concurrency:
   group: workflow-monitoring
   cancel-in-progress: true
@@ -41,6 +45,36 @@ jobs:
 
         python -m pip install --upgrade pip
         pip install requests python-dateutil
+
+    - name: Debug GitHub CLI Authentication
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "🔍 GitHub CLI Authentication Debug:"
+        echo "=================================="
+        echo ""
+
+        echo "📋 Environment variables:"
+        echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
+        echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+        echo "GITHUB_TOKEN set: $(if [[ -n "$GITHUB_TOKEN" ]]; then echo "✅ Yes"; else echo "❌ No"; fi)"
+        echo ""
+
+        echo "🔐 Authentication status:"
+        gh auth status || echo "⚠️ Authentication check failed"
+        echo ""
+
+        echo "📂 Repository context:"
+        gh repo view --json nameWithOwner,visibility || echo "⚠️ Repository access failed"
+        echo ""
+
+        echo "🎯 Available permissions test:"
+        echo "Testing basic API access..."
+        gh api /user || echo "⚠️ Basic API access failed"
+        echo ""
+
+        echo "🏃‍♂️ Testing workflow run access:"
+        gh run list --limit 1 || echo "⚠️ Workflow run access failed (this is expected if permissions are insufficient)"
 
     - name: Run enhanced workflow analysis
       env:
