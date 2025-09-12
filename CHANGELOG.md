@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cleaned up invalid features configuration for more reliable documentation builds
   - Updated .readthedocs.yaml for better compatibility and performance
 
-### 🧹 Improved - Code Quality & Formatting  
+### 🧹 Improved - Code Quality & Formatting
 - **Pre-commit Integration**: Applied comprehensive code formatting across the entire codebase
   - Standardized formatting with black, isort, and other pre-commit hooks
   - Improved code consistency across test files and GitHub scripts
