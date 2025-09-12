@@ -262,19 +262,20 @@ jobs:
         python-version: '3.12'
         cache: 'pip'
 
-    - name: Cache build dependencies and artifacts
+    - name: Cache build dependencies only
       uses: actions/cache@v4
       with:
         path: |
           ~/.cache/pip
-          build/
-          dist/
-          *.egg-info/
-        key: build-deps-v2-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'xraylabtool/**/*.py') }}
+        key: build-deps-v3-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
         restore-keys: |
-          build-deps-v2-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+          build-deps-v3-${{ runner.os }}-
           build-deps-v2-${{ runner.os }}-
-          build-deps-${{ runner.os }}-
+
+    - name: Clean build artifacts
+      run: |
+        rm -rf build/ dist/ *.egg-info/
+        echo "🧹 Cleaned build artifacts"
 
     - name: Install build tools
       uses: nick-fields/retry@v3
@@ -296,9 +297,15 @@ jobs:
 
     - name: Test package installation
       run: |
+        # Install the built wheel (should be only one after clean)
+        echo "📦 Installing built package..."
+        ls -la dist/
         pip install dist/*.whl
+        echo "✅ Package installed successfully"
+
+        # Test installation
         xraylabtool --version
-        python -c "import xraylabtool; print('Import successful')"
+        python -c "import xraylabtool; print('✅ Import successful')"
 
     - name: Test CLI functionality
       run: |

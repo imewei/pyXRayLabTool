@@ -230,10 +230,19 @@ class TestBatchProcessingMemoryManagement:
     )
     def test_large_batch_memory_efficiency(self):
         """Test memory efficiency with large batches."""
-        # Large batch test - only run on systems with sufficient memory
-        formulas = ["SiO2", "Al2O3", "Fe2O3", "Si", "C"] * 20  # 100 materials
-        energies = np.linspace(5.0, 15.0, 100)
-        densities = [2.2, 3.95, 5.24, 2.33, 2.267] * 20
+        # Adjust test size based on CI environment
+        is_ci = os.environ.get("CI", "").lower() == "true"
+
+        if is_ci:
+            # Smaller test for CI to avoid timeouts
+            formulas = ["SiO2", "Al2O3", "Fe2O3", "Si", "C"] * 5  # 25 materials
+            energies = np.linspace(5.0, 15.0, 20)  # Fewer energy points
+            densities = [2.2, 3.95, 5.24, 2.33, 2.267] * 5
+        else:
+            # Full test for local development
+            formulas = ["SiO2", "Al2O3", "Fe2O3", "Si", "C"] * 20  # 100 materials
+            energies = np.linspace(5.0, 15.0, 100)
+            densities = [2.2, 3.95, 5.24, 2.33, 2.267] * 20
 
         config = BatchConfig(memory_limit_gb=2.0, chunk_size=10, enable_progress=False)
 
@@ -251,10 +260,20 @@ class TestBatchProcessingMemoryManagement:
         memory_increase_mb = (end_memory - start_memory) / 1024 / 1024
         peak_mb = peak / 1024 / 1024
 
-        assert memory_increase_mb < 500, (
-            f"Memory increase too large: {memory_increase_mb:.2f}MB"
+        # Adjust memory expectations based on test size
+        if is_ci:
+            max_memory_increase = 100  # Lower expectations for CI
+            max_peak_memory = 200
+        else:
+            max_memory_increase = 500  # Full expectations for local
+            max_peak_memory = 1000
+
+        assert memory_increase_mb < max_memory_increase, (
+            f"Memory increase too large: {memory_increase_mb:.2f}MB (limit: {max_memory_increase}MB, CI: {is_ci})"
         )
-        assert peak_mb < 1000, f"Peak memory usage too high: {peak_mb:.2f}MB"
+        assert peak_mb < max_peak_memory, (
+            f"Peak memory usage too high: {peak_mb:.2f}MB (limit: {max_peak_memory}MB, CI: {is_ci})"
+        )
 
         # Most results should succeed
         successful_results = [
