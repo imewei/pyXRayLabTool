@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Advanced cache warming and management script for CI optimization.
+
 Preloads commonly used dependencies and optimizes cache structure.
 """
 
@@ -185,7 +186,7 @@ def check_cache_health() -> dict[str, Any]:
                         "exists": True,
                     }
                 )
-                print(f"  📊 {name}: {size / (1024 * 1024):.1f} MB")
+                print(f"  📊 {name}: {size / (1024 * 1024): .1f} MB")
             except Exception as e:
                 print(f"  ⚠️ Error checking {name} cache: {e}")
                 health_report["cache_directories"].append(
@@ -203,7 +204,7 @@ def check_cache_health() -> dict[str, Any]:
             )
 
     total_mb = health_report["total_cache_size"] / (1024 * 1024)
-    print(f"  📈 Total cache size: {total_mb:.1f} MB")
+    print(f"  📈 Total cache size: {total_mb: .1f} MB")
 
     return health_report
 
@@ -234,7 +235,7 @@ def cleanup_old_caches():
 
 
 def main():
-    """Main cache optimization routine."""
+    """Run main cache optimization routine."""
     print("🚀 Starting CI cache optimization...")
     start_time = time.time()
 
@@ -258,10 +259,10 @@ def main():
 
         # Summary
         elapsed = time.time() - start_time
-        print(f"\n✅ Cache optimization completed in {elapsed:.1f}s")
-        print(
-            f"📈 Cache size change: {initial_health['total_cache_size'] / (1024*1024):.1f} MB → {final_health['total_cache_size'] / (1024*1024):.1f} MB"
-        )
+        print(f"\n✅ Cache optimization completed in {elapsed: .1f}s")
+        initial_mb = initial_health["total_cache_size"] / (1024 * 1024)
+        final_mb = final_health["total_cache_size"] / (1024 * 1024)
+        print(f"📈 Cache size change: {initial_mb: .1f} MB → {final_mb: .1f} MB")
 
         # Save health report
         with open("cache_health_report.json", "w") as f:
