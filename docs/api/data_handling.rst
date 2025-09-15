@@ -1,7 +1,7 @@
 Data Handling Module
 ====================
 
-The data_handling module provides high-performance atomic data caching and batch processing capabilities.
+The data_handling module provides fast atomic data caching and batch processing capabilities.
 
 .. currentmodule:: xraylabtool.data_handling
 
@@ -125,7 +125,7 @@ Cache Management
    # Clear all cached data
    clear_cache()
 
-   # Preload specific elements for better performance
+   # Preload specific elements for faster performance
    preload_elements(["Si", "O", "Al", "Fe"])
 
 Data Sources

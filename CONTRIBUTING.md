@@ -25,12 +25,12 @@ Thank you for your interest in contributing to XRayLabTool! This document provid
 
 We welcome contributions in several areas:
 
-- 🐛 **Bug fixes** - Fix issues or improve error handling
-- ✨ **New features** - Add new X-ray analysis capabilities
-- 📚 **Documentation** - Improve guides, examples, or API docs
-- 🚀 **Performance** - Optimize calculations or memory usage
-- 🧪 **Testing** - Add test coverage or improve test quality
-- 🔧 **Infrastructure** - CI/CD, build tools, or development workflow
+- **Bug fixes** - Fix issues or improve error handling
+- **New features** - Add new X-ray analysis capabilities
+- **Documentation** - Improve guides, examples, or API docs
+- **Performance** - Optimize calculations or memory usage
+- **Testing** - Add test coverage or improve test quality
+- **Infrastructure** - CI/CD, build tools, or development workflow
 
 ## Development Setup
 
@@ -188,7 +188,7 @@ def example_function(param1: str, param2: float = 1.0) -> bool:
 
 ### Test Suite Overview
 
-We have comprehensive test coverage with **388 tests** across multiple categories:
+We have test coverage with **388 tests** across multiple categories:
 
 - **Unit tests** - Core functionality (atomic data, physics, parsing)
 - **Integration tests** - Cross-module functionality and CLI
@@ -341,24 +341,24 @@ We follow [Semantic Versioning](https://semver.org/):
 
 ### Communication Channels
 
-- 🐛 **Issues** - Bug reports and feature requests
-- 💬 **Discussions** - Questions and general discussion
-- 📧 **Email** - Wei Chen (wchen@anl.gov) for sensitive issues
+- **Issues** - Bug reports and feature requests
+- **Discussions** - Questions and general discussion
+- **Email** - Wei Chen (wchen@anl.gov) for sensitive issues
 
 ### Resources
 
-- 📖 **Documentation** - https://pyxraylabtool.readthedocs.io/
-- 🔬 **Examples** - See `docs/source/examples.rst`
-- 🚀 **Performance Guide** - See `docs/source/performance_guide.rst`
-- ⚡ **CLI Reference** - See `CLI_REFERENCE.md`
+- **Documentation** - https://pyxraylabtool.readthedocs.io/
+- **Examples** - See `docs/source/examples.rst`
+- **Performance Guide** - See `docs/source/performance_guide.rst`
+- **CLI Reference** - See `CLI_REFERENCE.md`
 
 ## Recognition
 
 Contributors are recognized in:
 
-- 🎉 **CHANGELOG.md** - All contributors listed for each release
-- 👥 **GitHub Contributors** - Automatic recognition on repository
-- 📦 **PyPI Acknowledgments** - Major contributors acknowledged
+- **CHANGELOG.md** - All contributors listed for each release
+- **GitHub Contributors** - Automatic recognition on repository
+- **PyPI Acknowledgments** - Major contributors acknowledged
 
 ## Community Guidelines
 
@@ -382,11 +382,11 @@ As a scientific computing tool, we maintain high standards for:
 
 ### Community Resources
 
-- 📚 **Documentation** - https://pyxraylabtool.readthedocs.io/
-- 💬 **Discussions** - GitHub Discussions for questions and ideas
-- 🐛 **Issues** - GitHub Issues for bug reports and feature requests
-- 🔬 **Examples** - Interactive notebooks and scientific workflows
-- 📧 **Contact** - Wei Chen (wchen@anl.gov) for project leadership
+- **Documentation** - https://pyxraylabtool.readthedocs.io/
+- **Discussions** - GitHub Discussions for questions and ideas
+- **Issues** - GitHub Issues for bug reports and feature requests
+- **Examples** - Interactive notebooks and scientific workflows
+- **Contact** - Wei Chen (wchen@anl.gov) for project leadership
 
 ### Contributor Levels
 
@@ -419,7 +419,7 @@ For scientific software, consider these types of contributions:
 
 ### Before Asking for Help
 
-1. **Check Documentation** - Search our comprehensive documentation
+1. **Check Documentation** - Search our documentation
 2. **Review Issues** - Look for existing solutions or discussions
 3. **Try Examples** - Run through provided examples and tutorials
 4. **Check Stack Overflow** - Search for related Python/NumPy questions
@@ -440,4 +440,4 @@ For scientific software, consider these types of contributions:
 
 ---
 
-Thank you for contributing to XRayLabTool! Your contributions help advance X-ray analysis tools for the scientific community. Together, we're building better tools for synchrotron science, materials research, and X-ray optics development. 🔬✨
+Thank you for contributing to XRayLabTool! Your contributions help advance X-ray analysis tools for the scientific community. Together, we're building better tools for synchrotron science, materials research, and X-ray optics development.

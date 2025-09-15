@@ -71,7 +71,7 @@ Atomic Data Functions
 
 .. autofunction:: xraylabtool.utils.get_atomic_data
 
-   Get comprehensive atomic data for given element symbol with LRU caching.
+   Get atomic data for given element symbol with LRU caching.
 
    **Example:**
 

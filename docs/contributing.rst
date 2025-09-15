@@ -1,7 +1,7 @@
 Contributing Guide
 ==================
 
-Welcome to XRayLabTool! We appreciate your interest in contributing to this high-performance X-ray optical properties calculator.
+This guide covers contributing to XRayLabTool.
 
 Getting Started
 ---------------
@@ -9,7 +9,7 @@ Getting Started
 Types of Contributions
 ~~~~~~~~~~~~~~~~~~~~~~
 
-We welcome various types of contributions:
+Types of contributions:
 
 **Code Contributions:**
 - New features and enhancements

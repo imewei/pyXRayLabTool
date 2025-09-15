@@ -11,7 +11,7 @@ We release patches for security vulnerabilities in the following versions:
 
 ## Reporting a Vulnerability
 
-The XRayLabTool team takes security bugs seriously. We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.
+The XRayLabTool team takes security bugs seriously. We appreciate responsible disclosure and will acknowledge your contributions.
 
 ### How to Report Security Issues
 
@@ -35,10 +35,10 @@ Please include the following information in your report:
 
 After you submit a report, we will:
 
-1. **Acknowledge receipt** of your vulnerability report within 48 hours
-2. **Provide an initial assessment** of the vulnerability within 5 business days
-3. **Work with you to understand and resolve the issue** as quickly as possible
-4. **Keep you informed** about the progress toward a fix and full announcement
+1. **Acknowledge receipt** within 48 hours
+2. **Provide initial assessment** within 5 business days
+3. **Work with you to resolve the issue** as quickly as possible
+4. **Keep you informed** about progress toward a fix
 5. **Credit you** in the security advisory (if you wish)
 
 ### Security Update Process
@@ -110,8 +110,8 @@ When we receive a security bug report, we will:
 - Prepare fixes for all supported versions
 - Release new versions with fixes as soon as possible
 
-We aim to disclose security vulnerabilities within 90 days of initial report, or sooner if possible.
+We aim to disclose security vulnerabilities within 90 days of initial report.
 
 ---
 
-Thank you for helping keep XRayLabTool and the scientific computing community safe!
+Thank you for helping keep XRayLabTool and the scientific computing community safe.

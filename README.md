@@ -41,7 +41,7 @@ pip install -e .
 
 ### Shell Completion Setup
 
-After installation, enable tab completion for enhanced CLI productivity:
+After installation, enable tab completion:
 
 ```bash
 # Install shell completion (auto-detects shell)
@@ -102,7 +102,7 @@ xraylabtool uninstall-completion
 
 Restart your shell or source your config file after installation.
 
-> **Note**: Shell completion is supported for **bash, zsh, fish, and PowerShell**. Use `xraylabtool install-completion <shell>` to install completion for your preferred shell, or `xraylabtool install-completion` for auto-detection.
+> **Note**: Shell completion supports bash, zsh, fish, and PowerShell. Use `xraylabtool install-completion <shell>` for a specific shell, or `xraylabtool install-completion` for auto-detection.
 
 ### Requirements
 
@@ -280,14 +280,14 @@ xraylabtool install-completion fish      # Fish completion
 xraylabtool install-completion powershell # PowerShell completion
 ```
 
-> **💡 Shell Requirements**: Make sure to install the shell-specific prerequisites above before installing completion. Zsh users especially need `zsh-completions` for proper functionality.
+> **Shell Requirements**: Install the shell-specific prerequisites above before installing completion. Zsh users need `zsh-completions`.
 
 **Tab Completion Features:**
-- **Command completion**: Auto-complete all 9 available commands
+- **Command completion**: Complete all 9 available commands
 - **Option completion**: Complete command-line options and flags
-- **File path completion**: Automatic file path completion for input/output files
-- **Chemical formulas**: Suggestions for common chemical formulas
-- **Energy values**: Common X-ray energy suggestions (8.048, 10.0, 12.4 keV)
+- **File path completion**: Complete file paths for input/output files
+- **Chemical formulas**: Complete common chemical formulas
+- **Energy values**: Complete common X-ray energies (8.048, 10.0, 12.4 keV)
 
 ### Output Formats
 
@@ -302,16 +302,16 @@ xraylabtool install-completion powershell # PowerShell completion
 - **Field Selection**: Choose specific output fields with `--fields`
 - **Precision Control**: Set decimal places with `--precision`
 - **File Output**: Save results to CSV or JSON files
-- **Multi-Shell Tab Completion**: Intelligent completion for bash, zsh, fish, and PowerShell
-  - **Context-aware**: Suggests appropriate values based on current command
-  - **File completion**: Automatic file path completion for input/output files
-  - **Chemical formulas**: Common materials and element suggestions
-  - **Energy values**: Typical X-ray energy suggestions (Cu Kα, Mo Kα, etc.)
+- **Multi-Shell Tab Completion**: Completion for bash, zsh, fish, and PowerShell
+  - **Context-aware**: Suggests values based on current command
+  - **File completion**: Complete file paths for input/output files
+  - **Chemical formulas**: Complete common materials and elements
+  - **Energy values**: Complete X-ray energies (Cu Kα, Mo Kα, etc.)
   - **Cross-platform**: Works on macOS, Linux, and Windows (with WSL/Cygwin)
 
-### 📖 CLI Help and Documentation
+### CLI Help and Documentation
 
-Get comprehensive help for any command:
+Get help for any command:
 
 ```bash
 # General help
@@ -371,7 +371,7 @@ The `XRayResult` dataclass contains all computed X-ray optical properties with c
 - **`real_sld_per_ang2: np.ndarray`** – Real scattering length density (Å⁻²)
 - **`imaginary_sld_per_ang2: np.ndarray`** – Imaginary scattering length density (Å⁻²)
 
-> **📝 Note**: Legacy field names (e.g., `Formula`, `MW`, `Critical_Angle`) are still supported for backward compatibility but will emit deprecation warnings. Use the new descriptive field names for clearer, more maintainable code.
+> **Note**: Legacy field names (e.g., `Formula`, `MW`, `Critical_Angle`) are supported for backward compatibility but emit deprecation warnings. Use the new descriptive field names for clearer code.
 
 ---
 
@@ -438,7 +438,7 @@ for formula, result in results.items():
           f"μ = {result.attenuation_length_cm[0]:.1f} cm")
 ```
 
-### Enhanced Plotting Example
+### Plotting Example
 
 ```python
 import matplotlib.pyplot as plt
@@ -475,7 +475,7 @@ plt.show()
 
 ## Migration Guide: Legacy to New Field Names
 
-To help users transition from legacy CamelCase field names to the new descriptive snake_case names, here's a comprehensive mapping:
+To help users transition from legacy CamelCase field names to the new descriptive snake_case names, here's a mapping:
 
 ### Field Name Migration Table
 
@@ -575,7 +575,7 @@ Where r₀ is the classical electron radius, λ is wavelength, and ρₑ is elec
 
 ## Performance Features
 
-XRayLabTool has been extensively optimized for high-performance calculations. Here are the key performance improvements:
+XRayLabTool is optimized for fast calculations. Key improvements:
 
 ### Performance Cache System
 
@@ -592,7 +592,7 @@ print(get_cache_stats())
 # {'preloaded_elements': 92, 'runtime_cached_elements': 0, 'total_cached_elements': 92}
 ```
 
-#### Advanced Caching Infrastructure
+#### Caching Infrastructure
 - Interpolator caching: Reuses PCHIP interpolators across calculations
 - LRU caches: Memory management for frequently accessed data
 - Bulk loading: Optimized atomic data loading for multiple elements
@@ -607,7 +607,7 @@ print(get_cache_stats())
 
 #### Smart Single vs Multi-Element Optimization
 ```python
-# Single element materials use optimized direct computation
+# Single element materials use direct computation
 result_single = xlt.calculate_single_material_properties("Si", energies, 2.33)
 
 # Multi-element materials use vectorized matrix operations
@@ -617,7 +617,7 @@ result_multi = xlt.calculate_single_material_properties("SiO2", energies, 2.2)
 ### Memory-Efficient Batch Processing
 
 #### High-Performance Batch API
-For large-scale calculations, use the optimized batch processor:
+For large-scale calculations, use the batch processor:
 
 ```python
 from xraylabtool.batch_processor import calculate_batch_properties, BatchConfig
@@ -630,7 +630,7 @@ config = BatchConfig(
     enable_progress=True   # Show progress bar
 )
 
-# Process large batches efficiently
+# Process large batches
 formulas = ["SiO2", "Al2O3", "Fe2O3"] * 100  # 300 materials
 energies = np.linspace(5, 15, 50)            # 50 energy points
 densities = [2.2, 3.95, 5.24] * 100
@@ -670,7 +670,7 @@ results = calculate_batch_properties(formulas, energies, densities, config)
 | Atomic data access | ~200ms (DB query) | ~0.001ms (cache) | 200,000x |
 | Single calculation | ~1.07s | ~0.003s | 350x |
 | Mathematical ops | Baseline | Vectorized | 2-3x |
-| Memory usage | High allocation | Chunked/optimized | 5-10x |
+| Memory usage | High allocation | Chunked/fast | 5-10x |
 | Batch processing | Sequential | Parallel+chunked | 5-15x |
 
 ### Performance Best Practices
@@ -686,7 +686,7 @@ energies = np.linspace(5, 15, 100)
 for formula in formulas:
     result = xlt.calculate_single_material_properties(formula, energies, density)
 
-# 3. Use batch processing for many materials
+# 3. Use batch processing for multiple materials
 results = xlt.calculate_xray_properties(formulas, energies, densities)  # ✅ Parallel
 
 # Instead of:
@@ -696,7 +696,7 @@ results = xlt.calculate_xray_properties(formulas, energies, densities)  # ✅ Pa
 
 #### For Large Datasets
 ```python
-# Use the optimized batch processor for very large datasets
+# Use the batch processor for large datasets
 from xraylabtool.batch_processor import calculate_batch_properties, BatchConfig
 
 # Configure for your system
@@ -732,7 +732,7 @@ print(f"Within limits: {monitor.check_memory()}")
 
 ## Testing and Validation
 
-XRayLabTool includes a comprehensive test suite with:
+XRayLabTool includes a test suite with:
 
 - **Unit Tests**: Individual function validation
 - **Integration Tests**: End-to-end workflows
@@ -791,20 +791,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **CXRO**: Atomic scattering factor databases
 - **NIST**: Reference data and validation
-- **NumPy/SciPy**: Scientific computing foundation
+- **NumPy/SciPy**: Scientific computing libraries
 
 ---
 
 ## Documentation & Support
 
-### 📖 Documentation
+### Documentation
 - **Main README**: Overview and Python API examples
 - **CLI Reference**: [CLI_REFERENCE.md](CLI_REFERENCE.md) - Comprehensive command-line interface guide
 - **Virtual Environment Setup**: [VIRTUAL_ENV.md](VIRTUAL_ENV.md) - Development environment setup
 - **Changelog**: [CHANGELOG.md](CHANGELOG.md) - Version history and updates
 - **Online Docs**: [https://pyxraylabtool.readthedocs.io](https://pyxraylabtool.readthedocs.io)
 
-### 🔍 Getting Help
+### Getting Help
 - **Issues**: [GitHub Issues](https://github.com/imewei/pyXRayLabTool/issues) - Bug reports and feature requests
 - **Discussions**: [GitHub Discussions](https://github.com/imewei/pyXRayLabTool/discussions) - Questions and community support
 - **CLI Help**: `xraylabtool --help` or `xraylabtool <command> --help` for command-specific help
@@ -831,8 +831,7 @@ If you use XRayLabTool in your research, please cite:
 <!--
 Primary Keywords: X-ray optical properties, atomic scattering factors, synchrotron calculations, Python X-ray tools
 Secondary Keywords: CXRO NIST database, X-ray reflectometry, materials characterization, critical angle calculator
-Long-tail Keywords: high-performance X-ray property calculator, Python synchrotron beamline tools, X-ray diffraction analysis software
+Long-tail Keywords: fast X-ray property calculator, Python synchrotron beamline tools, X-ray diffraction analysis software
 -->
 
-<!-- GitHub Topics for Discovery -->
-<!-- Topics: xray, synchrotron, crystallography, materials-science, optics, physics, scientific-computing, python-package, cli-tool -->
+<!-- GitHub Topics: xray, synchrotron, crystallography, materials-science, optics, physics, scientific-computing, python-package, cli-tool -->

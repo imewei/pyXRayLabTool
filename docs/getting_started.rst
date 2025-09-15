@@ -1,7 +1,7 @@
 Getting Started
 ===============
 
-This guide will help you get up and running with XRayLabTool quickly.
+This guide shows XRayLabTool installation and basic usage.
 
 Installation
 ------------
@@ -19,13 +19,13 @@ XRayLabTool requires:
 Install from PyPI
 ~~~~~~~~~~~~~~~~~
 
-The easiest way to install XRayLabTool is using pip:
+Install XRayLabTool using pip:
 
 .. code-block:: bash
 
    pip install xraylabtool
 
-This installs the core package with all essential dependencies.
+This installs the package with required dependencies.
 
 Development Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -41,7 +41,7 @@ For development or to get the latest features:
 Verify Installation
 ~~~~~~~~~~~~~~~~~~~
 
-Test your installation:
+Verify installation:
 
 .. code-block:: bash
 
@@ -55,7 +55,7 @@ Test your installation:
 Shell Completion (Optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Install Bash completion for better CLI experience:
+Install Bash completion:
 
 .. code-block:: bash
 
@@ -261,12 +261,12 @@ For synchrotron beamline design:
 Next Steps
 ----------
 
-Now that you're familiar with the basics, you can:
+Next steps:
 
 1. **Explore the CLI**: Try all 9 commands with ``xraylabtool --help``
-2. **Read the Tutorials**: Learn advanced techniques and workflows
-3. **Study Examples**: See real-world applications
-4. **Check the API Reference**: Understand all available functions
+2. **Read the Tutorials**: Learn techniques and workflows
+3. **Study Examples**: See applications
+4. **Check the API Reference**: View available functions
 5. **Learn the Physics**: Understand the X-ray optics background
 
 Key Documentation Sections:
@@ -311,7 +311,7 @@ If you encounter issues:
 Performance Tips
 ----------------
 
-For best performance:
+For faster performance:
 
 1. **Use preloaded elements**: Si, O, Al, Fe, C, etc. are cached for speed
 2. **Batch processing**: Process multiple materials together when possible

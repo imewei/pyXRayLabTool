@@ -1,7 +1,7 @@
 API Reference
 =============
 
-This section contains the complete API reference for XRayLabTool.
+This section contains the API reference for XRayLabTool.
 
 .. toctree::
    :maxdepth: 2

@@ -160,7 +160,7 @@ Mirror Design
 ~~~~~~~~~~~~~
 
 **Substrate Selection:**
-- Higher δ → larger critical angle → better reflectivity at higher angles
+- Higher δ → larger critical angle → increased reflectivity at higher angles
 - Lower β → less absorption → higher throughput
 - Thermal properties important for high-power applications
 
@@ -178,7 +178,7 @@ Beamline Components
 - Common materials: Be, diamond, SiN membranes
 
 **Monochromator Crystals:**
-- Silicon most common due to perfect crystal structure
+- Silicon most common due to crystal structure
 - Darwin width determines energy resolution
 - Thermal management crucial for stability
 

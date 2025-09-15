@@ -1,7 +1,7 @@
 CLI Reference
 =============
 
-XRayLabTool provides a comprehensive command-line interface with 9 commands for X-ray optical property calculations.
+XRayLabTool provides a command-line interface with 9 commands for X-ray optical property calculations.
 
 Overview
 --------
@@ -470,7 +470,7 @@ Display reference information, constants, and examples.
 install-completion - Shell Completion
 -------------------------------------
 
-Install Bash shell completion for improved command-line experience.
+Install Bash shell completion.
 
 **Syntax:**
 

@@ -6,10 +6,10 @@ Understanding and optimizing XRayLabTool performance for different use cases.
 Performance Overview
 --------------------
 
-XRayLabTool is designed for high-performance calculations with several optimization strategies:
+XRayLabTool is designed for fast calculations with several optimization strategies:
 
 **Key Performance Features:**
-- **Ultra-fast atomic data cache**: 92 preloaded elements
+- **Fast atomic data cache**: 92 preloaded elements
 - **Vectorized calculations**: NumPy-based matrix operations
 - **Batch processing**: Parallel processing with memory management
 - **Smart caching**: LRU caches and interpolator reuse
@@ -142,7 +142,7 @@ Caching Optimization
 
    from xraylabtool.data_handling.atomic_cache import preload_elements
 
-   # Preload elements you'll use frequently
+   # Preload elements used frequently
    common_elements = ["Si", "O", "Al", "Fe", "C", "N", "Ca", "Cu"]
    preload_elements(common_elements)
 
@@ -238,7 +238,7 @@ Energy Array Optimization
 
 .. code-block:: python
 
-   # For smooth curves, logarithmic spacing is often better
+   # For smooth curves, use logarithmic spacing
    energies = np.logspace(3, 5, 50)  # Fewer points, still smooth
 
    # For detailed analysis near edges, use adaptive spacing
@@ -357,7 +357,7 @@ Platform-Specific Optimizations
 NumPy/BLAS Optimization
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-For best performance, ensure optimized NumPy:
+For faster performance, ensure optimized NumPy:
 
 .. code-block:: bash
 
@@ -388,7 +388,7 @@ Multi-threading Control
 GPU Acceleration (Future)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-XRayLabTool is designed to support GPU acceleration:
+XRayLabTool supports GPU acceleration:
 
 .. code-block:: python
 
@@ -402,23 +402,23 @@ Performance Best Practices
 Do's
 ~~~~
 
-✅ **Use batch processing** for multiple materials
-✅ **Preload common elements** at startup
-✅ **Use NumPy arrays** for energy ranges
-✅ **Cache results** when reprocessing data
-✅ **Profile your code** to identify bottlenecks
-✅ **Use appropriate chunk sizes** for large datasets
-✅ **Warm up caches** before timing critical sections
+- **Use batch processing** for multiple materials
+- **Preload common elements** at startup
+- **Use NumPy arrays** for energy ranges
+- **Cache results** when reprocessing data
+- **Profile your code** to identify bottlenecks
+- **Use appropriate chunk sizes** for large datasets
+- **Warm up caches** before timing critical sections
 
 Don'ts
 ~~~~~~
 
-❌ **Don't process materials individually** in loops
-❌ **Don't ignore memory constraints** for large datasets
-❌ **Don't use Python lists** for large energy arrays
-❌ **Don't clear caches** unnecessarily
-❌ **Don't use excessive energy points** for smooth curves
-❌ **Don't mix single and batch processing** in the same workflow
+- **Don't process materials individually** in loops
+- **Don't ignore memory constraints** for large datasets
+- **Don't use Python lists** for large energy arrays
+- **Don't clear caches** unnecessarily
+- **Don't use excessive energy points** for smooth curves
+- **Don't mix single and batch processing** in the same workflow
 
 Performance Tuning Examples
 ---------------------------
@@ -546,7 +546,7 @@ Planned Enhancements
 Contributing Performance Improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We welcome performance contributions:
+Performance contributions:
 
 1. **Benchmarking**: Report performance on your hardware
 2. **Profiling**: Identify new bottlenecks

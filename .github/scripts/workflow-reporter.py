@@ -476,7 +476,10 @@ class WorkflowReporter:
 
         report_lines = [
             "# Workflow Analysis Report",
-            f"*Generated on {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC*",
+            (
+                f"*Generated on "
+                f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC*"
+            ),
             f"*Analysis period: Last {self.days} days*",
             "",
         ]
@@ -504,7 +507,8 @@ class WorkflowReporter:
 
             table_row = (
                 f"| {workflow} | {stats['total_runs']} | {stats['success_rate']}% | "
-                f"{stats['avg_duration_minutes']}m | {health_icon} {stats['health_status']} |"
+                f"{stats['avg_duration_minutes']}m | "
+                f"{health_icon} {stats['health_status']} |"
             )
             report_lines.append(table_row)
 
@@ -531,7 +535,8 @@ class WorkflowReporter:
                 report_lines.extend([f"### {workflow}", ""])
                 for failure in stats["recent_failures"]:
                     report_lines.append(
-                        f"- [{failure['created']}]({failure['url']}) on `{failure['branch']}`"
+                        f"- [{failure['created']}]({failure['url']}) on "
+                        f"`{failure['branch']}`"
                     )
                 report_lines.append("")
 

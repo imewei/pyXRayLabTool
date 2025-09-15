@@ -16,7 +16,7 @@ Command Line Interface
 CLI Commands Overview
 ~~~~~~~~~~~~~~~~~~~~~
 
-XRayLabTool provides 9 comprehensive CLI commands:
+XRayLabTool provides 9 CLI commands:
 
 .. list-table::
    :header-rows: 1
@@ -215,7 +215,7 @@ Shell completion is supported for:
 Error Handling
 --------------
 
-The CLI provides comprehensive error handling with helpful messages:
+The CLI provides error handling with helpful messages:
 
 .. code-block:: bash
 

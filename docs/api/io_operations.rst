@@ -158,7 +158,7 @@ Usage Examples
 Error Handling
 --------------
 
-The I/O module provides comprehensive error handling:
+The I/O module provides error handling:
 
 .. code-block:: python
 

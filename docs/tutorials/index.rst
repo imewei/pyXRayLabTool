@@ -1,7 +1,7 @@
 Tutorials
 =========
 
-Step-by-step tutorials for mastering XRayLabTool.
+Step-by-step tutorials for XRayLabTool.
 
 .. note::
    Additional tutorials will be added in future releases.
@@ -9,11 +9,11 @@ Step-by-step tutorials for mastering XRayLabTool.
 Tutorial Overview
 -----------------
 
-These tutorials are designed to take you from basic calculations to advanced analysis workflows:
+These tutorials cover basic calculations to analysis workflows:
 
 **Beginner Tutorials:**
 - Single materials and simple compounds
-- Processing multiple materials efficiently
+- Processing multiple materials
 
 **Intermediate Tutorials:**
 - Complex formulas and custom materials
@@ -35,10 +35,10 @@ Before starting these tutorials:
 What You'll Learn
 -----------------
 
-By the end of these tutorials, you'll be able to:
+These tutorials cover:
 
 - Calculate X-ray optical properties for any material
-- Process large datasets efficiently
+- Process large datasets
 - Create automated analysis workflows
 - Optimize beamline and optical component designs
 - Integrate XRayLabTool with other scientific tools

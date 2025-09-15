@@ -9,10 +9,10 @@ Real-world examples and use cases for XRayLabTool.
 Interactive Examples
 --------------------
 
-These examples include downloadable Jupyter notebooks and Python scripts demonstrating practical applications of XRayLabTool.
+These examples include downloadable Jupyter notebooks and Python scripts demonstrating applications of XRayLabTool.
 
 **Quick Start Examples:**
-- Interactive tutorial with comprehensive examples
+- Interactive tutorial with examples
 - Simple calculations and common materials
 - Single energy calculations
 - Energy range analysis
@@ -153,7 +153,7 @@ Examples demonstrate:
 Contributing Examples
 ---------------------
 
-We welcome community-contributed examples:
+Community-contributed examples:
 
 **Submission Guidelines:**
 1. **Format**: Jupyter notebook with clear documentation

@@ -1,7 +1,7 @@
 Changelog
 =========
 
-All notable changes to XRayLabTool will be documented in this file.
+Changes to XRayLabTool are documented in this file.
 
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
@@ -109,17 +109,17 @@ Migrating to v0.2.0
 
 **CLI Changes:**
 - New commands added: ``batch``, ``convert``, ``formula``, etc.
-- Existing ``calc`` command enhanced with new options
+- Existing ``calc`` command updated with new options
 - Output format options added
 
 **Dependencies:**
 - Minimum Python version increased to 3.12
 - NumPy minimum version updated
-- New optional dependencies for enhanced features
+- New optional dependencies for additional features
 
 **Configuration:**
 - New configuration options for caching and performance
-- Environment variables for advanced settings
+- Environment variables for settings
 
 Compatibility Matrix
 --------------------

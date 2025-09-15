@@ -1,12 +1,12 @@
 Testing Guide
 =============
 
-Comprehensive guide to testing XRayLabTool code and ensuring quality.
+Guide to testing XRayLabTool code and ensuring quality.
 
 Testing Philosophy
 ------------------
 
-XRayLabTool follows a comprehensive testing strategy:
+XRayLabTool follows a testing strategy:
 
 **Test Categories:**
 - **Unit Tests**: Test individual functions and classes
@@ -17,7 +17,7 @@ XRayLabTool follows a comprehensive testing strategy:
 
 **Testing Principles:**
 - **Fast feedback**: Most tests run in milliseconds
-- **Comprehensive coverage**: >95% code coverage target
+- **Code coverage**: >95% code coverage target
 - **Reliable**: Tests pass consistently across platforms
 - **Clear failures**: Descriptive error messages
 - **Independent**: Tests don't depend on external resources
@@ -966,4 +966,4 @@ When tests fail:
    pip install pytest-xdist
    pytest tests/ -n auto  # Use all CPU cores
 
-This comprehensive testing approach ensures XRayLabTool maintains high quality, performance, and reliability across all supported platforms and use cases.
+This testing approach ensures XRayLabTool maintains quality, performance, and reliability across all supported platforms and use cases.

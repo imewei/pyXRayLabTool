@@ -6,7 +6,7 @@ This directory contains utility scripts for XRayLabTool development and maintena
 
 ### `test_docs.py` - Documentation Testing
 
-Comprehensive documentation testing script that validates:
+Documentation testing script that validates:
 
 - **Docstring Examples**: Tests all code examples in Python docstrings
 - **RST Code Blocks**: Validates code examples in documentation files
@@ -55,7 +55,7 @@ The script provides color-coded output with clear pass/fail indicators:
 
 #### Integration:
 
-This script is designed to integrate with:
+This script integrates with:
 
 - **Pre-commit hooks**: Add to `.pre-commit-config.yaml`
 - **CI/CD pipelines**: Used in GitHub Actions workflows

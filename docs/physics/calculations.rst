@@ -9,7 +9,7 @@ Compound Analysis
 Chemical Formula Parsing
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-XRayLabTool uses a robust parser for chemical formulas:
+XRayLabTool uses a parser for chemical formulas:
 
 **Grammar Rules:**
 1. Element symbols: Capital letter + optional lowercase letter
