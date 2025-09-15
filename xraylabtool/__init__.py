@@ -1,5 +1,5 @@
 """
-XRayLabTool: High-Performance X-ray Optical Properties Calculator
+XRayLabTool: High-Performance X-ray Optical Properties Calculator.
 
 A comprehensive Python package for calculating X-ray optical properties of materials
 with ultra-fast performance, comprehensive CLI tools, and scientific accuracy.
@@ -49,7 +49,7 @@ Access via ``xraylabtool`` command with specialized subcommands:
 For complete documentation, visit: https://pyxraylabtool.readthedocs.io
 """
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"
 
@@ -68,7 +68,6 @@ from xraylabtool import (
 from xraylabtool.calculators import (
     XRayResult,
     calculate_derived_quantities,
-    calculate_multiple_xray_properties,
     calculate_scattering_factors,
     calculate_single_material_properties,
     calculate_xray_properties,

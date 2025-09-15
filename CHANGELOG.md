@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-09-15
+
+### 📝 Improved - Documentation & Dependencies
+
+#### **Documentation Standardization**
+- **Removed Promotional Language**: Systematically cleaned up marketing buzzwords and flowery language from all documentation
+  - Updated README.md to use direct, technical language instead of promotional phrases
+  - Simplified CONTRIBUTING.md guide, removed emoji bullets for cleaner presentation
+  - Standardized all Sphinx documentation files (.rst) to follow scientific computing documentation standards
+  - Replaced terms like "comprehensive", "enhanced", "ultra-fast" with more direct alternatives
+  - Improved professional tone throughout documentation for better scientific credibility
+
+#### **Code Quality & Maintenance**
+- **Linting Improvements**: Fixed flake8 linting issues in favicon generation script
+- **Line Length Compliance**: Improved code formatting in workflow reporter and documentation generation scripts
+- **Dependency Updates**: Merged automated dependency updates for GitHub Actions:
+  - Updated `actions/setup-python` from v5 to v6
+  - Updated `peter-evans/create-pull-request` from v5 to v7
+  - Updated `codecov/codecov-action` from v4 to v5
+
+#### **CI/CD Enhancements**
+- **Pre-commit Formatting**: Applied comprehensive code formatting improvements
+- **Workflow Reliability**: Enhanced GitHub Actions reliability with updated dependencies
+- **Build Process**: Improved build consistency and dependency management
+
+### 🧹 Maintenance
+- **File Cleanup**: Removed temporary test formatting files
+- **Branch Management**: Consolidated all feature branches and dependency updates into main
+
 ## [0.2.2] - 2025-01-12
 
 ### 🔧 Fixed - CI/CD Reliability & Performance
