@@ -117,7 +117,7 @@ dev = [
     # Security analysis
     "bandit[toml]>=1.7.0,<2.0.0",  # Security linter
     "pbr>=3.1.0",  # Required by bandit for version detection
-    "safety>=2.3.0,<3.0.0",  # Dependency vulnerability scanner
+    "safety>=2.3.0,<4.0.0",  # Dependency vulnerability scanner
 
     # Type stubs
     "pandas-stubs>=2.1.0",
