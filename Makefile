@@ -46,7 +46,10 @@ help:
 	@echo "  lint             Run linting with flake8"
 	@echo "  format           Format code with black"
 	@echo "  check-format     Check if code needs formatting"
-	@echo "  type-check       Run type checking with mypy (if available)"
+	@echo "  type-check       Run enhanced type checking on core modules"
+	@echo "  type-check-all   Run comprehensive type checking on all modules"
+	@echo "  type-check-strict Run strict type checking with enhanced rules"
+	@echo "  type-check-cache-info Show MyPy cache information and performance"
 	@echo "  claude           🤖 Comprehensive Claude Code quality analysis (pre-commit ready)"
 	@echo ""
 	@echo "$(YELLOW)📚 Documentation:$(NC)"
@@ -290,9 +293,24 @@ check-format:
 	@echo "$(GREEN)✅ Format check passed$(NC)"
 
 type-check:
-	@echo "$(YELLOW)Running type checks...$(NC)"
-	@command -v mypy >/dev/null 2>&1 && mypy xraylabtool/ || echo "$(BLUE)mypy not available, skipping type checks$(NC)"
-	@echo "$(GREEN)✅ Type checking completed$(NC)"
+	@echo "$(YELLOW)Running enhanced type checks...$(NC)"
+	@command -v mypy >/dev/null 2>&1 && python scripts/run_type_check.py --target core || echo "$(BLUE)mypy not available, skipping type checks$(NC)"
+	@echo "$(GREEN)✅ Enhanced type checking completed$(NC)"
+
+type-check-all:
+	@echo "$(YELLOW)Running comprehensive type checks...$(NC)"
+	@command -v mypy >/dev/null 2>&1 && python scripts/run_type_check.py --target all || echo "$(BLUE)mypy not available, skipping type checks$(NC)"
+	@echo "$(GREEN)✅ Comprehensive type checking completed$(NC)"
+
+type-check-strict:
+	@echo "$(YELLOW)Running strict type checks...$(NC)"
+	@command -v mypy >/dev/null 2>&1 && python scripts/run_type_check.py --target core --strict || echo "$(BLUE)mypy not available, skipping type checks$(NC)"
+	@echo "$(GREEN)✅ Strict type checking completed$(NC)"
+
+type-check-cache-info:
+	@echo "$(YELLOW)Checking type cache information...$(NC)"
+	@python scripts/run_type_check.py --target core --cache-info
+	@echo "$(GREEN)✅ Cache information displayed$(NC)"
 
 claude:
 	@echo "$(BLUE)🤖 Claude Code Comprehensive Quality Analysis$(NC)"
@@ -466,10 +484,10 @@ clean-all: clean docs-clean
 	@echo "$(GREEN)✅ Deep cleanup completed (all files removed)$(NC)"
 
 # Development Workflows
-dev: check-format lint test-fast
+dev: check-format lint type-check test-fast
 	@echo "$(GREEN)✅ Quick development cycle completed$(NC)"
 
-validate: format lint test-coverage test-benchmarks cli-test docs-test-all
+validate: format lint type-check-strict test-coverage test-benchmarks cli-test docs-test-all
 	@echo "$(GREEN)✅ Full validation completed - ready for commit!$(NC)"
 	@echo "$(BLUE)💡 Tip: For comprehensive pre-commit analysis, run 'make claude'$(NC)"
 

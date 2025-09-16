@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-09-16T08:22:37.705004",
+  "baseline_establishment_summary": {
+    "total_tests": 4,
+    "performance_targets": {
+      "current_minimum": "150,000 calc/sec aggregate",
+      "optimization_target": "300,000 calc/sec aggregate",
+      "stretch_target": "500,000 calc/sec aggregate"
+    },
+    "test_categories": {
+      "elements": 0,
+      "compounds": 0,
+      "complex_materials": 0,
+      "energy_scaling": 0,
+      "memory_tests": 4
+    }
+  },
+  "detailed_results": {
+    "memory_baseline_small_array": {
+      "peak_memory_mb": 214.0,
+      "memory_per_calc_kb": 2191.36,
+      "energy_points": 100,
+      "formula": "Si"
+    },
+    "memory_baseline_medium_array": {
+      "peak_memory_mb": 214.078125,
+      "memory_per_calc_kb": 438.432,
+      "energy_points": 500,
+      "formula": "SiO2"
+    },
+    "memory_baseline_large_array": {
+      "peak_memory_mb": 216.8125,
+      "memory_per_calc_kb": 222.016,
+      "energy_points": 1000,
+      "formula": "Al2O3"
+    },
+    "memory_baseline_xlarge_array": {
+      "peak_memory_mb": 216.9375,
+      "memory_per_calc_kb": 111.072,
+      "energy_points": 2000,
+      "formula": "Ti0.5Al0.5N"
+    }
+  }
+}

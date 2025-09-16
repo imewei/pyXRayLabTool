@@ -55,6 +55,7 @@ bandit_report.json
 bandit-report.json
 .benchmarks/
 .claude
+.agent-os/
 .ruff_cache/
 
 # Translations

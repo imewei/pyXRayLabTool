@@ -5,10 +5,20 @@ This module provides a pre-populated cache of atomic data for common elements
 to eliminate expensive database queries to the Mendeleev library during runtime.
 """
 
+from __future__ import annotations
+
 from functools import lru_cache
 import types
+from typing import TYPE_CHECKING, Any
+
+import numpy as np
 
 from xraylabtool.exceptions import UnknownElementError
+
+# Cache metrics imports are done lazily to avoid circular imports
+
+if TYPE_CHECKING:
+    from xraylabtool.typing_extensions import ComplexArray, EnergyArray
 
 # Pre-populated atomic data for the 50 most common elements in materials science
 # This eliminates the need for expensive Mendeleev database queries
@@ -129,17 +139,36 @@ def get_atomic_data_fast(element: str) -> types.MappingProxyType[str, float]:
     """
     element_key = element.capitalize()
 
-    # Check preloaded cache first (fastest) - use immutable view to avoid copying
+    # Check preloaded cache first (fastest) - record cache hit
     if element_key in _ATOMIC_DATA_PRELOADED:
+        try:
+            from xraylabtool.data_handling.cache_metrics import _record_cache_access
+
+            _record_cache_access(element_key, "preloaded_atomic", hit=True)
+        except ImportError:
+            pass
         return types.MappingProxyType(_ATOMIC_DATA_PRELOADED[element_key])
 
-    # Check runtime cache second - use immutable view to avoid copying
+    # Check runtime cache second - record cache hit
     if element_key in _RUNTIME_CACHE:
+        try:
+            from xraylabtool.data_handling.cache_metrics import _record_cache_access
+
+            _record_cache_access(element_key, "runtime_atomic", hit=True)
+        except ImportError:
+            pass
         return types.MappingProxyType(_RUNTIME_CACHE[element_key])
 
-    # Fall back to Mendeleev (slowest)
+    # Fall back to Mendeleev (slowest) - record cache miss
     try:
         from xraylabtool.utils import get_atomic_number, get_atomic_weight
+
+        try:
+            from xraylabtool.data_handling.cache_metrics import _record_cache_access
+
+            _record_cache_access(element_key, "atomic_data", hit=False)
+        except ImportError:
+            pass
 
         atomic_data = {
             "atomic_number": get_atomic_number(element),
@@ -195,6 +224,218 @@ def warm_up_cache(elements: list[str]) -> None:
             get_atomic_data_fast(element)
 
 
+def warm_cache_for_compounds(
+    formulas: list[str],
+    include_similar: bool = True,
+    include_family: bool = True,
+    timing_info: bool = False,
+) -> dict[str, Any]:
+    """
+    Intelligently warm cache for compounds and their related elements.
+
+    This function performs intelligent cache warming by analyzing compound
+    formulas, extracting their constituent elements, and pre-loading both
+    atomic data and scattering factor interpolators. It can also include
+    similar compounds and compound families for comprehensive warming.
+
+    Args:
+        formulas: List of chemical formulas to warm cache for
+        include_similar: Whether to include similar compounds
+        include_family: Whether to include compound family members
+        timing_info: Whether to return timing information
+
+    Returns:
+        Dictionary with warming results and statistics
+
+    Examples:
+        >>> result = warm_cache_for_compounds(["SiO2", "Al2O3"])
+        >>> result["elements_warmed"]
+        ['Si', 'O', 'Al']
+        >>> result["success_rate"] > 0.9
+        True
+    """
+    import time
+
+    from xraylabtool.data_handling.cache_metrics import track_compound_calculation
+    from xraylabtool.data_handling.compound_analysis import (
+        COMPOUND_FAMILIES,
+        find_similar_compounds,
+        get_compound_family,
+        get_elements_for_compound,
+    )
+
+    start_time = time.perf_counter() if timing_info else None
+
+    # Collect all elements to warm
+    elements_to_warm = set()
+    compound_info = {}
+
+    # Process each formula
+    for formula in formulas:
+        try:
+            # Get constituent elements
+            elements = get_elements_for_compound(formula)
+            elements_to_warm.update(elements)
+
+            compound_info[formula] = {
+                "elements": elements,
+                "status": "parsed",
+                "similar_compounds": [],
+                "family_compounds": [],
+            }
+
+            # Track this compound calculation
+            calc_start = time.perf_counter()
+            track_compound_calculation(formula, elements, 0.0)  # Placeholder timing
+            calc_time = time.perf_counter() - calc_start
+
+            # Find similar compounds if requested
+            if include_similar:
+                similar = find_similar_compounds(formula, similarity_threshold=0.3)
+                compound_info[formula]["similar_compounds"] = similar[:3]  # Limit to 3
+
+                # Add elements from similar compounds
+                for similar_formula in similar[:3]:
+                    try:
+                        similar_elements = get_elements_for_compound(similar_formula)
+                        elements_to_warm.update(similar_elements)
+                    except Exception:
+                        continue
+
+            # Find compound family members if requested
+            if include_family:
+                family = get_compound_family(formula)
+                if family and family in COMPOUND_FAMILIES:
+                    family_compounds = COMPOUND_FAMILIES[family][:5]  # Limit to 5
+                    compound_info[formula]["family_compounds"] = family_compounds
+
+                    # Add elements from family compounds
+                    for family_formula in family_compounds:
+                        try:
+                            family_elements = get_elements_for_compound(family_formula)
+                            elements_to_warm.update(family_elements)
+                        except Exception:
+                            continue
+
+        except Exception as e:
+            compound_info[formula] = {
+                "elements": [],
+                "status": f"error: {e}",
+                "similar_compounds": [],
+                "family_compounds": [],
+            }
+
+    # Warm atomic data cache
+    atomic_success = 0
+    atomic_total = len(elements_to_warm)
+
+    for element in elements_to_warm:
+        try:
+            get_atomic_data_fast(element)
+            atomic_success += 1
+        except Exception:
+            continue
+
+    # Warm scattering factor interpolators
+    interpolator_success = 0
+    interpolator_total = len(elements_to_warm)
+
+    for element in elements_to_warm:
+        try:
+            from xraylabtool.calculators.core import (
+                create_scattering_factor_interpolators,
+            )
+
+            create_scattering_factor_interpolators(element)
+            interpolator_success += 1
+        except Exception:
+            continue
+
+    # Warm bulk data cache for common combinations
+    bulk_success = 0
+    if len(elements_to_warm) > 1:
+        try:
+            # Create common element combinations
+            element_list = list(elements_to_warm)
+            common_combos = [
+                tuple(element_list[:3]),  # First 3 elements
+                tuple(element_list[:5]),  # First 5 elements
+                tuple(sorted(element_list)),  # All elements sorted
+            ]
+
+            for combo in common_combos:
+                if len(combo) > 0:
+                    try:
+                        get_bulk_atomic_data_fast(combo)
+                        bulk_success += 1
+                    except Exception:
+                        continue
+
+        except Exception:
+            pass
+
+    # Calculate timing
+    end_time = time.perf_counter() if timing_info else None
+    total_time_ms = (end_time - start_time) * 1000.0 if timing_info else 0.0
+
+    # Calculate success rates
+    atomic_success_rate = atomic_success / atomic_total if atomic_total > 0 else 0.0
+    interpolator_success_rate = (
+        interpolator_success / interpolator_total if interpolator_total > 0 else 0.0
+    )
+    overall_success_rate = (
+        (atomic_success + interpolator_success) / (atomic_total + interpolator_total)
+        if (atomic_total + interpolator_total) > 0
+        else 0.0
+    )
+
+    # Update cache metrics with warming performance
+    from xraylabtool.data_handling.cache_metrics import _metrics_lock, _usage_patterns
+
+    with _metrics_lock:
+        _usage_patterns["performance_metrics"]["warming_time_ms"] = total_time_ms
+
+    return {
+        "elements_warmed": sorted(list(elements_to_warm)),
+        "compounds_processed": compound_info,
+        "atomic_cache": {
+            "success": atomic_success,
+            "total": atomic_total,
+            "success_rate": atomic_success_rate,
+        },
+        "interpolator_cache": {
+            "success": interpolator_success,
+            "total": interpolator_total,
+            "success_rate": interpolator_success_rate,
+        },
+        "bulk_cache": {
+            "success": bulk_success,
+            "attempts": 3 if len(elements_to_warm) > 1 else 0,
+        },
+        "timing": (
+            {
+                "total_time_ms": total_time_ms,
+                "time_per_element_ms": (
+                    total_time_ms / len(elements_to_warm) if elements_to_warm else 0.0
+                ),
+            }
+            if timing_info
+            else {}
+        ),
+        "success_rate": overall_success_rate,
+        "performance_metrics": {
+            "elements_per_second": (
+                len(elements_to_warm) / (total_time_ms / 1000.0)
+                if total_time_ms > 0
+                else 0.0
+            ),
+            "within_target": (
+                total_time_ms < 100.0 if timing_info else True
+            ),  # Target: <100ms
+        },
+    }
+
+
 def get_cache_stats() -> dict[str, int]:
     """
     Get cache statistics for monitoring.
@@ -220,3 +461,137 @@ def is_element_preloaded(element: str) -> bool:
         True if element is preloaded, False otherwise
     """
     return element.capitalize() in _ATOMIC_DATA_PRELOADED
+
+
+# =====================================================================================
+# AtomicDataProvider Protocol Implementation
+# =====================================================================================
+
+
+class FastAtomicDataProvider:
+    """
+    High-performance atomic data provider implementing AtomicDataProvider protocol.
+
+    This implementation uses preloaded atomic data and interpolated scattering
+    factors for maximum performance in X-ray calculations.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the atomic data provider."""
+        self._scattering_cache: dict[
+            str, tuple[np.ndarray, np.ndarray, np.ndarray]
+        ] = {}
+
+    def get_scattering_factors(
+        self, element: str, energies: EnergyArray
+    ) -> ComplexArray:
+        """
+        Get atomic scattering factors for element at given energies.
+
+        This method loads scattering factor data and interpolates it to the
+        requested energies, returning complex scattering factors (f1 + if2).
+
+        Parameters
+        ----------
+        element : str
+            Chemical element symbol (e.g., 'Si', 'O')
+        energies : EnergyArray
+            X-ray energies in keV
+
+        Returns
+        -------
+        ComplexArray
+            Complex scattering factors (f1 + if2)
+        """
+        from xraylabtool.calculators.core import create_scattering_factor_interpolators
+
+        # Convert to numpy array if needed
+        energies_arr = np.asarray(energies, dtype=np.float64)
+
+        # Convert energy from keV to eV for interpolation
+        energies_ev = energies_arr * 1000.0
+
+        # Get interpolators for this element
+        f1_interp, f2_interp = create_scattering_factor_interpolators(element)
+
+        # Interpolate f1 and f2 values
+        f1_values = f1_interp(energies_ev)
+        f2_values = f2_interp(energies_ev)
+
+        # Combine into complex array
+        complex_factors = f1_values + 1j * f2_values
+
+        return np.asarray(complex_factors, dtype=np.complex128)
+
+    def is_element_cached(self, element: str) -> bool:
+        """
+        Check if element data is cached for fast access.
+
+        Parameters
+        ----------
+        element : str
+            Element symbol to check
+
+        Returns
+        -------
+        bool
+            True if element is cached for fast access
+        """
+        from xraylabtool.calculators.core import is_element_cached as is_core_cached
+
+        # Check both our preloaded data and core module cache
+        return is_element_preloaded(element) or is_core_cached(element)
+
+    def preload_elements(self, elements: list[str]) -> None:
+        """
+        Preload scattering factor data for elements.
+
+        Parameters
+        ----------
+        elements : list[str]
+            List of element symbols to preload
+        """
+        from xraylabtool.calculators.core import create_scattering_factor_interpolators
+
+        for element in elements:
+            try:
+                # This will cache the interpolators
+                create_scattering_factor_interpolators(element)
+            except Exception:
+                # Skip elements that can't be loaded
+                continue
+
+    def get_atomic_properties(self, element: str) -> types.MappingProxyType[str, float]:
+        """
+        Get basic atomic properties for an element.
+
+        Parameters
+        ----------
+        element : str
+            Element symbol
+
+        Returns
+        -------
+        types.MappingProxyType[str, float]
+            Immutable mapping with atomic properties
+        """
+        return get_atomic_data_fast(element)
+
+
+# Global instance for easy access
+_GLOBAL_PROVIDER: FastAtomicDataProvider | None = None
+
+
+def get_atomic_data_provider() -> FastAtomicDataProvider:
+    """
+    Get the global atomic data provider instance.
+
+    Returns
+    -------
+    FastAtomicDataProvider
+        Shared atomic data provider instance
+    """
+    global _GLOBAL_PROVIDER
+    if _GLOBAL_PROVIDER is None:
+        _GLOBAL_PROVIDER = FastAtomicDataProvider()
+    return _GLOBAL_PROVIDER

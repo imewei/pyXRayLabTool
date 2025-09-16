@@ -11,9 +11,14 @@ The constants are defined with high precision to ensure accurate calculations
 in X-ray optical property computations.
 """
 
-from typing import Final
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Final
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from xraylabtool.typing_extensions import FloatLike
 
 # =====================================================================================
 # FUNDAMENTAL PHYSICAL CONSTANTS
@@ -259,7 +264,7 @@ Usage: angle_deg = angle_rad * RADIANS_TO_DEGREES
 # =====================================================================================
 
 
-def energy_to_wavelength_angstrom(energy_kev: float) -> float:
+def energy_to_wavelength_angstrom(energy_kev: FloatLike) -> float:
     """
     Convert X-ray energy in keV to wavelength in Angstroms.
 
@@ -279,10 +284,10 @@ def energy_to_wavelength_angstrom(energy_kev: float) -> float:
         raise ValueError("Energy must be positive")
 
     wavelength_m = ENERGY_TO_WAVELENGTH_FACTOR / energy_kev
-    return wavelength_m * METER_TO_ANGSTROM
+    return float(wavelength_m * METER_TO_ANGSTROM)
 
 
-def wavelength_angstrom_to_energy(wavelength_angstrom: float) -> float:
+def wavelength_angstrom_to_energy(wavelength_angstrom: FloatLike) -> float:
     """
     Convert X-ray wavelength in Angstroms to energy in keV.
 
@@ -302,10 +307,10 @@ def wavelength_angstrom_to_energy(wavelength_angstrom: float) -> float:
         raise ValueError("Wavelength must be positive")
 
     wavelength_m = wavelength_angstrom * ANGSTROM_TO_METER
-    return ENERGY_TO_WAVELENGTH_FACTOR / wavelength_m
+    return float(ENERGY_TO_WAVELENGTH_FACTOR / wavelength_m)
 
 
-def critical_angle_degrees(dispersion: float) -> float:
+def critical_angle_degrees(dispersion: FloatLike) -> float:
     """
     Calculate critical angle for total external reflection from dispersion coefficient.
 
@@ -328,7 +333,9 @@ def critical_angle_degrees(dispersion: float) -> float:
     return float(theta_c_rad * RADIANS_TO_DEGREES)
 
 
-def attenuation_length_cm(wavelength_angstrom: float, absorption: float) -> float:
+def attenuation_length_cm(
+    wavelength_angstrom: FloatLike, absorption: FloatLike
+) -> float:
     """
     Calculate X-ray attenuation length from wavelength and absorption coefficient.
 
@@ -352,7 +359,7 @@ def attenuation_length_cm(wavelength_angstrom: float, absorption: float) -> floa
 
     wavelength_m = wavelength_angstrom * ANGSTROM_TO_METER
     length_m = wavelength_m / (4 * PI * absorption)
-    return length_m * METER_TO_CM
+    return float(length_m * METER_TO_CM)
 
 
 # =====================================================================================

@@ -363,15 +363,8 @@ python_version = "3.12"
 files = ["xraylabtool", "tests"]
 show_error_codes = true
 pretty = true
-warn_return_any = true
-warn_unused_configs = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
 
-# Strict mode settings
+# Enhanced strict mode settings
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
@@ -381,10 +374,32 @@ strict_optional = true
 disallow_any_generics = true
 disallow_subclassing_any = true
 
+# Enhanced type safety warnings
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+# Additional strict settings for enhanced type safety
+disallow_any_unimported = true
+disallow_any_expr = false  # Too strict for scientific computing with NumPy
+no_implicit_reexport = true
+strict_concatenate = true
+
+# Performance optimizations
+cache_dir = ".mypy_cache"
+sqlite_cache = true
+incremental = true
+follow_imports = "normal"
+
 # Error output
 show_column_numbers = true
 show_error_context = true
 color_output = true
+error_summary = true
 
 [[tool.mypy.overrides]]
 # Third-party libraries without stubs
@@ -400,10 +415,26 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-# Test files can be less strict
+# Enhanced strict mode for core modules (gradual rollout)
+module = [
+    "xraylabtool.calculators.core",
+    "xraylabtool.utils",
+    "xraylabtool.constants",
+    "xraylabtool.calculators.derived_quantities",
+]
+# Additional strict settings for core modules
+disallow_any_expr = false  # Still too strict for NumPy scientific computing
+warn_return_any = true
+strict_concatenate = true
+
+[[tool.mypy.overrides]]
+# Test files can be less strict but with some type safety
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+# Keep basic type safety for test infrastructure
+disallow_any_unimported = false
+no_implicit_reexport = false
 
 [[tool.mypy.overrides]]
 # Pandas has stubs available

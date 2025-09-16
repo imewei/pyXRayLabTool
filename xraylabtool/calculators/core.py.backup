@@ -7,13 +7,13 @@ including atomic scattering factors and crystallographic calculations.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 import concurrent.futures
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
 import types
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 import warnings
 
 import numpy as np
@@ -24,12 +24,16 @@ from scipy.interpolate import PchipInterpolator
 
 if TYPE_CHECKING:
     from xraylabtool.typing_extensions import (
-        ArrayLike,
         EnergyArray,
-        FloatLike,
-        InterpolatorProtocol,
-        OpticalConstantArray,
         WavelengthArray,
+        OpticalConstantArray,
+        ComplexArray,
+        ScatteringFactorArray,
+        FloatLike,
+        ArrayLike,
+        ElementComposition,
+        InterpolatorProtocol,
+        AtomicDataProvider,
     )
 
 # =====================================================================================
@@ -149,26 +153,22 @@ class XRayResult:
     electron_density_per_ang3: float  # Electron density (electrons/Å³)
 
     # X-ray energy and wavelength arrays (performance-optimized dtypes)
-    energy_kev: EnergyArray = field()  # X-ray energies in keV
-    wavelength_angstrom: WavelengthArray = field()  # X-ray wavelengths in Å
+    energy_kev: "EnergyArray" = field()  # X-ray energies in keV
+    wavelength_angstrom: "WavelengthArray" = field()  # X-ray wavelengths in Å
 
     # Fundamental optical constants (performance-critical arrays)
-    dispersion_delta: OpticalConstantArray = field()  # Dispersion coefficient δ
-    absorption_beta: OpticalConstantArray = field()  # Absorption coefficient β
+    dispersion_delta: "OpticalConstantArray" = field()  # Dispersion coefficient δ
+    absorption_beta: "OpticalConstantArray" = field()  # Absorption coefficient β
 
     # Atomic scattering factors (complex arrays for scientific accuracy)
-    scattering_factor_f1: OpticalConstantArray = (
-        field()
-    )  # Real part of scattering factor
-    scattering_factor_f2: OpticalConstantArray = (
-        field()
-    )  # Imaginary part of scattering factor
+    scattering_factor_f1: "OpticalConstantArray" = field()  # Real part of scattering factor
+    scattering_factor_f2: "OpticalConstantArray" = field()  # Imaginary part of scattering factor
 
     # Derived optical properties (performance-optimized arrays)
-    critical_angle_degrees: OpticalConstantArray = field()  # Critical angles (degrees)
-    attenuation_length_cm: OpticalConstantArray = field()  # Attenuation lengths (cm)
-    real_sld_per_ang2: OpticalConstantArray = field()  # Real SLD (Å⁻²)
-    imaginary_sld_per_ang2: OpticalConstantArray = field()  # Imaginary SLD (Å⁻²)
+    critical_angle_degrees: "OpticalConstantArray" = field()  # Critical angles (degrees)
+    attenuation_length_cm: "OpticalConstantArray" = field()  # Attenuation lengths (cm)
+    real_sld_per_ang2: "OpticalConstantArray" = field()  # Real SLD (Å⁻²)
+    imaginary_sld_per_ang2: "OpticalConstantArray" = field()  # Imaginary SLD (Å⁻²)
 
     def __post_init__(self) -> None:
         """Post-initialization to handle any setup after object creation."""
@@ -357,7 +357,7 @@ class XRayResult:
         reSLD: np.ndarray | None = None,
         imSLD: np.ndarray | None = None,
         **kwargs: Any,
-    ) -> XRayResult:
+    ) -> "XRayResult":
         """Create XRayResult from legacy field names (for internal use)."""
         return cls(
             formula=Formula or kwargs.get("formula", ""),
@@ -427,9 +427,7 @@ _scattering_factor_cache: dict[str, pd.DataFrame] = {}
 
 # Module-level cache for interpolators to avoid repeated creation
 if TYPE_CHECKING:
-    _interpolator_cache: dict[
-        str, tuple[InterpolatorProtocol, InterpolatorProtocol]
-    ] = {}
+    _interpolator_cache: dict[str, tuple[InterpolatorProtocol, InterpolatorProtocol]] = {}
 else:
     _interpolator_cache: dict[str, tuple[PchipInterpolator, PchipInterpolator]] = {}
 
@@ -669,7 +667,7 @@ def get_cached_elements() -> list[str]:
 @cache
 def get_bulk_atomic_data(
     elements_tuple: tuple[str, ...],
-) -> dict[str, types.MappingProxyType[str, float]]:
+) -> "dict[str, types.MappingProxyType[str, float]]":
     """
     Bulk load atomic data for multiple elements with high-performance caching.
 
@@ -717,17 +715,12 @@ def is_element_cached(element: str) -> bool:
 
 
 def calculate_scattering_factors(
-    energy_ev: EnergyArray,
-    wavelength: WavelengthArray,
-    mass_density: FloatLike,
-    molecular_weight: FloatLike,
-    element_data: list[tuple[float, InterpolatorProtocol, InterpolatorProtocol]],
-) -> tuple[
-    OpticalConstantArray,
-    OpticalConstantArray,
-    OpticalConstantArray,
-    OpticalConstantArray,
-]:
+    energy_ev: "EnergyArray",
+    wavelength: "WavelengthArray",
+    mass_density: "FloatLike",
+    molecular_weight: "FloatLike",
+    element_data: "list[tuple[float, InterpolatorProtocol, InterpolatorProtocol]]",
+) -> "tuple[OpticalConstantArray, OpticalConstantArray, OpticalConstantArray, OpticalConstantArray]":
     """
     Optimized vectorized calculation of X-ray scattering factors and properties.
 
@@ -837,19 +830,13 @@ def calculate_scattering_factors(
 
 
 def calculate_derived_quantities(
-    wavelength: WavelengthArray,
-    dispersion: OpticalConstantArray,
-    absorption: OpticalConstantArray,
-    mass_density: FloatLike,
-    molecular_weight: FloatLike,
-    number_of_electrons: FloatLike,
-) -> tuple[
-    float,
-    OpticalConstantArray,
-    OpticalConstantArray,
-    OpticalConstantArray,
-    OpticalConstantArray,
-]:
+    wavelength: "WavelengthArray",
+    dispersion: "OpticalConstantArray",
+    absorption: "OpticalConstantArray",
+    mass_density: "FloatLike",
+    molecular_weight: "FloatLike",
+    number_of_electrons: "FloatLike",
+) -> "tuple[float, OpticalConstantArray, OpticalConstantArray, OpticalConstantArray, OpticalConstantArray]":
     """
     Calculate derived X-ray optical quantities from dispersion and absorption.
 
@@ -915,7 +902,7 @@ def calculate_derived_quantities(
 @lru_cache(maxsize=128)
 def create_scattering_factor_interpolators(
     element: str,
-) -> tuple[InterpolatorProtocol, InterpolatorProtocol]:
+) -> "tuple[InterpolatorProtocol, InterpolatorProtocol]":
     """
     Create PCHIP interpolators for f1 and f2 scattering factors.
 
@@ -956,7 +943,6 @@ def create_scattering_factor_interpolators(
         # Lazy import to avoid circular imports
         try:
             from xraylabtool.data_handling.cache_metrics import _record_cache_access
-
             _record_cache_access(element, "interpolator_cache", hit=True)
         except ImportError:
             pass  # Silently continue if cache metrics not available
@@ -965,7 +951,6 @@ def create_scattering_factor_interpolators(
     # Cache miss - need to create new interpolators
     try:
         from xraylabtool.data_handling.cache_metrics import _record_cache_access
-
         _record_cache_access(element, "interpolator_cache", hit=False)
     except ImportError:
         pass  # Silently continue if cache metrics not available
@@ -1009,14 +994,14 @@ def create_scattering_factor_interpolators(
 
 def _validate_single_material_inputs(
     formula_str: str,
-    energy_kev: FloatLike | ArrayLike,
-    mass_density: FloatLike,
-) -> EnergyArray:
+    energy_kev: "FloatLike | ArrayLike",
+    mass_density: "FloatLike",
+) -> "EnergyArray":
     """Validate inputs for single material calculation."""
     if not formula_str or not isinstance(formula_str, str):
         raise ValueError("Formula must be a non-empty string")
 
-    if np.any(np.asarray(mass_density) <= 0):
+    if mass_density <= 0:
         raise ValueError("Mass density must be positive")
 
     # Convert and validate energy
@@ -1031,7 +1016,7 @@ def _validate_single_material_inputs(
     return energy_kev
 
 
-def _convert_energy_input(energy_kev: Any) -> EnergyArray:
+def _convert_energy_input(energy_kev: Any) -> "EnergyArray":
     """Convert energy input to numpy array."""
     if np.isscalar(energy_kev):
         if isinstance(energy_kev, complex):
@@ -1052,8 +1037,8 @@ def _convert_energy_input(energy_kev: Any) -> EnergyArray:
 def _calculate_molecular_properties(
     element_symbols: list[str],
     element_counts: list[float],
-    atomic_data_bulk: dict[str, types.MappingProxyType[str, float]],
-) -> tuple[float, float]:
+    atomic_data_bulk: "dict[str, types.MappingProxyType[str, float]]",
+) -> "tuple[float, float]":
     """Calculate molecular weight and total electrons."""
     molecular_weight = 0.0
     number_of_electrons = 0.0
@@ -1070,8 +1055,9 @@ def _calculate_molecular_properties(
 
 
 def _prepare_element_data(
-    element_symbols: list[str], element_counts: list[float]
-) -> list[tuple[float, InterpolatorProtocol, InterpolatorProtocol]]:
+    element_symbols: list[str],
+    element_counts: list[float]
+) -> "list[tuple[float, InterpolatorProtocol, InterpolatorProtocol]]":
     """Prepare element data with interpolators."""
     element_data = []
 
@@ -1084,9 +1070,9 @@ def _prepare_element_data(
 
 def _calculate_single_material_xray_properties(
     formula_str: str,
-    energy_kev: FloatLike | ArrayLike,
-    mass_density: FloatLike,
-) -> dict[str, str | float | np.ndarray]:
+    energy_kev: "FloatLike | ArrayLike",
+    mass_density: "FloatLike",
+) -> "dict[str, str | float | np.ndarray]":
     """
     Calculate X-ray optical properties for a single chemical formula.
 
@@ -1178,9 +1164,9 @@ def _calculate_single_material_xray_properties(
 
 def calculate_multiple_xray_properties(
     formula_list: list[str],
-    energy_kev: FloatLike | ArrayLike,
+    energy_kev: "FloatLike | ArrayLike",
     mass_density_list: list[float],
-) -> dict[str, dict[str, str | float | np.ndarray]]:
+) -> "dict[str, dict[str, str | float | np.ndarray]]":
     """
     Calculate X-ray optical properties for multiple chemical formulas.
 
@@ -1284,7 +1270,9 @@ def load_data_file(filename: str) -> pd.DataFrame:
 
 
 def calculate_single_material_properties(
-    formula: str, energy_keV: FloatLike | ArrayLike, density: FloatLike
+    formula: str,
+    energy_keV: "FloatLike | ArrayLike",
+    density: "FloatLike"
 ) -> XRayResult:
     """
     Calculate X-ray optical properties for a single material composition.
@@ -1432,7 +1420,7 @@ def _validate_xray_inputs(formulas: list[str], densities: list[float]) -> None:
             )
 
 
-def _validate_and_process_energies(energies: Any) -> EnergyArray:
+def _validate_and_process_energies(energies: Any) -> "EnergyArray":
     """Validate and convert energies to numpy array."""
     if np.isscalar(energies):
         if isinstance(energies, complex):
@@ -1460,7 +1448,8 @@ def _validate_and_process_energies(energies: Any) -> EnergyArray:
 
 
 def _restore_energy_order(
-    result: XRayResult, reverse_indices: np.ndarray
+    result: XRayResult,
+    reverse_indices: np.ndarray
 ) -> XRayResult:
     """Restore original energy order in XRayResult."""
     return XRayResult(
@@ -1483,8 +1472,9 @@ def _restore_energy_order(
 
 
 def _create_process_formula_function(
-    sorted_energies: EnergyArray, sort_indices: ArrayLike
-) -> Callable[[tuple[str, float]], tuple[str, XRayResult]]:
+    sorted_energies: "EnergyArray",
+    sort_indices: "ArrayLike"
+) -> "Callable[[tuple[str, float]], tuple[str, XRayResult]]":
     """Create process formula function with energy sorting logic."""
 
     def process_formula(
@@ -1510,8 +1500,8 @@ def _create_process_formula_function(
 def _process_formulas_parallel(
     formulas: list[str],
     densities: list[float],
-    process_func: Callable[[tuple[str, float]], tuple[str, XRayResult]],
-) -> dict[str, XRayResult]:
+    process_func: "Callable[[tuple[str, float]], tuple[str, XRayResult]]",
+) -> "dict[str, XRayResult]":
     """Process formulas in parallel using ThreadPoolExecutor."""
     import multiprocessing
 
@@ -1540,9 +1530,9 @@ def _process_formulas_parallel(
 
 def calculate_xray_properties(
     formulas: list[str],
-    energies: FloatLike | ArrayLike,
+    energies: "FloatLike | ArrayLike",
     densities: list[float],
-) -> dict[str, XRayResult]:
+) -> "dict[str, XRayResult]":
     """
     Calculate X-ray optical properties for multiple material compositions in parallel.
 
@@ -1687,9 +1677,9 @@ class FastXRayCalculationEngine:
     def calculate_optical_constants(
         self,
         formula: str,
-        energies: EnergyArray,
-        density: FloatLike,
-    ) -> tuple[OpticalConstantArray, OpticalConstantArray]:
+        energies: "EnergyArray",
+        density: "FloatLike",
+    ) -> "tuple[OpticalConstantArray, OpticalConstantArray]":
         """
         Calculate dispersion and absorption coefficients.
 
@@ -1720,10 +1710,10 @@ class FastXRayCalculationEngine:
 
     def calculate_derived_quantities(
         self,
-        dispersion: OpticalConstantArray,
-        absorption: OpticalConstantArray,
-        energies: EnergyArray,
-    ) -> dict[str, np.ndarray]:
+        dispersion: "OpticalConstantArray",
+        absorption: "OpticalConstantArray",
+        energies: "EnergyArray",
+    ) -> "dict[str, np.ndarray]":
         """
         Calculate derived quantities from optical constants.
 
@@ -1748,15 +1738,8 @@ class FastXRayCalculationEngine:
         wavelength_angstrom = wavelength * METER_TO_ANGSTROM
 
         # Calculate derived quantities using internal function
-        _, critical_angle, attenuation_length, re_sld, im_sld = (
-            calculate_derived_quantities(
-                wavelength,
-                dispersion,
-                absorption,
-                1.0,
-                1.0,
-                1.0,  # dummy values for density/MW/electrons
-            )
+        _, critical_angle, attenuation_length, re_sld, im_sld = calculate_derived_quantities(
+            wavelength, dispersion, absorption, 1.0, 1.0, 1.0  # dummy values for density/MW/electrons
         )
 
         return {
@@ -1781,41 +1764,18 @@ class FastXRayCalculationEngine:
         if common_elements is None:
             # Common elements in materials science
             common_elements = [
-                "H",
-                "C",
-                "N",
-                "O",
-                "F",
-                "Na",
-                "Mg",
-                "Al",
-                "Si",
-                "P",
-                "S",
-                "Cl",
-                "K",
-                "Ca",
-                "Ti",
-                "V",
-                "Cr",
-                "Mn",
-                "Fe",
-                "Co",
-                "Ni",
-                "Cu",
-                "Zn",
-                "Ge",
+                "H", "C", "N", "O", "F", "Na", "Mg", "Al", "Si", "P", "S", "Cl",
+                "K", "Ca", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ge"
             ]
 
         # Preload atomic data
         from xraylabtool.data_handling.atomic_cache import get_atomic_data_provider
-
         provider = get_atomic_data_provider()
         provider.preload_elements(common_elements)
 
         self._cache_warmed = True
 
-    def get_performance_info(self) -> dict[str, Any]:
+    def get_performance_info(self) -> "dict[str, Any]":
         """
         Get performance information about the calculation engine.
 

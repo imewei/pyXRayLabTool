@@ -5,15 +5,20 @@ This module contains helper functions for data processing, unit conversions,
 mathematical operations, and other common tasks in X-ray analysis.
 """
 
+from __future__ import annotations
+
 from collections.abc import Iterator
 from functools import lru_cache
 import re
-from typing import Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import numpy as np
 from scipy import constants
 
 from xraylabtool.exceptions import AtomicDataError, UnknownElementError
+
+if TYPE_CHECKING:
+    from xraylabtool.typing_extensions import ArrayLike, FloatLike
 
 # Physical constants
 PLANCK_CONSTANT: float = float(constants.h)  # J⋅s
@@ -47,7 +52,7 @@ __all__ = [
 ]
 
 
-def wavelength_to_energy(wavelength: float, units: str = "angstrom") -> float:
+def wavelength_to_energy(wavelength: FloatLike, units: str = "angstrom") -> float:
     """
     Convert X-ray wavelength to energy.
 
@@ -72,10 +77,10 @@ def wavelength_to_energy(wavelength: float, units: str = "angstrom") -> float:
     energy_j = (PLANCK_CONSTANT * SPEED_OF_LIGHT) / wavelength_m
     energy_kev = energy_j / (ELECTRON_CHARGE * 1000)
 
-    return energy_kev
+    return float(energy_kev)
 
 
-def energy_to_wavelength(energy: float, units: str = "angstrom") -> float:
+def energy_to_wavelength(energy: FloatLike, units: str = "angstrom") -> float:
     """
     Convert X-ray energy to wavelength.
 
@@ -94,16 +99,16 @@ def energy_to_wavelength(energy: float, units: str = "angstrom") -> float:
 
     # Convert to desired units
     if units == "angstrom":
-        return wavelength_m / 1e-10
+        return float(wavelength_m / 1e-10)
     elif units == "nm":
-        return wavelength_m / 1e-9
+        return float(wavelength_m / 1e-9)
     elif units == "m":
-        return wavelength_m
+        return float(wavelength_m)
     else:
         raise ValueError("Units must be 'angstrom', 'nm', or 'm'")
 
 
-def bragg_angle(d_spacing: float, wavelength: float, order: int = 1) -> float:
+def bragg_angle(d_spacing: FloatLike, wavelength: FloatLike, order: int = 1) -> float:
     """
     Calculate Bragg angle for given d-spacing and wavelength.
 
@@ -133,7 +138,7 @@ def bragg_angle(d_spacing: float, wavelength: float, order: int = 1) -> float:
     return float(theta_deg)
 
 
-def d_spacing_cubic(h: int, k: int, miller_l: int, a: float) -> float:
+def d_spacing_cubic(h: int, k: int, miller_l: int, a: FloatLike) -> float:
     """
     Calculate d-spacing for cubic crystal system.
 
@@ -147,7 +152,9 @@ def d_spacing_cubic(h: int, k: int, miller_l: int, a: float) -> float:
     return float(a / np.sqrt(h**2 + k**2 + miller_l**2))
 
 
-def d_spacing_tetragonal(h: int, k: int, miller_l: int, a: float, c: float) -> float:
+def d_spacing_tetragonal(
+    h: int, k: int, miller_l: int, a: FloatLike, c: FloatLike
+) -> float:
     """
     Calculate d-spacing for tetragonal crystal system.
 
@@ -163,7 +170,7 @@ def d_spacing_tetragonal(h: int, k: int, miller_l: int, a: float, c: float) -> f
 
 
 def d_spacing_orthorhombic(
-    h: int, k: int, miller_l: int, a: float, b: float, c: float
+    h: int, k: int, miller_l: int, a: FloatLike, b: FloatLike, c: FloatLike
 ) -> float:
     """
     Calculate d-spacing for orthorhombic crystal system.
@@ -178,7 +185,7 @@ def d_spacing_orthorhombic(
     return float(1 / np.sqrt(h**2 / a**2 + k**2 / b**2 + miller_l**2 / c**2))
 
 
-def q_from_angle(two_theta: float, wavelength: float) -> float:
+def q_from_angle(two_theta: FloatLike, wavelength: FloatLike) -> float:
     """
     Calculate momentum transfer q from scattering angle.
 
@@ -194,7 +201,7 @@ def q_from_angle(two_theta: float, wavelength: float) -> float:
     return float(q)
 
 
-def angle_from_q(q: float, wavelength: float) -> float:
+def angle_from_q(q: FloatLike, wavelength: FloatLike) -> float:
     """
     Calculate scattering angle from momentum transfer q.
 
@@ -216,7 +223,7 @@ def angle_from_q(q: float, wavelength: float) -> float:
     return float(two_theta_deg)
 
 
-def smooth_data(x: np.ndarray, y: np.ndarray, window_size: int = 5) -> np.ndarray:  # noqa: ARG001
+def smooth_data(x: ArrayLike, y: ArrayLike, window_size: int = 5) -> np.ndarray:  # noqa: ARG001
     """
     Apply moving average smoothing to data using optimized NumPy convolution.
 
@@ -234,23 +241,26 @@ def smooth_data(x: np.ndarray, y: np.ndarray, window_size: int = 5) -> np.ndarra
     if window_size < 1:
         raise ValueError("Window size must be at least 1")
 
-    if window_size >= len(y):
-        return np.full(len(y), np.mean(y), dtype=np.float64)
+    # Convert to numpy array for consistent operations
+    y_arr = np.asarray(y)
+
+    if window_size >= len(y_arr):
+        return np.full(len(y_arr), np.mean(y_arr), dtype=np.float64)
 
     # Use numpy convolution - much faster than pandas rolling
     kernel = np.ones(window_size, dtype=np.float64) / window_size
 
     # Handle edge effects with reflection padding
     half_window = window_size // 2
-    padded_y = np.pad(y, half_window, mode="edge")
+    padded_y = np.pad(y_arr, half_window, mode="edge")
     convolved = np.convolve(padded_y, kernel, mode="valid")
 
     # Ensure we return exactly the same length as input
-    return convolved[: len(y)]
+    return convolved[: len(y_arr)]
 
 
 def find_peaks(
-    x: np.ndarray, y: np.ndarray, prominence: float = 0.1, distance: int = 10
+    x: ArrayLike, y: ArrayLike, prominence: FloatLike = 0.1, distance: int = 10
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """
     Find peaks in diffraction data.
@@ -266,18 +276,21 @@ def find_peaks(
     """
     from scipy.signal import find_peaks as scipy_find_peaks
 
-    peaks, properties = scipy_find_peaks(y, prominence=prominence, distance=distance)
-
-    # Add x-values to properties
-    properties["x_values"] = x[peaks]
-    properties["y_values"] = y[peaks]
+    # Convert to numpy arrays for consistent operations
+    x_arr = np.asarray(x)
+    y_arr = np.asarray(y)
+    peaks, properties = scipy_find_peaks(
+        y_arr, prominence=prominence, distance=distance
+    )
+    properties["x_values"] = x_arr[peaks]
+    properties["y_values"] = y_arr[peaks]
 
     return peaks, properties
 
 
 def background_subtraction(
-    x: np.ndarray,
-    y: np.ndarray,
+    x: ArrayLike,
+    y: ArrayLike,
     method: str = "linear",
 ) -> np.ndarray:
     """
@@ -291,24 +304,28 @@ def background_subtraction(
     Returns:
         Background-subtracted y data
     """
+    # Convert to numpy arrays for consistent indexing
+    x_arr = np.asarray(x)
+    y_arr = np.asarray(y)
+
     if method == "linear":
         # Linear background between first and last points
-        background = np.linspace(y[0], y[-1], len(y))
+        background = np.linspace(y_arr[0], y_arr[-1], len(y_arr))
     elif method == "polynomial":
         # Fit quadratic polynomial using x values
         # Use endpoints and minimum point for fitting
-        min_idx = np.argmin(y)
-        x_points = np.array([x[0], x[min_idx], x[-1]])
-        y_points = np.array([y[0], y[min_idx], y[-1]])
+        min_idx = np.argmin(y_arr)
+        x_points = np.array([x_arr[0], x_arr[min_idx], x_arr[-1]])
+        y_points = np.array([y_arr[0], y_arr[min_idx], y_arr[-1]])
         coeffs = np.polyfit(x_points, y_points, 2)
-        background = np.polyval(coeffs, x)
+        background = np.polyval(coeffs, x_arr)
     else:
         raise ValueError("Method must be 'linear' or 'polynomial'")
 
-    return y - background
+    return y_arr - background
 
 
-def normalize_intensity(y: np.ndarray, method: str = "max") -> np.ndarray:
+def normalize_intensity(y: ArrayLike, method: str = "max") -> np.ndarray:
     """
     Normalize intensity data.
 
@@ -319,12 +336,15 @@ def normalize_intensity(y: np.ndarray, method: str = "max") -> np.ndarray:
     Returns:
         Normalized intensity data
     """
+    # Convert to numpy array for consistent operations
+    y_arr = np.asarray(y)
+
     if method == "max":
-        return y / float(np.max(y))
+        return y_arr / float(np.max(y_arr))
     elif method == "area":
-        return y / float(np.trapezoid(y))
+        return y_arr / float(np.trapezoid(y_arr))
     elif method == "standard":
-        return (y - float(np.mean(y))) / float(np.std(y))
+        return (y_arr - float(np.mean(y_arr))) / float(np.std(y_arr))
     else:
         raise ValueError("Method must be 'max', 'area', or 'standard'")
 
@@ -350,8 +370,8 @@ def progress_bar(iterable: Any, desc: str = "Processing") -> Any | Iterator[Any]
 
 
 def save_processed_data(
-    x: np.ndarray,
-    y: np.ndarray,
+    x: ArrayLike,
+    y: ArrayLike,
     filename: str,
     header: str = "# X-ray diffraction data",
 ) -> None:
