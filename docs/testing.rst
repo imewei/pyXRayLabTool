@@ -16,7 +16,7 @@ XRayLabTool follows a testing strategy:
 - **Regression Tests**: Prevent reintroduction of fixed bugs
 
 **Testing Principles:**
-- **Fast feedback**: Most tests run in milliseconds
+- **Quick feedback**: Most tests run in milliseconds
 - **Code coverage**: >95% code coverage target
 - **Reliable**: Tests pass consistently across platforms
 - **Clear failures**: Descriptive error messages

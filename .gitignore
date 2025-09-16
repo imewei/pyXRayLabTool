@@ -205,3 +205,7 @@ benchmark-results.json
 # Final CI alignment - Wed Sep 10 09:27:52 CDT 2025
 # Force CI update - Wed Sep 10 09:32:42 CDT 2025
 # Import sorting fix applied - Wed Sep 10 09:53:48 CDT 2025
+
+# Cleanup system temporary files
+.cleanup_backup/
+.cleanup_reports/

@@ -1,7 +1,16 @@
 API Reference
 =============
 
-This section contains the API reference for XRayLabTool.
+This section contains the API reference for XRayLabTool's modular architecture.
+
+XRayLabTool is organized into 5 focused sub-packages:
+
+- **calculators**: Core X-ray physics calculations
+- **data_handling**: Atomic data caching and batch processing
+- **interfaces**: CLI and completion systems
+- **validation**: Input validation and error handling
+- **io_operations**: File operations and export functionality
+- **utils**: Utility functions and constants
 
 .. toctree::
    :maxdepth: 2

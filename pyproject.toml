@@ -14,7 +14,7 @@ maintainers = [
 description = "Ultra-fast Python package for X-ray optical properties calculation with CXRO/NIST data, CLI tools, and synchrotron applications"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 classifiers = [
     # Development Status
     "Development Status :: 5 - Production/Stable",
@@ -34,6 +34,7 @@ classifiers = [
 
     # Programming Language
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -87,12 +88,12 @@ keywords = [
 
 # Core runtime dependencies
 dependencies = [
-    "numpy>=1.21.0",
-    "pandas>=1.5.0",
-    "scipy>=1.9.0",
-    "matplotlib>=3.5.0",
+    "numpy>=1.26.0,<2.0.0",
+    "pandas>=2.1.0,<3.0.0",
+    "scipy>=1.11.0,<2.0.0",
+    "matplotlib>=3.8.0",
     "mendeleev>=0.15.0",
-    "tqdm>=4.64.0",
+    "tqdm>=4.66.0",
     "psutil>=5.9.0",  # Memory monitoring for batch processing
 ]
 
@@ -100,31 +101,34 @@ dependencies = [
 # Development dependencies (includes testing, linting, formatting)
 dev = [
     # Testing
-    "pytest>=7.0.0",
+    "pytest>=7.4.0,<8.0.0",
     "pytest-cov>=4.0.0",
     "pytest-benchmark>=4.0.0",
     "pytest-xdist>=3.0.0",  # Parallel test execution
     "pytest-timeout>=2.1.0",  # Test timeout support
 
     # Code quality and linting
-    "black>=23.0.0",
+    "black>=23.12.0,<24.0.0",
     "flake8>=6.0.0",
-    "mypy>=1.0.0",
-    "ruff>=0.1.0",  # Fast linter and formatter
+    "mypy>=1.6.0,<2.0.0",
+    "ruff>=0.1.7,<1.0.0",  # Fast linter and formatter
     "isort>=5.12.0",  # Import sorting
 
     # Security analysis
-    "bandit[toml]>=1.7.0",  # Security linter
+    "bandit[toml]>=1.7.0,<2.0.0",  # Security linter
     "pbr>=3.1.0",  # Required by bandit for version detection
-    "safety>=2.3.0",  # Dependency vulnerability scanner
+    "safety>=2.3.0,<3.0.0",  # Dependency vulnerability scanner
 
     # Type stubs
-    "pandas-stubs>=2.0.0",
-    "types-tqdm>=4.64.0",
+    "pandas-stubs>=2.1.0",
+    "types-tqdm>=4.66.0",
     "types-psutil>=5.9.0",
 
     # Pre-commit hooks
-    "pre-commit>=3.0.0",
+    "pre-commit>=3.6.0",
+
+    # Additional security and quality tools
+    "codecov>=2.1.0,<3.0.0",  # Enhanced coverage reporting
 ]
 
 # Documentation dependencies
@@ -336,7 +340,7 @@ norecursedirs = [
 
 [tool.black]
 line-length = 88
-target-version = ['py312']
+target-version = ['py311']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -359,7 +363,7 @@ extend-exclude = '''
 preview = true  # Enable latest formatting features
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.11"
 files = ["xraylabtool", "tests"]
 show_error_codes = true
 pretty = true
@@ -448,7 +452,7 @@ ignore_missing_imports = false
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -463,12 +467,23 @@ select = [
     "SIM", # flake8-simplify
     "PLR", # pylint refactor
     "PLW", # pylint warnings
+    "S",   # flake8-bandit (security)
+    "N",   # pep8-naming
+    "A",   # flake8-builtins
+    "RUF", # Ruff-specific rules
+    "PL",  # pylint
 ]
 ignore = [
     "E501",  # line too long (handled by black)
     "B008",  # do not perform function calls in argument defaults
     "PLR0913",  # too many arguments
     "PLR2004",  # magic value used in comparison
+    "S101",  # assert statements (used in tests)
+    "S603",  # subprocess call (we use subprocess safely)
+    "N802",  # function name should be lowercase (scientific naming conventions)
+    "N803",  # argument name should be lowercase (scientific naming conventions)
+    "A003",  # builtin name shadowing (common in scientific computing)
+    "PLC0414",  # import alias does not rename original package
 ]
 exclude = [
     ".git",

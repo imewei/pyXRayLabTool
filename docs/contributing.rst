@@ -79,7 +79,7 @@ The development environment includes:
 
 - **pytest**: Test framework
 - **black**: Code formatting
-- **ruff**: Fast linting
+- **ruff**: Modern linting
 - **mypy**: Type checking
 - **pre-commit**: Git hooks for code quality
 

@@ -381,7 +381,7 @@ The `XRayResult` dataclass contains all computed X-ray optical properties with c
 
 ```python
 # Calculate properties for silicon dioxide at 10 keV
-result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.33)
+result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
 
 # Use new descriptive field names (recommended)
 print(f"Formula: {result.formula}")                                      # "SiO2"
@@ -517,6 +517,10 @@ If you need to temporarily suppress deprecation warnings during migration:
 
 ```python
 import warnings
+import xraylabtool as xlt
+
+# Calculate result first
+result = xlt.calculate_single_material_properties("Si", 8.0, 2.33)
 
 # Suppress only XRayLabTool deprecation warnings
 with warnings.catch_warnings():
@@ -587,7 +591,7 @@ XRayLabTool is optimized for fast calculations. Key improvements:
 
 ```python
 # Check cache statistics
-from xraylabtool.atomic_data_cache import get_cache_stats
+from xraylabtool.data_handling import get_cache_stats
 print(get_cache_stats())
 # {'preloaded_elements': 92, 'runtime_cached_elements': 0, 'total_cached_elements': 92}
 ```
@@ -620,7 +624,7 @@ result_multi = xlt.calculate_single_material_properties("SiO2", energies, 2.2)
 For large-scale calculations, use the batch processor:
 
 ```python
-from xraylabtool.batch_processor import calculate_batch_properties, BatchConfig
+from xraylabtool.data_handling import calculate_batch_properties, BatchConfig
 
 # Configure for optimal performance
 config = BatchConfig(
@@ -697,7 +701,7 @@ results = xlt.calculate_xray_properties(formulas, energies, densities)  # ✅ Pa
 #### For Large Datasets
 ```python
 # Use the batch processor for large datasets
-from xraylabtool.batch_processor import calculate_batch_properties, BatchConfig
+from xraylabtool.data_handling import calculate_batch_properties, BatchConfig
 
 # Configure for your system
 config = BatchConfig(
@@ -714,14 +718,14 @@ results = calculate_batch_properties(formulas, energies, densities, config)
 
 ```python
 # Monitor cache performance
-from xraylabtool.atomic_data_cache import get_cache_stats, is_element_preloaded
+from xraylabtool.data_handling import get_cache_stats, is_element_preloaded
 
 print(f"Cache stats: {get_cache_stats()}")
 print(f"Silicon preloaded: {is_element_preloaded('Si')}")  # True
 print(f"Unobtainium preloaded: {is_element_preloaded('Uo')}")  # False
 
 # Monitor memory usage during batch processing
-from xraylabtool.batch_processor import MemoryMonitor
+from xraylabtool.data_handling import MemoryMonitor
 
 monitor = MemoryMonitor(limit_gb=4.0)
 print(f"Current memory usage: {monitor.get_memory_usage_mb():.1f} MB")

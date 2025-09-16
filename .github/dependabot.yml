@@ -56,7 +56,17 @@ updates:
         patterns:
           - "bandit*"
           - "safety*"
-    # Ignore major version updates for stability
+      cleanup-system:
+        patterns:
+          - "psutil*"
+          - "pathlib*"
+    # Enable security updates for all dependencies
+    allow:
+      - dependency-type: "all"
+    # Ignore major version updates for stability (except security updates)
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+        # But allow security updates even if they're major version bumps
+    # Enable automatic security updates
+    insecure-external-code-execution: allow

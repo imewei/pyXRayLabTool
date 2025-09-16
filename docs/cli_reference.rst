@@ -27,11 +27,11 @@ Available Commands:
    * - ``formula``
      - Parse and analyze chemical formulas
    * - ``atomic``
-     - Look up atomic scattering factor data
+     - Look up atomic data for elements
    * - ``bragg``
-     - Calculate Bragg diffraction angles
+     - Calculate Bragg angles for diffraction
    * - ``list``
-     - Display reference information and constants
+     - List available data and information
    * - ``install-completion``
      - Install shell completion (bash, zsh, fish, PowerShell)
    * - ``uninstall-completion``
@@ -321,7 +321,7 @@ Parse and analyze chemical formulas.
 atomic - Atomic Data Lookup
 ----------------------------
 
-Look up atomic scattering factor data and element information.
+Look up atomic data for elements.
 
 **Syntax:**
 
@@ -376,7 +376,7 @@ Look up atomic scattering factor data and element information.
 bragg - Bragg Diffraction
 -------------------------
 
-Calculate Bragg diffraction angles for crystallographic analysis.
+Calculate Bragg angles for diffraction.
 
 **Syntax:**
 
@@ -425,7 +425,7 @@ Calculate Bragg diffraction angles for crystallographic analysis.
 list - Reference Information
 ----------------------------
 
-Display reference information, constants, and examples.
+List available data and information.
 
 **Syntax:**
 
@@ -639,5 +639,5 @@ Performance Tips
 1. **Use batch processing** for multiple materials
 2. **Enable progress bars** for long calculations: ``--show-progress``
 3. **Adjust chunk size** for memory optimization: ``--chunk-size 500``
-4. **Use CSV output** for faster processing than JSON
+4. **Use CSV output** for more efficient processing than JSON
 5. **Cache results** by saving to files when reprocessing

@@ -1,7 +1,7 @@
 Data Handling Module
 ====================
 
-The data_handling module provides fast atomic data caching and batch processing capabilities.
+The data_handling module provides atomic data caching and batch processing capabilities.
 
 .. currentmodule:: xraylabtool.data_handling
 
@@ -13,7 +13,7 @@ Atomic Data Cache
    :undoc-members:
    :show-inheritance:
 
-High-Performance Features
+Performance Features
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The atomic data cache provides several performance optimizations:
@@ -61,7 +61,7 @@ Batch Processing Features
 
 - **Memory Management**: Automatic chunking for large datasets
 - **Progress Tracking**: Built-in progress bars with tqdm
-- **Error Handling**: Robust error recovery and reporting
+- **Error Handling**: Reliable error recovery and reporting
 - **Parallel Processing**: Multi-core support for independent calculations
 
 Usage Example
@@ -125,7 +125,7 @@ Cache Management
    # Clear all cached data
    clear_cache()
 
-   # Preload specific elements for faster performance
+   # Preload specific elements for better performance
    preload_elements(["Si", "O", "Al", "Fe"])
 
 Data Sources

@@ -1,0 +1,220 @@
+# CI/CD Configuration for Cleanup System
+# This file contains configuration settings for continuous integration and deployment
+
+ci_settings:
+  # Python versions to test against
+  python_versions:
+    - "3.9"
+    - "3.10"
+    - "3.11"
+    - "3.12"
+
+  # Operating systems to test on
+  operating_systems:
+    - "ubuntu-latest"
+    - "windows-latest"
+    - "macos-latest"
+
+  # Test categories and their configurations
+  test_categories:
+    unit:
+      timeout_minutes: 30
+      coverage_threshold: 85
+      parallel_workers: 4
+
+    integration:
+      timeout_minutes: 45
+      requires_git: true
+      requires_make: true
+
+    performance:
+      timeout_minutes: 60
+      requires_benchmarking: true
+      baseline_comparison: true
+
+    security:
+      timeout_minutes: 20
+      tools:
+        - bandit
+        - safety
+        - semgrep
+      severity_threshold: "MEDIUM"
+
+  # Performance benchmarking settings
+  performance:
+    # File count thresholds for different test scales
+    small_scale_files: 50
+    medium_scale_files: 500
+    large_scale_files: 2000
+
+    # Performance targets
+    targets:
+      small_cleanup_max_duration: 2.0  # seconds
+      medium_cleanup_max_duration: 10.0  # seconds
+      large_cleanup_max_duration: 30.0  # seconds
+      max_memory_overhead_mb: 200.0
+      min_throughput_files_per_second: 100.0
+      backup_max_duration_per_mb: 2.0
+      audit_logging_max_overhead: 0.1
+      emergency_stop_max_response_time: 1.0
+
+  # Coverage requirements
+  coverage:
+    minimum_total: 85
+    minimum_per_file: 70
+    fail_under: 80
+
+    # Coverage exclusions
+    exclude_patterns:
+      - "*/tests/*"
+      - "*/conftest.py"
+      - "*/__init__.py"
+      - "*/setup.py"
+
+  # Code quality settings
+  quality:
+    black:
+      line_length: 88
+      target_version: ["py39"]
+
+    flake8:
+      max_line_length: 88
+      ignore:
+        - "E203"  # Whitespace before ':' (conflicts with black)
+        - "W503"  # Line break before binary operator
+
+    mypy:
+      python_version: "3.9"
+      warn_return_any: true
+      warn_unused_configs: true
+      strict_mode: false  # Gradually enable
+
+    bandit:
+      severity_level: "medium"
+      exclude_tests: true
+
+# Deployment settings
+deployment:
+  # Release automation
+  release:
+    auto_tag_pattern: "v*"
+    auto_changelog: true
+    pre_release_pattern: "*-*"  # e.g., v1.0.0-beta1
+
+    # PyPI publishing
+    pypi:
+      test_first: true
+      verify_metadata: true
+
+  # Documentation deployment
+  docs:
+    auto_deploy_branches:
+      - "main"
+      - "develop"
+    build_command: "make docs"
+    output_directory: "docs/_build/html"
+
+# Notification settings
+notifications:
+  # Failure notifications
+  on_failure:
+    - type: "github_issue"
+      labels: ["ci-failure", "bug"]
+      assignees: ["b80985"]
+
+  # Success notifications for releases
+  on_release:
+    - type: "github_release"
+      generate_changelog: true
+
+# Environment variables for CI
+environment:
+  # Cleanup system specific variables
+  CLEANUP_CI_MODE: "true"
+  CLEANUP_SAFETY_STRICT: "true"
+  CLEANUP_PERF_MODE: "false"  # Only for performance tests
+
+  # Python environment
+  PYTHONPATH: "${{ github.workspace }}"
+  PYTHONUNBUFFERED: "1"
+
+  # Testing environment
+  PYTEST_TIMEOUT: "300"
+  COVERAGE_PROCESS_START: ".coveragerc"
+
+# Tool-specific configurations
+tools:
+  pytest:
+    markers:
+      unit: "Unit tests"
+      integration: "Integration tests"
+      performance: "Performance tests"
+      slow: "Slow running tests"
+      cleanup: "Cleanup system tests"
+      safety: "Safety mechanism tests"
+
+    addopts:
+      - "--strict-markers"
+      - "--strict-config"
+      - "--tb=short"
+      - "--disable-warnings"
+
+  coverage:
+    source: ["xraylabtool.cleanup"]
+    omit:
+      - "*/tests/*"
+      - "*/conftest.py"
+      - "*/__init__.py"
+
+    report:
+      exclude_lines:
+        - "pragma: no cover"
+        - "def __repr__"
+        - "if self.debug:"
+        - "if settings.DEBUG"
+        - "raise AssertionError"
+        - "raise NotImplementedError"
+        - "if 0:"
+        - "if __name__ == .__main__.:"
+        - "class .*\\bProtocol\\):"
+        - "@(abc\\.)?abstractmethod"
+
+# Security scanning configuration
+security:
+  # Bandit configuration
+  bandit:
+    skips: ["B101"]  # Skip assert_used test
+    exclude_dirs:
+      - "/tests/"
+      - "/docs/"
+
+  # Safety configuration
+  safety:
+    ignore_ids: []  # Specific CVE IDs to ignore
+    check_requirements: true
+    check_dependencies: true
+
+  # Semgrep configuration
+  semgrep:
+    rules:
+      - "auto"
+      - "security"
+    exclude_paths:
+      - "tests/"
+      - "docs/"
+
+# Performance monitoring
+monitoring:
+  # Performance regression detection
+  regression_threshold: 20  # Percent performance degradation threshold
+
+  # Resource monitoring
+  resource_limits:
+    max_memory_mb: 1000
+    max_cpu_percent: 80
+    max_disk_io_mb: 500
+
+  # Baseline storage
+  baseline_storage:
+    retention_days: 90
+    comparison_count: 5  # Compare against last 5 baselines

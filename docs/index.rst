@@ -19,7 +19,7 @@ XRayLabTool Documentation
    :target: https://codecov.io/gh/b80985/pyXRayLabTool
    :alt: Code coverage
 
-**XRayLabTool** is a fast Python package and command-line tool for calculating X-ray optical properties of materials. It provides both a Python API and CLI for synchrotron scientists, materials researchers, and X-ray optics developers.
+**XRayLabTool** is a Python package and command-line tool for calculating X-ray optical properties of materials. It provides both a Python API and CLI for synchrotron scientists, materials researchers, and X-ray optics developers.
 
 Key Features
 ------------
@@ -36,7 +36,14 @@ Key Features
    - Transmission and reflection coefficients
 
 **Architecture**
-   - Modular design with focused sub-packages
+   - Modular design with 5 focused sub-packages:
+
+     - **calculators**: Core X-ray physics calculations
+     - **data_handling**: Atomic data caching and batch processing
+     - **interfaces**: CLI and completion systems
+     - **io**: File operations and export functionality
+     - **validation**: Input validation and error handling
+
    - Type-safe with complete type hints
    - Extensive test coverage (>95%)
    - Cross-platform compatibility
@@ -174,7 +181,7 @@ If you use XRayLabTool in your research, please cite:
      title={XRayLabTool: X-ray Optical Properties Calculator},
      author={XRayLabTool Contributors},
      url={https://github.com/b80985/pyXRayLabTool},
-     version={0.1.0},
+     version={0.2.3},
      year={2024}
    }
 

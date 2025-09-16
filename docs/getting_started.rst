@@ -258,6 +258,39 @@ For synchrotron beamline design:
    plt.tight_layout()
    plt.show()
 
+Understanding the Architecture
+------------------------------
+
+XRayLabTool uses a modular architecture with 5 focused sub-packages:
+
+**calculators/**
+   Core X-ray physics calculations and algorithms. Contains the main calculation functions and XRayResult data structure.
+
+**data_handling/**
+   Atomic data caching and batch processing. Provides high-performance data management with preloaded elements.
+
+**interfaces/**
+   User interfaces including the complete CLI and shell completion systems.
+
+**io/**
+   File operations and data export functionality. Handles CSV, JSON, and other format conversions.
+
+**validation/**
+   Input validation and error handling. Ensures data quality and provides detailed error messages.
+
+This modular design allows you to import only what you need:
+
+.. code-block:: python
+
+   # Import main calculation functions
+   from xraylabtool.calculators import calculate_single_material_properties
+
+   # Import specific utilities
+   from xraylabtool.utils import parse_formula, energy_to_wavelength
+
+   # Import data structures
+   from xraylabtool.calculators.core import XRayResult
+
 Next Steps
 ----------
 
@@ -311,7 +344,7 @@ If you encounter issues:
 Performance Tips
 ----------------
 
-For faster performance:
+For better performance:
 
 1. **Use preloaded elements**: Si, O, Al, Fe, C, etc. are cached for speed
 2. **Batch processing**: Process multiple materials together when possible

@@ -15,6 +15,7 @@ Available Commands:
     bragg               Calculate Bragg angles for diffraction
     list                List available data and information
     install-completion  Install shell completion for xraylabtool
+    uninstall-completion Remove shell completion for xraylabtool
 
 The CLI supports various output formats (table, CSV, JSON), field filtering,
 precision control, and comprehensive shell completion for enhanced usability.

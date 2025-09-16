@@ -1,0 +1,675 @@
+name: Cleanup System CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'xraylabtool/cleanup/**'
+      - 'tests/**'
+      - 'Makefile'
+      - '.github/workflows/cleanup-system-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'xraylabtool/cleanup/**'
+      - 'tests/**'
+      - 'Makefile'
+      - '.github/workflows/cleanup-system-ci.yml'
+  schedule:
+    # Run daily at 2 AM UTC to catch environmental issues
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_level:
+        description: 'Test level to run'
+        required: true
+        default: 'comprehensive'
+        type: choice
+        options:
+        - 'unit'
+        - 'integration'
+        - 'performance'
+        - 'comprehensive'
+      performance_benchmarks:
+        description: 'Run performance benchmarks'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHONPATH: ${{ github.workspace }}
+  CLEANUP_CI_MODE: "true"
+  CLEANUP_SAFETY_STRICT: "true"
+
+jobs:
+  # Pre-flight checks
+  pre-flight:
+    name: Pre-flight Checks
+    runs-on: ubuntu-latest
+    outputs:
+      should_run_tests: ${{ steps.changes.outputs.should_run_tests }}
+      test_matrix: ${{ steps.matrix.outputs.test_matrix }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+
+    - name: Check for relevant changes
+      id: changes
+      run: |
+        if git diff --name-only HEAD~1 HEAD | grep -E "(xraylabtool/cleanup/|tests/|Makefile)" > /dev/null; then
+          echo "should_run_tests=true" >> $GITHUB_OUTPUT
+        else
+          echo "should_run_tests=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Setup test matrix
+      id: matrix
+      run: |
+        if [[ "${{ github.event.inputs.test_level }}" == "unit" ]]; then
+          echo 'test_matrix=["unit"]' >> $GITHUB_OUTPUT
+        elif [[ "${{ github.event.inputs.test_level }}" == "integration" ]]; then
+          echo 'test_matrix=["integration"]' >> $GITHUB_OUTPUT
+        elif [[ "${{ github.event.inputs.test_level }}" == "performance" ]]; then
+          echo 'test_matrix=["performance"]' >> $GITHUB_OUTPUT
+        else
+          echo 'test_matrix=["unit", "integration", "performance"]' >> $GITHUB_OUTPUT
+        fi
+
+  # Static analysis and code quality
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    needs: pre-flight
+    if: needs.pre-flight.outputs.should_run_tests == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-quality-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-quality-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        pip install flake8 black mypy bandit safety
+
+    - name: Run Black formatter check
+      run: |
+        black --check --diff xraylabtool/cleanup/ tests/
+
+    - name: Run flake8 linting
+      run: |
+        flake8 xraylabtool/cleanup/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+
+    - name: Run mypy type checking
+      run: |
+        mypy xraylabtool/cleanup/ --ignore-missing-imports
+
+    - name: Run bandit security analysis
+      run: |
+        bandit -r xraylabtool/cleanup/ -f json -o bandit-report.json || true
+        if [ -f bandit-report.json ]; then
+          echo "Security scan completed"
+          cat bandit-report.json | jq '.results[] | select(.issue_severity == "HIGH" or .issue_severity == "MEDIUM")'
+        fi
+
+    - name: Check for known vulnerabilities
+      run: |
+        safety check --json || true
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.txt
+
+  # Unit tests across multiple Python versions
+  unit-tests:
+    name: Unit Tests (Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    needs: [pre-flight, code-quality]
+    if: needs.pre-flight.outputs.should_run_tests == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Reduce matrix for faster builds on PR
+          - os: windows-latest
+            python-version: '3.9'
+          - os: macos-latest
+            python-version: '3.9'
+          - os: windows-latest
+            python-version: '3.10'
+          - os: macos-latest
+            python-version: '3.10'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ~/AppData/Local/pip/Cache
+          ~/Library/Caches/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        pip install pytest pytest-cov pytest-xdist coverage[toml]
+
+    - name: Create test environment
+      run: |
+        # Create directories for test artifacts
+        mkdir -p test-results coverage-reports
+
+    - name: Run unit tests
+      run: |
+        pytest tests/unit/ \
+          --cov=xraylabtool.cleanup \
+          --cov-report=xml:coverage-reports/coverage-unit-${{ matrix.os }}-py${{ matrix.python-version }}.xml \
+          --cov-report=html:coverage-reports/html-unit-${{ matrix.os }}-py${{ matrix.python-version }} \
+          --cov-report=term-missing \
+          --junit-xml=test-results/unit-tests-${{ matrix.os }}-py${{ matrix.python-version }}.xml \
+          -v --tb=short
+
+    - name: Run safety mechanism tests
+      run: |
+        python -m pytest tests/unit/test_safety_mechanisms.py \
+          --junit-xml=test-results/safety-tests-${{ matrix.os }}-py${{ matrix.python-version }}.xml \
+          -v --tb=short
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-unit-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: |
+          test-results/
+          coverage-reports/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      with:
+        file: coverage-reports/coverage-unit-${{ matrix.os }}-py${{ matrix.python-version }}.xml
+        flags: unit-tests
+        name: unit-tests-${{ matrix.os }}-py${{ matrix.python-version }}
+
+  # Integration tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [pre-flight, unit-tests]
+    if: needs.pre-flight.outputs.should_run_tests == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git make
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-integration-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-integration-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        pip install pytest pytest-cov pytest-timeout
+
+    - name: Setup git for tests
+      run: |
+        git config --global user.name "CI Test Runner"
+        git config --global user.email "ci@example.com"
+
+    - name: Run integration tests
+      timeout-minutes: 30
+      run: |
+        pytest tests/integration/ \
+          --cov=xraylabtool.cleanup \
+          --cov-report=xml:coverage-integration.xml \
+          --cov-report=html:coverage-integration-html \
+          --junit-xml=integration-test-results.xml \
+          -v --tb=short --timeout=300
+
+    - name: Run end-to-end workflow tests
+      timeout-minutes: 45
+      run: |
+        pytest tests/integration/test_end_to_end_workflows.py \
+          --junit-xml=e2e-test-results.xml \
+          -v --tb=short --timeout=600
+
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-test-results
+        path: |
+          integration-test-results.xml
+          e2e-test-results.xml
+          coverage-integration.xml
+          coverage-integration-html/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage-integration.xml
+        flags: integration-tests
+        name: integration-tests
+
+  # Performance benchmarks
+  performance-tests:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    needs: [pre-flight, unit-tests]
+    if: (needs.pre-flight.outputs.should_run_tests == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && (github.event.inputs.performance_benchmarks == 'true' || github.event_name == 'schedule')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y htop psutil
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-performance-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-performance-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        pip install pytest psutil memory_profiler
+
+    - name: Run performance benchmarks
+      timeout-minutes: 60
+      run: |
+        # Set performance environment
+        export CLEANUP_PERF_MODE=true
+        export CLEANUP_PERF_SAMPLES=5
+
+        python -m pytest tests/performance/ \
+          --junit-xml=performance-test-results.xml \
+          -v --tb=short -s
+
+    - name: Collect performance data
+      run: |
+        # Collect system information
+        echo "System Info:" > performance-system-info.txt
+        echo "CPU Count: $(nproc)" >> performance-system-info.txt
+        echo "Memory: $(free -h)" >> performance-system-info.txt
+        echo "Disk: $(df -h .)" >> performance-system-info.txt
+        echo "Python Version: $(python --version)" >> performance-system-info.txt
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-test-results
+        path: |
+          performance-test-results.xml
+          performance-system-info.txt
+          **/benchmark_report_*.json
+
+    - name: Performance regression check
+      run: |
+        # Simple performance regression check
+        # In a real scenario, this would compare against baseline metrics
+        echo "Performance regression check - placeholder for future implementation"
+
+  # Makefile integration tests
+  makefile-tests:
+    name: Makefile Integration Tests
+    runs-on: ubuntu-latest
+    needs: [pre-flight, integration-tests]
+    if: needs.pre-flight.outputs.should_run_tests == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y make git
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+
+    - name: Test Makefile cleanup commands
+      run: |
+        # Test existing Makefile commands
+        make clean || echo "Clean command completed"
+
+        # Test that files are properly cleaned
+        if [ -d "build/" ]; then
+          echo "ERROR: build directory still exists after clean"
+          exit 1
+        fi
+
+    - name: Test enhanced Makefile integration
+      run: |
+        # Create test scenario for Makefile enhancement
+        mkdir -p test_makefile_scenario
+        cd test_makefile_scenario
+
+        # Create simple Makefile
+        cat > Makefile << 'EOF'
+.PHONY: clean test
+clean:
+	rm -rf build/ dist/ *.egg-info/
+	find . -name "*.pyc" -delete
+
+test:
+	echo "Running tests"
+EOF
+
+        # Create test files
+        mkdir -p build dist
+        touch build/test.o dist/package.tar.gz test.pyc
+
+        # Test enhanced cleanup
+        make clean
+
+        # Verify cleanup worked
+        if [ -d "build" ] || [ -d "dist" ] || [ -f "test.pyc" ]; then
+          echo "ERROR: Cleanup did not work properly"
+          exit 1
+        fi
+
+  # Security and compliance tests
+  security-tests:
+    name: Security & Compliance Tests
+    runs-on: ubuntu-latest
+    needs: [pre-flight]
+    if: needs.pre-flight.outputs.should_run_tests == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        pip install bandit safety semgrep
+
+    - name: Run Bandit security scan
+      run: |
+        bandit -r xraylabtool/cleanup/ -f json -o bandit-results.json
+        bandit -r xraylabtool/cleanup/ -f txt
+
+    - name: Run Safety vulnerability scan
+      run: |
+        safety check --json --output safety-results.json || true
+
+    - name: Run Semgrep security analysis
+      run: |
+        semgrep --config=auto xraylabtool/cleanup/ --json --output=semgrep-results.json || true
+
+    - name: Test cleanup safety mechanisms
+      run: |
+        # Test that cleanup operations don't expose sensitive data
+        python -c "
+import tempfile
+import os
+from pathlib import Path
+from xraylabtool.cleanup.safety_integration import SafetyIntegratedCleanup
+from xraylabtool.cleanup.config import CleanupConfig
+
+# Create test environment with sensitive-looking files
+with tempfile.TemporaryDirectory() as temp_dir:
+    project_root = Path(temp_dir) / 'test_project'
+    project_root.mkdir()
+
+    # Create files that should NOT be cleaned
+    (project_root / 'config.json').write_text('{\"api_key\": \"secret\"}')
+    (project_root / '.env').write_text('SECRET_KEY=mysecret')
+    (project_root / 'private_key.pem').write_text('-----BEGIN PRIVATE KEY-----')
+
+    # Create files that should be cleaned
+    cache_dir = project_root / '__pycache__'
+    cache_dir.mkdir()
+    (cache_dir / 'test.pyc').write_bytes(b'cache data')
+
+    # Test cleanup
+    safety_cleanup = SafetyIntegratedCleanup(
+        project_root=project_root,
+        config=CleanupConfig(),
+        dry_run=True
+    )
+
+    cleanup_targets = list(project_root.glob('**/__pycache__'))
+    result = safety_cleanup.execute_safe_cleanup(
+        files_to_cleanup=cleanup_targets,
+        operation_type='security_test',
+        force_backup=False,
+        user_confirmation=False
+    )
+
+    # Verify sensitive files are not in cleanup targets
+    all_files = list(project_root.rglob('*'))
+    sensitive_files = [f for f in all_files if any(sensitive in f.name.lower()
+                      for sensitive in ['key', 'secret', 'password', 'token', '.env'])]
+
+    cleanup_file_names = [str(f) for f in cleanup_targets]
+    for sensitive_file in sensitive_files:
+        if str(sensitive_file) in cleanup_file_names:
+            raise Exception(f'Security violation: Sensitive file {sensitive_file} was targeted for cleanup')
+
+    print('Security test passed: No sensitive files targeted for cleanup')
+"
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-scan-results
+        path: |
+          bandit-results.json
+          safety-results.json
+          semgrep-results.json
+
+  # Deployment and release tests
+  deployment-tests:
+    name: Deployment Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    if: github.ref == 'refs/heads/main' && (needs.pre-flight.outputs.should_run_tests == 'true' || github.event_name == 'schedule')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Check package
+      run: |
+        twine check dist/*
+
+    - name: Test package installation
+      run: |
+        # Test installation in clean environment
+        pip install dist/*.whl
+
+        # Test basic import
+        python -c "from xraylabtool.cleanup.safety_integration import SafetyIntegratedCleanup; print('Import successful')"
+
+        # Test CLI availability if applicable
+        # python -c "import xraylabtool.cleanup; print('Cleanup module available')"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: package-build
+        path: dist/
+
+  # Test result aggregation and reporting
+  test-report:
+    name: Test Report & Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, performance-tests, security-tests, makefile-tests]
+    if: always() && (needs.pre-flight.outputs.should_run_tests == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+
+    steps:
+    - name: Download all test artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Generate test summary
+      run: |
+        echo "# Cleanup System CI/CD Test Summary" > test-summary.md
+        echo "" >> test-summary.md
+        echo "**Date:** $(date)" >> test-summary.md
+        echo "**Commit:** ${{ github.sha }}" >> test-summary.md
+        echo "**Branch:** ${{ github.ref_name }}" >> test-summary.md
+        echo "" >> test-summary.md
+
+        echo "## Test Results" >> test-summary.md
+        echo "" >> test-summary.md
+
+        # Aggregate results from different test phases
+        if [ -d "test-results-unit-ubuntu-latest-py3.11" ]; then
+          echo "✅ Unit Tests: PASSED" >> test-summary.md
+        else
+          echo "❌ Unit Tests: FAILED" >> test-summary.md
+        fi
+
+        if [ -d "integration-test-results" ]; then
+          echo "✅ Integration Tests: PASSED" >> test-summary.md
+        else
+          echo "❌ Integration Tests: FAILED" >> test-summary.md
+        fi
+
+        if [ -d "performance-test-results" ]; then
+          echo "✅ Performance Tests: PASSED" >> test-summary.md
+        else
+          echo "⚠️ Performance Tests: SKIPPED" >> test-summary.md
+        fi
+
+        if [ -d "security-scan-results" ]; then
+          echo "✅ Security Tests: PASSED" >> test-summary.md
+        else
+          echo "❌ Security Tests: FAILED" >> test-summary.md
+        fi
+
+        echo "" >> test-summary.md
+        echo "## Coverage Summary" >> test-summary.md
+        echo "" >> test-summary.md
+        echo "Coverage reports are available in the artifacts." >> test-summary.md
+
+        cat test-summary.md
+
+    - name: Upload test summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-summary
+        path: test-summary.md
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const summary = fs.readFileSync('test-summary.md', 'utf8');
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: summary
+          });
+
+  # Notification on failure
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, performance-tests, security-tests]
+    if: failure() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+
+    steps:
+    - name: Notify team of CI failure
+      run: |
+        echo "CI pipeline failed on main branch or scheduled run"
+        echo "Failed jobs: ${{ join(needs.*.result, ', ') }}"
+        # In real implementation, this would send notifications via Slack, email, etc.

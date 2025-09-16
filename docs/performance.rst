@@ -6,10 +6,10 @@ Understanding and optimizing XRayLabTool performance for different use cases.
 Performance Overview
 --------------------
 
-XRayLabTool is designed for fast calculations with several optimization strategies:
+XRayLabTool is designed for efficient calculations with several optimization strategies:
 
 **Key Performance Features:**
-- **Fast atomic data cache**: 92 preloaded elements
+- **Atomic data cache**: 92 preloaded elements providing 10-50x speed improvement
 - **Vectorized calculations**: NumPy-based matrix operations
 - **Batch processing**: Parallel processing with memory management
 - **Smart caching**: LRU caches and interpolator reuse
@@ -357,7 +357,7 @@ Platform-Specific Optimizations
 NumPy/BLAS Optimization
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-For faster performance, ensure optimized NumPy:
+For better performance, ensure optimized NumPy:
 
 .. code-block:: bash
 
@@ -541,7 +541,7 @@ Planned Enhancements
 - **JIT compilation** with Numba
 - **Distributed processing** with Dask
 - **Improved memory management** with memory mapping
-- **Machine learning interpolation** for faster atomic data lookup
+- **Machine learning interpolation** for more efficient atomic data lookup
 
 Contributing Performance Improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

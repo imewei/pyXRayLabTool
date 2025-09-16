@@ -2,7 +2,7 @@
 # Provides convenient commands for testing, development, and CI
 # Supports both Python API and CLI functionality
 
-.PHONY: help install install-docs dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all dev validate ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test
+.PHONY: help install install-docs dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all clean-detect clean-dry clean-obsolete clean-safe clean-build clean-legacy clean-interactive clean-status clean-report clean-backup clean-enhanced dev validate ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test
 
 # Colors for output
 RED=\033[0;31m
@@ -81,6 +81,18 @@ help:
 	@echo "$(YELLOW)🧹 Cleanup:$(NC)"
 	@echo "  clean            Clean build artifacts and cache (preserves virtual environments)"
 	@echo "  clean-all        Deep clean including virtual environments and all unrelated files"
+	@echo ""
+	@echo "$(YELLOW)🤖 Intelligent Cleanup:$(NC)"
+	@echo "  clean-detect     🔍 Analyze project for obsolete files (detection only)"
+	@echo "  clean-dry        🧪 Preview cleanup operations without making changes"
+	@echo "  clean-obsolete   🧹 Remove obsolete files with safety checks and backup"
+	@echo "  clean-safe       🛡️  Remove only files classified as safe to remove"
+	@echo "  clean-build      🏗️  Clean build artifacts and system-generated files"
+	@echo "  clean-legacy     📼 Clean legacy and deprecated files with backup"
+	@echo "  clean-interactive 🤔 Interactive cleanup with user confirmations"
+	@echo "  clean-status     📋 Show current cleanup status and recommendations"
+	@echo "  clean-report     📊 Generate comprehensive cleanup analysis report"
+	@echo "  clean-enhanced   🚀 Combined traditional and intelligent cleanup"
 	@echo ""
 	@echo "$(YELLOW)🚀 Development Workflows:$(NC)"
 	@echo "  dev              Quick development cycle (format, lint, test-fast)"
@@ -467,6 +479,11 @@ clean:
 	rm -rf CODE_QUALITY_REPORT.md
 	rm -rf docs_build.log
 	rm -rf test_results.log
+	rm -rf baseline_ci_report.json
+	rm -rf performance_baseline_summary.json
+	rm -rf performance_history.json
+	rm -rf test_persistence.json
+	rm -rf reports/
 	rm -rf .tox/
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
@@ -482,6 +499,64 @@ clean-all: clean docs-clean
 	rm -rf .DS_Store
 	find . -name ".DS_Store" -delete 2>/dev/null || true
 	@echo "$(GREEN)✅ Deep cleanup completed (all files removed)$(NC)"
+
+# Enhanced Intelligent Cleanup Commands
+clean-detect:
+	@echo "$(YELLOW)🔍 Analyzing project for obsolete files...$(NC)"
+	@python scripts/cleanup_manager.py --detect-only --verbose
+	@echo "$(GREEN)✅ Analysis completed$(NC)"
+
+clean-dry:
+	@echo "$(YELLOW)🧪 Dry-run cleanup preview...$(NC)"
+	@python scripts/cleanup_manager.py --dry-run --verbose
+	@echo "$(GREEN)✅ Dry-run completed$(NC)"
+
+clean-obsolete:
+	@echo "$(YELLOW)🧹 Removing obsolete files with safety checks...$(NC)"
+	@echo "$(BLUE)This will create a backup and only remove files classified as safe$(NC)"
+	@python scripts/cleanup_manager.py --execute --backup --verbose
+	@echo "$(GREEN)✅ Obsolete file cleanup completed$(NC)"
+
+clean-safe:
+	@echo "$(YELLOW)🛡️  Removing only files classified as safe...$(NC)"
+	@python scripts/cleanup_manager.py --execute --category safe_to_remove --backup --verbose
+	@echo "$(GREEN)✅ Safe file cleanup completed$(NC)"
+
+clean-build:
+	@echo "$(YELLOW)🏗️  Cleaning build artifacts and caches...$(NC)"
+	@python scripts/cleanup_manager.py --execute --category build_artifact --category system_generated --no-backup --verbose
+	@echo "$(GREEN)✅ Build artifact cleanup completed$(NC)"
+
+clean-legacy:
+	@echo "$(YELLOW)📼 Cleaning legacy and deprecated files...$(NC)"
+	@echo "$(BLUE)This will create a backup for safety$(NC)"
+	@python scripts/cleanup_manager.py --execute --category legacy --backup --verbose
+	@echo "$(GREEN)✅ Legacy file cleanup completed$(NC)"
+
+clean-interactive:
+	@echo "$(YELLOW)🤔 Interactive cleanup with confirmations...$(NC)"
+	@python scripts/cleanup_manager.py --execute --interactive --backup --verbose
+	@echo "$(GREEN)✅ Interactive cleanup completed$(NC)"
+
+clean-report:
+	@echo "$(YELLOW)📊 Generating comprehensive cleanup report...$(NC)"
+	@python scripts/cleanup_manager.py --detect-only --verbose
+	@echo "$(GREEN)✅ Cleanup report generated in .cleanup_reports/$(NC)"
+
+clean-status:
+	@echo "$(YELLOW)📋 Current cleanup status...$(NC)"
+	@python scripts/cleanup_manager.py --status-only
+	@echo "$(GREEN)✅ Status check completed$(NC)"
+
+clean-backup:
+	@echo "$(YELLOW)💾 Creating backup of project before cleanup...$(NC)"
+	@python scripts/cleanup_manager.py --backup --detect-only --verbose
+	@echo "$(GREEN)✅ Backup created$(NC)"
+
+clean-enhanced: clean clean-safe
+	@echo "$(YELLOW)🚀 Enhanced cleanup combining traditional and intelligent cleanup...$(NC)"
+	@echo "$(BLUE)Traditional cleanup completed, now running intelligent cleanup...$(NC)"
+	@echo "$(GREEN)✅ Enhanced cleanup completed$(NC)"
 
 # Development Workflows
 dev: check-format lint type-check test-fast

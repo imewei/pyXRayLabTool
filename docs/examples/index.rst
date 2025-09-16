@@ -166,19 +166,19 @@ Community-contributed examples:
 .. code-block:: python
 
    """
-   Example: [Title]
+   Example: Silicon Properties Analysis
 
-   Description: [Brief description of the example]
-   Application: [Target application domain]
-   Level: [Beginner/Intermediate/Advanced]
-   Dependencies: [Required packages beyond XRayLabTool]
-
-   Author: [Your name]
-   Date: [Creation date]
+   Description: Calculate X-ray properties for silicon substrate
+   Application: X-ray mirror design and optics
+   Level: Beginner
+   Dependencies: None (basic XRayLabTool functionality)
    """
 
-   import xraylabtool as xrt
-   # ... example code ...
+   import xraylabtool as xlt
+
+   # Calculate properties for silicon at 8 keV
+   result = xlt.calculate_single_material_properties("Si", 8.0, 2.33)
+   print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
 
 **Submission Process:**
 1. Fork the repository on GitHub
