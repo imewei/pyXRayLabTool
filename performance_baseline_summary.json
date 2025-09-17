@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-16T15:20:52.066696",
+  "timestamp": "2025-09-16T20:55:32.274514",
   "baseline_establishment_summary": {
     "total_tests": 4,
     "performance_targets": {
@@ -17,26 +17,26 @@
   },
   "detailed_results": {
     "memory_baseline_small_array": {
-      "peak_memory_mb": 214.984375,
-      "memory_per_calc_kb": 2201.44,
+      "peak_memory_mb": 169.796875,
+      "memory_per_calc_kb": 1738.72,
       "energy_points": 100,
       "formula": "Si"
     },
     "memory_baseline_medium_array": {
-      "peak_memory_mb": 215.484375,
-      "memory_per_calc_kb": 441.312,
+      "peak_memory_mb": 174.03125,
+      "memory_per_calc_kb": 356.416,
       "energy_points": 500,
       "formula": "SiO2"
     },
     "memory_baseline_large_array": {
-      "peak_memory_mb": 217.375,
-      "memory_per_calc_kb": 222.592,
+      "peak_memory_mb": 178.125,
+      "memory_per_calc_kb": 182.4,
       "energy_points": 1000,
       "formula": "Al2O3"
     },
     "memory_baseline_xlarge_array": {
-      "peak_memory_mb": 217.40625,
-      "memory_per_calc_kb": 111.312,
+      "peak_memory_mb": 178.96875,
+      "memory_per_calc_kb": 91.632,
       "energy_points": 2000,
       "formula": "Ti0.5Al0.5N"
     }

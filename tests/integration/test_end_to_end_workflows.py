@@ -21,7 +21,6 @@ from typing import List, Dict, Any
 # Import cleanup components
 from xraylabtool.cleanup.config import CleanupConfig
 from xraylabtool.cleanup.safety_integration import SafetyIntegratedCleanup
-from xraylabtool.cleanup.makefile_integration import MakefileCleanupIntegration
 from xraylabtool.cleanup.backup_manager import BackupManager
 from xraylabtool.cleanup.audit_logger import AuditLogger
 from xraylabtool.cleanup.emergency_manager import EmergencyStopManager
@@ -70,7 +69,8 @@ class EndToEndWorkflowBase(unittest.TestCase):
         # Core modules
         modules = {
             "__init__.py": "# MyPackage\n__version__ = '1.0.0'\n",
-            "core.py": """
+            "core.py": (
+                """
 # Core functionality
 import logging
 import numpy as np
@@ -83,8 +83,10 @@ class CoreCalculator:
 
     def calculate(self, x):
         return np.sum(self.data * x)
-""",
-            "utils.py": """
+"""
+            ),
+            "utils.py": (
+                """
 # Utility functions
 import os
 import json
@@ -98,8 +100,10 @@ def save_results(data, output_path):
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(data, f, indent=2)
-""",
-            "cli.py": """
+"""
+            ),
+            "cli.py": (
+                """
 # Command line interface
 import argparse
 import sys
@@ -118,6 +122,7 @@ def main():
 if __name__ == '__main__':
     main()
 """
+            ),
         }
 
         for filename, content in modules.items():
@@ -129,7 +134,8 @@ if __name__ == '__main__':
 
         test_files = {
             "__init__.py": "",
-            "test_core.py": """
+            "test_core.py": (
+                """
 import unittest
 from mypackage.core import CoreCalculator
 
@@ -143,8 +149,10 @@ class TestCore(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-""",
-            "test_utils.py": """
+"""
+            ),
+            "test_utils.py": (
+                """
 import unittest
 import tempfile
 import json
@@ -166,6 +174,7 @@ class TestUtils(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 """
+            ),
         }
 
         for filename, content in test_files.items():
@@ -176,7 +185,8 @@ if __name__ == '__main__':
         docs_dir.mkdir()
 
         doc_files = {
-            "README.md": """
+            "README.md": (
+                """
 # MyPackage
 
 A sample Python package for testing.
@@ -194,8 +204,10 @@ from mypackage.core import CoreCalculator
 calc = CoreCalculator()
 result = calc.calculate([1, 2, 3, 4, 5])
 ```
-""",
-            "api.rst": """
+"""
+            ),
+            "api.rst": (
+                """
 API Documentation
 =================
 
@@ -210,8 +222,10 @@ Utils Module
 
 .. automodule:: mypackage.utils
    :members:
-""",
-            "changelog.md": """
+"""
+            ),
+            "changelog.md": (
+                """
 # Changelog
 
 ## v1.0.0
@@ -219,6 +233,7 @@ Utils Module
 - Core calculation functionality
 - CLI interface
 """
+            ),
         }
 
         for filename, content in doc_files.items():
@@ -226,7 +241,8 @@ Utils Module
 
         # Configuration files
         config_files = {
-            "pyproject.toml": """
+            "pyproject.toml": (
+                """
 [build-system]
 requires = ["setuptools>=45", "wheel", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
@@ -254,8 +270,10 @@ target-version = ['py38']
 python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
-""",
-            "setup.py": """
+"""
+            ),
+            "setup.py": (
+                """
 from setuptools import setup, find_packages
 
 setup(
@@ -269,8 +287,10 @@ setup(
         ],
     },
 )
-""",
-            ".gitignore": """
+"""
+            ),
+            ".gitignore": (
+                """
 # Python
 __pycache__/
 *.py[cod]
@@ -311,11 +331,15 @@ Thumbs.db
 
 # Documentation
 docs/_build/
-""",
-            "requirements.txt": """
+"""
+            ),
+            "requirements.txt": (
+                """
 numpy>=1.20.0
-""",
-            "requirements-dev.txt": """
+"""
+            ),
+            "requirements-dev.txt": (
+                """
 pytest>=6.0
 black
 flake8
@@ -323,8 +347,10 @@ mypy
 coverage
 sphinx
 sphinx-rtd-theme
-""",
-            "tox.ini": """
+"""
+            ),
+            "tox.ini": (
+                """
 [tox]
 envlist = py38,py39,py310,py311
 
@@ -335,8 +361,10 @@ deps =
 commands =
     coverage run -m pytest
     coverage report
-""",
-            "Makefile": """
+"""
+            ),
+            "Makefile": (
+                """
 .PHONY: test clean build install docs lint format
 
 # Test commands
@@ -399,6 +427,7 @@ release:
 \tpython -m build
 \ttwine upload dist/*
 """
+            ),
         }
 
         for filename, content in config_files.items():
@@ -418,7 +447,9 @@ release:
 
         (build_dir / "lib").mkdir()
         (build_dir / "lib" / "mypackage").mkdir()
-        (build_dir / "lib" / "mypackage" / "core.so").write_bytes(b"fake compiled module")
+        (build_dir / "lib" / "mypackage" / "core.so").write_bytes(
+            b"fake compiled module"
+        )
         (build_dir / "bdist.win-amd64").mkdir()
         (build_dir / "temp.win-amd64-3.9").mkdir()
 
@@ -441,7 +472,7 @@ release:
             "tests/__pycache__",
             ".pytest_cache",
             ".mypy_cache",
-            ".tox"
+            ".tox",
         ]
 
         for cache_dir in cache_dirs:
@@ -458,11 +489,15 @@ release:
         # IDE files
         vscode_dir = self.project_root / ".vscode"
         vscode_dir.mkdir()
-        (vscode_dir / "settings.json").write_text('{"python.defaultInterpreterPath": "./venv/bin/python"}')
+        (vscode_dir / "settings.json").write_text(
+            '{"python.defaultInterpreterPath": "./venv/bin/python"}'
+        )
 
         idea_dir = self.project_root / ".idea"
         idea_dir.mkdir()
-        (idea_dir / "workspace.xml").write_text("<?xml version='1.0' encoding='UTF-8'?>\n<project></project>")
+        (idea_dir / "workspace.xml").write_text(
+            "<?xml version='1.0' encoding='UTF-8'?>\n<project></project>"
+        )
 
         # Temporary and swap files
         temp_files = [
@@ -471,7 +506,7 @@ release:
             ".DS_Store",
             "Thumbs.db",
             "core.py.swp",
-            "utils.py.swo"
+            "utils.py.swo",
         ]
 
         for temp_file in temp_files:
@@ -487,20 +522,57 @@ release:
     def _initialize_git_repo(self):
         """Initialize git repository with realistic history"""
         try:
-            subprocess.run(["git", "init"], cwd=self.project_root, capture_output=True, check=True)
-            subprocess.run(["git", "config", "user.name", "Test User"], cwd=self.project_root, capture_output=True)
-            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=self.project_root, capture_output=True)
+            subprocess.run(
+                ["git", "init"], cwd=self.project_root, capture_output=True, check=True
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test User"],
+                cwd=self.project_root,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.com"],
+                cwd=self.project_root,
+                capture_output=True,
+            )
 
             # Add initial files
-            subprocess.run(["git", "add", "mypackage/", "tests/", "docs/", "*.py", "*.toml", "*.txt", "*.md", "Makefile"],
-                         cwd=self.project_root, capture_output=True)
-            subprocess.run(["git", "commit", "-m", "Initial project setup"],
-                         cwd=self.project_root, capture_output=True)
+            subprocess.run(
+                [
+                    "git",
+                    "add",
+                    "mypackage/",
+                    "tests/",
+                    "docs/",
+                    "*.py",
+                    "*.toml",
+                    "*.txt",
+                    "*.md",
+                    "Makefile",
+                ],
+                cwd=self.project_root,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["git", "commit", "-m", "Initial project setup"],
+                cwd=self.project_root,
+                capture_output=True,
+            )
 
             # Create some additional commits
-            (self.project_root / "mypackage" / "new_feature.py").write_text("# New feature\npass\n")
-            subprocess.run(["git", "add", "mypackage/new_feature.py"], cwd=self.project_root, capture_output=True)
-            subprocess.run(["git", "commit", "-m", "Add new feature"], cwd=self.project_root, capture_output=True)
+            (self.project_root / "mypackage" / "new_feature.py").write_text(
+                "# New feature\npass\n"
+            )
+            subprocess.run(
+                ["git", "add", "mypackage/new_feature.py"],
+                cwd=self.project_root,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["git", "commit", "-m", "Add new feature"],
+                cwd=self.project_root,
+                capture_output=True,
+            )
 
         except (subprocess.CalledProcessError, FileNotFoundError):
             # Git may not be available in test environment
@@ -512,7 +584,7 @@ release:
             "step": step_name,
             "timestamp": time.time(),
             "elapsed": time.time() - self.workflow_start_time,
-            "details": details or {}
+            "details": details or {},
         }
         self.workflow_steps.append(step_info)
 
@@ -523,12 +595,12 @@ release:
         report = {
             "workflow_duration": total_time,
             "steps_completed": len(self.workflow_steps),
-            "steps": self.workflow_steps
+            "steps": self.workflow_steps,
         }
 
         # Save report for analysis
         report_path = self.temp_dir / "workflow_report.json"
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             json.dump(report, f, indent=2)
 
 
@@ -537,7 +609,9 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
 
     def test_daily_development_cleanup_workflow(self):
         """Test typical daily development cleanup workflow"""
-        self._log_workflow_step("workflow_start", {"workflow_type": "daily_development"})
+        self._log_workflow_step(
+            "workflow_start", {"workflow_type": "daily_development"}
+        )
 
         # Step 1: Developer analyzes current project state
         self._log_workflow_step("project_analysis")
@@ -557,7 +631,7 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
         safety_cleanup = SafetyIntegratedCleanup(
             project_root=self.project_root,
             config=CleanupConfig(),
-            dry_run=True  # Safe default for daily workflow
+            dry_run=True,  # Safe default for daily workflow
         )
 
         # Step 3: Perform dry-run analysis
@@ -569,7 +643,7 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
             files_to_cleanup=all_cleanup_targets,
             operation_type="daily_cleanup",
             force_backup=False,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         self.assertTrue(dry_run_result.get("dry_run", False))
@@ -585,7 +659,7 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
             files_to_cleanup=cache_files,
             operation_type="daily_cache_cleanup",
             force_backup=False,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         self.assertFalse(cache_cleanup_result.get("dry_run", True))
@@ -641,9 +715,7 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
         config.safety.strict_mode = True
 
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=config,
-            dry_run=False
+            project_root=self.project_root, config=config, dry_run=False
         )
 
         # Step 3: Execute cleanup with backup for safety
@@ -653,7 +725,7 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
             files_to_cleanup=safe_cleanup_targets,
             operation_type="pre_commit_cleanup",
             force_backup=True,  # Always backup before commits
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         # Step 4: Verify backup was created
@@ -673,12 +745,18 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
                 ["git", "status", "--porcelain"],
                 cwd=self.project_root,
                 capture_output=True,
-                text=True
+                text=True,
             )
 
             # Should not show any cache files in git status
-            status_lines = git_status.stdout.strip().split('\n') if git_status.stdout.strip() else []
-            cache_files_in_status = [line for line in status_lines if '__pycache__' in line or '.pyc' in line]
+            status_lines = (
+                git_status.stdout.strip().split("\n")
+                if git_status.stdout.strip()
+                else []
+            )
+            cache_files_in_status = [
+                line for line in status_lines if "__pycache__" in line or ".pyc" in line
+            ]
             self.assertEqual(len(cache_files_in_status), 0)
 
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -688,30 +766,48 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
 
     def test_release_preparation_workflow(self):
         """Test comprehensive cleanup workflow for release preparation"""
-        self._log_workflow_step("workflow_start", {"workflow_type": "release_preparation"})
+        self._log_workflow_step(
+            "workflow_start", {"workflow_type": "release_preparation"}
+        )
 
         # Step 1: Comprehensive project analysis
         self._log_workflow_step("comprehensive_analysis")
 
         # Identify all cleanup targets for release
         cleanup_categories = {
-            "build_artifacts": list(self.project_root.glob("build/**/*")) +
-                             list(self.project_root.glob("dist/**/*")) +
-                             list(self.project_root.glob("*.egg-info/**/*")),
-            "cache_files": list(self.project_root.glob("**/__pycache__")) +
-                          list(self.project_root.glob("**/*.pyc")) +
-                          list(self.project_root.glob(".pytest_cache/**/*")) +
-                          list(self.project_root.glob(".mypy_cache/**/*")),
-            "test_artifacts": list(self.project_root.glob("htmlcov/**/*")) +
-                             ([self.project_root / ".coverage"] if (self.project_root / ".coverage").exists() else []),
-            "temp_files": list(self.project_root.glob("**/*.tmp")) +
-                         list(self.project_root.glob("**/*.bak")) +
-                         list(self.project_root.glob("**/*.swp")) +
-                         list(self.project_root.glob("**/*.swo")),
-            "ide_files": list(self.project_root.glob(".vscode/**/*")) +
-                        list(self.project_root.glob(".idea/**/*")),
-            "os_files": list(self.project_root.glob("**/.DS_Store")) +
-                       list(self.project_root.glob("**/Thumbs.db"))
+            "build_artifacts": (
+                list(self.project_root.glob("build/**/*"))
+                + list(self.project_root.glob("dist/**/*"))
+                + list(self.project_root.glob("*.egg-info/**/*"))
+            ),
+            "cache_files": (
+                list(self.project_root.glob("**/__pycache__"))
+                + list(self.project_root.glob("**/*.pyc"))
+                + list(self.project_root.glob(".pytest_cache/**/*"))
+                + list(self.project_root.glob(".mypy_cache/**/*"))
+            ),
+            "test_artifacts": (
+                list(self.project_root.glob("htmlcov/**/*"))
+                + (
+                    [self.project_root / ".coverage"]
+                    if (self.project_root / ".coverage").exists()
+                    else []
+                )
+            ),
+            "temp_files": (
+                list(self.project_root.glob("**/*.tmp"))
+                + list(self.project_root.glob("**/*.bak"))
+                + list(self.project_root.glob("**/*.swp"))
+                + list(self.project_root.glob("**/*.swo"))
+            ),
+            "ide_files": (
+                list(self.project_root.glob(".vscode/**/*"))
+                + list(self.project_root.glob(".idea/**/*"))
+            ),
+            "os_files": (
+                list(self.project_root.glob("**/.DS_Store"))
+                + list(self.project_root.glob("**/Thumbs.db"))
+            ),
         }
 
         total_files = sum(len(files) for files in cleanup_categories.values())
@@ -727,7 +823,7 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
         safety_cleanup = SafetyIntegratedCleanup(
             project_root=self.project_root,
             config=config,
-            dry_run=True  # Start with dry-run for release preparation
+            dry_run=True,  # Start with dry-run for release preparation
         )
 
         # Step 3: Perform comprehensive dry-run
@@ -741,7 +837,7 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
             files_to_cleanup=all_cleanup_targets,
             operation_type="release_preparation_dry_run",
             force_backup=True,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         self.assertTrue(dry_run_result.get("dry_run", False))
@@ -759,7 +855,7 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
                 files_to_cleanup=files,
                 operation_type=f"release_cleanup_{category}",
                 force_backup=True,
-                user_confirmation=False
+                user_confirmation=False,
             )
 
             # Verify each category cleanup
@@ -776,12 +872,14 @@ class TestDeveloperWorkflows(EndToEndWorkflowBase):
             "setup.py",
             "pyproject.toml",
             "README.md",
-            "Makefile"
+            "Makefile",
         ]
 
         for critical_file in critical_files:
-            self.assertTrue((self.project_root / critical_file).exists(),
-                          f"Critical file {critical_file} was removed")
+            self.assertTrue(
+                (self.project_root / critical_file).exists(),
+                f"Critical file {critical_file} was removed",
+            )
 
         # Verify cleanup targets are gone
         remaining_cache = list(self.project_root.glob("**/__pycache__"))
@@ -804,7 +902,9 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
 
     def test_scheduled_maintenance_workflow(self):
         """Test scheduled maintenance cleanup workflow"""
-        self._log_workflow_step("workflow_start", {"workflow_type": "scheduled_maintenance"})
+        self._log_workflow_step(
+            "workflow_start", {"workflow_type": "scheduled_maintenance"}
+        )
 
         # Step 1: Initialize maintenance cleanup
         self._log_workflow_step("maintenance_init")
@@ -813,9 +913,7 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
         config.safety.strict_mode = False  # More permissive for maintenance
 
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=config,
-            dry_run=False
+            project_root=self.project_root, config=config, dry_run=False
         )
 
         # Step 2: Comprehensive cleanup including old backups
@@ -851,7 +949,7 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
             files_to_cleanup=maintenance_targets,
             operation_type="scheduled_maintenance",
             force_backup=True,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         # Step 3: Verify maintenance completed
@@ -873,7 +971,9 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
 
     def test_emergency_recovery_workflow(self):
         """Test emergency recovery workflow"""
-        self._log_workflow_step("workflow_start", {"workflow_type": "emergency_recovery"})
+        self._log_workflow_step(
+            "workflow_start", {"workflow_type": "emergency_recovery"}
+        )
 
         # Step 1: Setup emergency scenario
         self._log_workflow_step("emergency_scenario_setup")
@@ -881,18 +981,17 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
         # Create backup first
         backup_manager = BackupManager(
             project_root=self.project_root,
-            backup_root=self.project_root / ".emergency_backups"
+            backup_root=self.project_root / ".emergency_backups",
         )
 
         important_files = [
             self.project_root / "mypackage" / "core.py",
             self.project_root / "setup.py",
-            self.project_root / "pyproject.toml"
+            self.project_root / "pyproject.toml",
         ]
 
         backup_metadata = backup_manager.create_backup(
-            files_to_backup=important_files,
-            operation_type="emergency_backup"
+            files_to_backup=important_files, operation_type="emergency_backup"
         )
 
         # Step 2: Simulate emergency (accidental deletion)
@@ -914,17 +1013,14 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
         self._log_workflow_step("emergency_recovery_init")
 
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=CleanupConfig(),
-            dry_run=False
+            project_root=self.project_root, config=CleanupConfig(), dry_run=False
         )
 
         # Step 4: Execute emergency recovery
         self._log_workflow_step("emergency_recovery_execution")
 
         recovery_result = backup_manager.restore_backup(
-            backup_id=backup_metadata.backup_id,
-            verify_integrity=True
+            backup_id=backup_metadata.backup_id, verify_integrity=True
         )
 
         # Step 5: Verify recovery
@@ -943,7 +1039,11 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
         self._log_workflow_step("post_recovery_audit")
 
         # Log recovery event
-        from xraylabtool.cleanup.audit_logger import AuditEvent, AuditLevel, AuditCategory
+        from xraylabtool.cleanup.audit_logger import (
+            AuditEvent,
+            AuditLevel,
+            AuditCategory,
+        )
 
         recovery_event = AuditEvent(
             level=AuditLevel.CRITICAL,
@@ -953,8 +1053,8 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
             details={
                 "backup_id": backup_metadata.backup_id,
                 "files_recovered": len(important_files),
-                "recovery_method": "backup_restore"
-            }
+                "recovery_method": "backup_restore",
+            },
         )
 
         safety_cleanup.audit_logger.log_event(recovery_event)
@@ -963,14 +1063,15 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
 
     def test_makefile_integration_workflow(self):
         """Test Makefile integration and enhancement workflow"""
-        self._log_workflow_step("workflow_start", {"workflow_type": "makefile_integration"})
+        self._log_workflow_step(
+            "workflow_start", {"workflow_type": "makefile_integration"}
+        )
 
         # Step 1: Analyze existing Makefile
         self._log_workflow_step("makefile_analysis")
 
         makefile_integration = MakefileCleanupIntegration(
-            project_root=self.project_root,
-            config=CleanupConfig()
+            project_root=self.project_root, config=CleanupConfig()
         )
 
         analysis_result = makefile_integration.analyze_cleanup_commands()
@@ -986,10 +1087,9 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
         # Step 3: Enhance Makefile with safety features
         self._log_workflow_step("makefile_enhancement")
 
-        with patch('builtins.input', return_value='y'):
+        with patch("builtins.input", return_value="y"):
             enhancement_result = makefile_integration.enhance_makefile_cleanup(
-                dry_run=False,
-                backup_original=True
+                dry_run=False, backup_original=True
             )
 
         # Step 4: Verify enhancement
@@ -1000,11 +1100,7 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
         enhanced_makefile = (self.project_root / "Makefile").read_text()
 
         # Verify safety features were added
-        expected_features = [
-            "clean-safe",
-            "clean-comprehensive",
-            "backup-before-clean"
-        ]
+        expected_features = ["clean-safe", "clean-comprehensive", "backup-before-clean"]
 
         for feature in expected_features:
             self.assertIn(feature, enhanced_makefile)
@@ -1023,10 +1119,14 @@ class TestMaintenanceWorkflows(EndToEndWorkflowBase):
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
             # Should not fail (though make may not be available)
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        except (
+            subprocess.CalledProcessError,
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+        ):
             pass  # Make may not be available in test environment
 
         self._log_workflow_step("workflow_complete")
@@ -1037,15 +1137,15 @@ class TestErrorRecoveryWorkflows(EndToEndWorkflowBase):
 
     def test_interrupted_operation_recovery(self):
         """Test recovery from interrupted cleanup operation"""
-        self._log_workflow_step("workflow_start", {"workflow_type": "interrupted_operation_recovery"})
+        self._log_workflow_step(
+            "workflow_start", {"workflow_type": "interrupted_operation_recovery"}
+        )
 
         # Step 1: Setup operation that will be interrupted
         self._log_workflow_step("operation_setup")
 
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=CleanupConfig(),
-            dry_run=False
+            project_root=self.project_root, config=CleanupConfig(), dry_run=False
         )
 
         cleanup_targets = list(self.project_root.glob("**/__pycache__"))
@@ -1056,11 +1156,11 @@ class TestErrorRecoveryWorkflows(EndToEndWorkflowBase):
         def interrupt_after_delay():
             time.sleep(0.1)  # Allow operation to start
             safety_cleanup.emergency_manager.trigger_emergency_stop(
-                reason="system_shutdown",
-                message="Simulated system interruption"
+                reason="system_shutdown", message="Simulated system interruption"
             )
 
         import threading
+
         interrupt_thread = threading.Thread(target=interrupt_after_delay)
         interrupt_thread.start()
 
@@ -1070,7 +1170,7 @@ class TestErrorRecoveryWorkflows(EndToEndWorkflowBase):
                 files_to_cleanup=cleanup_targets,
                 operation_type="interrupted_operation",
                 force_backup=True,
-                user_confirmation=False
+                user_confirmation=False,
             )
         except Exception:
             pass  # Expected due to interruption
@@ -1094,7 +1194,7 @@ class TestErrorRecoveryWorkflows(EndToEndWorkflowBase):
             files_to_cleanup=cleanup_targets,
             operation_type="recovery_operation",
             force_backup=True,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         # Step 5: Verify recovery completed
@@ -1110,27 +1210,30 @@ class TestErrorRecoveryWorkflows(EndToEndWorkflowBase):
 
     def test_corrupted_backup_recovery(self):
         """Test recovery when backup is corrupted"""
-        self._log_workflow_step("workflow_start", {"workflow_type": "corrupted_backup_recovery"})
+        self._log_workflow_step(
+            "workflow_start", {"workflow_type": "corrupted_backup_recovery"}
+        )
 
         # Step 1: Create backup
         self._log_workflow_step("backup_creation")
 
         backup_manager = BackupManager(
             project_root=self.project_root,
-            backup_root=self.project_root / ".test_backups"
+            backup_root=self.project_root / ".test_backups",
         )
 
         test_files = list(self.project_root.glob("**/*.tmp"))
 
         backup_metadata = backup_manager.create_backup(
-            files_to_backup=test_files,
-            operation_type="corruption_test"
+            files_to_backup=test_files, operation_type="corruption_test"
         )
 
         # Step 2: Verify backup integrity initially
         self._log_workflow_step("initial_integrity_check")
 
-        initial_integrity = backup_manager.verify_backup_integrity(backup_metadata.backup_id)
+        initial_integrity = backup_manager.verify_backup_integrity(
+            backup_metadata.backup_id
+        )
         self.assertTrue(initial_integrity)
 
         # Step 3: Simulate backup corruption
@@ -1146,7 +1249,9 @@ class TestErrorRecoveryWorkflows(EndToEndWorkflowBase):
         # Step 4: Detect corruption
         self._log_workflow_step("corruption_detection")
 
-        corrupted_integrity = backup_manager.verify_backup_integrity(backup_metadata.backup_id)
+        corrupted_integrity = backup_manager.verify_backup_integrity(
+            backup_metadata.backup_id
+        )
         self.assertFalse(corrupted_integrity)
 
         # Step 5: Recovery from corruption
@@ -1154,12 +1259,13 @@ class TestErrorRecoveryWorkflows(EndToEndWorkflowBase):
 
         # Create new backup as recovery
         recovery_backup = backup_manager.create_backup(
-            files_to_backup=test_files,
-            operation_type="corruption_recovery"
+            files_to_backup=test_files, operation_type="corruption_recovery"
         )
 
         # Verify new backup integrity
-        recovery_integrity = backup_manager.verify_backup_integrity(recovery_backup.backup_id)
+        recovery_integrity = backup_manager.verify_backup_integrity(
+            recovery_backup.backup_id
+        )
         self.assertTrue(recovery_integrity)
 
         self._log_workflow_step("workflow_complete")
@@ -1174,7 +1280,7 @@ if __name__ == "__main__":
     test_classes = [
         TestDeveloperWorkflows,
         TestMaintenanceWorkflows,
-        TestErrorRecoveryWorkflows
+        TestErrorRecoveryWorkflows,
     ]
 
     for test_class in test_classes:
@@ -1192,7 +1298,9 @@ if __name__ == "__main__":
     print(f"Total workflows tested: {result.testsRun}")
     print(f"Workflow failures: {len(result.failures)}")
     print(f"Workflow errors: {len(result.errors)}")
-    print(f"Success rate: {(result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100:.1f}%")
+    print(
+        f"Success rate: {(result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100:.1f}%"
+    )
 
     # Analyze workflow types
     workflow_types = [
@@ -1203,7 +1311,7 @@ if __name__ == "__main__":
         "emergency_recovery",
         "makefile_integration",
         "interrupted_operation_recovery",
-        "corrupted_backup_recovery"
+        "corrupted_backup_recovery",
     ]
 
     print(f"\nWorkflow Types Tested:")

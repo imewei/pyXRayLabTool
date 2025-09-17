@@ -44,9 +44,9 @@ class TestTypeSafetyConfig(BaseXRayLabToolTest):
         assert pyproject_file.exists(), "pyproject.toml not found"
 
         content = pyproject_file.read_text()
-        assert "[tool.mypy]" in content, (
-            "MyPy configuration section not found in pyproject.toml"
-        )
+        assert (
+            "[tool.mypy]" in content
+        ), "MyPy configuration section not found in pyproject.toml"
 
     def test_mypy_strict_mode_configuration(self):
         """Test that MyPy strict mode settings are properly configured."""

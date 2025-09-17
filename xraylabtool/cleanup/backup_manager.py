@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BackupMetadata:
     """Metadata for a backup operation."""
+
     backup_id: str
     timestamp: str
     operation_type: str
@@ -39,10 +40,26 @@ class BackupMetadata:
     compression_ratio: float
     integrity_verified: bool
 
+    @property
+    def files_count(self) -> int:
+        """Compatibility property for tests - returns total_files."""
+        return self.total_files
+
+    @property
+    def backup_path(self) -> Path:
+        """Get the backup directory/file path."""
+        # This will be set by the backup manager when creating backups
+        if hasattr(self, '_backup_path'):
+            return self._backup_path
+        # Fallback: construct from backup_id
+        # Note: This requires the backup manager to set the backup root
+        return Path(f"backup_{self.backup_id}")  # Minimal fallback
+
 
 @dataclass
 class FileBackupInfo:
     """Information about a backed up file."""
+
     original_path: str
     relative_path: str
     backup_path: str
@@ -72,7 +89,7 @@ class BackupManager:
         backup_root: Union[str, Path] = ".cleanup_backups",
         compression_enabled: bool = True,
         max_backup_age_days: int = 30,
-        max_parallel_workers: int = 4
+        max_parallel_workers: int = 4,
     ):
         """
         Initialize backup manager.
@@ -103,7 +120,7 @@ class BackupManager:
         files_to_backup: List[Path],
         operation_type: str = "cleanup",
         backup_method: str = "copy",
-        include_git_info: bool = True
+        include_git_info: bool = True,
     ) -> BackupMetadata:
         """
         Create a comprehensive backup of specified files.
@@ -139,11 +156,17 @@ class BackupManager:
 
             # Perform backup based on method
             if backup_method == "zip":
-                backup_info = self._create_zip_backup(existing_files, backup_dir, backup_id)
+                backup_info = self._create_zip_backup(
+                    existing_files, backup_dir, backup_id
+                )
             elif backup_method == "incremental":
-                backup_info = self._create_incremental_backup(existing_files, backup_dir, backup_id)
+                backup_info = self._create_incremental_backup(
+                    existing_files, backup_dir, backup_id
+                )
             else:  # copy method (default)
-                backup_info = self._create_copy_backup(existing_files, backup_dir, backup_id)
+                backup_info = self._create_copy_backup(
+                    existing_files, backup_dir, backup_id
+                )
 
             # Add Git information if requested
             if include_git_info:
@@ -159,18 +182,26 @@ class BackupManager:
                 operation_type=operation_type,
                 total_files=len(existing_files),
                 total_size_bytes=backup_info["total_size"],
-                compressed_size_bytes=backup_info.get("compressed_size", backup_info["total_size"]),
+                compressed_size_bytes=backup_info.get(
+                    "compressed_size", backup_info["total_size"]
+                ),
                 checksum=overall_checksum,
                 files=backup_info["files"],
                 project_root=str(self.project_root),
                 backup_method=backup_method,
                 compression_ratio=backup_info.get("compression_ratio", 1.0),
-                integrity_verified=True
+                integrity_verified=True,
             )
+
+            # Set the backup path for compatibility with tests
+            if backup_method == "zip":
+                metadata._backup_path = backup_dir / f"{backup_id}.zip"
+            else:
+                metadata._backup_path = backup_dir
 
             # Save metadata
             metadata_file = backup_dir / "backup_metadata.json"
-            with open(metadata_file, 'w') as f:
+            with open(metadata_file, "w") as f:
                 json.dump(asdict(metadata), f, indent=2, default=str)
 
             # Verify backup integrity
@@ -178,10 +209,14 @@ class BackupManager:
                 raise RuntimeError("Backup integrity verification failed")
 
             logger.info(f"Backup created successfully: {backup_id}")
-            logger.info(f"Files: {metadata.total_files}, Size: {metadata.total_size_bytes / (1024*1024):.2f} MB")
+            logger.info(
+                f"Files: {metadata.total_files}, Size: {metadata.total_size_bytes / (1024*1024):.2f} MB"
+            )
             if backup_method == "zip":
-                logger.info(f"Compressed size: {metadata.compressed_size_bytes / (1024*1024):.2f} MB "
-                           f"(ratio: {metadata.compression_ratio:.2f})")
+                logger.info(
+                    f"Compressed size: {metadata.compressed_size_bytes / (1024*1024):.2f} MB "
+                    f"(ratio: {metadata.compression_ratio:.2f})"
+                )
 
             return metadata
 
@@ -197,7 +232,7 @@ class BackupManager:
         backup_id: str,
         restore_files: Optional[List[str]] = None,
         verify_integrity: bool = True,
-        overwrite_existing: bool = False
+        overwrite_existing: bool = False,
     ) -> Dict[str, Any]:
         """
         Restore files from a backup.
@@ -222,9 +257,13 @@ class BackupManager:
         if not metadata_file.exists():
             raise ValueError(f"Backup metadata not found for '{backup_id}'")
 
-        with open(metadata_file, 'r') as f:
+        with open(metadata_file, "r") as f:
             metadata_dict = json.load(f)
         metadata = BackupMetadata(**metadata_dict)
+
+        # Set the backup path for compatibility with tests
+        backup_dir = self.backup_root / backup_id
+        metadata._backup_path = backup_dir
 
         # Verify integrity if requested
         if verify_integrity and not self._verify_backup_integrity(metadata):
@@ -233,7 +272,8 @@ class BackupManager:
         # Determine files to restore
         if restore_files:
             files_to_restore = [
-                file_info for file_info in metadata.files
+                file_info
+                for file_info in metadata.files
                 if file_info["relative_path"] in restore_files
             ]
         else:
@@ -243,17 +283,26 @@ class BackupManager:
 
         # Perform restore based on backup method
         if metadata.backup_method == "zip":
-            restore_results = self._restore_from_zip(backup_dir, files_to_restore, overwrite_existing)
+            restore_results = self._restore_from_zip(
+                backup_dir, files_to_restore, overwrite_existing
+            )
         else:  # copy or incremental method
-            restore_results = self._restore_from_copy(backup_dir, files_to_restore, overwrite_existing)
+            restore_results = self._restore_from_copy(
+                backup_dir, files_to_restore, overwrite_existing
+            )
 
         # Restore Git information if available
         git_info_file = backup_dir / "git_info.json"
         if git_info_file.exists():
             logger.info("Git repository information available in backup")
 
-        logger.info(f"Restore completed: {restore_results['restored']} files restored, "
-                   f"{restore_results['failed']} failures")
+        logger.info(
+            f"Restore completed: {restore_results['restored']} files restored, "
+            f"{restore_results['failed']} failures"
+        )
+
+        # Add success indicator based on whether there were any failures
+        restore_results["success"] = restore_results["failed"] == 0
 
         return restore_results
 
@@ -271,12 +320,16 @@ class BackupManager:
                 metadata_file = backup_dir / "backup_metadata.json"
                 if metadata_file.exists():
                     try:
-                        with open(metadata_file, 'r') as f:
+                        with open(metadata_file, "r") as f:
                             metadata_dict = json.load(f)
                         backup = BackupMetadata(**metadata_dict)
+                        # Set the backup path for compatibility with tests
+                        backup._backup_path = backup_dir
                         backups.append(backup)
                     except Exception as e:
-                        logger.warning(f"Failed to load metadata for backup {backup_dir.name}: {e}")
+                        logger.warning(
+                            f"Failed to load metadata for backup {backup_dir.name}: {e}"
+                        )
 
         # Sort by timestamp (newest first)
         backups.sort(key=lambda b: b.timestamp, reverse=True)
@@ -306,13 +359,17 @@ class BackupManager:
                 try:
                     metadata_file = backup_dir / "backup_metadata.json"
                     if metadata_file.exists():
-                        with open(metadata_file, 'r') as f:
+                        with open(metadata_file, "r") as f:
                             metadata_dict = json.load(f)
 
                         backup_time = datetime.fromisoformat(metadata_dict["timestamp"])
                         if backup_time < cutoff_date:
                             # Calculate size before removal
-                            backup_size = sum(f.stat().st_size for f in backup_dir.rglob('*') if f.is_file())
+                            backup_size = sum(
+                                f.stat().st_size
+                                for f in backup_dir.rglob("*")
+                                if f.is_file()
+                            )
 
                             # Remove backup
                             shutil.rmtree(backup_dir)
@@ -325,13 +382,15 @@ class BackupManager:
                     logger.warning(f"Failed to remove backup {backup_dir.name}: {e}")
                     failed_count += 1
 
-        logger.info(f"Backup cleanup completed: {removed_count} removed, "
-                   f"{removed_size / (1024*1024):.2f} MB freed")
+        logger.info(
+            f"Backup cleanup completed: {removed_count} removed, "
+            f"{removed_size / (1024*1024):.2f} MB freed"
+        )
 
         return {
             "removed_count": removed_count,
-            "removed_size_mb": removed_size / (1024*1024),
-            "failed_count": failed_count
+            "removed_size_mb": removed_size / (1024 * 1024),
+            "failed_count": failed_count,
         }
 
     def get_backup_info(self, backup_id: str) -> Optional[BackupMetadata]:
@@ -351,18 +410,53 @@ class BackupManager:
             return None
 
         try:
-            with open(metadata_file, 'r') as f:
+            with open(metadata_file, "r") as f:
                 metadata_dict = json.load(f)
-            return BackupMetadata(**metadata_dict)
+            metadata = BackupMetadata(**metadata_dict)
+            # Set the backup path for compatibility with tests
+            metadata._backup_path = backup_dir
+            return metadata
         except Exception as e:
             logger.error(f"Failed to load backup metadata: {e}")
             return None
 
+    def verify_backup_integrity(self, backup_id: str) -> bool:
+        """
+        Verify the integrity of a backup by ID.
+
+        Args:
+            backup_id: ID of the backup to verify
+
+        Returns:
+            True if backup integrity is valid, False otherwise
+        """
+        backup_dir = self.backup_root / backup_id
+        if not backup_dir.exists():
+            logger.error(f"Backup directory not found: {backup_dir}")
+            return False
+
+        # Load metadata
+        metadata_file = backup_dir / "backup_metadata.json"
+        if not metadata_file.exists():
+            logger.error(f"Backup metadata not found for '{backup_id}'")
+            return False
+
+        try:
+            with open(metadata_file, "r") as f:
+                metadata_dict = json.load(f)
+            metadata = BackupMetadata(**metadata_dict)
+
+            # Set the backup path for compatibility
+            metadata._backup_path = backup_dir
+
+            # Call the private verification method
+            return self._verify_backup_integrity(metadata)
+        except Exception as e:
+            logger.error(f"Failed to verify backup integrity: {e}")
+            return False
+
     def _create_copy_backup(
-        self,
-        files: List[Path],
-        backup_dir: Path,
-        backup_id: str
+        self, files: List[Path], backup_dir: Path, backup_id: str
     ) -> Dict[str, Any]:
         """Create backup using file copy method."""
         total_size = 0
@@ -377,8 +471,12 @@ class BackupManager:
                 if not file_path.exists():
                     return None
 
-                # Calculate relative path
-                rel_path = file_path.relative_to(self.project_root)
+                # Calculate relative path (resolve both paths to handle symlinks)
+                try:
+                    rel_path = file_path.resolve().relative_to(self.project_root.resolve())
+                except ValueError:
+                    # Fallback: if relative_to fails, use the filename with a safe directory structure
+                    rel_path = Path("backup_files") / file_path.name
                 backup_file_path = files_dir / rel_path
 
                 # Create parent directories
@@ -401,7 +499,7 @@ class BackupManager:
                     "modified_time": stat.st_mtime,
                     "permissions": stat.st_mode,
                     "checksum": file_checksum,
-                    "backup_timestamp": datetime.now().isoformat()
+                    "backup_timestamp": datetime.now().isoformat(),
                 }
 
             except Exception as e:
@@ -426,30 +524,30 @@ class BackupManager:
                     backup_files.append(result)
                     total_size += result["file_size"]
 
-        return {
-            "total_size": total_size,
-            "files": backup_files
-        }
+        return {"total_size": total_size, "files": backup_files}
 
     def _create_zip_backup(
-        self,
-        files: List[Path],
-        backup_dir: Path,
-        backup_id: str
+        self, files: List[Path], backup_dir: Path, backup_id: str
     ) -> Dict[str, Any]:
         """Create backup using ZIP compression."""
         zip_file_path = backup_dir / f"{backup_id}.zip"
         total_size = 0
         backup_files = []
 
-        with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+        with zipfile.ZipFile(
+            zip_file_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
+        ) as zf:
             for file_path in files:
                 if not file_path.exists():
                     continue
 
                 try:
-                    # Calculate relative path
-                    rel_path = file_path.relative_to(self.project_root)
+                    # Calculate relative path (resolve both paths to handle symlinks)
+                    try:
+                        rel_path = file_path.resolve().relative_to(self.project_root.resolve())
+                    except ValueError:
+                        # Fallback: if relative_to fails, use the filename
+                        rel_path = Path(file_path.name)
 
                     # Add to ZIP
                     zf.write(file_path, rel_path)
@@ -458,16 +556,18 @@ class BackupManager:
                     stat = file_path.stat()
                     file_checksum = self._calculate_file_checksum(file_path)
 
-                    backup_files.append({
-                        "original_path": str(file_path),
-                        "relative_path": str(rel_path),
-                        "backup_path": str(zip_file_path),
-                        "file_size": stat.st_size,
-                        "modified_time": stat.st_mtime,
-                        "permissions": stat.st_mode,
-                        "checksum": file_checksum,
-                        "backup_timestamp": datetime.now().isoformat()
-                    })
+                    backup_files.append(
+                        {
+                            "original_path": str(file_path),
+                            "relative_path": str(rel_path),
+                            "backup_path": str(zip_file_path),
+                            "file_size": stat.st_size,
+                            "modified_time": stat.st_mtime,
+                            "permissions": stat.st_mode,
+                            "checksum": file_checksum,
+                            "backup_timestamp": datetime.now().isoformat(),
+                        }
+                    )
 
                     total_size += stat.st_size
 
@@ -482,14 +582,11 @@ class BackupManager:
             "total_size": total_size,
             "compressed_size": compressed_size,
             "compression_ratio": compression_ratio,
-            "files": backup_files
+            "files": backup_files,
         }
 
     def _create_incremental_backup(
-        self,
-        files: List[Path],
-        backup_dir: Path,
-        backup_id: str
+        self, files: List[Path], backup_dir: Path, backup_id: str
     ) -> Dict[str, Any]:
         """Create incremental backup (currently same as copy, future enhancement)."""
         # For now, incremental backup is the same as copy backup
@@ -500,7 +597,7 @@ class BackupManager:
         self,
         backup_dir: Path,
         files_to_restore: List[Dict[str, Any]],
-        overwrite_existing: bool
+        overwrite_existing: bool,
     ) -> Dict[str, int]:
         """Restore files from copy backup."""
         restored_count = 0
@@ -546,7 +643,7 @@ class BackupManager:
         self,
         backup_dir: Path,
         files_to_restore: List[Dict[str, Any]],
-        overwrite_existing: bool
+        overwrite_existing: bool,
     ) -> Dict[str, int]:
         """Restore files from ZIP backup."""
         zip_file_path = None
@@ -554,7 +651,7 @@ class BackupManager:
         # Find the ZIP file
         for file_info in files_to_restore:
             backup_path = Path(file_info["backup_path"])
-            if backup_path.suffix == '.zip':
+            if backup_path.suffix == ".zip":
                 zip_file_path = backup_path
                 break
 
@@ -564,7 +661,7 @@ class BackupManager:
         restored_count = 0
         failed_count = 0
 
-        with zipfile.ZipFile(zip_file_path, 'r') as zf:
+        with zipfile.ZipFile(zip_file_path, "r") as zf:
             for file_info in files_to_restore:
                 try:
                     rel_path = file_info["relative_path"]
@@ -580,7 +677,7 @@ class BackupManager:
 
                     # Extract file
                     with zf.open(rel_path) as source:
-                        with open(original_path, 'wb') as target:
+                        with open(original_path, "wb") as target:
                             shutil.copyfileobj(source, target)
 
                     # Restore permissions
@@ -611,22 +708,28 @@ class BackupManager:
             return ""
 
     def _calculate_backup_checksum(self, backup_dir: Path) -> str:
-        """Calculate overall checksum of backup directory."""
+        """Calculate overall checksum of backup directory, excluding metadata file."""
         sha256_hash = hashlib.sha256()
 
         # Get all files in backup directory, sorted for consistent hashing
-        all_files = sorted(backup_dir.rglob('*'))
+        all_files = sorted(backup_dir.rglob("*"))
 
         for file_path in all_files:
             if file_path.is_file():
+                # Skip metadata and git info files to avoid circular dependency and timestamp changes
+                if file_path.name in ("metadata.json", "backup_metadata.json", "git_info.json"):
+                    continue
+
                 # Include file path and content in hash
                 sha256_hash.update(str(file_path.relative_to(backup_dir)).encode())
                 try:
-                    with open(file_path, 'rb') as f:
+                    with open(file_path, "rb") as f:
                         for chunk in iter(lambda: f.read(65536), b""):
                             sha256_hash.update(chunk)
                 except Exception as e:
-                    logger.warning(f"Failed to include {file_path} in backup checksum: {e}")
+                    logger.warning(
+                        f"Failed to include {file_path} in backup checksum: {e}"
+                    )
 
         return sha256_hash.hexdigest()
 
@@ -653,7 +756,9 @@ class BackupManager:
             for file_info in metadata.files:
                 backup_file_path = Path(file_info["backup_path"])
                 if backup_file_path.exists():
-                    current_file_checksum = self._calculate_file_checksum(backup_file_path)
+                    current_file_checksum = self._calculate_file_checksum(
+                        backup_file_path
+                    )
                     if current_file_checksum != file_info["checksum"]:
                         logger.error(f"File integrity check failed: {backup_file_path}")
                         return False
@@ -669,6 +774,7 @@ class BackupManager:
             # Get current branch
             try:
                 from xraylabtool.cleanup.git_analyzer import GitChangeAnalyzer
+
                 git_analyzer = GitChangeAnalyzer(self.project_root)
 
                 if git_analyzer.is_git_available():
@@ -683,7 +789,7 @@ class BackupManager:
 
             # Save Git info
             git_info_file = backup_dir / "git_info.json"
-            with open(git_info_file, 'w') as f:
+            with open(git_info_file, "w") as f:
                 json.dump(git_info, f, indent=2)
 
         except Exception as e:

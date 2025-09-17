@@ -21,18 +21,20 @@ logger = logging.getLogger(__name__)
 
 class FileCategory(Enum):
     """Categories for file classification during cleanup analysis."""
-    SAFE_TO_REMOVE = auto()      # Files that are definitely safe to remove
-    LEGACY = auto()              # Legacy files that are likely obsolete
-    SYSTEM_GENERATED = auto()    # System-generated files (OS, IDE)
-    BUILD_ARTIFACT = auto()      # Build and compilation artifacts
-    TEMPORARY = auto()           # Temporary files and caches
-    REVIEW_NEEDED = auto()       # Files that need manual review
-    CRITICAL_KEEP = auto()       # Files that must never be removed
+
+    SAFE_TO_REMOVE = auto()  # Files that are definitely safe to remove
+    LEGACY = auto()  # Legacy files that are likely obsolete
+    SYSTEM_GENERATED = auto()  # System-generated files (OS, IDE)
+    BUILD_ARTIFACT = auto()  # Build and compilation artifacts
+    TEMPORARY = auto()  # Temporary files and caches
+    REVIEW_NEEDED = auto()  # Files that need manual review
+    CRITICAL_KEEP = auto()  # Files that must never be removed
 
 
 @dataclass
 class DetectionResult:
     """Result of file detection with metadata and safety classification."""
+
     file_path: Path
     category: FileCategory
     reason: str
@@ -56,66 +58,53 @@ class ObsoleteFileDetector:
 
     # Known obsolete file patterns for XRayLabTool
     OBSOLETE_PATTERNS = {
-        'performance_artifacts': [
-            'performance_baseline_summary.json',
-            'baseline_ci_report.json',
-            'test_persistence.json',
-            'performance_history.json',
-            'benchmark_report.json',
-            'benchmark.json',
-            'benchmark-results.json'
+        "performance_artifacts": [
+            "performance_baseline_summary.json",
+            "baseline_ci_report.json",
+            "test_persistence.json",
+            "performance_history.json",
+            "benchmark_report.json",
+            "benchmark.json",
+            "benchmark-results.json",
         ],
-        'legacy_completion': [
-            '_xraylabtool_completion.bash',
-            'install_completion.py'
+        "legacy_completion": ["_xraylabtool_completion.bash", "install_completion.py"],
+        "system_files": [".DS_Store", "._*", "Thumbs.db", "ehthumbs.db", "Desktop.ini"],
+        "temporary_patterns": [
+            "*.tmp",
+            "*.bak",
+            "*~",
+            "*.swp",
+            "*.swo",
+            "core.*",
+            ".#*",
         ],
-        'system_files': [
-            '.DS_Store',
-            '._*',
-            'Thumbs.db',
-            'ehthumbs.db',
-            'Desktop.ini'
+        "build_artifacts": [
+            "build/**/*",
+            "dist/**/*",
+            "*.egg-info/**/*",
+            "**/__pycache__/**/*",
+            "**/*.pyc",
+            "**/*.pyo",
+            ".pytest_cache/**/*",
+            "htmlcov/**/*",
+            ".coverage*",
+            "coverage.xml",
+            "coverage.json",
+            ".tox/**/*",
+            ".mypy_cache/**/*",
+            ".ruff_cache/**/*",
+            ".benchmarks/**/*",
         ],
-        'temporary_patterns': [
-            '*.tmp',
-            '*.bak',
-            '*~',
-            '*.swp',
-            '*.swo',
-            'core.*',
-            '.#*'
+        "log_files": ["*.log", "docs_build.log", "test_results.log"],
+        "security_reports": [
+            "bandit-report.json",
+            "bandit_report.json",
+            "bandit-claude-report.json",
+            "consistency_report.json",
+            "CLAUDE_QUALITY_SUMMARY.json",
+            "coverage-claude.json",
+            "CODE_QUALITY_REPORT.md",
         ],
-        'build_artifacts': [
-            'build/**/*',
-            'dist/**/*',
-            '*.egg-info/**/*',
-            '**/__pycache__/**/*',
-            '**/*.pyc',
-            '**/*.pyo',
-            '.pytest_cache/**/*',
-            'htmlcov/**/*',
-            '.coverage*',
-            'coverage.xml',
-            'coverage.json',
-            '.tox/**/*',
-            '.mypy_cache/**/*',
-            '.ruff_cache/**/*',
-            '.benchmarks/**/*'
-        ],
-        'log_files': [
-            '*.log',
-            'docs_build.log',
-            'test_results.log'
-        ],
-        'security_reports': [
-            'bandit-report.json',
-            'bandit_report.json',
-            'bandit-claude-report.json',
-            'consistency_report.json',
-            'CLAUDE_QUALITY_SUMMARY.json',
-            'coverage-claude.json',
-            'CODE_QUALITY_REPORT.md'
-        ]
     }
 
     def __init__(
@@ -124,7 +113,7 @@ class ObsoleteFileDetector:
         recursive: bool = True,
         use_git_context: bool = False,
         max_file_size_mb: Optional[float] = None,
-        exclude_patterns: Optional[List[str]] = None
+        exclude_patterns: Optional[List[str]] = None,
     ):
         """
         Initialize the obsolete file detector.
@@ -155,13 +144,13 @@ class ObsoleteFileDetector:
             compiled[category] = []
             for pattern in patterns:
                 # Convert glob patterns to regex
-                if '*' in pattern or '?' in pattern:
+                if "*" in pattern or "?" in pattern:
                     regex_pattern = fnmatch.translate(pattern)
                     compiled[category].append(re.compile(regex_pattern, re.IGNORECASE))
                 else:
                     # Exact filename match
                     escaped = re.escape(pattern)
-                    compiled[category].append(re.compile(f'^{escaped}$', re.IGNORECASE))
+                    compiled[category].append(re.compile(f"^{escaped}$", re.IGNORECASE))
 
         return compiled
 
@@ -194,36 +183,36 @@ class ObsoleteFileDetector:
 
     def detect_performance_artifacts(self) -> List[DetectionResult]:
         """Detect performance tracking and benchmark artifacts."""
-        return self._detect_by_category('performance_artifacts', FileCategory.SAFE_TO_REMOVE)
+        return self._detect_by_category(
+            "performance_artifacts", FileCategory.SAFE_TO_REMOVE
+        )
 
     def detect_legacy_files(self) -> List[DetectionResult]:
         """Detect legacy completion and installation scripts."""
-        return self._detect_by_category('legacy_completion', FileCategory.LEGACY)
+        return self._detect_by_category("legacy_completion", FileCategory.LEGACY)
 
     def detect_system_files(self) -> List[DetectionResult]:
         """Detect system-generated files (OS and IDE artifacts)."""
-        return self._detect_by_category('system_files', FileCategory.SYSTEM_GENERATED)
+        return self._detect_by_category("system_files", FileCategory.SYSTEM_GENERATED)
 
     def detect_build_artifacts(self) -> List[DetectionResult]:
         """Detect build artifacts and compilation byproducts."""
-        return self._detect_by_category('build_artifacts', FileCategory.BUILD_ARTIFACT)
+        return self._detect_by_category("build_artifacts", FileCategory.BUILD_ARTIFACT)
 
     def detect_temporary_files(self) -> List[DetectionResult]:
         """Detect temporary files and editor backups."""
-        return self._detect_by_category('temporary_patterns', FileCategory.TEMPORARY)
+        return self._detect_by_category("temporary_patterns", FileCategory.TEMPORARY)
 
     def detect_log_files(self) -> List[DetectionResult]:
         """Detect log files and debug output."""
-        return self._detect_by_category('log_files', FileCategory.SAFE_TO_REMOVE)
+        return self._detect_by_category("log_files", FileCategory.SAFE_TO_REMOVE)
 
     def detect_security_reports(self) -> List[DetectionResult]:
         """Detect security scan reports and quality analysis files."""
-        return self._detect_by_category('security_reports', FileCategory.SAFE_TO_REMOVE)
+        return self._detect_by_category("security_reports", FileCategory.SAFE_TO_REMOVE)
 
     def _detect_by_category(
-        self,
-        category: str,
-        file_category: FileCategory
+        self, category: str, file_category: FileCategory
     ) -> List[DetectionResult]:
         """
         Detect files matching patterns for a specific category.
@@ -253,7 +242,7 @@ class ObsoleteFileDetector:
                             file_path,
                             file_category,
                             f"Matches {category} pattern: {pattern.pattern}",
-                            confidence=0.9
+                            confidence=0.9,
                         )
                         results.append(result)
                         break  # Only add once per file
@@ -272,7 +261,7 @@ class ObsoleteFileDetector:
             # Recursive scan
             for root, dirs, files in os.walk(self.root_path):
                 # Skip hidden directories and common exclusions
-                dirs[:] = [d for d in dirs if not d.startswith('.') or d in ['.git']]
+                dirs[:] = [d for d in dirs if not d.startswith(".") or d in [".git"]]
 
                 for filename in files:
                     file_path = Path(root) / filename
@@ -311,9 +300,15 @@ class ObsoleteFileDetector:
 
         # Basic safety checks - never include critical files
         critical_names = {
-            'pyproject.toml', 'setup.py', 'requirements.txt',
-            'README.md', 'LICENSE', 'CHANGELOG.md',
-            '__init__.py', '.gitignore', '.gitattributes'
+            "pyproject.toml",
+            "setup.py",
+            "requirements.txt",
+            "README.md",
+            "LICENSE",
+            "CHANGELOG.md",
+            "__init__.py",
+            ".gitignore",
+            ".gitattributes",
         }
 
         if file_path.name in critical_names:
@@ -322,11 +317,7 @@ class ObsoleteFileDetector:
         return True
 
     def _create_detection_result(
-        self,
-        file_path: Path,
-        category: FileCategory,
-        reason: str,
-        confidence: float
+        self, file_path: Path, category: FileCategory, reason: str, confidence: float
     ) -> DetectionResult:
         """
         Create a DetectionResult with file metadata.
@@ -357,12 +348,14 @@ class ObsoleteFileDetector:
             size_bytes=size_bytes,
             last_modified=last_modified,
             metadata={
-                'detector_version': '1.0',
-                'relative_path': str(file_path.relative_to(self.root_path))
-            }
+                "detector_version": "1.0",
+                "relative_path": str(file_path.relative_to(self.root_path)),
+            },
         )
 
-    def _deduplicate_results(self, results: List[DetectionResult]) -> List[DetectionResult]:
+    def _deduplicate_results(
+        self, results: List[DetectionResult]
+    ) -> List[DetectionResult]:
         """
         Remove duplicate detection results based on file path.
 
@@ -396,11 +389,11 @@ class ObsoleteFileDetector:
         """
         if not results:
             return {
-                'total_files': 0,
-                'total_size_mb': 0.0,
-                'categories': {},
-                'largest_files': [],
-                'oldest_files': []
+                "total_files": 0,
+                "total_size_mb": 0.0,
+                "categories": {},
+                "largest_files": [],
+                "oldest_files": [],
             }
 
         # Calculate statistics
@@ -413,28 +406,30 @@ class ObsoleteFileDetector:
         for result in results:
             cat_name = result.category.name
             if cat_name not in categories:
-                categories[cat_name] = {'count': 0, 'size_mb': 0.0}
-            categories[cat_name]['count'] += 1
-            categories[cat_name]['size_mb'] += result.size_bytes / (1024 * 1024)
+                categories[cat_name] = {"count": 0, "size_mb": 0.0}
+            categories[cat_name]["count"] += 1
+            categories[cat_name]["size_mb"] += result.size_bytes / (1024 * 1024)
 
         # Find largest and oldest files
         largest_files = sorted(results, key=lambda r: r.size_bytes, reverse=True)[:5]
         oldest_files = sorted(results, key=lambda r: r.last_modified)[:5]
 
         return {
-            'total_files': total_files,
-            'total_size_mb': round(total_size_mb, 2),
-            'categories': categories,
-            'largest_files': [
+            "total_files": total_files,
+            "total_size_mb": round(total_size_mb, 2),
+            "categories": categories,
+            "largest_files": [
                 {
-                    'path': str(f.file_path.relative_to(self.root_path)),
-                    'size_mb': round(f.size_bytes / (1024 * 1024), 2)
-                } for f in largest_files
+                    "path": str(f.file_path.relative_to(self.root_path)),
+                    "size_mb": round(f.size_bytes / (1024 * 1024), 2),
+                }
+                for f in largest_files
             ],
-            'oldest_files': [
+            "oldest_files": [
                 {
-                    'path': str(f.file_path.relative_to(self.root_path)),
-                    'last_modified': f.last_modified
-                } for f in oldest_files
-            ]
+                    "path": str(f.file_path.relative_to(self.root_path)),
+                    "last_modified": f.last_modified,
+                }
+                for f in oldest_files
+            ],
         }

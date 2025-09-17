@@ -18,6 +18,7 @@ from enum import Enum
 
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
@@ -31,15 +32,17 @@ logger = logging.getLogger(__name__)
 
 class ReportFormat(Enum):
     """Supported report formats."""
-    JSON = 'json'
-    YAML = 'yaml'
-    TEXT = 'text'
-    HTML = 'html'
+
+    JSON = "json"
+    YAML = "yaml"
+    TEXT = "text"
+    HTML = "html"
 
 
 @dataclass
 class OperationStats:
     """Statistics for cleanup operations."""
+
     files_scanned: int = 0
     files_detected: int = 0
     files_removed: int = 0
@@ -52,6 +55,7 @@ class OperationStats:
 @dataclass
 class SafetySummary:
     """Summary of safety analysis results."""
+
     total_files: int
     safe_to_remove: int
     review_needed: int
@@ -64,6 +68,7 @@ class SafetySummary:
 @dataclass
 class CleanupReport:
     """Comprehensive cleanup operation report."""
+
     timestamp: str
     operation_type: str
     root_directory: str
@@ -86,7 +91,7 @@ class ProgressTracker:
         self,
         total_items: int,
         operation_name: str = "Processing",
-        log_interval: int = 100
+        log_interval: int = 100,
     ):
         """
         Initialize progress tracker.
@@ -148,8 +153,8 @@ class CleanupLogger:
     def __init__(
         self,
         log_file: Optional[Union[str, Path]] = None,
-        log_level: str = 'INFO',
-        console_output: bool = True
+        log_level: str = "INFO",
+        console_output: bool = True,
     ):
         """
         Initialize cleanup logger.
@@ -175,12 +180,12 @@ class CleanupLogger:
         """Set up logging configuration."""
         # Create formatter
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
 
         # Get cleanup logger
-        cleanup_logger = logging.getLogger('xraylabtool.cleanup')
+        cleanup_logger = logging.getLogger("xraylabtool.cleanup")
         cleanup_logger.setLevel(self.log_level)
 
         # Clear existing handlers
@@ -219,7 +224,9 @@ class CleanupLogger:
     def end_operation(self) -> None:
         """End the current operation tracking."""
         if self.operation_start_time:
-            self.operation_stats.total_time_seconds = time.time() - self.operation_start_time
+            self.operation_stats.total_time_seconds = (
+                time.time() - self.operation_start_time
+            )
 
         logger.info(f"Completed operation: {self.current_operation}")
         logger.info(f"Operation statistics: {asdict(self.operation_stats)}")
@@ -227,10 +234,7 @@ class CleanupLogger:
         self.current_operation = None
         self.operation_start_time = None
 
-    def log_detection_results(
-        self,
-        results: List[DetectionResult]
-    ) -> None:
+    def log_detection_results(self, results: List[DetectionResult]) -> None:
         """Log detection results summary."""
         if not results:
             logger.info("No files detected for cleanup")
@@ -255,8 +259,7 @@ class CleanupLogger:
         self.operation_stats.files_detected = len(results)
 
     def log_safety_analysis(
-        self,
-        classifications: Dict[Path, ClassificationResult]
+        self, classifications: Dict[Path, ClassificationResult]
     ) -> None:
         """Log safety classification results."""
         if not classifications:
@@ -278,7 +281,9 @@ class CleanupLogger:
             if result.warnings:
                 warnings_count += len(result.warnings)
 
-        logger.info(f"Safety analysis completed: {len(classifications)} files classified")
+        logger.info(
+            f"Safety analysis completed: {len(classifications)} files classified"
+        )
 
         for category, count in category_counts.items():
             logger.info(f"  {category}: {count} files")
@@ -294,12 +299,12 @@ class CleanupLogger:
         operation: str,
         file_path: Path,
         success: bool,
-        error: Optional[str] = None
+        error: Optional[str] = None,
     ) -> None:
         """Log individual file operations."""
         if success:
             logger.debug(f"{operation} successful: {file_path}")
-            if operation.lower() == 'remove':
+            if operation.lower() == "remove":
                 self.operation_stats.files_removed += 1
         else:
             logger.error(f"{operation} failed for {file_path}: {error}")
@@ -309,10 +314,7 @@ class CleanupLogger:
 class ReportGenerator:
     """Comprehensive report generator for cleanup operations."""
 
-    def __init__(
-        self,
-        report_directory: Union[str, Path] = '.cleanup_reports'
-    ):
+    def __init__(self, report_directory: Union[str, Path] = ".cleanup_reports"):
         """
         Initialize report generator.
 
@@ -332,7 +334,7 @@ class ReportGenerator:
         configuration: Dict[str, Any],
         errors: List[str] = None,
         warnings: List[str] = None,
-        format: ReportFormat = ReportFormat.JSON
+        format: ReportFormat = ReportFormat.JSON,
     ) -> Path:
         """
         Generate comprehensive cleanup report.
@@ -369,7 +371,9 @@ class ReportGenerator:
         )
 
         # Build detailed results
-        detailed_results = self._build_detailed_results(detection_results, classifications)
+        detailed_results = self._build_detailed_results(
+            detection_results, classifications
+        )
 
         # Create report object
         report = CleanupReport(
@@ -385,7 +389,7 @@ class ReportGenerator:
             errors=errors or [],
             warnings=warnings or [],
             recommendations=recommendations,
-            detailed_results=detailed_results
+            detailed_results=detailed_results,
         )
 
         # Generate report file
@@ -405,8 +409,7 @@ class ReportGenerator:
         return report_path
 
     def _build_safety_summary(
-        self,
-        classifications: Dict[Path, ClassificationResult]
+        self, classifications: Dict[Path, ClassificationResult]
     ) -> SafetySummary:
         """Build safety analysis summary."""
         if not classifications:
@@ -450,12 +453,11 @@ class ReportGenerator:
             critical_keep=critical_keep,
             low_confidence=low_confidence,
             warnings_count=warnings_count,
-            recommendation=recommendation
+            recommendation=recommendation,
         )
 
     def _build_category_breakdown(
-        self,
-        results: List[DetectionResult]
+        self, results: List[DetectionResult]
     ) -> Dict[str, int]:
         """Build breakdown by file category."""
         breakdown = {}
@@ -465,33 +467,31 @@ class ReportGenerator:
         return breakdown
 
     def _find_largest_files(
-        self,
-        results: List[DetectionResult],
-        limit: int = 10
+        self, results: List[DetectionResult], limit: int = 10
     ) -> List[Dict[str, Any]]:
         """Find the largest files in detection results."""
         sorted_results = sorted(results, key=lambda r: r.size_bytes, reverse=True)
         return [
             {
-                'path': str(result.file_path),
-                'size_mb': round(result.size_bytes / (1024 * 1024), 2),
-                'category': result.category.name
+                "path": str(result.file_path),
+                "size_mb": round(result.size_bytes / (1024 * 1024), 2),
+                "category": result.category.name,
             }
             for result in sorted_results[:limit]
         ]
 
     def _find_oldest_files(
-        self,
-        results: List[DetectionResult],
-        limit: int = 10
+        self, results: List[DetectionResult], limit: int = 10
     ) -> List[Dict[str, Any]]:
         """Find the oldest files in detection results."""
         sorted_results = sorted(results, key=lambda r: r.last_modified)
         return [
             {
-                'path': str(result.file_path),
-                'last_modified': datetime.fromtimestamp(result.last_modified).isoformat(),
-                'category': result.category.name
+                "path": str(result.file_path),
+                "last_modified": (
+                    datetime.fromtimestamp(result.last_modified).isoformat()
+                ),
+                "category": result.category.name,
             }
             for result in sorted_results[:limit]
         ]
@@ -500,39 +500,57 @@ class ReportGenerator:
         self,
         detection_results: List[DetectionResult],
         classifications: Dict[Path, ClassificationResult],
-        stats: OperationStats
+        stats: OperationStats,
     ) -> List[str]:
         """Generate cleanup recommendations."""
         recommendations = []
 
         # File count recommendations
         if len(detection_results) > 100:
-            recommendations.append("Large number of files detected - consider batch processing")
+            recommendations.append(
+                "Large number of files detected - consider batch processing"
+            )
 
         # Safety recommendations
-        safe_files = sum(1 for c in classifications.values() if c.category == FileCategory.SAFE_TO_REMOVE)
+        safe_files = sum(
+            1
+            for c in classifications.values()
+            if c.category == FileCategory.SAFE_TO_REMOVE
+        )
         if safe_files > 50:
-            recommendations.append(f"{safe_files} files appear safe to remove - consider automated cleanup")
+            recommendations.append(
+                f"{safe_files} files appear safe to remove - consider automated cleanup"
+            )
 
-        review_files = sum(1 for c in classifications.values() if c.category == FileCategory.REVIEW_NEEDED)
+        review_files = sum(
+            1
+            for c in classifications.values()
+            if c.category == FileCategory.REVIEW_NEEDED
+        )
         if review_files > 0:
-            recommendations.append(f"{review_files} files need manual review before removal")
+            recommendations.append(
+                f"{review_files} files need manual review before removal"
+            )
 
         # Performance recommendations
         if stats.errors_encountered > 0:
-            recommendations.append(f"{stats.errors_encountered} errors encountered - investigate before proceeding")
+            recommendations.append(
+                f"{stats.errors_encountered} errors encountered - investigate before proceeding"
+            )
 
         # Size recommendations
         total_size_mb = sum(r.size_bytes for r in detection_results) / (1024 * 1024)
         if total_size_mb > 100:
-            recommendations.append(f"Cleanup would free {total_size_mb:.1f} MB of disk space")
+            recommendations.append(
+                f"Cleanup would free {total_size_mb:.1f} MB of disk space"
+            )
 
         return recommendations
 
     def _build_detailed_results(
         self,
         detection_results: List[DetectionResult],
-        classifications: Dict[Path, ClassificationResult]
+        classifications: Dict[Path, ClassificationResult],
     ) -> List[Dict[str, Any]]:
         """Build detailed results for each file."""
         detailed = []
@@ -541,22 +559,26 @@ class ReportGenerator:
             classification = classifications.get(result.file_path)
 
             file_info = {
-                'path': str(result.file_path),
-                'size_bytes': result.size_bytes,
-                'size_mb': round(result.size_bytes / (1024 * 1024), 3),
-                'last_modified': datetime.fromtimestamp(result.last_modified).isoformat(),
-                'detection_category': result.category.name,
-                'detection_reason': result.reason,
-                'detection_confidence': result.confidence
+                "path": str(result.file_path),
+                "size_bytes": result.size_bytes,
+                "size_mb": round(result.size_bytes / (1024 * 1024), 3),
+                "last_modified": (
+                    datetime.fromtimestamp(result.last_modified).isoformat()
+                ),
+                "detection_category": result.category.name,
+                "detection_reason": result.reason,
+                "detection_confidence": result.confidence,
             }
 
             if classification:
-                file_info.update({
-                    'safety_category': classification.category.name,
-                    'safety_confidence': classification.confidence,
-                    'safety_reasons': classification.reasons,
-                    'safety_warnings': classification.warnings or []
-                })
+                file_info.update(
+                    {
+                        "safety_category": classification.category.name,
+                        "safety_confidence": classification.confidence,
+                        "safety_reasons": classification.reasons,
+                        "safety_warnings": classification.warnings or [],
+                    }
+                )
 
             detailed.append(file_info)
 
@@ -564,7 +586,7 @@ class ReportGenerator:
 
     def _write_json_report(self, report: CleanupReport, report_path: Path) -> None:
         """Write report in JSON format."""
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             json.dump(asdict(report), f, indent=2, default=str)
 
     def _write_yaml_report(self, report: CleanupReport, report_path: Path) -> None:
@@ -572,25 +594,29 @@ class ReportGenerator:
         if not YAML_AVAILABLE:
             raise ImportError("PyYAML is required for YAML reports")
 
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             yaml.dump(asdict(report), f, default_flow_style=False, default=str)
 
     def _write_text_report(self, report: CleanupReport, report_path: Path) -> None:
         """Write report in human-readable text format."""
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             f.write(f"Cleanup Report - {report.timestamp}\n")
             f.write("=" * 50 + "\n\n")
 
             f.write(f"Operation: {report.operation_type}\n")
             f.write(f"Directory: {report.root_directory}\n")
-            f.write(f"Duration: {report.operation_stats.total_time_seconds:.2f} seconds\n\n")
+            f.write(
+                f"Duration: {report.operation_stats.total_time_seconds:.2f} seconds\n\n"
+            )
 
             f.write("Summary Statistics:\n")
             f.write("-" * 20 + "\n")
             f.write(f"Files Scanned: {report.operation_stats.files_scanned}\n")
             f.write(f"Files Detected: {report.operation_stats.files_detected}\n")
             f.write(f"Files Removed: {report.operation_stats.files_removed}\n")
-            f.write(f"Total Size Freed: {report.operation_stats.total_size_removed_mb:.2f} MB\n")
+            f.write(
+                f"Total Size Freed: {report.operation_stats.total_size_removed_mb:.2f} MB\n"
+            )
             f.write(f"Errors: {report.operation_stats.errors_encountered}\n\n")
 
             f.write("Safety Analysis:\n")

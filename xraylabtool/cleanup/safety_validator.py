@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class SafetyLevel(Enum):
     """Safety levels for operations."""
+
     SAFE = "safe"
     CAUTION = "caution"
     DANGEROUS = "dangerous"
@@ -36,6 +37,7 @@ class SafetyLevel(Enum):
 
 class ValidationResult(Enum):
     """Validation results."""
+
     PASS = "pass"
     WARNING = "warning"
     FAIL = "fail"
@@ -45,6 +47,7 @@ class ValidationResult(Enum):
 @dataclass
 class SafetyCheck:
     """Individual safety check result."""
+
     name: str
     description: str
     result: ValidationResult
@@ -57,6 +60,7 @@ class SafetyCheck:
 @dataclass
 class ValidationReport:
     """Comprehensive validation report."""
+
     operation_type: str
     total_checks: int
     passed_checks: int
@@ -69,6 +73,15 @@ class ValidationReport:
     recommendations: List[str]
     required_actions: List[str]
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+
+    @property
+    def can_proceed(self) -> bool:
+        """
+        Determine if operation can proceed based on validation results.
+
+        Returns True for PASS and WARNING results, False for FAIL and ERROR.
+        """
+        return self.overall_result in [ValidationResult.PASS, ValidationResult.WARNING]
 
 
 class EmergencyStop:
@@ -88,6 +101,7 @@ class EmergencyStop:
 
     def _install_signal_handlers(self):
         """Install signal handlers for emergency stop."""
+
         def signal_handler(signum, frame):
             logger.warning(f"Emergency stop signal received: {signum}")
             self.request_stop()
@@ -100,9 +114,12 @@ class EmergencyStop:
                 # Some signals might not be available on all platforms
                 pass
 
-    def request_stop(self):
+    def request_stop(self, reason: str = ""):
         """Request emergency stop."""
-        logger.warning("Emergency stop requested")
+        if reason:
+            logger.warning(f"Emergency stop requested: {reason}")
+        else:
+            logger.warning("Emergency stop requested")
         self._stop_requested.set()
 
         if self._cleanup_callback:
@@ -136,7 +153,7 @@ class SafetyValidator:
         self,
         project_root: Union[str, Path],
         backup_manager: Optional[BackupManager] = None,
-        strict_mode: bool = True
+        strict_mode: bool = True,
     ):
         """
         Initialize safety validator.
@@ -153,9 +170,7 @@ class SafetyValidator:
         logger.info(f"Initialized SafetyValidator (strict_mode={strict_mode})")
 
     def validate_pre_operation(
-        self,
-        files_to_process: List[Path],
-        operation_type: str = "cleanup"
+        self, files_to_process: List[Path], operation_type: str = "cleanup"
     ) -> ValidationReport:
         """
         Perform comprehensive pre-operation safety validation.
@@ -167,7 +182,9 @@ class SafetyValidator:
         Returns:
             ValidationReport with all safety check results
         """
-        logger.info(f"Starting pre-operation validation for {len(files_to_process)} files")
+        logger.info(
+            f"Starting pre-operation validation for {len(files_to_process)} files"
+        )
 
         checks = []
 
@@ -189,13 +206,13 @@ class SafetyValidator:
         # Generate report
         report = self._generate_validation_report(checks, operation_type)
 
-        logger.info(f"Pre-operation validation completed: {report.overall_result.value}")
+        logger.info(
+            f"Pre-operation validation completed: {report.overall_result.value}"
+        )
         return report
 
     def validate_post_operation(
-        self,
-        processed_files: List[Path],
-        operation_type: str = "cleanup"
+        self, processed_files: List[Path], operation_type: str = "cleanup"
     ) -> ValidationReport:
         """
         Perform post-operation validation to ensure system integrity.
@@ -207,7 +224,9 @@ class SafetyValidator:
         Returns:
             ValidationReport with post-operation validation results
         """
-        logger.info(f"Starting post-operation validation for {len(processed_files)} files")
+        logger.info(
+            f"Starting post-operation validation for {len(processed_files)} files"
+        )
 
         checks = []
 
@@ -222,13 +241,13 @@ class SafetyValidator:
         # Generate report
         report = self._generate_validation_report(checks, f"post_{operation_type}")
 
-        logger.info(f"Post-operation validation completed: {report.overall_result.value}")
+        logger.info(
+            f"Post-operation validation completed: {report.overall_result.value}"
+        )
         return report
 
     def create_rollback_plan(
-        self,
-        backup_metadata: BackupMetadata,
-        validation_report: ValidationReport
+        self, backup_metadata: BackupMetadata, validation_report: ValidationReport
     ) -> Dict[str, Any]:
         """
         Create a rollback plan based on backup and validation results.
@@ -242,12 +261,17 @@ class SafetyValidator:
         """
         rollback_plan = {
             "backup_id": backup_metadata.backup_id,
-            "rollback_required": validation_report.overall_result in [ValidationResult.FAIL, ValidationResult.ERROR],
-            "automatic_rollback": validation_report.overall_safety_level == SafetyLevel.CRITICAL,
+            "rollback_required": (
+                validation_report.overall_result
+                in [ValidationResult.FAIL, ValidationResult.ERROR]
+            ),
+            "automatic_rollback": (
+                validation_report.overall_safety_level == SafetyLevel.CRITICAL
+            ),
             "rollback_steps": [],
             "verification_steps": [],
             "recovery_time_estimate": "5-15 minutes",
-            "risk_assessment": "low"
+            "risk_assessment": "low",
         }
 
         # Determine rollback steps based on validation failures
@@ -257,14 +281,14 @@ class SafetyValidator:
                 "Restore files from backup",
                 "Verify file integrity",
                 "Run post-restore validation",
-                "Restart services if needed"
+                "Restart services if needed",
             ]
 
             rollback_plan["verification_steps"] = [
                 "Check project build capability",
                 "Verify import statements work",
                 "Run basic functionality tests",
-                "Confirm Git repository state"
+                "Confirm Git repository state",
             ]
 
         # Adjust risk and time estimates
@@ -278,7 +302,7 @@ class SafetyValidator:
         self,
         backup_id: str,
         rollback_plan: Dict[str, Any],
-        emergency_stop: Optional[EmergencyStop] = None
+        emergency_stop: Optional[EmergencyStop] = None,
     ) -> Dict[str, Any]:
         """
         Execute rollback operation.
@@ -301,7 +325,7 @@ class SafetyValidator:
             "restored_files": 0,
             "failed_files": 0,
             "errors": [],
-            "duration_seconds": 0
+            "duration_seconds": 0,
         }
 
         start_time = time.time()
@@ -313,9 +337,7 @@ class SafetyValidator:
 
             # Restore from backup
             restore_results = self.backup_manager.restore_backup(
-                backup_id=backup_id,
-                verify_integrity=True,
-                overwrite_existing=True
+                backup_id=backup_id, verify_integrity=True, overwrite_existing=True
             )
 
             rollback_results["restored_files"] = restore_results["restored"]
@@ -352,51 +374,61 @@ class SafetyValidator:
             # Check available memory
             memory = psutil.virtual_memory()
             if memory.percent > 90:
-                checks.append(SafetyCheck(
-                    name="memory_check",
-                    description="System memory availability",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.CAUTION,
-                    message=f"High memory usage: {memory.percent}%",
-                    details={"memory_percent": memory.percent}
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="memory_check",
+                        description="System memory availability",
+                        result=ValidationResult.WARNING,
+                        level=SafetyLevel.CAUTION,
+                        message=f"High memory usage: {memory.percent}%",
+                        details={"memory_percent": memory.percent},
+                    )
+                )
             else:
-                checks.append(SafetyCheck(
-                    name="memory_check",
-                    description="System memory availability",
-                    result=ValidationResult.PASS,
-                    level=SafetyLevel.SAFE,
-                    message=f"Memory usage normal: {memory.percent}%"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="memory_check",
+                        description="System memory availability",
+                        result=ValidationResult.PASS,
+                        level=SafetyLevel.SAFE,
+                        message=f"Memory usage normal: {memory.percent}%",
+                    )
+                )
 
             # Check CPU usage
             cpu_percent = psutil.cpu_percent(interval=1)
             if cpu_percent > 80:
-                checks.append(SafetyCheck(
-                    name="cpu_check",
-                    description="System CPU usage",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.CAUTION,
-                    message=f"High CPU usage: {cpu_percent}%",
-                    details={"cpu_percent": cpu_percent}
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="cpu_check",
+                        description="System CPU usage",
+                        result=ValidationResult.WARNING,
+                        level=SafetyLevel.CAUTION,
+                        message=f"High CPU usage: {cpu_percent}%",
+                        details={"cpu_percent": cpu_percent},
+                    )
+                )
             else:
-                checks.append(SafetyCheck(
-                    name="cpu_check",
-                    description="System CPU usage",
-                    result=ValidationResult.PASS,
-                    level=SafetyLevel.SAFE,
-                    message=f"CPU usage normal: {cpu_percent}%"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="cpu_check",
+                        description="System CPU usage",
+                        result=ValidationResult.PASS,
+                        level=SafetyLevel.SAFE,
+                        message=f"CPU usage normal: {cpu_percent}%",
+                    )
+                )
 
         except Exception as e:
-            checks.append(SafetyCheck(
-                name="system_resources",
-                description="System resource check",
-                result=ValidationResult.ERROR,
-                level=SafetyLevel.DANGEROUS,
-                message=f"Failed to check system resources: {e}"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="system_resources",
+                    description="System resource check",
+                    result=ValidationResult.ERROR,
+                    level=SafetyLevel.DANGEROUS,
+                    message=f"Failed to check system resources: {e}",
+                )
+            )
 
         return checks
 
@@ -411,30 +443,36 @@ class SafetyValidator:
                 test_file.write_text("test")
                 test_file.unlink()
 
-                checks.append(SafetyCheck(
-                    name="fs_permissions",
-                    description="File system write permissions",
-                    result=ValidationResult.PASS,
-                    level=SafetyLevel.SAFE,
-                    message="Write permissions verified"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="fs_permissions",
+                        description="File system write permissions",
+                        result=ValidationResult.PASS,
+                        level=SafetyLevel.SAFE,
+                        message="Write permissions verified",
+                    )
+                )
             except PermissionError:
-                checks.append(SafetyCheck(
-                    name="fs_permissions",
-                    description="File system write permissions",
-                    result=ValidationResult.FAIL,
-                    level=SafetyLevel.CRITICAL,
-                    message="No write permission to project directory"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="fs_permissions",
+                        description="File system write permissions",
+                        result=ValidationResult.FAIL,
+                        level=SafetyLevel.CRITICAL,
+                        message="No write permission to project directory",
+                    )
+                )
 
         except Exception as e:
-            checks.append(SafetyCheck(
-                name="fs_permissions",
-                description="File system permissions check",
-                result=ValidationResult.ERROR,
-                level=SafetyLevel.DANGEROUS,
-                message=f"Permission check failed: {e}"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="fs_permissions",
+                    description="File system permissions check",
+                    result=ValidationResult.ERROR,
+                    level=SafetyLevel.DANGEROUS,
+                    message=f"Permission check failed: {e}",
+                )
+            )
 
         return checks
 
@@ -455,39 +493,50 @@ class SafetyValidator:
             required_gb = (total_size * 2) / (1024**3)  # 2x for safety margin
 
             if available_gb < required_gb:
-                checks.append(SafetyCheck(
-                    name="disk_space",
-                    description="Available disk space for backup",
-                    result=ValidationResult.FAIL,
-                    level=SafetyLevel.CRITICAL,
-                    message=f"Insufficient disk space: {available_gb:.2f}GB available, {required_gb:.2f}GB required",
-                    details={"available_gb": available_gb, "required_gb": required_gb}
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="disk_space",
+                        description="Available disk space for backup",
+                        result=ValidationResult.FAIL,
+                        level=SafetyLevel.CRITICAL,
+                        message=f"Insufficient disk space: {available_gb:.2f}GB available, {required_gb:.2f}GB required",
+                        details={
+                            "available_gb": available_gb,
+                            "required_gb": required_gb,
+                        },
+                    )
+                )
             elif available_gb < required_gb * 2:
-                checks.append(SafetyCheck(
-                    name="disk_space",
-                    description="Available disk space for backup",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.CAUTION,
-                    message=f"Limited disk space: {available_gb:.2f}GB available, {required_gb:.2f}GB required"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="disk_space",
+                        description="Available disk space for backup",
+                        result=ValidationResult.WARNING,
+                        level=SafetyLevel.CAUTION,
+                        message=f"Limited disk space: {available_gb:.2f}GB available, {required_gb:.2f}GB required",
+                    )
+                )
             else:
-                checks.append(SafetyCheck(
-                    name="disk_space",
-                    description="Available disk space for backup",
-                    result=ValidationResult.PASS,
-                    level=SafetyLevel.SAFE,
-                    message=f"Sufficient disk space: {available_gb:.2f}GB available"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="disk_space",
+                        description="Available disk space for backup",
+                        result=ValidationResult.PASS,
+                        level=SafetyLevel.SAFE,
+                        message=f"Sufficient disk space: {available_gb:.2f}GB available",
+                    )
+                )
 
         except Exception as e:
-            checks.append(SafetyCheck(
-                name="disk_space",
-                description="Disk space availability check",
-                result=ValidationResult.ERROR,
-                level=SafetyLevel.DANGEROUS,
-                message=f"Disk space check failed: {e}"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="disk_space",
+                    description="Disk space availability check",
+                    result=ValidationResult.ERROR,
+                    level=SafetyLevel.DANGEROUS,
+                    message=f"Disk space check failed: {e}",
+                )
+            )
 
         return checks
 
@@ -496,11 +545,7 @@ class SafetyValidator:
         checks = []
 
         # Check for essential project files
-        essential_files = [
-            "pyproject.toml",
-            "setup.py",
-            "Makefile"
-        ]
+        essential_files = ["pyproject.toml", "setup.py", "Makefile"]
 
         missing_files = []
         for file_name in essential_files:
@@ -509,29 +554,35 @@ class SafetyValidator:
 
         if missing_files:
             if "pyproject.toml" in missing_files and "setup.py" in missing_files:
-                checks.append(SafetyCheck(
-                    name="project_integrity",
-                    description="Essential project files",
-                    result=ValidationResult.FAIL,
-                    level=SafetyLevel.CRITICAL,
-                    message=f"Critical project files missing: {missing_files}"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="project_integrity",
+                        description="Essential project files",
+                        result=ValidationResult.FAIL,
+                        level=SafetyLevel.CRITICAL,
+                        message=f"Critical project files missing: {missing_files}",
+                    )
+                )
             else:
-                checks.append(SafetyCheck(
+                checks.append(
+                    SafetyCheck(
+                        name="project_integrity",
+                        description="Essential project files",
+                        result=ValidationResult.WARNING,
+                        level=SafetyLevel.CAUTION,
+                        message=f"Some project files missing: {missing_files}",
+                    )
+                )
+        else:
+            checks.append(
+                SafetyCheck(
                     name="project_integrity",
                     description="Essential project files",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.CAUTION,
-                    message=f"Some project files missing: {missing_files}"
-                ))
-        else:
-            checks.append(SafetyCheck(
-                name="project_integrity",
-                description="Essential project files",
-                result=ValidationResult.PASS,
-                level=SafetyLevel.SAFE,
-                message="All essential project files present"
-            ))
+                    result=ValidationResult.PASS,
+                    level=SafetyLevel.SAFE,
+                    message="All essential project files present",
+                )
+            )
 
         return checks
 
@@ -542,13 +593,15 @@ class SafetyValidator:
         try:
             # Check if it's a Git repository
             if not (self.project_root / ".git").exists():
-                checks.append(SafetyCheck(
-                    name="git_repository",
-                    description="Git repository status",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.CAUTION,
-                    message="Not a Git repository - version control protection unavailable"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="git_repository",
+                        description="Git repository status",
+                        result=ValidationResult.WARNING,
+                        level=SafetyLevel.CAUTION,
+                        message="Not a Git repository - version control protection unavailable",
+                    )
+                )
                 return checks
 
             # Try to get Git status
@@ -558,53 +611,67 @@ class SafetyValidator:
                     cwd=self.project_root,
                     capture_output=True,
                     text=True,
-                    timeout=10
+                    timeout=10,
                 )
 
                 if result.returncode == 0:
                     if result.stdout.strip():
-                        checks.append(SafetyCheck(
+                        checks.append(
+                            SafetyCheck(
+                                name="git_repository",
+                                description="Git repository status",
+                                result=ValidationResult.WARNING,
+                                level=SafetyLevel.CAUTION,
+                                message="Uncommitted changes detected - consider committing before cleanup",
+                                details={
+                                    "uncommitted_files": (
+                                        result.stdout.strip().split("\n")
+                                    )
+                                },
+                            )
+                        )
+                    else:
+                        checks.append(
+                            SafetyCheck(
+                                name="git_repository",
+                                description="Git repository status",
+                                result=ValidationResult.PASS,
+                                level=SafetyLevel.SAFE,
+                                message="Git repository clean",
+                            )
+                        )
+                else:
+                    checks.append(
+                        SafetyCheck(
                             name="git_repository",
                             description="Git repository status",
                             result=ValidationResult.WARNING,
                             level=SafetyLevel.CAUTION,
-                            message="Uncommitted changes detected - consider committing before cleanup",
-                            details={"uncommitted_files": result.stdout.strip().split('\n')}
-                        ))
-                    else:
-                        checks.append(SafetyCheck(
-                            name="git_repository",
-                            description="Git repository status",
-                            result=ValidationResult.PASS,
-                            level=SafetyLevel.SAFE,
-                            message="Git repository clean"
-                        ))
-                else:
-                    checks.append(SafetyCheck(
+                            message="Could not determine Git status",
+                        )
+                    )
+
+            except subprocess.TimeoutExpired:
+                checks.append(
+                    SafetyCheck(
                         name="git_repository",
                         description="Git repository status",
                         result=ValidationResult.WARNING,
                         level=SafetyLevel.CAUTION,
-                        message="Could not determine Git status"
-                    ))
-
-            except subprocess.TimeoutExpired:
-                checks.append(SafetyCheck(
-                    name="git_repository",
-                    description="Git repository status",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.CAUTION,
-                    message="Git status check timed out"
-                ))
+                        message="Git status check timed out",
+                    )
+                )
 
         except Exception as e:
-            checks.append(SafetyCheck(
-                name="git_repository",
-                description="Git repository status check",
-                result=ValidationResult.ERROR,
-                level=SafetyLevel.CAUTION,
-                message=f"Git status check failed: {e}"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="git_repository",
+                    description="Git repository status check",
+                    result=ValidationResult.ERROR,
+                    level=SafetyLevel.CAUTION,
+                    message=f"Git status check failed: {e}",
+                )
+            )
 
         return checks
 
@@ -623,46 +690,54 @@ class SafetyValidator:
                     break
 
             if main_module:
-                checks.append(SafetyCheck(
-                    name="build_dependencies",
-                    description="Project build structure",
-                    result=ValidationResult.PASS,
-                    level=SafetyLevel.SAFE,
-                    message=f"Main module directory found: {main_module}"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="build_dependencies",
+                        description="Project build structure",
+                        result=ValidationResult.PASS,
+                        level=SafetyLevel.SAFE,
+                        message=f"Main module directory found: {main_module}",
+                    )
+                )
             else:
-                checks.append(SafetyCheck(
-                    name="build_dependencies",
-                    description="Project build structure",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.CAUTION,
-                    message="Could not identify main module directory"
-                ))
+                checks.append(
+                    SafetyCheck(
+                        name="build_dependencies",
+                        description="Project build structure",
+                        result=ValidationResult.WARNING,
+                        level=SafetyLevel.CAUTION,
+                        message="Could not identify main module directory",
+                    )
+                )
 
         except Exception as e:
-            checks.append(SafetyCheck(
-                name="build_dependencies",
-                description="Build dependencies check",
-                result=ValidationResult.ERROR,
-                level=SafetyLevel.CAUTION,
-                message=f"Build check failed: {e}"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="build_dependencies",
+                    description="Build dependencies check",
+                    result=ValidationResult.ERROR,
+                    level=SafetyLevel.CAUTION,
+                    message=f"Build check failed: {e}",
+                )
+            )
 
         return checks
 
-    def _check_file_criticality(self, files_to_process: List[Path]) -> List[SafetyCheck]:
+    def _check_file_criticality(
+        self, files_to_process: List[Path]
+    ) -> List[SafetyCheck]:
         """Check criticality of files to be processed."""
         checks = []
 
         critical_patterns = [
-            "*.py",       # Source code
-            "*.toml",     # Configuration
-            "*.yaml",     # Configuration
-            "*.yml",      # Configuration
-            "*.json",     # Data/config
-            "Makefile",   # Build system
-            "README*",    # Documentation
-            "LICENSE*"    # Legal
+            "*.py",  # Source code
+            "*.toml",  # Configuration
+            "*.yaml",  # Configuration
+            "*.yml",  # Configuration
+            "*.json",  # Data/config
+            "Makefile",  # Build system
+            "README*",  # Documentation
+            "LICENSE*",  # Legal
         ]
 
         critical_files = []
@@ -674,63 +749,81 @@ class SafetyValidator:
                         break
 
         if critical_files:
-            if len(critical_files) > len(files_to_process) * 0.1:  # More than 10% critical
-                checks.append(SafetyCheck(
-                    name="file_criticality",
-                    description="Critical file analysis",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.DANGEROUS,
-                    message=f"Many critical files to be processed: {len(critical_files)}",
-                    details={"critical_files": [str(f) for f in critical_files[:10]]}
-                ))
+            if (
+                len(critical_files) > len(files_to_process) * 0.1
+            ):  # More than 10% critical
+                checks.append(
+                    SafetyCheck(
+                        name="file_criticality",
+                        description="Critical file analysis",
+                        result=ValidationResult.WARNING,
+                        level=SafetyLevel.DANGEROUS,
+                        message=f"Many critical files to be processed: {len(critical_files)}",
+                        details={
+                            "critical_files": [str(f) for f in critical_files[:10]]
+                        },
+                    )
+                )
             else:
-                checks.append(SafetyCheck(
+                checks.append(
+                    SafetyCheck(
+                        name="file_criticality",
+                        description="Critical file analysis",
+                        result=ValidationResult.WARNING,
+                        level=SafetyLevel.CAUTION,
+                        message=f"Some critical files to be processed: {len(critical_files)}",
+                    )
+                )
+        else:
+            checks.append(
+                SafetyCheck(
                     name="file_criticality",
                     description="Critical file analysis",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.CAUTION,
-                    message=f"Some critical files to be processed: {len(critical_files)}"
-                ))
-        else:
-            checks.append(SafetyCheck(
-                name="file_criticality",
-                description="Critical file analysis",
-                result=ValidationResult.PASS,
-                level=SafetyLevel.SAFE,
-                message="No critical files in processing list"
-            ))
+                    result=ValidationResult.PASS,
+                    level=SafetyLevel.SAFE,
+                    message="No critical files in processing list",
+                )
+            )
 
         return checks
 
-    def _check_file_dependencies(self, files_to_process: List[Path]) -> List[SafetyCheck]:
+    def _check_file_dependencies(
+        self, files_to_process: List[Path]
+    ) -> List[SafetyCheck]:
         """Check for file dependencies that might be broken."""
         checks = []
 
         # This is a simplified dependency check
         # In a full implementation, this would analyze imports, references, etc.
 
-        checks.append(SafetyCheck(
-            name="file_dependencies",
-            description="File dependency analysis",
-            result=ValidationResult.PASS,
-            level=SafetyLevel.SAFE,
-            message="Dependency analysis completed (basic check)"
-        ))
+        checks.append(
+            SafetyCheck(
+                name="file_dependencies",
+                description="File dependency analysis",
+                result=ValidationResult.PASS,
+                level=SafetyLevel.SAFE,
+                message="Dependency analysis completed (basic check)",
+            )
+        )
 
         return checks
 
-    def _check_backup_capability(self, files_to_process: List[Path]) -> List[SafetyCheck]:
+    def _check_backup_capability(
+        self, files_to_process: List[Path]
+    ) -> List[SafetyCheck]:
         """Check if backup can be created for the files."""
         checks = []
 
         if not self.backup_manager:
-            checks.append(SafetyCheck(
-                name="backup_capability",
-                description="Backup system availability",
-                result=ValidationResult.WARNING,
-                level=SafetyLevel.CAUTION,
-                message="No backup manager available"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="backup_capability",
+                    description="Backup system availability",
+                    result=ValidationResult.WARNING,
+                    level=SafetyLevel.CAUTION,
+                    message="No backup manager available",
+                )
+            )
             return checks
 
         try:
@@ -739,22 +832,26 @@ class SafetyValidator:
             backup_test_file.write_text("test")
             backup_test_file.unlink()
 
-            checks.append(SafetyCheck(
-                name="backup_capability",
-                description="Backup system availability",
-                result=ValidationResult.PASS,
-                level=SafetyLevel.SAFE,
-                message="Backup system ready"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="backup_capability",
+                    description="Backup system availability",
+                    result=ValidationResult.PASS,
+                    level=SafetyLevel.SAFE,
+                    message="Backup system ready",
+                )
+            )
 
         except Exception as e:
-            checks.append(SafetyCheck(
-                name="backup_capability",
-                description="Backup system availability",
-                result=ValidationResult.FAIL,
-                level=SafetyLevel.CRITICAL,
-                message=f"Backup system not available: {e}"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="backup_capability",
+                    description="Backup system availability",
+                    result=ValidationResult.FAIL,
+                    level=SafetyLevel.CRITICAL,
+                    message=f"Backup system not available: {e}",
+                )
+            )
 
         return checks
 
@@ -768,43 +865,53 @@ class SafetyValidator:
 
             main_package = self.project_root / "xraylabtool" / "__init__.py"
             if main_package.exists():
-                spec = importlib.util.spec_from_file_location("xraylabtool", main_package)
+                spec = importlib.util.spec_from_file_location(
+                    "xraylabtool", main_package
+                )
                 if spec and spec.loader:
                     module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(module)
 
-                    checks.append(SafetyCheck(
-                        name="import_verification",
-                        description="Package import verification",
-                        result=ValidationResult.PASS,
-                        level=SafetyLevel.SAFE,
-                        message="Main package imports successfully"
-                    ))
+                    checks.append(
+                        SafetyCheck(
+                            name="import_verification",
+                            description="Package import verification",
+                            result=ValidationResult.PASS,
+                            level=SafetyLevel.SAFE,
+                            message="Main package imports successfully",
+                        )
+                    )
                 else:
-                    checks.append(SafetyCheck(
+                    checks.append(
+                        SafetyCheck(
+                            name="import_verification",
+                            description="Package import verification",
+                            result=ValidationResult.WARNING,
+                            level=SafetyLevel.CAUTION,
+                            message="Could not create import spec",
+                        )
+                    )
+            else:
+                checks.append(
+                    SafetyCheck(
                         name="import_verification",
                         description="Package import verification",
                         result=ValidationResult.WARNING,
                         level=SafetyLevel.CAUTION,
-                        message="Could not create import spec"
-                    ))
-            else:
-                checks.append(SafetyCheck(
-                    name="import_verification",
-                    description="Package import verification",
-                    result=ValidationResult.WARNING,
-                    level=SafetyLevel.CAUTION,
-                    message="Main package __init__.py not found"
-                ))
+                        message="Main package __init__.py not found",
+                    )
+                )
 
         except Exception as e:
-            checks.append(SafetyCheck(
-                name="import_verification",
-                description="Package import verification",
-                result=ValidationResult.FAIL,
-                level=SafetyLevel.DANGEROUS,
-                message=f"Import verification failed: {e}"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="import_verification",
+                    description="Package import verification",
+                    result=ValidationResult.FAIL,
+                    level=SafetyLevel.DANGEROUS,
+                    message=f"Import verification failed: {e}",
+                )
+            )
 
         return checks
 
@@ -817,21 +924,25 @@ class SafetyValidator:
         build_config_found = any((self.project_root / f).exists() for f in build_files)
 
         if build_config_found:
-            checks.append(SafetyCheck(
-                name="build_verification",
-                description="Build capability verification",
-                result=ValidationResult.PASS,
-                level=SafetyLevel.SAFE,
-                message="Build configuration files present"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="build_verification",
+                    description="Build capability verification",
+                    result=ValidationResult.PASS,
+                    level=SafetyLevel.SAFE,
+                    message="Build configuration files present",
+                )
+            )
         else:
-            checks.append(SafetyCheck(
-                name="build_verification",
-                description="Build capability verification",
-                result=ValidationResult.WARNING,
-                level=SafetyLevel.CAUTION,
-                message="No build configuration files found"
-            ))
+            checks.append(
+                SafetyCheck(
+                    name="build_verification",
+                    description="Build capability verification",
+                    result=ValidationResult.WARNING,
+                    level=SafetyLevel.CAUTION,
+                    message="No build configuration files found",
+                )
+            )
 
         return checks
 
@@ -840,20 +951,20 @@ class SafetyValidator:
         checks = []
 
         # This would be a more complex analysis in a full implementation
-        checks.append(SafetyCheck(
-            name="broken_references",
-            description="Broken reference analysis",
-            result=ValidationResult.PASS,
-            level=SafetyLevel.SAFE,
-            message="Reference analysis completed (basic check)"
-        ))
+        checks.append(
+            SafetyCheck(
+                name="broken_references",
+                description="Broken reference analysis",
+                result=ValidationResult.PASS,
+                level=SafetyLevel.SAFE,
+                message="Reference analysis completed (basic check)",
+            )
+        )
 
         return checks
 
     def _generate_validation_report(
-        self,
-        checks: List[SafetyCheck],
-        operation_type: str
+        self, checks: List[SafetyCheck], operation_type: str
     ) -> ValidationReport:
         """Generate comprehensive validation report."""
         # Count results by type
@@ -899,5 +1010,5 @@ class SafetyValidator:
             overall_result=overall_result,
             checks=checks,
             recommendations=recommendations,
-            required_actions=required_actions
+            required_actions=required_actions,
         )

@@ -10,7 +10,8 @@ from __future__ import annotations
 
 from functools import wraps
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
 
 import numpy as np
 
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
     )
 
 
-def ensure_c_contiguous(func):
+def ensure_c_contiguous(func: Callable) -> Callable:
     """
     Decorator to ensure arrays are C-contiguous for optimal performance.
 
@@ -34,7 +35,7 @@ def ensure_c_contiguous(func):
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs) -> Any:
         # Convert numpy array arguments to C-contiguous if needed
         new_args = []
         for arg in args:
@@ -641,7 +642,7 @@ def adaptive_simd_interpolation_batch(
         return f1_total, f2_total
 
 
-def configure_numpy_for_performance():
+def configure_numpy_for_performance() -> None:
     """
     Configure NumPy for optimal performance on the current system.
 

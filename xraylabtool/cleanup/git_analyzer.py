@@ -16,16 +16,21 @@ from datetime import datetime, timedelta
 try:
     import git
     from git import Repo, InvalidGitRepositoryError, GitCommandError
+
     GIT_AVAILABLE = True
 except ImportError:
     GIT_AVAILABLE = False
+
     # Create mock classes for when GitPython is not available
     class Repo:
         pass
+
     class InvalidGitRepositoryError(Exception):
         pass
+
     class GitCommandError(Exception):
         pass
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +38,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FileHistory:
     """File history information from Git."""
+
     file_path: Path
     first_commit_date: Optional[datetime]
     last_commit_date: Optional[datetime]
@@ -46,6 +52,7 @@ class FileHistory:
 @dataclass
 class AgeAnalysis:
     """File age analysis results."""
+
     days_since_creation: int
     days_since_last_commit: int
     days_since_last_modification: int
@@ -61,11 +68,7 @@ class GitChangeAnalyzer:
     and change patterns to inform cleanup decisions.
     """
 
-    def __init__(
-        self,
-        repo_path: Union[str, Path],
-        stale_threshold_days: int = 90
-    ):
+    def __init__(self, repo_path: Union[str, Path], stale_threshold_days: int = 90):
         """
         Initialize the Git analyzer.
 
@@ -122,7 +125,7 @@ class GitChangeAnalyzer:
             if commits:
                 # Extract commit information
                 first_commit = commits[-1]  # Oldest commit
-                last_commit = commits[0]    # Most recent commit
+                last_commit = commits[0]  # Most recent commit
 
                 first_commit_date = datetime.fromtimestamp(first_commit.committed_date)
                 last_commit_date = datetime.fromtimestamp(last_commit.committed_date)
@@ -137,7 +140,7 @@ class GitChangeAnalyzer:
                     authors=authors,
                     is_tracked=is_tracked,
                     is_staged=is_staged,
-                    is_modified=is_modified
+                    is_modified=is_modified,
                 )
             else:
                 # File exists but has no commit history
@@ -149,7 +152,7 @@ class GitChangeAnalyzer:
                     authors=set(),
                     is_tracked=is_tracked,
                     is_staged=is_staged,
-                    is_modified=is_modified
+                    is_modified=is_modified,
                 )
 
         except Exception as e:
@@ -211,7 +214,9 @@ class GitChangeAnalyzer:
                 days_since_last_commit=days_since_fs_modification,
                 days_since_last_modification=days_since_fs_modification,
                 is_stale=days_since_fs_modification > self.stale_threshold_days,
-                staleness_score=min(1.0, days_since_fs_modification / self.stale_threshold_days)
+                staleness_score=min(
+                    1.0, days_since_fs_modification / self.stale_threshold_days
+                ),
             )
 
         history = self.get_file_history(file_path)
@@ -229,16 +234,18 @@ class GitChangeAnalyzer:
 
         # Determine staleness
         is_stale = (
-            days_since_last_commit > self.stale_threshold_days and
-            not history.is_modified and
-            not history.is_staged
+            days_since_last_commit > self.stale_threshold_days
+            and not history.is_modified
+            and not history.is_staged
         )
 
         # Calculate staleness score (0.0 = fresh, 1.0 = very stale)
         staleness_factors = [
             days_since_last_commit / self.stale_threshold_days,
             0.0 if history.is_modified else 0.2,  # Modified files are fresher
-            0.0 if history.commit_count > 1 else 0.3,  # Files with history are more important
+            (
+                0.0 if history.commit_count > 1 else 0.3
+            ),  # Files with history are more important
         ]
         staleness_score = min(1.0, sum(staleness_factors) / len(staleness_factors))
 
@@ -247,7 +254,7 @@ class GitChangeAnalyzer:
             days_since_last_commit=days_since_last_commit,
             days_since_last_modification=days_since_fs_modification,
             is_stale=is_stale,
-            staleness_score=staleness_score
+            staleness_score=staleness_score,
         )
 
     def get_ignored_patterns(self) -> List[str]:
@@ -261,14 +268,14 @@ class GitChangeAnalyzer:
             return []
 
         patterns = []
-        gitignore_path = self.repo_path / '.gitignore'
+        gitignore_path = self.repo_path / ".gitignore"
 
         try:
             if gitignore_path.exists():
-                content = gitignore_path.read_text(encoding='utf-8')
-                for line in content.split('\n'):
+                content = gitignore_path.read_text(encoding="utf-8")
+                for line in content.split("\n"):
                     line = line.strip()
-                    if line and not line.startswith('#'):
+                    if line and not line.startswith("#"):
                         patterns.append(line)
         except Exception as e:
             logger.error(f"Failed to read .gitignore: {e}")
@@ -276,9 +283,7 @@ class GitChangeAnalyzer:
         return patterns
 
     def find_large_files_in_history(
-        self,
-        size_threshold_mb: float = 10.0,
-        max_files: int = 50
+        self, size_threshold_mb: float = 10.0, max_files: int = 50
     ) -> List[Tuple[Path, float]]:
         """
         Find large files that might have been accidentally committed.
@@ -299,8 +304,8 @@ class GitChangeAnalyzer:
             # Check files in the current working tree
             for root, dirs, files in os.walk(self.repo_path):
                 # Skip .git directory
-                if '.git' in dirs:
-                    dirs.remove('.git')
+                if ".git" in dirs:
+                    dirs.remove(".git")
 
                 for filename in files:
                     file_path = Path(root) / filename
@@ -334,10 +339,10 @@ class GitChangeAnalyzer:
         """
         if not self.is_git_available():
             return {
-                'safe_to_remove': False,
-                'confidence': 0.0,
-                'reasons': ['Git not available'],
-                'git_status': 'unknown'
+                "safe_to_remove": False,
+                "confidence": 0.0,
+                "reasons": ["Git not available"],
+                "git_status": "unknown",
             }
 
         history = self.get_file_history(file_path)
@@ -366,12 +371,16 @@ class GitChangeAnalyzer:
 
         # Old, unchanged files might be artifacts
         elif age_analysis.is_stale and not history.is_modified:
-            reasons.append(f"File is stale ({age_analysis.days_since_last_commit} days old)")
+            reasons.append(
+                f"File is stale ({age_analysis.days_since_last_commit} days old)"
+            )
             confidence += 0.2
 
         # Files with extensive history are more important
         if history.commit_count > 10:
-            reasons.append(f"File has extensive history ({history.commit_count} commits)")
+            reasons.append(
+                f"File has extensive history ({history.commit_count} commits)"
+            )
             confidence -= 0.2
 
         # Multiple authors indicate collaborative work
@@ -380,16 +389,16 @@ class GitChangeAnalyzer:
             confidence -= 0.1
 
         return {
-            'safe_to_remove': safe_to_remove and confidence > 0.6,
-            'confidence': max(0.0, min(1.0, confidence)),
-            'reasons': reasons,
-            'git_status': {
-                'tracked': history.is_tracked,
-                'modified': history.is_modified,
-                'staged': history.is_staged,
-                'commit_count': history.commit_count,
-                'days_since_last_commit': age_analysis.days_since_last_commit
-            }
+            "safe_to_remove": safe_to_remove and confidence > 0.6,
+            "confidence": max(0.0, min(1.0, confidence)),
+            "reasons": reasons,
+            "git_status": {
+                "tracked": history.is_tracked,
+                "modified": history.is_modified,
+                "staged": history.is_staged,
+                "commit_count": history.commit_count,
+                "days_since_last_commit": age_analysis.days_since_last_commit,
+            },
         }
 
     def _get_relative_path(self, file_path: Path) -> Path:
@@ -444,7 +453,7 @@ class GitChangeAnalyzer:
                 authors=set(),
                 is_tracked=False,
                 is_staged=False,
-                is_modified=False
+                is_modified=False,
             )
         except (OSError, IOError):
             return FileHistory(
@@ -455,5 +464,5 @@ class GitChangeAnalyzer:
                 authors=set(),
                 is_tracked=False,
                 is_staged=False,
-                is_modified=False
+                is_modified=False,
             )

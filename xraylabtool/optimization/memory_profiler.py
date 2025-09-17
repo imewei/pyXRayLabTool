@@ -198,7 +198,7 @@ class MemoryProfiler:
             # Monitor peak memory during execution
             peak_memory = start_snapshot.rss_mb
 
-            def memory_monitor():
+            def memory_monitor() -> None:
                 nonlocal peak_memory
                 while True:
                     try:

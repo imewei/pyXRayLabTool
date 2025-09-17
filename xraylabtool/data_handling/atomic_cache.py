@@ -478,9 +478,9 @@ class FastAtomicDataProvider:
 
     def __init__(self) -> None:
         """Initialize the atomic data provider."""
-        self._scattering_cache: dict[
-            str, tuple[np.ndarray, np.ndarray, np.ndarray]
-        ] = {}
+        self._scattering_cache: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]] = (
+            {}
+        )
 
     def get_scattering_factors(
         self, element: str, energies: EnergyArray

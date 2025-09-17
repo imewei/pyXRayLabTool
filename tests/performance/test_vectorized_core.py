@@ -119,9 +119,9 @@ class TestVectorizedCore(BasePerformanceTest):
                         if not np.any(mask):
                             rel_error = np.max(abs_diff)
 
-                        assert rel_error < self.accuracy_tolerance, (
-                            f"Accuracy failure for {formula}, result {j}: relative error {rel_error:.2e} > {self.accuracy_tolerance:.2e}"
-                        )
+                        assert (
+                            rel_error < self.accuracy_tolerance
+                        ), f"Accuracy failure for {formula}, result {j}: relative error {rel_error:.2e} > {self.accuracy_tolerance:.2e}"
 
                         print(f"{formula}[{i}][{j}]: max rel error = {rel_error:.2e}")
 
@@ -199,15 +199,15 @@ class TestVectorizedCore(BasePerformanceTest):
                 )
 
                 # Check accuracy is preserved
-                assert benchmark_result["accuracy_preserved"], (
-                    f"Accuracy not preserved for {test_key}"
-                )
+                assert benchmark_result[
+                    "accuracy_preserved"
+                ], f"Accuracy not preserved for {test_key}"
 
                 # Check for performance improvement
                 min_expected_speedup = 1.1  # At least 10% improvement
-                assert benchmark_result["speedup"] > min_expected_speedup, (
-                    f"Insufficient speedup for {test_key}: {benchmark_result['speedup']:.2f}x < {min_expected_speedup}x"
-                )
+                assert (
+                    benchmark_result["speedup"] > min_expected_speedup
+                ), f"Insufficient speedup for {test_key}: {benchmark_result['speedup']:.2f}x < {min_expected_speedup}x"
 
                 print(
                     f"{test_key}: {benchmark_result['speedup']:.2f}x speedup "
@@ -222,9 +222,9 @@ class TestVectorizedCore(BasePerformanceTest):
 
         # Assert overall performance target
         target_speedup = 1.3  # Target at least 30% improvement on average
-        assert mean_speedup > target_speedup, (
-            f"Overall speedup target not met: {mean_speedup:.2f}x < {target_speedup}x"
-        )
+        assert (
+            mean_speedup > target_speedup
+        ), f"Overall speedup target not met: {mean_speedup:.2f}x < {target_speedup}x"
 
     def test_vectorized_interpolation_batch(self):
         """Test the vectorized interpolation batch function."""
@@ -357,9 +357,9 @@ class TestVectorizedCore(BasePerformanceTest):
                 zip(individual_result, batch_result, strict=False)
             ):
                 rel_error = np.max(np.abs((individual - batch) / (individual + 1e-15)))
-                assert rel_error < 1e-12, (
-                    f"Material {i}, result {j}: relative error {rel_error:.2e}"
-                )
+                assert (
+                    rel_error < 1e-12
+                ), f"Material {i}, result {j}: relative error {rel_error:.2e}"
 
         print(
             f"Multi-material batch processing validated for {len(test_materials)} materials"
@@ -602,9 +602,9 @@ class TestVectorizedCore(BasePerformanceTest):
 
         # Memory usage should be reasonable
         max_acceptable_memory = 200  # MB
-        assert memory_increase < max_acceptable_memory, (
-            f"Excessive memory usage: {memory_increase:.1f}MB > {max_acceptable_memory}MB"
-        )
+        assert (
+            memory_increase < max_acceptable_memory
+        ), f"Excessive memory usage: {memory_increase:.1f}MB > {max_acceptable_memory}MB"
 
         print(
             f"Memory usage: +{memory_increase:.1f}MB for {len(energies)} energies, {len(element_data)} elements"
@@ -682,9 +682,9 @@ class TestVectorizationRegression(BasePerformanceTest):
 
         # Assert minimum performance
         min_performance = 500  # calc/sec - should be much higher with vectorization
-        assert calc_per_second > min_performance, (
-            f"Vectorized performance regression: {calc_per_second:.0f} < {min_performance} calc/sec"
-        )
+        assert (
+            calc_per_second > min_performance
+        ), f"Vectorized performance regression: {calc_per_second:.0f} < {min_performance} calc/sec"
 
         print(f"Vectorized performance: {calc_per_second:.0f} calc/sec")
 

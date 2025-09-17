@@ -6,7 +6,7 @@ performance bottlenecks in calculation pipelines, memory allocation patterns,
 and vectorization opportunities.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 import cProfile
 from dataclasses import asdict, dataclass
@@ -133,7 +133,7 @@ class BottleneckAnalyzer:
         """
 
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> Any:
             profiler = cProfile.Profile()
 
             if self.enable_line_profiling:
@@ -177,7 +177,7 @@ class BottleneckAnalyzer:
     @contextmanager
     def profile_operation(
         self, operation_name: str, enable_memory_tracking: bool = True, **context
-    ):
+    ) -> Iterator[None]:
         """
         Context manager for profiling an operation.
 

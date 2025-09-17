@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class EmergencyStopReason(Enum):
     """Emergency stop reasons"""
+
     USER_ABORT = "user_abort"
     KEYBOARD_INTERRUPT = "keyboard_interrupt"
     SIGNAL_TERMINATION = "signal_termination"
@@ -35,6 +36,7 @@ class EmergencyStopReason(Enum):
 @dataclass
 class EmergencyContext:
     """Emergency stop context information"""
+
     reason: EmergencyStopReason
     message: str
     timestamp: float
@@ -77,7 +79,7 @@ class EmergencyStopManager:
 
         logger.debug("EmergencyStopManager initialized")
 
-    def install_signal_handlers(self):
+    def install_signal_handlers(self) -> None:
         """Install signal handlers for graceful shutdown"""
         if self.signal_handlers_installed:
             return
@@ -90,7 +92,7 @@ class EmergencyStopManager:
             signal.signal(signal.SIGTERM, self._signal_handler)
 
             # Install SIGUSR1 for emergency stop (Unix only)
-            if hasattr(signal, 'SIGUSR1'):
+            if hasattr(signal, "SIGUSR1"):
                 signal.signal(signal.SIGUSR1, self._emergency_signal_handler)
 
             self.signal_handlers_installed = True
@@ -101,7 +103,11 @@ class EmergencyStopManager:
 
     def _signal_handler(self, signum: int, frame):
         """Handle termination signals"""
-        reason = EmergencyStopReason.KEYBOARD_INTERRUPT if signum == signal.SIGINT else EmergencyStopReason.SIGNAL_TERMINATION
+        reason = (
+            EmergencyStopReason.KEYBOARD_INTERRUPT
+            if signum == signal.SIGINT
+            else EmergencyStopReason.SIGNAL_TERMINATION
+        )
         message = f"Received signal {signum}"
 
         logger.warning(f"Emergency stop triggered by signal {signum}")
@@ -110,8 +116,9 @@ class EmergencyStopManager:
     def _emergency_signal_handler(self, signum: int, frame):
         """Handle emergency signals (SIGUSR1)"""
         logger.critical(f"Emergency signal {signum} received - immediate stop")
-        self.trigger_emergency_stop(EmergencyStopReason.SIGNAL_TERMINATION,
-                                   f"Emergency signal {signum}")
+        self.trigger_emergency_stop(
+            EmergencyStopReason.SIGNAL_TERMINATION, f"Emergency signal {signum}"
+        )
 
     def register_cleanup_callback(self, callback: Callable):
         """Register callback for cleanup operations during emergency stop"""
@@ -123,7 +130,9 @@ class EmergencyStopManager:
         self.rollback_callbacks.append(callback)
         logger.debug(f"Registered rollback callback: {callback.__name__}")
 
-    def set_operation_context(self, operation_id: str, phase: str, timeout: Optional[float] = None):
+    def set_operation_context(
+        self, operation_id: str, phase: str, timeout: Optional[float] = None
+    ):
         """Set current operation context for emergency tracking"""
         self.current_operation_id = operation_id
         self.current_phase = phase
@@ -132,10 +141,12 @@ class EmergencyStopManager:
 
         logger.debug(f"Operation context set: {operation_id} - {phase}")
 
-    def start_resource_monitoring(self,
-                                disk_threshold_mb: float = 1000.0,
-                                memory_threshold_mb: float = 2000.0,
-                                check_interval: float = 5.0):
+    def start_resource_monitoring(
+        self,
+        disk_threshold_mb: float = 1000.0,
+        memory_threshold_mb: float = 2000.0,
+        check_interval: float = 5.0,
+    ):
         """Start resource monitoring with automatic emergency stop on threshold breach"""
         if self.resource_monitor:
             self.resource_monitor.stop()
@@ -144,13 +155,17 @@ class EmergencyStopManager:
             disk_threshold_mb=disk_threshold_mb,
             memory_threshold_mb=memory_threshold_mb,
             check_interval=check_interval,
-            emergency_callback=self._resource_threshold_breach
+            emergency_callback=self._resource_threshold_breach,
         )
 
         self.resource_monitor.start()
-        logger.info(f"Resource monitoring started (disk: {disk_threshold_mb}MB, memory: {memory_threshold_mb}MB)")
+        logger.info(
+            f"Resource monitoring started (disk: {disk_threshold_mb}MB, memory: {memory_threshold_mb}MB)"
+        )
 
-    def _resource_threshold_breach(self, resource_type: str, current_value: float, threshold: float):
+    def _resource_threshold_breach(
+        self, resource_type: str, current_value: float, threshold: float
+    ):
         """Handle resource threshold breach"""
         message = f"{resource_type} threshold breached: {current_value:.1f}MB >= {threshold:.1f}MB"
         logger.critical(message)
@@ -163,17 +178,21 @@ class EmergencyStopManager:
 
         elapsed = time.time() - self.operation_start_time
         if elapsed > self.operation_timeout:
-            message = f"Operation timeout: {elapsed:.1f}s > {self.operation_timeout:.1f}s"
+            message = (
+                f"Operation timeout: {elapsed:.1f}s > {self.operation_timeout:.1f}s"
+            )
             logger.error(message)
             self.trigger_emergency_stop(EmergencyStopReason.OPERATION_TIMEOUT, message)
             return True
 
         return False
 
-    def trigger_emergency_stop(self,
-                             reason: EmergencyStopReason,
-                             message: str,
-                             files_in_progress: Optional[List[Path]] = None):
+    def trigger_emergency_stop(
+        self,
+        reason: EmergencyStopReason,
+        message: str,
+        files_in_progress: Optional[List[Path]] = None,
+    ):
         """Trigger emergency stop with specified reason"""
         with self.abort_lock:
             if self.stop_requested:
@@ -186,7 +205,7 @@ class EmergencyStopManager:
                 timestamp=time.time(),
                 operation_id=self.current_operation_id,
                 current_phase=self.current_phase,
-                files_in_progress=files_in_progress or []
+                files_in_progress=files_in_progress or [],
             )
 
             logger.critical(f"EMERGENCY STOP TRIGGERED: {reason.value} - {message}")
@@ -218,10 +237,14 @@ class EmergencyStopManager:
             if self.emergency_context.rollback_required:
                 for callback in self.rollback_callbacks:
                     try:
-                        logger.debug(f"Executing rollback callback: {callback.__name__}")
+                        logger.debug(
+                            f"Executing rollback callback: {callback.__name__}"
+                        )
                         callback(self.emergency_context)
                     except Exception as e:
-                        logger.error(f"Rollback callback failed: {callback.__name__}: {e}")
+                        logger.error(
+                            f"Rollback callback failed: {callback.__name__}: {e}"
+                        )
 
             logger.info("Emergency stop procedures completed")
 
@@ -256,7 +279,7 @@ class EmergencyStopManager:
                 try:
                     tty.cbreak(sys.stdin.fileno())
                     char = sys.stdin.read(1)
-                    if char.lower() in ['q', '\x03', '\x1b']:  # 'q', Ctrl+C, ESC
+                    if char.lower() in ["q", "\x03", "\x1b"]:  # 'q', Ctrl+C, ESC
                         return True
                 finally:
                     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
@@ -268,11 +291,13 @@ class EmergencyStopManager:
         return False
 
     @contextmanager
-    def operation_context(self,
-                         operation_id: str,
-                         phase: str,
-                         timeout: Optional[float] = None,
-                         files_in_progress: Optional[List[Path]] = None):
+    def operation_context(
+        self,
+        operation_id: str,
+        phase: str,
+        timeout: Optional[float] = None,
+        files_in_progress: Optional[List[Path]] = None,
+    ):
         """Context manager for safe operation execution with emergency stop"""
         self.set_operation_context(operation_id, phase, timeout)
 
@@ -283,7 +308,7 @@ class EmergencyStopManager:
             self.trigger_emergency_stop(
                 EmergencyStopReason.KEYBOARD_INTERRUPT,
                 "Keyboard interrupt during operation",
-                files_in_progress
+                files_in_progress,
             )
             raise
 
@@ -292,13 +317,16 @@ class EmergencyStopManager:
                 self.trigger_emergency_stop(
                     EmergencyStopReason.CRITICAL_ERROR,
                     f"Critical error during operation: {e}",
-                    files_in_progress
+                    files_in_progress,
                 )
             raise
 
         finally:
             if self.resource_monitor:
                 self.resource_monitor.stop()
+            # Reset operation context when exiting
+            self.current_operation_id = ""
+            self.current_phase = ""
 
     def reset(self):
         """Reset emergency stop state for new operation"""
@@ -330,18 +358,22 @@ class EmergencyStopManager:
             "current_phase": self.emergency_context.current_phase,
             "cleanup_required": self.emergency_context.cleanup_required,
             "rollback_required": self.emergency_context.rollback_required,
-            "files_in_progress": [str(f) for f in self.emergency_context.files_in_progress]
+            "files_in_progress": [
+                str(f) for f in self.emergency_context.files_in_progress
+            ],
         }
 
 
 class ResourceMonitor:
     """Resource usage monitor with threshold-based emergency stop"""
 
-    def __init__(self,
-                 disk_threshold_mb: float,
-                 memory_threshold_mb: float,
-                 check_interval: float,
-                 emergency_callback: Callable[[str, float, float], None]):
+    def __init__(
+        self,
+        disk_threshold_mb: float,
+        memory_threshold_mb: float,
+        check_interval: float,
+        emergency_callback: Callable[[str, float, float], None],
+    ):
         self.disk_threshold_mb = disk_threshold_mb
         self.memory_threshold_mb = memory_threshold_mb
         self.check_interval = check_interval
@@ -374,11 +406,15 @@ class ResourceMonitor:
         while self.monitoring:
             try:
                 # Check available disk space
-                disk_usage = psutil.disk_usage('.')
+                disk_usage = psutil.disk_usage(".")
                 available_mb = disk_usage.free / (1024 * 1024)
 
                 if available_mb < self.disk_threshold_mb:
-                    self.emergency_callback("disk_space", self.disk_threshold_mb - available_mb, self.disk_threshold_mb)
+                    self.emergency_callback(
+                        "disk_space",
+                        self.disk_threshold_mb - available_mb,
+                        self.disk_threshold_mb,
+                    )
                     break
 
                 # Check available memory
@@ -386,7 +422,11 @@ class ResourceMonitor:
                 available_mb = memory.available / (1024 * 1024)
 
                 if available_mb < self.memory_threshold_mb:
-                    self.emergency_callback("memory", self.memory_threshold_mb - available_mb, self.memory_threshold_mb)
+                    self.emergency_callback(
+                        "memory",
+                        self.memory_threshold_mb - available_mb,
+                        self.memory_threshold_mb,
+                    )
                     break
 
                 time.sleep(self.check_interval)
@@ -400,7 +440,7 @@ class ResourceMonitor:
         try:
             import psutil
 
-            disk_usage = psutil.disk_usage('.')
+            disk_usage = psutil.disk_usage(".")
             memory = psutil.virtual_memory()
 
             return {
@@ -408,7 +448,7 @@ class ResourceMonitor:
                 "disk_used_mb": disk_usage.used / (1024 * 1024),
                 "memory_available_mb": memory.available / (1024 * 1024),
                 "memory_used_mb": memory.used / (1024 * 1024),
-                "memory_percent": memory.percent
+                "memory_percent": memory.percent,
             }
 
         except ImportError:
@@ -442,6 +482,7 @@ def get_emergency_manager() -> EmergencyStopManager:
 
 def emergency_stop_wrapper(func):
     """Decorator to wrap functions with emergency stop protection"""
+
     def wrapper(*args, **kwargs):
         manager = get_emergency_manager()
 
@@ -453,14 +494,14 @@ def emergency_stop_wrapper(func):
         except KeyboardInterrupt:
             manager.trigger_emergency_stop(
                 EmergencyStopReason.KEYBOARD_INTERRUPT,
-                f"Keyboard interrupt in {func.__name__}"
+                f"Keyboard interrupt in {func.__name__}",
             )
             raise
         except Exception as e:
             if not manager.stop_requested:
                 manager.trigger_emergency_stop(
                     EmergencyStopReason.CRITICAL_ERROR,
-                    f"Critical error in {func.__name__}: {e}"
+                    f"Critical error in {func.__name__}: {e}",
                 )
             raise
 

@@ -77,16 +77,16 @@ class TestBottleneckIdentification(BasePerformanceTest):
             )
 
             # Verify we found bottlenecks
-            assert len(function_bottlenecks) > 0, (
-                f"No function bottlenecks found for {profile_name}"
-            )
+            assert (
+                len(function_bottlenecks) > 0
+            ), f"No function bottlenecks found for {profile_name}"
 
             # Check that top bottleneck is significant
             if function_bottlenecks:
                 top_bottleneck = function_bottlenecks[0]
-                assert top_bottleneck.cumulative_time > 0, (
-                    "Top bottleneck has no cumulative time"
-                )
+                assert (
+                    top_bottleneck.cumulative_time > 0
+                ), "Top bottleneck has no cumulative time"
 
                 # Print bottleneck information for debugging
                 print(f"\nTop bottleneck for {profile_name}:")
@@ -176,9 +176,9 @@ class TestBottleneckIdentification(BasePerformanceTest):
                 print(f"    Suggestion: {op.suggested_optimization}")
 
         # Verify we found some opportunities (the codebase should have room for improvement)
-        assert len(opportunities) >= 0, (
-            "Should find vectorization opportunities in the codebase"
-        )
+        assert (
+            len(opportunities) >= 0
+        ), "Should find vectorization opportunities in the codebase"
 
     def test_function_call_overhead(self):
         """Analyze function call overhead patterns."""

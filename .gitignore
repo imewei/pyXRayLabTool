@@ -53,6 +53,9 @@ coverage.xml
 cover/
 bandit_report.json
 bandit-report.json
+baseline_ci_report.json
+performance_baseline_summary.json
+performance_history.json
 .benchmarks/
 .claude
 .agent-os/

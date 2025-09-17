@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FileMetadata:
     """Comprehensive metadata information for a file."""
+
     path: Path
     size_bytes: int
     created_time: datetime
@@ -46,6 +47,7 @@ class FileMetadata:
 @dataclass
 class OrphanAnalysis:
     """Analysis result for orphaned files."""
+
     file_path: Path
     is_orphaned: bool
     confidence: float
@@ -64,29 +66,50 @@ class MetadataAnalyzer:
 
     # Known temporary file patterns
     TEMP_FILE_PATTERNS = [
-        r'.*\.tmp$', r'.*\.temp$', r'.*\.bak$', r'.*\.backup$',
-        r'.*~$', r'\.#.*', r'#.*#$', r'.*\.swp$', r'.*\.swo$',
-        r'core\.\d+$', r'.*\.orig$', r'.*\.rej$'
+        r".*\.tmp$",
+        r".*\.temp$",
+        r".*\.bak$",
+        r".*\.backup$",
+        r".*~$",
+        r"\.#.*",
+        r"#.*#$",
+        r".*\.swp$",
+        r".*\.swo$",
+        r"core\.\d+$",
+        r".*\.orig$",
+        r".*\.rej$",
     ]
 
     # Build artifact patterns
     BUILD_ARTIFACT_PATTERNS = [
-        r'.*\.pyc$', r'.*\.pyo$', r'.*\.pyd$',
-        r'.*\.o$', r'.*\.obj$', r'.*\.so$', r'.*\.dll$',
-        r'.*\.class$', r'.*\.jar$', r'.*\.war$'
+        r".*\.pyc$",
+        r".*\.pyo$",
+        r".*\.pyd$",
+        r".*\.o$",
+        r".*\.obj$",
+        r".*\.so$",
+        r".*\.dll$",
+        r".*\.class$",
+        r".*\.jar$",
+        r".*\.war$",
     ]
 
     # Configuration file patterns
     CONFIG_FILE_PATTERNS = [
-        r'.*\.conf$', r'.*\.config$', r'.*\.ini$', r'.*\.cfg$',
-        r'.*\.properties$', r'.*\.env$', r'\.env.*$'
+        r".*\.conf$",
+        r".*\.config$",
+        r".*\.ini$",
+        r".*\.cfg$",
+        r".*\.properties$",
+        r".*\.env$",
+        r"\.env.*$",
     ]
 
     def __init__(
         self,
         root_path: Union[str, Path],
         max_file_size_mb: float = 100.0,
-        enable_content_analysis: bool = True
+        enable_content_analysis: bool = True,
     ):
         """
         Initialize the metadata analyzer.
@@ -101,9 +124,15 @@ class MetadataAnalyzer:
         self.enable_content_analysis = enable_content_analysis
 
         # Compile patterns for efficient matching
-        self._temp_patterns = [re.compile(p, re.IGNORECASE) for p in self.TEMP_FILE_PATTERNS]
-        self._build_patterns = [re.compile(p, re.IGNORECASE) for p in self.BUILD_ARTIFACT_PATTERNS]
-        self._config_patterns = [re.compile(p, re.IGNORECASE) for p in self.CONFIG_FILE_PATTERNS]
+        self._temp_patterns = [
+            re.compile(p, re.IGNORECASE) for p in self.TEMP_FILE_PATTERNS
+        ]
+        self._build_patterns = [
+            re.compile(p, re.IGNORECASE) for p in self.BUILD_ARTIFACT_PATTERNS
+        ]
+        self._config_patterns = [
+            re.compile(p, re.IGNORECASE) for p in self.CONFIG_FILE_PATTERNS
+        ]
 
         logger.info(f"Initialized MetadataAnalyzer for {self.root_path}")
 
@@ -148,12 +177,14 @@ class MetadataAnalyzer:
                 is_text=is_text,
                 is_binary=is_binary,
                 is_executable=is_executable,
-                file_type=file_type
+                file_type=file_type,
             )
 
             # Perform content analysis if enabled and file is not too large
-            if (self.enable_content_analysis and
-                size_bytes < self.max_file_size_mb * 1024 * 1024):
+            if (
+                self.enable_content_analysis
+                and size_bytes < self.max_file_size_mb * 1024 * 1024
+            ):
                 self._analyze_content(metadata)
 
             return metadata
@@ -172,13 +203,11 @@ class MetadataAnalyzer:
                 is_text=False,
                 is_binary=True,
                 is_executable=False,
-                file_type='unknown'
+                file_type="unknown",
             )
 
     def find_orphaned_files(
-        self,
-        file_paths: List[Path],
-        reference_extensions: Optional[Set[str]] = None
+        self, file_paths: List[Path], reference_extensions: Optional[Set[str]] = None
     ) -> List[OrphanAnalysis]:
         """
         Find files that appear to be orphaned (no references from other files).
@@ -191,7 +220,15 @@ class MetadataAnalyzer:
             List of orphan analysis results
         """
         if reference_extensions is None:
-            reference_extensions = {'.py', '.js', '.ts', '.json', '.yaml', '.yml', '.toml'}
+            reference_extensions = {
+                ".py",
+                ".js",
+                ".ts",
+                ".json",
+                ".yaml",
+                ".yml",
+                ".toml",
+            }
 
         # Build reference database
         reference_db = self._build_reference_database(file_paths, reference_extensions)
@@ -205,9 +242,7 @@ class MetadataAnalyzer:
         return orphan_analyses
 
     def analyze_duplicate_files(
-        self,
-        file_paths: List[Path],
-        compare_content: bool = True
+        self, file_paths: List[Path], compare_content: bool = True
     ) -> Dict[str, List[Path]]:
         """
         Find duplicate files based on size and optionally content.
@@ -247,8 +282,7 @@ class MetadataAnalyzer:
         return {k: v for k, v in duplicates.items() if len(v) > 1}
 
     def analyze_file_relationships(
-        self,
-        file_paths: List[Path]
+        self, file_paths: List[Path]
     ) -> Dict[Path, Set[Path]]:
         """
         Analyze relationships between files (imports, includes, references).
@@ -284,8 +318,7 @@ class MetadataAnalyzer:
         return relationships
 
     def get_cleanup_recommendations(
-        self,
-        file_paths: List[Path]
+        self, file_paths: List[Path]
     ) -> Dict[str, List[Path]]:
         """
         Generate cleanup recommendations based on metadata analysis.
@@ -297,13 +330,13 @@ class MetadataAnalyzer:
             Dictionary categorizing files by cleanup recommendation
         """
         recommendations = {
-            'safe_to_remove': [],
-            'likely_temporary': [],
-            'build_artifacts': [],
-            'duplicates': [],
-            'orphaned': [],
-            'review_needed': [],
-            'keep': []
+            "safe_to_remove": [],
+            "likely_temporary": [],
+            "build_artifacts": [],
+            "duplicates": [],
+            "orphaned": [],
+            "review_needed": [],
+            "keep": [],
         }
 
         # Analyze duplicates
@@ -316,7 +349,8 @@ class MetadataAnalyzer:
         # Analyze orphaned files
         orphan_analyses = self.find_orphaned_files(file_paths)
         orphaned_files = {
-            analysis.file_path for analysis in orphan_analyses
+            analysis.file_path
+            for analysis in orphan_analyses
             if analysis.is_orphaned and analysis.confidence > 0.7
         }
 
@@ -327,53 +361,73 @@ class MetadataAnalyzer:
 
                 # Check for temporary files
                 if self._matches_temp_patterns(file_path):
-                    recommendations['likely_temporary'].append(file_path)
+                    recommendations["likely_temporary"].append(file_path)
                     continue
 
                 # Check for build artifacts
                 if self._matches_build_patterns(file_path):
-                    recommendations['build_artifacts'].append(file_path)
+                    recommendations["build_artifacts"].append(file_path)
                     continue
 
                 # Check for duplicates
                 if file_path in duplicate_files:
-                    recommendations['duplicates'].append(file_path)
+                    recommendations["duplicates"].append(file_path)
                     continue
 
                 # Check for orphaned files
                 if file_path in orphaned_files:
-                    recommendations['orphaned'].append(file_path)
+                    recommendations["orphaned"].append(file_path)
                     continue
 
                 # Check for critical files
                 if self._is_critical_file(file_path, metadata):
-                    recommendations['keep'].append(file_path)
+                    recommendations["keep"].append(file_path)
                     continue
 
                 # Check for safe removal candidates
                 if self._is_safe_to_remove(file_path, metadata):
-                    recommendations['safe_to_remove'].append(file_path)
+                    recommendations["safe_to_remove"].append(file_path)
                     continue
 
                 # Default to review needed
-                recommendations['review_needed'].append(file_path)
+                recommendations["review_needed"].append(file_path)
 
             except Exception as e:
                 logger.error(f"Failed to categorize {file_path}: {e}")
-                recommendations['review_needed'].append(file_path)
+                recommendations["review_needed"].append(file_path)
 
         return recommendations
 
     def _is_text_file(self, file_path: Path, mime_type: Optional[str]) -> bool:
         """Determine if a file is a text file."""
-        if mime_type and mime_type.startswith('text/'):
+        if mime_type and mime_type.startswith("text/"):
             return True
 
         # Check common text file extensions
         text_extensions = {
-            '.txt', '.md', '.rst', '.py', '.js', '.ts', '.json', '.yaml', '.yml',
-            '.toml', '.ini', '.cfg', '.conf', '.log', '.csv', '.xml', '.html',
-            '.css', '.sql', '.sh', '.bash', '.fish', '.zsh'
+            ".txt",
+            ".md",
+            ".rst",
+            ".py",
+            ".js",
+            ".ts",
+            ".json",
+            ".yaml",
+            ".yml",
+            ".toml",
+            ".ini",
+            ".cfg",
+            ".conf",
+            ".log",
+            ".csv",
+            ".xml",
+            ".html",
+            ".css",
+            ".sql",
+            ".sh",
+            ".bash",
+            ".fish",
+            ".zsh",
         }
 
         return file_path.suffix.lower() in text_extensions
@@ -383,25 +437,25 @@ class MetadataAnalyzer:
         extension = file_path.suffix.lower()
 
         type_mapping = {
-            '.py': 'python_source',
-            '.js': 'javascript',
-            '.ts': 'typescript',
-            '.json': 'json_data',
-            '.yaml': 'yaml_config',
-            '.yml': 'yaml_config',
-            '.toml': 'toml_config',
-            '.ini': 'ini_config',
-            '.cfg': 'config_file',
-            '.conf': 'config_file',
-            '.log': 'log_file',
-            '.tmp': 'temporary',
-            '.bak': 'backup',
-            '.pyc': 'python_bytecode',
-            '.so': 'shared_library',
-            '.dll': 'dynamic_library'
+            ".py": "python_source",
+            ".js": "javascript",
+            ".ts": "typescript",
+            ".json": "json_data",
+            ".yaml": "yaml_config",
+            ".yml": "yaml_config",
+            ".toml": "toml_config",
+            ".ini": "ini_config",
+            ".cfg": "config_file",
+            ".conf": "config_file",
+            ".log": "log_file",
+            ".tmp": "temporary",
+            ".bak": "backup",
+            ".pyc": "python_bytecode",
+            ".so": "shared_library",
+            ".dll": "dynamic_library",
         }
 
-        return type_mapping.get(extension, 'unknown')
+        return type_mapping.get(extension, "unknown")
 
     def _analyze_content(self, metadata: FileMetadata) -> None:
         """Analyze file content and populate content-related metadata."""
@@ -409,18 +463,18 @@ class MetadataAnalyzer:
             return
 
         try:
-            content = metadata.path.read_text(encoding='utf-8', errors='ignore')
+            content = metadata.path.read_text(encoding="utf-8", errors="ignore")
 
             # Basic content statistics
-            metadata.line_count = len(content.split('\n'))
+            metadata.line_count = len(content.split("\n"))
             metadata.char_count = len(content)
 
             # Content-specific analysis based on file type
-            if metadata.file_type == 'python_source':
+            if metadata.file_type == "python_source":
                 self._analyze_python_content(content, metadata)
-            elif metadata.file_type in ['json_data']:
+            elif metadata.file_type in ["json_data"]:
                 self._analyze_json_content(content, metadata)
-            elif metadata.file_type in ['yaml_config', 'toml_config']:
+            elif metadata.file_type in ["yaml_config", "toml_config"]:
                 self._analyze_config_content(content, metadata)
 
             # General pattern analysis
@@ -449,12 +503,18 @@ class MetadataAnalyzer:
             metadata.references = references
 
             # Additional Python-specific analysis
-            metadata.content_summary.update({
-                'has_main': '__main__' in content,
-                'has_classes': any(isinstance(n, ast.ClassDef) for n in ast.walk(tree)),
-                'has_functions': any(isinstance(n, ast.FunctionDef) for n in ast.walk(tree)),
-                'import_count': len(imports)
-            })
+            metadata.content_summary.update(
+                {
+                    "has_main": "__main__" in content,
+                    "has_classes": any(
+                        isinstance(n, ast.ClassDef) for n in ast.walk(tree)
+                    ),
+                    "has_functions": any(
+                        isinstance(n, ast.FunctionDef) for n in ast.walk(tree)
+                    ),
+                    "import_count": len(imports),
+                }
+            )
 
         except SyntaxError:
             logger.debug(f"Syntax error in Python file: {metadata.path}")
@@ -466,11 +526,13 @@ class MetadataAnalyzer:
         try:
             data = json.loads(content)
 
-            metadata.content_summary.update({
-                'json_type': type(data).__name__,
-                'key_count': len(data) if isinstance(data, dict) else None,
-                'is_empty': not bool(data)
-            })
+            metadata.content_summary.update(
+                {
+                    "json_type": type(data).__name__,
+                    "key_count": len(data) if isinstance(data, dict) else None,
+                    "is_empty": not bool(data),
+                }
+            )
 
             # Look for common patterns
             if isinstance(data, dict):
@@ -484,8 +546,8 @@ class MetadataAnalyzer:
         """Analyze configuration file content."""
         # Look for key-value patterns
         config_patterns = [
-            r'(\w+)\s*[=:]\s*(.+)',  # key=value or key: value
-            r'\[(\w+)\]',  # [section]
+            r"(\w+)\s*[=:]\s*(.+)",  # key=value or key: value
+            r"\[(\w+)\]",  # [section]
         ]
 
         references = set()
@@ -501,7 +563,7 @@ class MetadataAnalyzer:
         # Look for file references
         file_patterns = [
             r'["\']([^"\']+\.[a-zA-Z0-9]+)["\']',  # Quoted file names
-            r'([a-zA-Z0-9_/.-]+\.[a-zA-Z0-9]+)',  # File-like paths
+            r"([a-zA-Z0-9_/.-]+\.[a-zA-Z0-9]+)",  # File-like paths
         ]
 
         references = set()
@@ -509,15 +571,13 @@ class MetadataAnalyzer:
             matches = re.finditer(pattern, content)
             for match in matches:
                 ref = match.group(1)
-                if '.' in ref and len(ref) > 2:  # Basic validation
+                if "." in ref and len(ref) > 2:  # Basic validation
                     references.add(ref)
 
         metadata.references.update(references)
 
     def _build_reference_database(
-        self,
-        file_paths: List[Path],
-        reference_extensions: Set[str]
+        self, file_paths: List[Path], reference_extensions: Set[str]
     ) -> Dict[str, Set[Path]]:
         """Build a database of file references."""
         reference_db = defaultdict(set)
@@ -537,9 +597,7 @@ class MetadataAnalyzer:
         return dict(reference_db)
 
     def _analyze_file_references(
-        self,
-        file_path: Path,
-        reference_db: Dict[str, Set[Path]]
+        self, file_path: Path, reference_db: Dict[str, Set[Path]]
     ) -> OrphanAnalysis:
         """Analyze if a file appears to be orphaned."""
         file_name = file_path.name
@@ -579,7 +637,7 @@ class MetadataAnalyzer:
             confidence=min(1.0, confidence),
             reasons=reasons,
             related_files=related_files,
-            potential_references=potential_references
+            potential_references=potential_references,
         )
 
     def _calculate_file_hash(self, file_path: Path) -> str:
@@ -592,19 +650,25 @@ class MetadataAnalyzer:
         except Exception:
             return f"error_{file_path.stat().st_size}"
 
-    def _find_files_by_import(self, import_name: str, file_paths: List[Path]) -> Set[Path]:
+    def _find_files_by_import(
+        self, import_name: str, file_paths: List[Path]
+    ) -> Set[Path]:
         """Find files that might correspond to an import."""
         matches = set()
 
         for file_path in file_paths:
-            if (file_path.stem == import_name or
-                file_path.name == f"{import_name}.py" or
-                import_name in str(file_path)):
+            if (
+                file_path.stem == import_name
+                or file_path.name == f"{import_name}.py"
+                or import_name in str(file_path)
+            ):
                 matches.add(file_path)
 
         return matches
 
-    def _find_files_by_reference(self, reference: str, file_paths: List[Path]) -> Set[Path]:
+    def _find_files_by_reference(
+        self, reference: str, file_paths: List[Path]
+    ) -> Set[Path]:
         """Find files that might correspond to a reference."""
         matches = set()
 
@@ -627,18 +691,25 @@ class MetadataAnalyzer:
     def _is_critical_file(self, file_path: Path, metadata: FileMetadata) -> bool:
         """Determine if a file is critical and should be kept."""
         critical_names = {
-            'README.md', 'LICENSE', 'setup.py', 'pyproject.toml',
-            'requirements.txt', '.gitignore', 'Makefile'
+            "README.md",
+            "LICENSE",
+            "setup.py",
+            "pyproject.toml",
+            "requirements.txt",
+            ".gitignore",
+            "Makefile",
         }
 
-        return (file_path.name in critical_names or
-                metadata.file_type in ['python_source'] or
-                file_path.suffix.lower() in ['.py'])
+        return (
+            file_path.name in critical_names
+            or metadata.file_type in ["python_source"]
+            or file_path.suffix.lower() in [".py"]
+        )
 
     def _is_safe_to_remove(self, file_path: Path, metadata: FileMetadata) -> bool:
         """Determine if a file appears safe to remove."""
         return (
-            self._matches_temp_patterns(file_path) or
-            self._matches_build_patterns(file_path) or
-            metadata.file_type in ['temporary', 'backup', 'python_bytecode']
+            self._matches_temp_patterns(file_path)
+            or self._matches_build_patterns(file_path)
+            or metadata.file_type in ["temporary", "backup", "python_bytecode"]
         )

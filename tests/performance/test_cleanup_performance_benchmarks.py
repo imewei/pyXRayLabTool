@@ -33,6 +33,7 @@ from xraylabtool.cleanup.safety_validator import SafetyValidator
 @dataclass
 class PerformanceMetrics:
     """Performance metrics for a single operation"""
+
     operation_name: str
     duration_seconds: float
     memory_peak_mb: float
@@ -54,6 +55,7 @@ class PerformanceMetrics:
 @dataclass
 class BenchmarkReport:
     """Comprehensive benchmark report"""
+
     benchmark_name: str
     timestamp: float
     system_info: Dict[str, Any]
@@ -73,7 +75,7 @@ class BenchmarkReport:
             "metrics": [m.to_dict() for m in self.metrics],
             "summary_statistics": self.summary_statistics,
             "performance_targets": self.performance_targets,
-            "targets_met": self.targets_met
+            "targets_met": self.targets_met,
         }
 
 
@@ -113,7 +115,7 @@ class PerformanceMonitor:
                 "cpu_percent_peak": 0.0,
                 "cpu_percent_average": 0.0,
                 "disk_io_read_mb": 0.0,
-                "disk_io_write_mb": 0.0
+                "disk_io_write_mb": 0.0,
             }
 
         memory_values = [s["memory_mb"] for s in self.samples]
@@ -121,8 +123,13 @@ class PerformanceMonitor:
 
         # Calculate disk I/O delta
         if len(self.samples) > 1:
-            disk_read_delta = self.samples[-1]["disk_read_bytes"] - self.samples[0]["disk_read_bytes"]
-            disk_write_delta = self.samples[-1]["disk_write_bytes"] - self.samples[0]["disk_write_bytes"]
+            disk_read_delta = (
+                self.samples[-1]["disk_read_bytes"] - self.samples[0]["disk_read_bytes"]
+            )
+            disk_write_delta = (
+                self.samples[-1]["disk_write_bytes"]
+                - self.samples[0]["disk_write_bytes"]
+            )
         else:
             disk_read_delta = disk_write_delta = 0
 
@@ -132,7 +139,7 @@ class PerformanceMonitor:
             "cpu_percent_peak": max(cpu_values),
             "cpu_percent_average": statistics.mean(cpu_values),
             "disk_io_read_mb": disk_read_delta / (1024 * 1024),
-            "disk_io_write_mb": disk_write_delta / (1024 * 1024)
+            "disk_io_write_mb": disk_write_delta / (1024 * 1024),
         }
 
     def _monitor_loop(self):
@@ -156,7 +163,7 @@ class PerformanceMonitor:
                     "memory_mb": memory_info.rss / (1024 * 1024),
                     "cpu_percent": cpu_percent,
                     "disk_read_bytes": disk_read_bytes,
-                    "disk_write_bytes": disk_write_bytes
+                    "disk_write_bytes": disk_write_bytes,
                 }
 
                 self.samples.append(sample)
@@ -215,7 +222,7 @@ class PerformanceBenchmarkBase(unittest.TestCase):
             "min_throughput_files_per_second": 100.0,  # files/sec
             "backup_max_duration_per_mb": 2.0,  # seconds per MB
             "audit_logging_max_overhead": 0.1,  # seconds per event
-            "emergency_stop_max_response_time": 1.0  # seconds
+            "emergency_stop_max_response_time": 1.0,  # seconds
         }
 
     def _get_system_info(self) -> Dict[str, Any]:
@@ -225,9 +232,11 @@ class PerformanceBenchmarkBase(unittest.TestCase):
                 "platform": os.name,
                 "cpu_count": os.cpu_count(),
                 "total_memory_gb": psutil.virtual_memory().total / (1024**3),
-                "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",
-                "disk_total_gb": psutil.disk_usage('.').total / (1024**3),
-                "disk_free_gb": psutil.disk_usage('.').free / (1024**3)
+                "python_version": (
+                    f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}"
+                ),
+                "disk_total_gb": psutil.disk_usage(".").total / (1024**3),
+                "disk_free_gb": psutil.disk_usage(".").free / (1024**3),
             }
         except Exception:
             return {"platform": os.name, "cpu_count": os.cpu_count()}
@@ -257,7 +266,9 @@ class PerformanceBenchmarkBase(unittest.TestCase):
 
         for i in range(file_count // 4):
             python_file = python_dir / f"module_{i:04d}.py"
-            content = f"# Python module {i}\n" + "print('test data')\n" * (file_size // 20)
+            content = f"# Python module {i}\n" + "print('test data')\n" * (
+                file_size // 20
+            )
             python_file.write_text(content)
 
         # Create cache files
@@ -288,7 +299,7 @@ class PerformanceBenchmarkBase(unittest.TestCase):
             ".pytest_cache",
             ".mypy_cache",
             "node_modules",
-            ".tox"
+            ".tox",
         ]
 
         for pattern in cache_patterns:
@@ -300,7 +311,9 @@ class PerformanceBenchmarkBase(unittest.TestCase):
                 cache_file = cache_dir / f"cache_file_{i}.cache"
                 cache_file.write_bytes(b"cache data" * 100)
 
-    def measure_operation(self, operation_name: str, operation_func: Callable, *args, **kwargs) -> PerformanceMetrics:
+    def measure_operation(
+        self, operation_name: str, operation_func: Callable, *args, **kwargs
+    ) -> PerformanceMetrics:
         """Measure performance of an operation"""
         monitor = PerformanceMonitor(sample_interval=0.05)
 
@@ -347,7 +360,7 @@ class PerformanceBenchmarkBase(unittest.TestCase):
             disk_io_read_mb=perf_data["disk_io_read_mb"],
             disk_io_write_mb=perf_data["disk_io_write_mb"],
             operation_success=operation_success,
-            error_message=error_message
+            error_message=error_message,
         )
 
     def _generate_benchmark_report(self):
@@ -356,32 +369,46 @@ class PerformanceBenchmarkBase(unittest.TestCase):
             return
 
         # Calculate summary statistics
-        durations = [m.duration_seconds for m in self.benchmark_results if m.operation_success]
-        throughputs = [m.throughput_files_per_second for m in self.benchmark_results if m.operation_success]
-        memory_peaks = [m.memory_peak_mb for m in self.benchmark_results if m.operation_success]
+        durations = [
+            m.duration_seconds for m in self.benchmark_results if m.operation_success
+        ]
+        throughputs = [
+            m.throughput_files_per_second
+            for m in self.benchmark_results
+            if m.operation_success
+        ]
+        memory_peaks = [
+            m.memory_peak_mb for m in self.benchmark_results if m.operation_success
+        ]
 
         summary_stats = {}
         if durations:
-            summary_stats.update({
-                "average_duration": statistics.mean(durations),
-                "median_duration": statistics.median(durations),
-                "max_duration": max(durations),
-                "min_duration": min(durations)
-            })
+            summary_stats.update(
+                {
+                    "average_duration": statistics.mean(durations),
+                    "median_duration": statistics.median(durations),
+                    "max_duration": max(durations),
+                    "min_duration": min(durations),
+                }
+            )
 
         if throughputs:
-            summary_stats.update({
-                "average_throughput": statistics.mean(throughputs),
-                "median_throughput": statistics.median(throughputs),
-                "max_throughput": max(throughputs),
-                "min_throughput": min(throughputs)
-            })
+            summary_stats.update(
+                {
+                    "average_throughput": statistics.mean(throughputs),
+                    "median_throughput": statistics.median(throughputs),
+                    "max_throughput": max(throughputs),
+                    "min_throughput": min(throughputs),
+                }
+            )
 
         if memory_peaks:
-            summary_stats.update({
-                "average_memory_peak": statistics.mean(memory_peaks),
-                "max_memory_peak": max(memory_peaks)
-            })
+            summary_stats.update(
+                {
+                    "average_memory_peak": statistics.mean(memory_peaks),
+                    "max_memory_peak": max(memory_peaks),
+                }
+            )
 
         # Check if performance targets are met
         targets_met = self._check_performance_targets()
@@ -393,17 +420,17 @@ class PerformanceBenchmarkBase(unittest.TestCase):
             system_info=self.system_info,
             test_configuration={
                 "temp_dir": str(self.temp_dir),
-                "project_root": str(self.project_root)
+                "project_root": str(self.project_root),
             },
             metrics=self.benchmark_results,
             summary_statistics=summary_stats,
             performance_targets=self.performance_targets,
-            targets_met=targets_met
+            targets_met=targets_met,
         )
 
         # Save report
         report_path = self.temp_dir / f"benchmark_report_{self.__class__.__name__}.json"
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             json.dump(report.to_dict(), f, indent=2)
 
     def _check_performance_targets(self) -> bool:
@@ -420,15 +447,23 @@ class PerformanceBenchmarkBase(unittest.TestCase):
 
         # Duration checks
         max_duration = max(m.duration_seconds for m in successful_results)
-        checks.append(max_duration <= self.performance_targets.get("large_cleanup_max_duration", 30.0))
+        checks.append(
+            max_duration
+            <= self.performance_targets.get("large_cleanup_max_duration", 30.0)
+        )
 
         # Memory checks
         max_memory = max(m.memory_peak_mb for m in successful_results)
-        checks.append(max_memory <= self.performance_targets.get("max_memory_overhead_mb", 200.0))
+        checks.append(
+            max_memory <= self.performance_targets.get("max_memory_overhead_mb", 200.0)
+        )
 
         # Throughput checks
         min_throughput = min(m.throughput_files_per_second for m in successful_results)
-        checks.append(min_throughput >= self.performance_targets.get("min_throughput_files_per_second", 10.0))
+        checks.append(
+            min_throughput
+            >= self.performance_targets.get("min_throughput_files_per_second", 10.0)
+        )
 
         return all(checks)
 
@@ -442,9 +477,7 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
         cleanup_targets = [f for f in cleanup_targets if f.is_file()]
 
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=CleanupConfig(),
-            dry_run=True
+            project_root=self.project_root, config=CleanupConfig(), dry_run=True
         )
 
         def cleanup_operation():
@@ -452,7 +485,7 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
                 files_to_cleanup=cleanup_targets,
                 operation_type="small_scale_perf_test",
                 force_backup=False,
-                user_confirmation=False
+                user_confirmation=False,
             )
 
         metrics = self.measure_operation("small_scale_cleanup", cleanup_operation)
@@ -460,7 +493,10 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
 
         # Validate performance
         self.assertTrue(metrics.operation_success)
-        self.assertLess(metrics.duration_seconds, self.performance_targets["small_cleanup_max_duration"])
+        self.assertLess(
+            metrics.duration_seconds,
+            self.performance_targets["small_cleanup_max_duration"],
+        )
         self.assertGreater(metrics.throughput_files_per_second, 10.0)
 
     def test_medium_scale_cleanup_performance(self):
@@ -469,9 +505,7 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
         cleanup_targets = [f for f in cleanup_targets if f.is_file()]
 
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=CleanupConfig(),
-            dry_run=True
+            project_root=self.project_root, config=CleanupConfig(), dry_run=True
         )
 
         def cleanup_operation():
@@ -479,7 +513,7 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
                 files_to_cleanup=cleanup_targets,
                 operation_type="medium_scale_perf_test",
                 force_backup=False,
-                user_confirmation=False
+                user_confirmation=False,
             )
 
         metrics = self.measure_operation("medium_scale_cleanup", cleanup_operation)
@@ -487,8 +521,13 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
 
         # Validate performance
         self.assertTrue(metrics.operation_success)
-        self.assertLess(metrics.duration_seconds, self.performance_targets["medium_cleanup_max_duration"])
-        self.assertLess(metrics.memory_peak_mb, self.performance_targets["max_memory_overhead_mb"])
+        self.assertLess(
+            metrics.duration_seconds,
+            self.performance_targets["medium_cleanup_max_duration"],
+        )
+        self.assertLess(
+            metrics.memory_peak_mb, self.performance_targets["max_memory_overhead_mb"]
+        )
 
     def test_large_scale_cleanup_performance(self):
         """Test performance with large number of files"""
@@ -496,9 +535,7 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
         cleanup_targets = [f for f in cleanup_targets if f.is_file()]
 
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=CleanupConfig(),
-            dry_run=True
+            project_root=self.project_root, config=CleanupConfig(), dry_run=True
         )
 
         def cleanup_operation():
@@ -506,7 +543,7 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
                 files_to_cleanup=cleanup_targets,
                 operation_type="large_scale_perf_test",
                 force_backup=False,
-                user_confirmation=False
+                user_confirmation=False,
             )
 
         metrics = self.measure_operation("large_scale_cleanup", cleanup_operation)
@@ -514,7 +551,10 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
 
         # Validate performance
         self.assertTrue(metrics.operation_success)
-        self.assertLess(metrics.duration_seconds, self.performance_targets["large_cleanup_max_duration"])
+        self.assertLess(
+            metrics.duration_seconds,
+            self.performance_targets["large_cleanup_max_duration"],
+        )
         self.assertGreater(metrics.files_processed, 1000)
 
     def test_concurrent_cleanup_performance(self):
@@ -524,12 +564,13 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
         all_targets = [f for f in all_targets if f.is_file()]
 
         chunk_size = len(all_targets) // 4
-        file_chunks = [all_targets[i:i + chunk_size] for i in range(0, len(all_targets), chunk_size)]
+        file_chunks = [
+            all_targets[i : i + chunk_size]
+            for i in range(0, len(all_targets), chunk_size)
+        ]
 
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=CleanupConfig(),
-            dry_run=True
+            project_root=self.project_root, config=CleanupConfig(), dry_run=True
         )
 
         def concurrent_cleanup():
@@ -540,7 +581,7 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
                     files_to_cleanup=files,
                     operation_type=f"concurrent_perf_test_{chunk_id}",
                     force_backup=False,
-                    user_confirmation=False
+                    user_confirmation=False,
                 )
 
             with ThreadPoolExecutor(max_workers=4) as executor:
@@ -564,12 +605,14 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
     def test_cleanup_with_backup_performance(self):
         """Test performance of cleanup operations with backup"""
         cleanup_targets = list(self.project_root.glob("test_data_small/**/*"))
-        cleanup_targets = [f for f in cleanup_targets if f.is_file()][:50]  # Limit for backup test
+        cleanup_targets = [f for f in cleanup_targets if f.is_file()][
+            :50
+        ]  # Limit for backup test
 
         safety_cleanup = SafetyIntegratedCleanup(
             project_root=self.project_root,
             config=CleanupConfig(),
-            dry_run=False  # Need actual operation for backup
+            dry_run=False,  # Need actual operation for backup
         )
 
         def cleanup_with_backup():
@@ -577,7 +620,7 @@ class TestCleanupPerformance(PerformanceBenchmarkBase):
                 files_to_cleanup=cleanup_targets,
                 operation_type="backup_perf_test",
                 force_backup=True,
-                user_confirmation=False
+                user_confirmation=False,
             )
 
         metrics = self.measure_operation("cleanup_with_backup", cleanup_with_backup)
@@ -595,18 +638,20 @@ class TestBackupPerformance(PerformanceBenchmarkBase):
     def test_copy_backup_performance(self):
         """Test performance of copy-based backup"""
         test_files = list(self.project_root.glob("test_data_medium/**/*"))
-        test_files = [f for f in test_files if f.is_file()][:200]  # Limit for focused test
+        test_files = [f for f in test_files if f.is_file()][
+            :200
+        ]  # Limit for focused test
 
         backup_manager = BackupManager(
             project_root=self.project_root,
-            backup_root=self.project_root / ".perf_backups"
+            backup_root=self.project_root / ".perf_backups",
         )
 
         def copy_backup_operation():
             return backup_manager.create_backup(
                 files_to_backup=test_files,
                 operation_type="copy_perf_test",
-                backup_method="copy"
+                backup_method="copy",
             )
 
         metrics = self.measure_operation("copy_backup", copy_backup_operation)
@@ -623,14 +668,14 @@ class TestBackupPerformance(PerformanceBenchmarkBase):
 
         backup_manager = BackupManager(
             project_root=self.project_root,
-            backup_root=self.project_root / ".perf_backups"
+            backup_root=self.project_root / ".perf_backups",
         )
 
         def zip_backup_operation():
             return backup_manager.create_backup(
                 files_to_backup=test_files,
                 operation_type="zip_perf_test",
-                backup_method="zip"
+                backup_method="zip",
             )
 
         metrics = self.measure_operation("zip_backup", zip_backup_operation)
@@ -648,20 +693,22 @@ class TestBackupPerformance(PerformanceBenchmarkBase):
 
         backup_manager = BackupManager(
             project_root=self.project_root,
-            backup_root=self.project_root / ".perf_backups"
+            backup_root=self.project_root / ".perf_backups",
         )
 
         # Create backup first
         backup_metadata = backup_manager.create_backup(
             files_to_backup=test_files,
             operation_type="integrity_perf_test",
-            backup_method="copy"
+            backup_method="copy",
         )
 
         def verify_integrity():
             return backup_manager.verify_backup_integrity(backup_metadata.backup_id)
 
-        metrics = self.measure_operation("backup_integrity_verification", verify_integrity)
+        metrics = self.measure_operation(
+            "backup_integrity_verification", verify_integrity
+        )
         self.benchmark_results.append(metrics)
 
         # Validate integrity verification performance
@@ -675,14 +722,14 @@ class TestBackupPerformance(PerformanceBenchmarkBase):
 
         backup_manager = BackupManager(
             project_root=self.project_root,
-            backup_root=self.project_root / ".perf_backups"
+            backup_root=self.project_root / ".perf_backups",
         )
 
         # Create backup
         backup_metadata = backup_manager.create_backup(
             files_to_backup=test_files,
             operation_type="restore_perf_test",
-            backup_method="copy"
+            backup_method="copy",
         )
 
         # Delete original files
@@ -692,8 +739,7 @@ class TestBackupPerformance(PerformanceBenchmarkBase):
 
         def restore_backup():
             return backup_manager.restore_backup(
-                backup_id=backup_metadata.backup_id,
-                verify_integrity=True
+                backup_id=backup_metadata.backup_id, verify_integrity=True
             )
 
         metrics = self.measure_operation("backup_restoration", restore_backup)
@@ -710,12 +756,15 @@ class TestAuditLoggingPerformance(PerformanceBenchmarkBase):
     def test_high_volume_audit_logging_performance(self):
         """Test performance with high volume of audit events"""
         audit_logger = AuditLogger(
-            audit_dir=self.project_root / ".perf_audit",
-            max_file_size_mb=50
+            audit_dir=self.project_root / ".perf_audit", max_file_size_mb=50
         )
 
         def high_volume_logging():
-            from xraylabtool.cleanup.audit_logger import AuditEvent, AuditLevel, AuditCategory
+            from xraylabtool.cleanup.audit_logger import (
+                AuditEvent,
+                AuditLevel,
+                AuditCategory,
+            )
 
             events_logged = 0
 
@@ -726,14 +775,16 @@ class TestAuditLoggingPerformance(PerformanceBenchmarkBase):
                         category=AuditCategory.OPERATION,
                         message=f"Performance test event {i}",
                         operation_id="perf_test",
-                        details={"iteration": i, "test_data": f"data_{i}"}
+                        details={"iteration": i, "test_data": f"data_{i}"},
                     )
                     audit_logger.log_event(event)
                     events_logged += 1
 
             return events_logged
 
-        metrics = self.measure_operation("high_volume_audit_logging", high_volume_logging)
+        metrics = self.measure_operation(
+            "high_volume_audit_logging", high_volume_logging
+        )
         self.benchmark_results.append(metrics)
 
         # Validate audit logging performance
@@ -744,12 +795,15 @@ class TestAuditLoggingPerformance(PerformanceBenchmarkBase):
     def test_concurrent_audit_logging_performance(self):
         """Test performance of concurrent audit logging"""
         audit_logger = AuditLogger(
-            audit_dir=self.project_root / ".perf_audit_concurrent",
-            max_file_size_mb=50
+            audit_dir=self.project_root / ".perf_audit_concurrent", max_file_size_mb=50
         )
 
         def concurrent_logging():
-            from xraylabtool.cleanup.audit_logger import AuditEvent, AuditLevel, AuditCategory
+            from xraylabtool.cleanup.audit_logger import (
+                AuditEvent,
+                AuditLevel,
+                AuditCategory,
+            )
 
             def log_from_thread(thread_id):
                 for i in range(100):
@@ -757,7 +811,7 @@ class TestAuditLoggingPerformance(PerformanceBenchmarkBase):
                         level=AuditLevel.INFO,
                         category=AuditCategory.OPERATION,
                         message=f"Concurrent event from thread {thread_id}, iteration {i}",
-                        operation_id=f"concurrent_test_{thread_id}"
+                        operation_id=f"concurrent_test_{thread_id}",
                     )
                     audit_logger.log_event(event)
 
@@ -783,26 +837,31 @@ class TestAuditLoggingPerformance(PerformanceBenchmarkBase):
     def test_audit_integrity_verification_performance(self):
         """Test performance of audit log integrity verification"""
         audit_logger = AuditLogger(
-            audit_dir=self.project_root / ".perf_audit_integrity",
-            max_file_size_mb=10
+            audit_dir=self.project_root / ".perf_audit_integrity", max_file_size_mb=10
         )
 
         # Generate some audit events first
-        from xraylabtool.cleanup.audit_logger import AuditEvent, AuditLevel, AuditCategory
+        from xraylabtool.cleanup.audit_logger import (
+            AuditEvent,
+            AuditLevel,
+            AuditCategory,
+        )
 
         for i in range(200):
             event = AuditEvent(
                 level=AuditLevel.INFO,
                 category=AuditCategory.OPERATION,
                 message=f"Integrity test event {i}",
-                operation_id="integrity_test"
+                operation_id="integrity_test",
             )
             audit_logger.log_event(event)
 
         def verify_integrity():
             return audit_logger.verify_integrity()
 
-        metrics = self.measure_operation("audit_integrity_verification", verify_integrity)
+        metrics = self.measure_operation(
+            "audit_integrity_verification", verify_integrity
+        )
         self.benchmark_results.append(metrics)
 
         # Validate integrity verification performance
@@ -815,7 +874,10 @@ class TestEmergencyStopPerformance(PerformanceBenchmarkBase):
 
     def test_emergency_stop_response_time(self):
         """Test response time of emergency stop mechanism"""
-        from xraylabtool.cleanup.emergency_manager import EmergencyStopManager, EmergencyStopReason
+        from xraylabtool.cleanup.emergency_manager import (
+            EmergencyStopManager,
+            EmergencyStopReason,
+        )
 
         emergency_manager = EmergencyStopManager()
 
@@ -825,7 +887,7 @@ class TestEmergencyStopPerformance(PerformanceBenchmarkBase):
 
             emergency_manager.trigger_emergency_stop(
                 reason=EmergencyStopReason.USER_ABORT,
-                message="Performance test emergency stop"
+                message="Performance test emergency stop",
             )
 
             # Verify stop was triggered
@@ -839,7 +901,10 @@ class TestEmergencyStopPerformance(PerformanceBenchmarkBase):
 
         # Validate emergency stop performance
         self.assertTrue(metrics.operation_success)
-        self.assertLess(metrics.duration_seconds, self.performance_targets["emergency_stop_max_response_time"])
+        self.assertLess(
+            metrics.duration_seconds,
+            self.performance_targets["emergency_stop_max_response_time"],
+        )
 
     def test_resource_monitoring_performance(self):
         """Test performance of resource monitoring"""
@@ -850,9 +915,7 @@ class TestEmergencyStopPerformance(PerformanceBenchmarkBase):
         def resource_monitoring_test():
             # Start resource monitoring
             emergency_manager.start_resource_monitoring(
-                disk_threshold_mb=1000.0,
-                memory_threshold_mb=2000.0,
-                check_interval=0.1
+                disk_threshold_mb=1000.0, memory_threshold_mb=2000.0, check_interval=0.1
             )
 
             # Run for a short period to test monitoring overhead
@@ -863,7 +926,9 @@ class TestEmergencyStopPerformance(PerformanceBenchmarkBase):
 
             return True
 
-        metrics = self.measure_operation("resource_monitoring", resource_monitoring_test)
+        metrics = self.measure_operation(
+            "resource_monitoring", resource_monitoring_test
+        )
         self.benchmark_results.append(metrics)
 
         # Validate resource monitoring performance
@@ -892,9 +957,7 @@ class TestScalabilityBenchmarks(PerformanceBenchmarkBase):
                 test_files.append(test_file)
 
             safety_cleanup = SafetyIntegratedCleanup(
-                project_root=self.project_root,
-                config=CleanupConfig(),
-                dry_run=True
+                project_root=self.project_root, config=CleanupConfig(), dry_run=True
             )
 
             def scalability_test():
@@ -902,10 +965,12 @@ class TestScalabilityBenchmarks(PerformanceBenchmarkBase):
                     files_to_cleanup=test_files,
                     operation_type=f"scalability_test_{file_count}",
                     force_backup=False,
-                    user_confirmation=False
+                    user_confirmation=False,
                 )
 
-            metrics = self.measure_operation(f"scalability_{file_count}_files", scalability_test)
+            metrics = self.measure_operation(
+                f"scalability_{file_count}_files", scalability_test
+            )
             self.benchmark_results.append(metrics)
             scalability_results.append(metrics)
 
@@ -919,7 +984,7 @@ class TestScalabilityBenchmarks(PerformanceBenchmarkBase):
 
         # Calculate how duration and throughput scale with file count
         for i in range(1, len(results)):
-            prev_result = results[i-1]
+            prev_result = results[i - 1]
             curr_result = results[i]
 
             file_ratio = curr_result.files_processed / prev_result.files_processed
@@ -929,7 +994,9 @@ class TestScalabilityBenchmarks(PerformanceBenchmarkBase):
             scaling_efficiency = file_ratio / duration_ratio
 
             # Log scaling analysis
-            print(f"Scaling from {prev_result.files_processed} to {curr_result.files_processed} files:")
+            print(
+                f"Scaling from {prev_result.files_processed} to {curr_result.files_processed} files:"
+            )
             print(f"  Duration ratio: {duration_ratio:.2f}")
             print(f"  File ratio: {file_ratio:.2f}")
             print(f"  Scaling efficiency: {scaling_efficiency:.2f}")
@@ -946,7 +1013,7 @@ if __name__ == "__main__":
         TestBackupPerformance,
         TestAuditLoggingPerformance,
         TestEmergencyStopPerformance,
-        TestScalabilityBenchmarks
+        TestScalabilityBenchmarks,
     ]
 
     for test_class in test_classes:
@@ -954,9 +1021,9 @@ if __name__ == "__main__":
         suite.addTests(tests)
 
     # Run performance tests
-    print("="*80)
+    print("=" * 80)
     print("PERFORMANCE BENCHMARK SUITE")
-    print("="*80)
+    print("=" * 80)
 
     start_time = time.time()
     runner = unittest.TextTestRunner(verbosity=2, buffer=True)
@@ -971,7 +1038,9 @@ if __name__ == "__main__":
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    print(f"Success rate: {(result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100:.1f}%")
+    print(
+        f"Success rate: {(result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100:.1f}%"
+    )
 
     # Performance categories tested
     categories = [
@@ -979,7 +1048,7 @@ if __name__ == "__main__":
         "Backup Systems",
         "Audit Logging",
         "Emergency Stop Mechanisms",
-        "Scalability Analysis"
+        "Scalability Analysis",
     ]
 
     print(f"\nPerformance Categories Benchmarked:")
@@ -1008,7 +1077,9 @@ if __name__ == "__main__":
         print("✅ Emergency stop performance validated")
         print("✅ Scalability characteristics analyzed")
     else:
-        print(f"⚠️  {len(result.failures) + len(result.errors)} performance tests failed")
+        print(
+            f"⚠️  {len(result.failures) + len(result.errors)} performance tests failed"
+        )
 
     print(f"{'='*80}")
     print("Performance benchmark reports saved to temporary directories")

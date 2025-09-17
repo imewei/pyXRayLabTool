@@ -20,7 +20,6 @@ from unittest.mock import patch, MagicMock
 # Import cleanup components
 from xraylabtool.cleanup.config import CleanupConfig
 from xraylabtool.cleanup.safety_integration import SafetyIntegratedCleanup
-from xraylabtool.cleanup.makefile_integration import MakefileCleanupIntegration
 from xraylabtool.cleanup.backup_manager import BackupManager
 from xraylabtool.cleanup.audit_logger import AuditLogger
 
@@ -76,16 +75,22 @@ class BaseIntegrationTest(unittest.TestCase):
         (docs_dir / "api.rst").write_text("API Documentation\n")
 
         # Configuration files
-        (self.project_root / "pyproject.toml").write_text("""
+        (self.project_root / "pyproject.toml").write_text(
+            """
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
 [tool.black]
 line-length = 88
-""")
+"""
+        )
 
-        (self.project_root / "setup.py").write_text("from setuptools import setup\nsetup(name='test-project')\n")
-        (self.project_root / ".gitignore").write_text("__pycache__/\n*.pyc\n.pytest_cache/\n")
+        (self.project_root / "setup.py").write_text(
+            "from setuptools import setup\nsetup(name='test-project')\n"
+        )
+        (self.project_root / ".gitignore").write_text(
+            "__pycache__/\n*.pyc\n.pytest_cache/\n"
+        )
 
         # Build artifacts (to be cleaned)
         build_dir = self.project_root / "build"
@@ -98,12 +103,7 @@ line-length = 88
         (dist_dir / "package-1.0.tar.gz").write_text("distribution package")
 
         # Cache directories
-        cache_dirs = [
-            "__pycache__",
-            ".pytest_cache",
-            ".mypy_cache",
-            "node_modules"
-        ]
+        cache_dirs = ["__pycache__", ".pytest_cache", ".mypy_cache", "node_modules"]
 
         for cache_dir in cache_dirs:
             cache_path = self.project_root / cache_dir
@@ -111,12 +111,7 @@ line-length = 88
             (cache_path / "cached_file").write_text("cached data")
 
         # Temporary files
-        temp_files = [
-            "temp_file.tmp",
-            "backup_20241201.bak",
-            ".DS_Store",
-            "Thumbs.db"
-        ]
+        temp_files = ["temp_file.tmp", "backup_20241201.bak", ".DS_Store", "Thumbs.db"]
 
         for temp_file in temp_files:
             (self.project_root / temp_file).write_text("temporary data")
@@ -124,7 +119,9 @@ line-length = 88
         # IDE files
         vscode_dir = self.project_root / ".vscode"
         vscode_dir.mkdir()
-        (vscode_dir / "settings.json").write_text('{"python.defaultInterpreterPath": "./venv/bin/python"}')
+        (vscode_dir / "settings.json").write_text(
+            '{"python.defaultInterpreterPath": "./venv/bin/python"}'
+        )
 
         # Create Makefile
         makefile_content = """
@@ -147,10 +144,24 @@ build:
         # Initialize git repository
         try:
             subprocess.run(["git", "init"], cwd=self.project_root, capture_output=True)
-            subprocess.run(["git", "config", "user.name", "Test User"], cwd=self.project_root, capture_output=True)
-            subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=self.project_root, capture_output=True)
-            subprocess.run(["git", "add", "."], cwd=self.project_root, capture_output=True)
-            subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=self.project_root, capture_output=True)
+            subprocess.run(
+                ["git", "config", "user.name", "Test User"],
+                cwd=self.project_root,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.com"],
+                cwd=self.project_root,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["git", "add", "."], cwd=self.project_root, capture_output=True
+            )
+            subprocess.run(
+                ["git", "commit", "-m", "Initial commit"],
+                cwd=self.project_root,
+                capture_output=True,
+            )
         except (subprocess.CalledProcessError, FileNotFoundError):
             # Git may not be available in test environment
             pass
@@ -162,9 +173,7 @@ class TestBasicCleanupIntegration(BaseIntegrationTest):
     def test_safety_integrated_cleanup_dry_run(self):
         """Test dry-run cleanup with safety integration"""
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=self.config,
-            dry_run=True
+            project_root=self.project_root, config=self.config, dry_run=True
         )
 
         # Identify files to cleanup
@@ -177,7 +186,7 @@ class TestBasicCleanupIntegration(BaseIntegrationTest):
             files_to_cleanup=files_to_cleanup,
             operation_type="basic_cleanup",
             force_backup=False,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         # Verify dry-run results
@@ -194,9 +203,7 @@ class TestBasicCleanupIntegration(BaseIntegrationTest):
     def test_safety_integrated_cleanup_with_backup(self):
         """Test cleanup with backup creation"""
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=self.config,
-            dry_run=False
+            project_root=self.project_root, config=self.config, dry_run=False
         )
 
         # Files to cleanup (less critical ones for this test)
@@ -207,7 +214,7 @@ class TestBasicCleanupIntegration(BaseIntegrationTest):
             files_to_cleanup=files_to_cleanup,
             operation_type="backup_test",
             force_backup=True,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         # Verify backup was created
@@ -220,9 +227,7 @@ class TestBasicCleanupIntegration(BaseIntegrationTest):
     def test_audit_logging_integration(self):
         """Test audit logging during cleanup operations"""
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=self.config,
-            dry_run=True
+            project_root=self.project_root, config=self.config, dry_run=True
         )
 
         # Execute cleanup to generate audit logs
@@ -232,7 +237,7 @@ class TestBasicCleanupIntegration(BaseIntegrationTest):
             files_to_cleanup=files_to_cleanup,
             operation_type="audit_test",
             force_backup=False,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         # Verify audit logs were created
@@ -255,20 +260,18 @@ class TestBasicCleanupIntegration(BaseIntegrationTest):
     def test_emergency_stop_integration(self):
         """Test emergency stop mechanism integration"""
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=self.config,
-            dry_run=True
+            project_root=self.project_root, config=self.config, dry_run=True
         )
 
         # Trigger emergency stop during operation
         def trigger_stop():
             time.sleep(0.1)  # Allow operation to start
             safety_cleanup.emergency_manager.trigger_emergency_stop(
-                reason="user_abort",
-                message="Integration test emergency stop"
+                reason="user_abort", message="Integration test emergency stop"
             )
 
         import threading
+
         stop_thread = threading.Thread(target=trigger_stop)
         stop_thread.start()
 
@@ -279,7 +282,7 @@ class TestBasicCleanupIntegration(BaseIntegrationTest):
             files_to_cleanup=files_to_cleanup,
             operation_type="emergency_test",
             force_backup=False,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         stop_thread.join()
@@ -295,8 +298,7 @@ class TestMakefileIntegration(BaseIntegrationTest):
     def test_makefile_cleanup_detection(self):
         """Test detection of Makefile cleanup commands"""
         makefile_integration = MakefileCleanupIntegration(
-            project_root=self.project_root,
-            config=self.config
+            project_root=self.project_root, config=self.config
         )
 
         # Detect existing cleanup commands
@@ -309,8 +311,7 @@ class TestMakefileIntegration(BaseIntegrationTest):
     def test_makefile_enhancement_dry_run(self):
         """Test Makefile enhancement in dry-run mode"""
         makefile_integration = MakefileCleanupIntegration(
-            project_root=self.project_root,
-            config=self.config
+            project_root=self.project_root, config=self.config
         )
 
         # Read original Makefile
@@ -318,8 +319,7 @@ class TestMakefileIntegration(BaseIntegrationTest):
 
         # Enhance Makefile
         enhancement_result = makefile_integration.enhance_makefile_cleanup(
-            dry_run=True,
-            backup_original=True
+            dry_run=True, backup_original=True
         )
 
         self.assertIsInstance(enhancement_result, dict)
@@ -329,18 +329,16 @@ class TestMakefileIntegration(BaseIntegrationTest):
         current_makefile = (self.project_root / "Makefile").read_text()
         self.assertEqual(original_makefile, current_makefile)
 
-    @patch('builtins.input', return_value='y')
+    @patch("builtins.input", return_value="y")
     def test_makefile_enhancement_execution(self):
         """Test actual Makefile enhancement"""
         makefile_integration = MakefileCleanupIntegration(
-            project_root=self.project_root,
-            config=self.config
+            project_root=self.project_root, config=self.config
         )
 
         # Enhance Makefile
         enhancement_result = makefile_integration.enhance_makefile_cleanup(
-            dry_run=False,
-            backup_original=True
+            dry_run=False, backup_original=True
         )
 
         self.assertIsInstance(enhancement_result, dict)
@@ -365,12 +363,11 @@ class TestWorkflowIntegration(BaseIntegrationTest):
         safety_cleanup = SafetyIntegratedCleanup(
             project_root=self.project_root,
             config=self.config,
-            dry_run=False  # Actual cleanup for workflow test
+            dry_run=False,  # Actual cleanup for workflow test
         )
 
         makefile_integration = MakefileCleanupIntegration(
-            project_root=self.project_root,
-            config=self.config
+            project_root=self.project_root, config=self.config
         )
 
         # Step 2: Analyze project
@@ -395,7 +392,7 @@ class TestWorkflowIntegration(BaseIntegrationTest):
             files_to_cleanup=cleanup_targets,
             operation_type="complete_workflow",
             force_backup=True,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         # Step 5: Verify workflow completion
@@ -416,21 +413,18 @@ class TestWorkflowIntegration(BaseIntegrationTest):
     def test_error_recovery_workflow(self):
         """Test error recovery and rollback workflow"""
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=self.config,
-            dry_run=False
+            project_root=self.project_root, config=self.config, dry_run=False
         )
 
         # Create backup first
         backup_manager = BackupManager(
             project_root=self.project_root,
-            backup_root=self.project_root / ".cleanup_backups"
+            backup_root=self.project_root / ".cleanup_backups",
         )
 
         test_files = list(self.project_root.glob("**/*.tmp"))
         backup_metadata = backup_manager.create_backup(
-            files_to_backup=test_files,
-            operation_type="error_recovery_test"
+            files_to_backup=test_files, operation_type="error_recovery_test"
         )
 
         # Simulate error during cleanup by creating a scenario that should trigger rollback
@@ -440,10 +434,11 @@ class TestWorkflowIntegration(BaseIntegrationTest):
             time.sleep(0.1)
             safety_cleanup.emergency_manager.trigger_emergency_stop(
                 reason="critical_error",
-                message="Simulated critical error for recovery test"
+                message="Simulated critical error for recovery test",
             )
 
         import threading
+
         emergency_thread = threading.Thread(target=trigger_emergency)
         emergency_thread.start()
 
@@ -453,7 +448,7 @@ class TestWorkflowIntegration(BaseIntegrationTest):
                 files_to_cleanup=test_files,
                 operation_type="error_recovery_test",
                 force_backup=True,
-                user_confirmation=False
+                user_confirmation=False,
             )
         except Exception:
             pass  # Expected due to emergency stop
@@ -466,8 +461,7 @@ class TestWorkflowIntegration(BaseIntegrationTest):
 
         # Test recovery
         restore_result = backup_manager.restore_backup(
-            backup_id=backup_metadata.backup_id,
-            verify_integrity=True
+            backup_id=backup_metadata.backup_id, verify_integrity=True
         )
 
         self.assertTrue(restore_result.get("success", False))
@@ -475,9 +469,7 @@ class TestWorkflowIntegration(BaseIntegrationTest):
     def test_concurrent_operations_safety(self):
         """Test safety mechanisms with concurrent operations"""
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=self.config,
-            dry_run=True
+            project_root=self.project_root, config=self.config, dry_run=True
         )
 
         # Create multiple file sets for concurrent operations
@@ -487,7 +479,7 @@ class TestWorkflowIntegration(BaseIntegrationTest):
         # Split files into chunks for concurrent processing
         chunk_size = max(1, len(base_files) // 3)
         for i in range(0, len(base_files), chunk_size):
-            file_sets.append(base_files[i:i + chunk_size])
+            file_sets.append(base_files[i : i + chunk_size])
 
         results = []
         errors = []
@@ -498,7 +490,7 @@ class TestWorkflowIntegration(BaseIntegrationTest):
                     files_to_cleanup=file_set,
                     operation_type=f"concurrent_test_{operation_id}",
                     force_backup=False,
-                    user_confirmation=False
+                    user_confirmation=False,
                 )
                 results.append(result)
             except Exception as e:
@@ -506,6 +498,7 @@ class TestWorkflowIntegration(BaseIntegrationTest):
 
         # Run concurrent operations
         import threading
+
         threads = []
 
         for i, file_set in enumerate(file_sets[:2]):  # Limit to 2 concurrent operations
@@ -548,7 +541,7 @@ class TestPerformanceIntegration(BaseIntegrationTest):
         safety_cleanup = SafetyIntegratedCleanup(
             project_root=self.project_root,
             config=self.config,
-            dry_run=True  # Dry run for performance test
+            dry_run=True,  # Dry run for performance test
         )
 
         # Measure performance
@@ -558,14 +551,16 @@ class TestPerformanceIntegration(BaseIntegrationTest):
             files_to_cleanup=cache_files,
             operation_type="performance_test",
             force_backup=False,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         end_time = time.time()
         duration = end_time - start_time
 
         # Verify reasonable performance (should complete in under 10 seconds)
-        self.assertLess(duration, 10.0, f"Cleanup took too long: {duration:.2f} seconds")
+        self.assertLess(
+            duration, 10.0, f"Cleanup took too long: {duration:.2f} seconds"
+        )
 
         # Verify all files were processed
         self.assertIn("files_processed", result)
@@ -584,7 +579,7 @@ class TestPerformanceIntegration(BaseIntegrationTest):
         backup_manager = BackupManager(
             project_root=self.project_root,
             backup_root=self.project_root / ".performance_backups",
-            compression_enabled=True
+            compression_enabled=True,
         )
 
         # Measure backup performance
@@ -593,7 +588,7 @@ class TestPerformanceIntegration(BaseIntegrationTest):
         backup_metadata = backup_manager.create_backup(
             files_to_backup=large_files,
             operation_type="performance_backup_test",
-            backup_method="zip"
+            backup_method="zip",
         )
 
         end_time = time.time()
@@ -609,8 +604,7 @@ class TestPerformanceIntegration(BaseIntegrationTest):
     def test_audit_logging_performance(self):
         """Test audit logging performance with many events"""
         audit_logger = AuditLogger(
-            audit_dir=self.project_root / ".performance_audit",
-            max_file_size_mb=10
+            audit_dir=self.project_root / ".performance_audit", max_file_size_mb=10
         )
 
         # Log many events to test performance
@@ -623,17 +617,21 @@ class TestPerformanceIntegration(BaseIntegrationTest):
                     file_path=Path(f"test_file_{i}.py"),
                     operation="process",
                     success=True,
-                    duration_ms=1.0
+                    duration_ms=1.0,
                 )
 
         end_time = time.time()
         duration = end_time - start_time
 
         # Verify reasonable performance
-        self.assertLess(duration, 5.0, f"Audit logging took too long: {duration:.2f} seconds")
+        self.assertLess(
+            duration, 5.0, f"Audit logging took too long: {duration:.2f} seconds"
+        )
 
         # Verify logs were created
-        json_logs = list((self.project_root / ".performance_audit").glob("json/audit_*.json"))
+        json_logs = list(
+            (self.project_root / ".performance_audit").glob("json/audit_*.json")
+        )
         self.assertGreater(len(json_logs), 0)
 
 
@@ -643,22 +641,20 @@ class TestErrorHandlingIntegration(BaseIntegrationTest):
     def test_invalid_file_handling(self):
         """Test handling of invalid or missing files"""
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=self.config,
-            dry_run=True
+            project_root=self.project_root, config=self.config, dry_run=True
         )
 
         # Try to cleanup non-existent files
         invalid_files = [
             self.project_root / "non_existent_file.py",
-            self.project_root / "missing" / "nested_file.txt"
+            self.project_root / "missing" / "nested_file.txt",
         ]
 
         result = safety_cleanup.execute_safe_cleanup(
             files_to_cleanup=invalid_files,
             operation_type="invalid_file_test",
             force_backup=False,
-            user_confirmation=False
+            user_confirmation=False,
         )
 
         # Verify operation handled invalid files gracefully
@@ -667,7 +663,7 @@ class TestErrorHandlingIntegration(BaseIntegrationTest):
 
     def test_permission_denied_handling(self):
         """Test handling of permission denied errors"""
-        if os.name == 'nt':  # Skip on Windows due to different permission model
+        if os.name == "nt":  # Skip on Windows due to different permission model
             self.skipTest("Permission test not applicable on Windows")
 
         # Create a file with restricted permissions
@@ -677,16 +673,14 @@ class TestErrorHandlingIntegration(BaseIntegrationTest):
 
         try:
             safety_cleanup = SafetyIntegratedCleanup(
-                project_root=self.project_root,
-                config=self.config,
-                dry_run=True
+                project_root=self.project_root, config=self.config, dry_run=True
             )
 
             result = safety_cleanup.execute_safe_cleanup(
                 files_to_cleanup=[restricted_file],
                 operation_type="permission_test",
                 force_backup=False,
-                user_confirmation=False
+                user_confirmation=False,
             )
 
             # Should handle permission errors gracefully
@@ -703,13 +697,11 @@ class TestErrorHandlingIntegration(BaseIntegrationTest):
         """Test handling of disk space issues"""
         # This is a mock test since we can't easily simulate disk space issues
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=self.config,
-            dry_run=True
+            project_root=self.project_root, config=self.config, dry_run=True
         )
 
         # Mock insufficient disk space
-        with patch('shutil.disk_usage') as mock_disk_usage:
+        with patch("shutil.disk_usage") as mock_disk_usage:
             mock_disk_usage.return_value = (1000, 900, 50)  # Very low free space
 
             files_to_cleanup = list(self.project_root.glob("**/*.tmp"))
@@ -718,7 +710,7 @@ class TestErrorHandlingIntegration(BaseIntegrationTest):
                 files_to_cleanup=files_to_cleanup,
                 operation_type="disk_space_test",
                 force_backup=False,
-                user_confirmation=False
+                user_confirmation=False,
             )
 
             # Should detect low disk space and handle appropriately
@@ -727,20 +719,18 @@ class TestErrorHandlingIntegration(BaseIntegrationTest):
     def test_interrupted_operation_recovery(self):
         """Test recovery from interrupted operations"""
         safety_cleanup = SafetyIntegratedCleanup(
-            project_root=self.project_root,
-            config=self.config,
-            dry_run=False
+            project_root=self.project_root, config=self.config, dry_run=False
         )
 
         # Start operation and interrupt it
         def interrupt_operation():
             time.sleep(0.05)  # Allow operation to start
             safety_cleanup.emergency_manager.trigger_emergency_stop(
-                reason="system_shutdown",
-                message="Simulated system shutdown"
+                reason="system_shutdown", message="Simulated system shutdown"
             )
 
         import threading
+
         interrupt_thread = threading.Thread(target=interrupt_operation)
         interrupt_thread.start()
 
@@ -751,7 +741,7 @@ class TestErrorHandlingIntegration(BaseIntegrationTest):
                 files_to_cleanup=files_to_cleanup,
                 operation_type="interruption_test",
                 force_backup=True,
-                user_confirmation=False
+                user_confirmation=False,
             )
         except Exception:
             pass  # Expected due to interruption
@@ -783,7 +773,7 @@ if __name__ == "__main__":
         TestMakefileIntegration,
         TestWorkflowIntegration,
         TestPerformanceIntegration,
-        TestErrorHandlingIntegration
+        TestErrorHandlingIntegration,
     ]
 
     for test_class in test_classes:
@@ -801,7 +791,9 @@ if __name__ == "__main__":
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    print(f"Success rate: {(result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100:.1f}%")
+    print(
+        f"Success rate: {(result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100:.1f}%"
+    )
 
     if result.failures:
         print(f"\n{'*'*40} FAILURES {'*'*40}")
@@ -820,6 +812,8 @@ if __name__ == "__main__":
     if len(result.failures) + len(result.errors) == 0:
         print("🎉 ALL INTEGRATION TESTS PASSED!")
     else:
-        print(f"⚠️  {len(result.failures) + len(result.errors)} integration tests failed")
+        print(
+            f"⚠️  {len(result.failures) + len(result.errors)} integration tests failed"
+        )
 
     print(f"{'='*80}")

@@ -75,15 +75,14 @@ def cache_metrics(
         Decorated function with cache metrics tracking
 
     Examples:
-        >>> @cache_metrics("atomic_data")
-        ... def get_element_data(element: str):
-        ...     # Function implementation
-        ...     pass
+        >>> # Usage as a decorator
+        >>> metrics = cache_metrics("atomic_data")
+        >>> # Function would be decorated with @cache_metrics("atomic_data")
     """
 
     def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> Any:
             start_time = time.perf_counter() if track_timing else None
 
             # Extract element from args - assume first arg is element

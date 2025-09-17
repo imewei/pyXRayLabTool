@@ -10,9 +10,9 @@ from .safety_classifier import SafetyClassifier
 from .config import CleanupConfig
 
 __all__ = [
-    'ObsoleteFileDetector',
-    'DetectionResult',
-    'FileCategory',
-    'SafetyClassifier',
-    'CleanupConfig'
+    "ObsoleteFileDetector",
+    "DetectionResult",
+    "FileCategory",
+    "SafetyClassifier",
+    "CleanupConfig",
 ]

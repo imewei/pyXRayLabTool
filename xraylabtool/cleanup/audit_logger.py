@@ -25,28 +25,31 @@ logger = logging.getLogger(__name__)
 
 class AuditLevel(Enum):
     """Audit log levels with increasing detail"""
-    CRITICAL = "critical"    # System errors, data loss risks
-    WARNING = "warning"      # Potential issues, unusual conditions
-    INFO = "info"           # Normal operations, progress updates
-    DEBUG = "debug"         # Detailed execution traces
-    AUDIT = "audit"         # All file operations and changes
+
+    CRITICAL = "critical"  # System errors, data loss risks
+    WARNING = "warning"  # Potential issues, unusual conditions
+    INFO = "info"  # Normal operations, progress updates
+    DEBUG = "debug"  # Detailed execution traces
+    AUDIT = "audit"  # All file operations and changes
 
 
 class AuditCategory(Enum):
     """Categories of audit events"""
-    SYSTEM = "system"               # System-level operations
-    OPERATION = "operation"         # Cleanup operations
-    FILE = "file"                  # File-level operations
-    BACKUP = "backup"              # Backup operations
-    VALIDATION = "validation"       # Safety validations
-    EMERGENCY = "emergency"         # Emergency stops and recovery
-    SECURITY = "security"          # Security-related events
-    PERFORMANCE = "performance"     # Performance metrics
+
+    SYSTEM = "system"  # System-level operations
+    OPERATION = "operation"  # Cleanup operations
+    FILE = "file"  # File-level operations
+    BACKUP = "backup"  # Backup operations
+    VALIDATION = "validation"  # Safety validations
+    EMERGENCY = "emergency"  # Emergency stops and recovery
+    SECURITY = "security"  # Security-related events
+    PERFORMANCE = "performance"  # Performance metrics
 
 
 @dataclass
 class AuditEvent:
     """Individual audit event with comprehensive metadata"""
+
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: float = field(default_factory=time.time)
     level: AuditLevel = AuditLevel.INFO
@@ -72,7 +75,7 @@ class AuditEvent:
             self.timestamp = time.time()
 
         if not self.user_id:
-            self.user_id = os.getenv('USER', os.getenv('USERNAME', 'unknown'))
+            self.user_id = os.getenv("USER", os.getenv("USERNAME", "unknown"))
 
         if not self.session_id:
             self.session_id = f"session_{int(self.timestamp)}"
@@ -80,9 +83,11 @@ class AuditEvent:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary with proper serialization"""
         data = asdict(self)
-        data['level'] = self.level.value
-        data['category'] = self.category.value
-        data['datetime'] = datetime.fromtimestamp(self.timestamp, timezone.utc).isoformat()
+        data["level"] = self.level.value
+        data["category"] = self.category.value
+        data["datetime"] = datetime.fromtimestamp(
+            self.timestamp, timezone.utc
+        ).isoformat()
         return data
 
     def to_json(self) -> str:
@@ -93,15 +98,15 @@ class AuditEvent:
         """Generate tamper-evident hash of the event"""
         # Create deterministic string representation
         data = {
-            'event_id': self.event_id,
-            'timestamp': self.timestamp,
-            'level': self.level.value,
-            'category': self.category.value,
-            'operation_id': self.operation_id,
-            'user_id': self.user_id,
-            'message': self.message,
-            'file_path': self.file_path,
-            'success': self.success
+            "event_id": self.event_id,
+            "timestamp": self.timestamp,
+            "level": self.level.value,
+            "category": self.category.value,
+            "operation_id": self.operation_id,
+            "user_id": self.user_id,
+            "message": self.message,
+            "file_path": self.file_path,
+            "success": self.success,
         }
 
         # Sort keys for deterministic hashing
@@ -112,6 +117,7 @@ class AuditEvent:
 @dataclass
 class OperationAuditContext:
     """Context for tracking operation-level audit information"""
+
     operation_id: str
     operation_type: str
     start_time: float
@@ -133,14 +139,16 @@ class AuditLogger:
     and tamper-evident integrity verification.
     """
 
-    def __init__(self,
-                 audit_dir: Union[str, Path],
-                 retention_days: int = 365,
-                 max_file_size_mb: int = 100,
-                 enable_json_logs: bool = True,
-                 enable_csv_logs: bool = True,
-                 enable_human_readable: bool = True,
-                 compression_enabled: bool = True):
+    def __init__(
+        self,
+        audit_dir: Union[str, Path],
+        retention_days: int = 365,
+        max_file_size_mb: int = 100,
+        enable_json_logs: bool = True,
+        enable_csv_logs: bool = True,
+        enable_human_readable: bool = True,
+        compression_enabled: bool = True,
+    ):
         """
         Initialize audit logger.
 
@@ -188,7 +196,9 @@ class AuditLogger:
         self.json_log_path = self.audit_dir / "json" / f"audit_{timestamp}.json"
         self.csv_log_path = self.audit_dir / "csv" / f"audit_{timestamp}.csv"
         self.human_log_path = self.audit_dir / "human" / f"audit_{timestamp}.log"
-        self.integrity_path = self.audit_dir / "integrity" / f"integrity_{timestamp}.hash"
+        self.integrity_path = (
+            self.audit_dir / "integrity" / f"integrity_{timestamp}.hash"
+        )
 
         # Initialize CSV headers if needed
         if self.enable_csv_logs and not self.csv_log_path.exists():
@@ -197,13 +207,24 @@ class AuditLogger:
     def _write_csv_header(self):
         """Write CSV header row"""
         headers = [
-            "event_id", "timestamp", "datetime", "level", "category",
-            "operation_id", "user_id", "session_id", "message",
-            "file_path", "success", "duration_ms", "file_size_before", "file_size_after"
+            "event_id",
+            "timestamp",
+            "datetime",
+            "level",
+            "category",
+            "operation_id",
+            "user_id",
+            "session_id",
+            "message",
+            "file_path",
+            "success",
+            "duration_ms",
+            "file_size_before",
+            "file_size_after",
         ]
 
-        with open(self.csv_log_path, 'w') as f:
-            f.write(','.join(headers) + '\n')
+        with open(self.csv_log_path, "w") as f:
+            f.write(",".join(headers) + "\n")
 
     def _load_integrity_chain(self):
         """Load existing integrity chain"""
@@ -211,10 +232,12 @@ class AuditLogger:
             integrity_files = sorted(self.audit_dir.glob("integrity/integrity_*.hash"))
             if integrity_files:
                 latest_integrity = integrity_files[-1]
-                with open(latest_integrity, 'r') as f:
+                with open(latest_integrity, "r") as f:
                     for line in f:
                         self._integrity_chain.append(line.strip())
-                logger.debug(f"Loaded integrity chain with {len(self._integrity_chain)} entries")
+                logger.debug(
+                    f"Loaded integrity chain with {len(self._integrity_chain)} entries"
+                )
 
         except Exception as e:
             logger.warning(f"Failed to load integrity chain: {e}")
@@ -225,8 +248,12 @@ class AuditLogger:
         try:
             # Add to integrity chain
             event_hash = event.get_hash()
-            previous_hash = self._integrity_chain[-1] if self._integrity_chain else "genesis"
-            chain_hash = hashlib.sha256(f"{previous_hash}:{event_hash}".encode()).hexdigest()
+            previous_hash = (
+                self._integrity_chain[-1] if self._integrity_chain else "genesis"
+            )
+            chain_hash = hashlib.sha256(
+                f"{previous_hash}:{event_hash}".encode()
+            ).hexdigest()
             self._integrity_chain.append(chain_hash)
 
             # Write to different formats
@@ -251,8 +278,8 @@ class AuditLogger:
     def _write_json_log(self, event: AuditEvent):
         """Write event to JSON log"""
         try:
-            with open(self.json_log_path, 'a') as f:
-                f.write(event.to_json() + '\n')
+            with open(self.json_log_path, "a") as f:
+                f.write(event.to_json() + "\n")
         except Exception as e:
             logger.error(f"Failed to write JSON log: {e}")
 
@@ -261,24 +288,24 @@ class AuditLogger:
         try:
             data = event.to_dict()
             values = [
-                data.get('event_id', ''),
-                data.get('timestamp', ''),
-                data.get('datetime', ''),
-                data.get('level', ''),
-                data.get('category', ''),
-                data.get('operation_id', ''),
-                data.get('user_id', ''),
-                data.get('session_id', ''),
-                data.get('message', '').replace(',', ';'),  # Escape commas
-                data.get('file_path', ''),
-                data.get('success', ''),
-                data.get('duration_ms', ''),
-                data.get('file_size_before', ''),
-                data.get('file_size_after', '')
+                data.get("event_id", ""),
+                data.get("timestamp", ""),
+                data.get("datetime", ""),
+                data.get("level", ""),
+                data.get("category", ""),
+                data.get("operation_id", ""),
+                data.get("user_id", ""),
+                data.get("session_id", ""),
+                data.get("message", "").replace(",", ";"),  # Escape commas
+                data.get("file_path", ""),
+                data.get("success", ""),
+                data.get("duration_ms", ""),
+                data.get("file_size_before", ""),
+                data.get("file_size_after", ""),
             ]
 
-            with open(self.csv_log_path, 'a') as f:
-                f.write(','.join(str(v) for v in values) + '\n')
+            with open(self.csv_log_path, "a") as f:
+                f.write(",".join(str(v) for v in values) + "\n")
 
         except Exception as e:
             logger.error(f"Failed to write CSV log: {e}")
@@ -286,7 +313,9 @@ class AuditLogger:
     def _write_human_log(self, event: AuditEvent):
         """Write event to human-readable log"""
         try:
-            timestamp = datetime.fromtimestamp(event.timestamp).strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = datetime.fromtimestamp(event.timestamp).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
             level = event.level.value.upper()
             category = event.category.value.upper()
 
@@ -306,8 +335,8 @@ class AuditLogger:
             if not event.success and event.error_message:
                 log_line += f"\n    Error: {event.error_message}"
 
-            with open(self.human_log_path, 'a') as f:
-                f.write(log_line + '\n')
+            with open(self.human_log_path, "a") as f:
+                f.write(log_line + "\n")
 
         except Exception as e:
             logger.error(f"Failed to write human-readable log: {e}")
@@ -315,7 +344,7 @@ class AuditLogger:
     def _write_integrity_hash(self, chain_hash: str):
         """Write integrity hash to file"""
         try:
-            with open(self.integrity_path, 'a') as f:
+            with open(self.integrity_path, "a") as f:
                 f.write(f"{chain_hash}\n")
         except Exception as e:
             logger.error(f"Failed to write integrity hash: {e}")
@@ -323,7 +352,10 @@ class AuditLogger:
     def _check_log_rotation(self):
         """Check if log rotation is needed"""
         try:
-            if self.json_log_path.exists() and self.json_log_path.stat().st_size > self.max_file_size_bytes:
+            if (
+                self.json_log_path.exists()
+                and self.json_log_path.stat().st_size > self.max_file_size_bytes
+            ):
                 self._rotate_logs()
         except Exception as e:
             logger.warning(f"Failed to check log rotation: {e}")
@@ -338,11 +370,15 @@ class AuditLogger:
                 import gzip
                 import shutil
 
-                for log_path in [self.json_log_path, self.csv_log_path, self.human_log_path]:
+                for log_path in [
+                    self.json_log_path,
+                    self.csv_log_path,
+                    self.human_log_path,
+                ]:
                     if log_path.exists():
-                        compressed_path = log_path.with_suffix(log_path.suffix + '.gz')
-                        with open(log_path, 'rb') as f_in:
-                            with gzip.open(compressed_path, 'wb') as f_out:
+                        compressed_path = log_path.with_suffix(log_path.suffix + ".gz")
+                        with open(log_path, "rb") as f_in:
+                            with gzip.open(compressed_path, "wb") as f_out:
                                 shutil.copyfileobj(f_in, f_out)
                         log_path.unlink()  # Remove uncompressed version
 
@@ -355,14 +391,13 @@ class AuditLogger:
             logger.error(f"Failed to rotate logs: {e}")
 
     @contextmanager
-    def operation_context(self,
-                         operation_id: str,
-                         operation_type: str,
-                         user_id: Optional[str] = None) -> Iterator[OperationAuditContext]:
+    def operation_context(
+        self, operation_id: str, operation_type: str, user_id: Optional[str] = None
+    ) -> Iterator[OperationAuditContext]:
         """Context manager for operation-level audit tracking"""
 
         if not user_id:
-            user_id = os.getenv('USER', os.getenv('USERNAME', 'unknown'))
+            user_id = os.getenv("USER", os.getenv("USERNAME", "unknown"))
 
         session_id = f"session_{int(time.time())}"
 
@@ -371,7 +406,7 @@ class AuditLogger:
             operation_type=operation_type,
             start_time=time.time(),
             user_id=user_id,
-            session_id=session_id
+            session_id=session_id,
         )
 
         with self._lock:
@@ -385,7 +420,7 @@ class AuditLogger:
             user_id=user_id,
             session_id=session_id,
             message=f"Operation started: {operation_type}",
-            details={"operation_type": operation_type}
+            details={"operation_type": operation_type},
         )
         self.log_event(start_event)
 
@@ -409,7 +444,7 @@ class AuditLogger:
                 message=f"Operation failed: {operation_type}",
                 success=False,
                 error_message=str(e),
-                details={"operation_type": operation_type, "error": str(e)}
+                details={"operation_type": operation_type, "error": str(e)},
             )
             self.log_event(error_event)
             raise
@@ -433,25 +468,27 @@ class AuditLogger:
                     "operation_type": operation_type,
                     "files_affected": len(context.files_affected),
                     "events_logged": len(context.events),
-                    "duration_seconds": duration
-                }
+                    "duration_seconds": duration,
+                },
             )
             self.log_event(end_event)
 
             with self._lock:
                 del self._active_operations[operation_id]
 
-    def log_file_operation(self,
-                          operation_id: str,
-                          file_path: Path,
-                          operation: str,
-                          success: bool = True,
-                          error_message: Optional[str] = None,
-                          hash_before: Optional[str] = None,
-                          hash_after: Optional[str] = None,
-                          size_before: Optional[int] = None,
-                          size_after: Optional[int] = None,
-                          duration_ms: Optional[float] = None):
+    def log_file_operation(
+        self,
+        operation_id: str,
+        file_path: Path,
+        operation: str,
+        success: bool = True,
+        error_message: Optional[str] = None,
+        hash_before: Optional[str] = None,
+        hash_after: Optional[str] = None,
+        size_before: Optional[int] = None,
+        size_after: Optional[int] = None,
+        duration_ms: Optional[float] = None,
+    ):
         """Log a file-level operation with before/after hashes"""
 
         # Update operation context
@@ -476,9 +513,15 @@ class AuditLogger:
             details={
                 "operation": operation,
                 "file_path": str(file_path),
-                "hash_changed": hash_before != hash_after if hash_before and hash_after else False,
-                "size_changed": size_before != size_after if size_before is not None and size_after is not None else False
-            }
+                "hash_changed": (
+                    hash_before != hash_after if hash_before and hash_after else False
+                ),
+                "size_changed": (
+                    size_before != size_after
+                    if size_before is not None and size_after is not None
+                    else False
+                ),
+            },
         )
 
         self.log_event(event)
@@ -490,21 +533,23 @@ class AuditLogger:
                 "integrity_verified": True,
                 "events_verified": 0,
                 "chain_breaks": [],
-                "verification_time": time.time()
+                "verification_time": time.time(),
             }
 
             # Verify integrity chain
             if len(self._integrity_chain) > 1:
                 for i in range(1, len(self._integrity_chain)):
                     # Verify chain link
-                    previous_hash = self._integrity_chain[i-1]
+                    previous_hash = self._integrity_chain[i - 1]
                     current_hash = self._integrity_chain[i]
 
                     # Note: Full verification would require re-reading and hashing events
                     # This is a simplified check of chain continuity
                     verification_results["events_verified"] += 1
 
-            logger.info(f"Integrity verification completed: {verification_results['events_verified']} events verified")
+            logger.info(
+                f"Integrity verification completed: {verification_results['events_verified']} events verified"
+            )
             return verification_results
 
         except Exception as e:
@@ -512,13 +557,15 @@ class AuditLogger:
             return {
                 "integrity_verified": False,
                 "error": str(e),
-                "verification_time": time.time()
+                "verification_time": time.time(),
             }
 
-    def get_audit_summary(self,
-                         operation_id: Optional[str] = None,
-                         start_time: Optional[float] = None,
-                         end_time: Optional[float] = None) -> Dict[str, Any]:
+    def get_audit_summary(
+        self,
+        operation_id: Optional[str] = None,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
+    ) -> Dict[str, Any]:
         """Get summary of audit events with optional filtering"""
         try:
             # This would normally parse through log files to generate summary
@@ -526,7 +573,9 @@ class AuditLogger:
 
             with self._lock:
                 active_ops = len(self._active_operations)
-                operation_types = [op.operation_type for op in self._active_operations.values()]
+                operation_types = [
+                    op.operation_type for op in self._active_operations.values()
+                ]
 
             summary = {
                 "active_operations": active_ops,
@@ -537,8 +586,8 @@ class AuditLogger:
                 "formats_enabled": {
                     "json": self.enable_json_logs,
                     "csv": self.enable_csv_logs,
-                    "human_readable": self.enable_human_readable
-                }
+                    "human_readable": self.enable_human_readable,
+                },
             }
 
             return summary
@@ -564,7 +613,9 @@ class AuditLogger:
                         log_file.unlink()
                         removed_count += 1
 
-            logger.info(f"Cleanup completed: removed {removed_count} old log files (cutoff: {cutoff_date})")
+            logger.info(
+                f"Cleanup completed: removed {removed_count} old log files (cutoff: {cutoff_date})"
+            )
             return removed_count
 
         except Exception as e:
@@ -572,8 +623,9 @@ class AuditLogger:
             return 0
 
 
-def create_audit_logger(project_root: Path,
-                       audit_subdir: str = ".cleanup_audit") -> AuditLogger:
+def create_audit_logger(
+    project_root: Path, audit_subdir: str = ".cleanup_audit"
+) -> AuditLogger:
     """Factory function to create configured audit logger"""
     audit_dir = project_root / audit_subdir
 
@@ -584,7 +636,7 @@ def create_audit_logger(project_root: Path,
         enable_json_logs=True,
         enable_csv_logs=True,
         enable_human_readable=True,
-        compression_enabled=True
+        compression_enabled=True,
     )
 
 
@@ -600,7 +652,7 @@ if __name__ == "__main__":
         audit_logger = AuditLogger(
             audit_dir=temp_dir,
             retention_days=30,
-            max_file_size_mb=1  # Small for testing
+            max_file_size_mb=1,  # Small for testing
         )
 
         # Test operation context
@@ -615,7 +667,7 @@ if __name__ == "__main__":
                 hash_after=None,
                 size_before=1024,
                 size_after=0,
-                duration_ms=15.5
+                duration_ms=15.5,
             )
 
             # Log another operation
@@ -624,7 +676,7 @@ if __name__ == "__main__":
                 category=AuditCategory.VALIDATION,
                 operation_id="test_op_001",
                 message="Validation warning detected",
-                details={"validation_type": "file_permissions"}
+                details={"validation_type": "file_permissions"},
             )
             audit_logger.log_event(event)
 

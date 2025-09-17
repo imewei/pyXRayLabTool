@@ -172,9 +172,9 @@ class TestBatchProcessingMemoryManagement:
         memory_increase_mb = (final_memory - initial_memory) / 1024 / 1024
 
         # Memory increase should be reasonable (less than 10MB for this calculation)
-        assert memory_increase_mb < 10, (
-            f"Memory increase too large: {memory_increase_mb:.2f}MB"
-        )
+        assert (
+            memory_increase_mb < 10
+        ), f"Memory increase too large: {memory_increase_mb:.2f}MB"
         assert result is not None
         assert formula_result == formula
 
@@ -268,12 +268,12 @@ class TestBatchProcessingMemoryManagement:
             max_memory_increase = 500  # Full expectations for local
             max_peak_memory = 1000
 
-        assert memory_increase_mb < max_memory_increase, (
-            f"Memory increase too large: {memory_increase_mb:.2f}MB (limit: {max_memory_increase}MB, CI: {is_ci})"
-        )
-        assert peak_mb < max_peak_memory, (
-            f"Peak memory usage too high: {peak_mb:.2f}MB (limit: {max_peak_memory}MB, CI: {is_ci})"
-        )
+        assert (
+            memory_increase_mb < max_memory_increase
+        ), f"Memory increase too large: {memory_increase_mb:.2f}MB (limit: {max_memory_increase}MB, CI: {is_ci})"
+        assert (
+            peak_mb < max_peak_memory
+        ), f"Peak memory usage too high: {peak_mb:.2f}MB (limit: {max_peak_memory}MB, CI: {is_ci})"
 
         # Most results should succeed
         successful_results = [
@@ -358,9 +358,9 @@ class TestMemoryLeakPrevention:
         memory_increase_mb = (final_memory - initial_memory) / 1024 / 1024
 
         # Memory increase should be minimal (less than 50MB)
-        assert memory_increase_mb < 50, (
-            f"Possible memory leak: {memory_increase_mb:.2f}MB increase"
-        )
+        assert (
+            memory_increase_mb < 50
+        ), f"Possible memory leak: {memory_increase_mb:.2f}MB increase"
 
     def test_batch_calculation_memory_cleanup(self):
         """Test that batch calculations clean up memory properly."""
@@ -380,9 +380,9 @@ class TestMemoryLeakPrevention:
         memory_increase_mb = (final_memory - initial_memory) / 1024 / 1024
 
         # Memory increase should be reasonable
-        assert memory_increase_mb < 100, (
-            f"Memory increase too large: {memory_increase_mb:.2f}MB"
-        )
+        assert (
+            memory_increase_mb < 100
+        ), f"Memory increase too large: {memory_increase_mb:.2f}MB"
 
         # Verify results are correct
         assert len(results) == len(set(formulas))  # Unique formulas
@@ -412,6 +412,6 @@ class TestMemoryLeakPrevention:
         memory_increase_mb = (final_memory - initial_memory) / 1024 / 1024
 
         # Should handle large arrays efficiently
-        assert memory_increase_mb < 200, (
-            f"Large array memory usage: {memory_increase_mb:.2f}MB"
-        )
+        assert (
+            memory_increase_mb < 200
+        ), f"Large array memory usage: {memory_increase_mb:.2f}MB"

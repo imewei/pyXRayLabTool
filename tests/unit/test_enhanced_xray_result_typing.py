@@ -40,17 +40,17 @@ class TestXRayResultTyping(BaseXRayLabToolTest):
         assert hints["density_g_cm3"] == "float"
         assert hints["electron_density_per_ang3"] == "float"
 
-        # Test array field types (these are string annotations due to TYPE_CHECKING)
-        assert hints["energy_kev"] == "'EnergyArray'"
-        assert hints["wavelength_angstrom"] == "'WavelengthArray'"
-        assert hints["dispersion_delta"] == "'OpticalConstantArray'"
-        assert hints["absorption_beta"] == "'OpticalConstantArray'"
-        assert hints["scattering_factor_f1"] == "'OpticalConstantArray'"
-        assert hints["scattering_factor_f2"] == "'OpticalConstantArray'"
-        assert hints["critical_angle_degrees"] == "'OpticalConstantArray'"
-        assert hints["attenuation_length_cm"] == "'OpticalConstantArray'"
-        assert hints["real_sld_per_ang2"] == "'OpticalConstantArray'"
-        assert hints["imaginary_sld_per_ang2"] == "'OpticalConstantArray'"
+        # Test array field types (these are TYPE_CHECKING imports, so no quotes in annotations)
+        assert hints["energy_kev"] == "EnergyArray"
+        assert hints["wavelength_angstrom"] == "WavelengthArray"
+        assert hints["dispersion_delta"] == "OpticalConstantArray"
+        assert hints["absorption_beta"] == "OpticalConstantArray"
+        assert hints["scattering_factor_f1"] == "OpticalConstantArray"
+        assert hints["scattering_factor_f2"] == "OpticalConstantArray"
+        assert hints["critical_angle_degrees"] == "OpticalConstantArray"
+        assert hints["attenuation_length_cm"] == "OpticalConstantArray"
+        assert hints["real_sld_per_ang2"] == "OpticalConstantArray"
+        assert hints["imaginary_sld_per_ang2"] == "OpticalConstantArray"
 
     def test_xray_result_creation_with_correct_types(self):
         """Test XRayResult creation with properly typed inputs."""
@@ -314,9 +314,9 @@ class TestXRayResultTyping(BaseXRayLabToolTest):
         time_per_creation = total_time / n_iterations
 
         # Should be fast (< 1ms per creation for reasonable array sizes)
-        assert time_per_creation < 0.001, (
-            f"XRayResult creation too slow: {time_per_creation:.4f}s"
-        )
+        assert (
+            time_per_creation < 0.001
+        ), f"XRayResult creation too slow: {time_per_creation:.4f}s"
 
     def _create_test_result(self, array_size: int = 10) -> XRayResult:
         """Helper method to create test XRayResult instances."""

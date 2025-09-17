@@ -103,9 +103,9 @@ class TestPerformanceBaselines(BasePerformanceTest):
                 }
 
                 # Verify reasonable performance
-                assert calc_per_second > 1000, (
-                    f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
-                )
+                assert (
+                    calc_per_second > 1000
+                ), f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
                 assert result is not None, f"Calculation failed for {test_name}"
 
     def test_compound_baselines(self):
@@ -167,9 +167,9 @@ class TestPerformanceBaselines(BasePerformanceTest):
                 }
 
                 # Compounds should be slower than elements but still performant
-                assert calc_per_second > 500, (
-                    f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
-                )
+                assert (
+                    calc_per_second > 500
+                ), f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
                 assert result is not None, f"Calculation failed for {test_name}"
 
     def test_complex_material_baselines(self):
@@ -231,9 +231,9 @@ class TestPerformanceBaselines(BasePerformanceTest):
                 }
 
                 # Complex materials should still meet minimum performance
-                assert calc_per_second > 200, (
-                    f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
-                )
+                assert (
+                    calc_per_second > 200
+                ), f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
                 assert result is not None, f"Calculation failed for {test_name}"
 
     def test_energy_scaling_baselines(self):
@@ -290,9 +290,9 @@ class TestPerformanceBaselines(BasePerformanceTest):
             }
 
             # Ensure scaling efficiency
-            assert calc_per_second > 100, (
-                f"Poor scaling performance for {size} points: {calc_per_second:.1f} calc/sec"
-            )
+            assert (
+                calc_per_second > 100
+            ), f"Poor scaling performance for {size} points: {calc_per_second:.1f} calc/sec"
             assert result is not None, f"Calculation failed for {test_name}"
 
     def test_memory_usage_baselines(self):
@@ -411,41 +411,58 @@ class TestBaselineValidation(BasePerformanceTest):
 
     def test_baseline_data_integrity(self):
         """Verify baseline data is being recorded correctly."""
-        detector = PerformanceRegressionDetector()
+        import tempfile
 
-        # Record a test metric
-        detector.record_metric(
-            name="test_validation_metric",
-            value=12345.0,
-            unit="calc/sec",
-            context={"test": "validation"},
-        )
+        # Use temporary file for test isolation
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as temp_file:
+            temp_path = Path(temp_file.name)
 
-        # Verify it was recorded
-        baseline = detector.get_baseline("test_validation_metric")
-        assert baseline is not None
-        assert baseline == 12345.0
+        try:
+            detector = PerformanceRegressionDetector(data_file=temp_path)
 
-        # Test regression detection
-        alert = detector.check_regression("test_validation_metric", 10000.0)
-        assert alert is not None
-        assert alert.severity == "warning"
-        assert alert.regression_percentage > 15
+            # Record a test metric
+            detector.record_metric(
+                name="test_validation_metric",
+                value=12345.0,
+                unit="calc/sec",
+                context={"test": "validation"},
+            )
+
+            # Verify it was recorded
+            baseline = detector.get_baseline("test_validation_metric")
+            assert baseline is not None
+            assert baseline == 12345.0
+
+            # Test regression detection
+            alert = detector.check_regression("test_validation_metric", 10000.0)
+            assert alert is not None
+            assert alert.severity == "warning"
+            assert alert.regression_percentage > 15
+        finally:
+            # Clean up
+            temp_path.unlink(missing_ok=True)
 
     def test_baseline_persistence(self):
         """Test that baselines persist across detector instances."""
-        # Create detector and record metric
-        detector1 = PerformanceRegressionDetector(
-            data_file=Path("test_persistence.json")
-        )
-        detector1.record_metric("persistence_test", 9999.0, "calc/sec")
+        import tempfile
 
-        # Create new detector instance and verify data persists
-        detector2 = PerformanceRegressionDetector(
-            data_file=Path("test_persistence.json")
-        )
-        baseline = detector2.get_baseline("persistence_test")
-        assert baseline == 9999.0
+        # Use temporary file for test isolation
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as temp_file:
+            temp_path = Path(temp_file.name)
 
-        # Clean up
-        Path("test_persistence.json").unlink(missing_ok=True)
+        try:
+            # Create detector and record metric
+            detector1 = PerformanceRegressionDetector(
+                data_file=temp_path
+            )
+            detector1.record_metric("persistence_test", 9999.0, "calc/sec")
+
+            # Create new detector instance and verify data persists
+            detector2 = PerformanceRegressionDetector(
+                data_file=temp_path
+            )
+            baseline = detector2.get_baseline("persistence_test")
+            assert baseline == 9999.0
+        finally:
+            # Clean up
+            temp_path.unlink(missing_ok=True)

@@ -341,48 +341,48 @@ class XRayResult:
     @classmethod
     def from_legacy(
         cls,
-        Formula: str | None = None,
-        MW: float | None = None,
-        Number_Of_Electrons: float | None = None,
-        Density: float | None = None,
-        Electron_Density: float | None = None,
-        Energy: np.ndarray | None = None,
-        Wavelength: np.ndarray | None = None,
-        Dispersion: np.ndarray | None = None,
-        Absorption: np.ndarray | None = None,
+        formula: str | None = None,
+        mw: float | None = None,
+        number_of_electrons: float | None = None,
+        density: float | None = None,
+        electron_density: float | None = None,
+        energy: np.ndarray | None = None,
+        wavelength: np.ndarray | None = None,
+        dispersion: np.ndarray | None = None,
+        absorption: np.ndarray | None = None,
         f1: np.ndarray | None = None,
         f2: np.ndarray | None = None,
-        Critical_Angle: np.ndarray | None = None,
-        Attenuation_Length: np.ndarray | None = None,
-        reSLD: np.ndarray | None = None,
-        imSLD: np.ndarray | None = None,
+        critical_angle: np.ndarray | None = None,
+        attenuation_length: np.ndarray | None = None,
+        re_sld: np.ndarray | None = None,
+        im_sld: np.ndarray | None = None,
         **kwargs: Any,
     ) -> XRayResult:
         """Create XRayResult from legacy field names (for internal use)."""
         return cls(
-            formula=Formula or kwargs.get("formula", ""),
-            molecular_weight_g_mol=MW or kwargs.get("molecular_weight_g_mol", 0.0),
-            total_electrons=Number_Of_Electrons or kwargs.get("total_electrons", 0.0),
-            density_g_cm3=Density or kwargs.get("density_g_cm3", 0.0),
+            formula=formula or kwargs.get("formula", ""),
+            molecular_weight_g_mol=mw or kwargs.get("molecular_weight_g_mol", 0.0),
+            total_electrons=number_of_electrons or kwargs.get("total_electrons", 0.0),
+            density_g_cm3=density or kwargs.get("density_g_cm3", 0.0),
             electron_density_per_ang3=(
-                Electron_Density or kwargs.get("electron_density_per_ang3", 0.0)
+                electron_density or kwargs.get("electron_density_per_ang3", 0.0)
             ),
             energy_kev=(
-                Energy if Energy is not None else kwargs.get("energy_kev", np.array([]))
+                energy if energy is not None else kwargs.get("energy_kev", np.array([]))
             ),
             wavelength_angstrom=(
-                Wavelength
-                if Wavelength is not None
+                wavelength
+                if wavelength is not None
                 else kwargs.get("wavelength_angstrom", np.array([]))
             ),
             dispersion_delta=(
-                Dispersion
-                if Dispersion is not None
+                dispersion
+                if dispersion is not None
                 else kwargs.get("dispersion_delta", np.array([]))
             ),
             absorption_beta=(
-                Absorption
-                if Absorption is not None
+                absorption
+                if absorption is not None
                 else kwargs.get("absorption_beta", np.array([]))
             ),
             scattering_factor_f1=(
@@ -396,23 +396,23 @@ class XRayResult:
                 else kwargs.get("scattering_factor_f2", np.array([]))
             ),
             critical_angle_degrees=(
-                Critical_Angle
-                if Critical_Angle is not None
+                critical_angle
+                if critical_angle is not None
                 else kwargs.get("critical_angle_degrees", np.array([]))
             ),
             attenuation_length_cm=(
-                Attenuation_Length
-                if Attenuation_Length is not None
+                attenuation_length
+                if attenuation_length is not None
                 else kwargs.get("attenuation_length_cm", np.array([]))
             ),
             real_sld_per_ang2=(
-                reSLD
-                if reSLD is not None
+                re_sld
+                if re_sld is not None
                 else kwargs.get("real_sld_per_ang2", np.array([]))
             ),
             imaginary_sld_per_ang2=(
-                imSLD
-                if imSLD is not None
+                im_sld
+                if im_sld is not None
                 else kwargs.get("imaginary_sld_per_ang2", np.array([]))
             ),
         )
@@ -595,7 +595,9 @@ class AtomicScatteringFactor:
         """
         return load_scattering_factor_data(element)
 
-    def get_scattering_factor(self, element: str, q_values: np.ndarray) -> np.ndarray:  # noqa: ARG002
+    def get_scattering_factor(
+        self, element: str, q_values: np.ndarray
+    ) -> np.ndarray:  # noqa: ARG002
         """
         Calculate scattering factors for given q values.
 
@@ -642,7 +644,9 @@ class CrystalStructure:
             {"element": element, "position": position, "occupancy": occupancy}
         )
 
-    def calculate_structure_factor(self, hkl: tuple[int, int, int]) -> complex:  # noqa: ARG002
+    def calculate_structure_factor(
+        self, hkl: tuple[int, int, int]
+    ) -> complex:  # noqa: ARG002
         """
         Calculate structure factor for given Miller indices.
 

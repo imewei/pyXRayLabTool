@@ -21,9 +21,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SafetySettings:
     """Safety-related configuration options."""
+
     require_confirmation: bool = True
     create_backup: bool = True
-    backup_directory: str = '.cleanup_backup'
+    backup_directory: str = ".cleanup_backup"
     max_file_size_mb: float = 100.0
     strict_mode: bool = True
     dry_run_by_default: bool = True
@@ -32,6 +33,7 @@ class SafetySettings:
 @dataclass
 class DetectionSettings:
     """File detection configuration options."""
+
     recursive_scan: bool = True
     follow_symlinks: bool = False
     include_hidden_files: bool = False
@@ -43,6 +45,7 @@ class DetectionSettings:
 @dataclass
 class PatternSettings:
     """Custom pattern configuration for file detection."""
+
     obsolete_patterns: List[str] = field(default_factory=list)
     safe_patterns: List[str] = field(default_factory=list)
     exclude_patterns: List[str] = field(default_factory=list)
@@ -52,11 +55,12 @@ class PatternSettings:
 @dataclass
 class ReportingSettings:
     """Configuration for logging and reporting."""
-    log_level: str = 'INFO'
+
+    log_level: str = "INFO"
     detailed_logging: bool = True
     create_summary_report: bool = True
-    report_format: str = 'json'  # json, yaml, text
-    report_directory: str = '.cleanup_reports'
+    report_format: str = "json"  # json, yaml, text
+    report_directory: str = ".cleanup_reports"
 
 
 class CleanupConfig:
@@ -69,81 +73,81 @@ class CleanupConfig:
 
     # Default configuration for XRayLabTool
     DEFAULT_CONFIG = {
-        'safety': {
-            'require_confirmation': True,
-            'create_backup': True,
-            'backup_directory': '.cleanup_backup',
-            'max_file_size_mb': 100.0,
-            'strict_mode': True,
-            'dry_run_by_default': True
+        "safety": {
+            "require_confirmation": True,
+            "create_backup": True,
+            "backup_directory": ".cleanup_backup",
+            "max_file_size_mb": 100.0,
+            "strict_mode": True,
+            "dry_run_by_default": True,
         },
-        'detection': {
-            'recursive_scan': True,
-            'follow_symlinks': False,
-            'include_hidden_files': False,
-            'use_git_context': True,
-            'enable_content_analysis': True,
-            'stale_threshold_days': 90
+        "detection": {
+            "recursive_scan": True,
+            "follow_symlinks": False,
+            "include_hidden_files": False,
+            "use_git_context": True,
+            "enable_content_analysis": True,
+            "stale_threshold_days": 90,
         },
-        'patterns': {
-            'obsolete_patterns': [
-                'performance_baseline_summary.json',
-                'baseline_ci_report.json',
-                'test_persistence.json',
-                'performance_history.json',
-                '_xraylabtool_completion.bash',
-                'install_completion.py',
-                '*.pyc',
-                '*.pyo',
-                '**/__pycache__/**',
-                '.DS_Store',
-                '*.tmp',
-                '*.bak'
+        "patterns": {
+            "obsolete_patterns": [
+                "performance_baseline_summary.json",
+                "baseline_ci_report.json",
+                "test_persistence.json",
+                "performance_history.json",
+                "_xraylabtool_completion.bash",
+                "install_completion.py",
+                "*.pyc",
+                "*.pyo",
+                "**/__pycache__/**",
+                ".DS_Store",
+                "*.tmp",
+                "*.bak",
             ],
-            'safe_patterns': [
-                '*.pyc',
-                '*.pyo',
-                '**/__pycache__/**/*',
-                'build/**/*',
-                'dist/**/*',
-                '*.egg-info/**/*',
-                '.pytest_cache/**/*',
-                'htmlcov/**/*',
-                '.coverage*',
-                '.DS_Store',
-                '._*',
-                'Thumbs.db'
+            "safe_patterns": [
+                "*.pyc",
+                "*.pyo",
+                "**/__pycache__/**/*",
+                "build/**/*",
+                "dist/**/*",
+                "*.egg-info/**/*",
+                ".pytest_cache/**/*",
+                "htmlcov/**/*",
+                ".coverage*",
+                ".DS_Store",
+                "._*",
+                "Thumbs.db",
             ],
-            'exclude_patterns': [
-                'pyproject.toml',
-                'setup.py',
-                'requirements*.txt',
-                'README*',
-                'LICENSE*',
-                'CHANGELOG*',
-                '.gitignore',
-                '.gitattributes'
+            "exclude_patterns": [
+                "pyproject.toml",
+                "setup.py",
+                "requirements*.txt",
+                "README*",
+                "LICENSE*",
+                "CHANGELOG*",
+                ".gitignore",
+                ".gitattributes",
             ],
-            'custom_rules': {
-                '*.secret': 'CRITICAL_KEEP',
-                '*.key': 'CRITICAL_KEEP',
-                'config_*': 'REVIEW_NEEDED',
-                'important_*': 'CRITICAL_KEEP'
-            }
+            "custom_rules": {
+                "*.secret": "CRITICAL_KEEP",
+                "*.key": "CRITICAL_KEEP",
+                "config_*": "REVIEW_NEEDED",
+                "important_*": "CRITICAL_KEEP",
+            },
         },
-        'reporting': {
-            'log_level': 'INFO',
-            'detailed_logging': True,
-            'create_summary_report': True,
-            'report_format': 'json',
-            'report_directory': '.cleanup_reports'
-        }
+        "reporting": {
+            "log_level": "INFO",
+            "detailed_logging": True,
+            "create_summary_report": True,
+            "report_format": "json",
+            "report_directory": ".cleanup_reports",
+        },
     }
 
     def __init__(
         self,
         config_dict: Optional[Dict[str, Any]] = None,
-        config_file: Optional[Union[str, Path]] = None
+        config_file: Optional[Union[str, Path]] = None,
     ):
         """
         Initialize cleanup configuration.
@@ -171,15 +175,15 @@ class CleanupConfig:
         self._validate_config()
 
         # Create typed settings objects
-        self.safety = SafetySettings(**self._config['safety'])
-        self.detection = DetectionSettings(**self._config['detection'])
-        self.patterns = PatternSettings(**self._config['patterns'])
-        self.reporting = ReportingSettings(**self._config['reporting'])
+        self.safety = SafetySettings(**self._config["safety"])
+        self.detection = DetectionSettings(**self._config["detection"])
+        self.patterns = PatternSettings(**self._config["patterns"])
+        self.reporting = ReportingSettings(**self._config["reporting"])
 
         logger.info("Initialized cleanup configuration")
 
     @classmethod
-    def from_file(cls, config_file: Union[str, Path]) -> 'CleanupConfig':
+    def from_file(cls, config_file: Union[str, Path]) -> "CleanupConfig":
         """
         Create configuration from a file.
 
@@ -193,9 +197,7 @@ class CleanupConfig:
 
     @classmethod
     def create_default_config_file(
-        cls,
-        output_path: Union[str, Path],
-        format: str = 'json'
+        cls, output_path: Union[str, Path], format: str = "json"
     ) -> Path:
         """
         Create a default configuration file.
@@ -209,17 +211,28 @@ class CleanupConfig:
         """
         output_path = Path(output_path)
 
-        if format.lower() == 'json':
-            output_path = output_path.with_suffix('.json') if not output_path.suffix else output_path
-            with open(output_path, 'w') as f:
+        if format.lower() == "json":
+            output_path = (
+                output_path.with_suffix(".json")
+                if not output_path.suffix
+                else output_path
+            )
+            with open(output_path, "w") as f:
                 json.dump(cls.DEFAULT_CONFIG, f, indent=2, sort_keys=True)
 
-        elif format.lower() == 'yaml':
+        elif format.lower() == "yaml":
             try:
                 import yaml
-                output_path = output_path.with_suffix('.yaml') if not output_path.suffix else output_path
-                with open(output_path, 'w') as f:
-                    yaml.dump(cls.DEFAULT_CONFIG, f, default_flow_style=False, sort_keys=True)
+
+                output_path = (
+                    output_path.with_suffix(".yaml")
+                    if not output_path.suffix
+                    else output_path
+                )
+                with open(output_path, "w") as f:
+                    yaml.dump(
+                        cls.DEFAULT_CONFIG, f, default_flow_style=False, sort_keys=True
+                    )
             except ImportError:
                 raise ImportError("PyYAML is required for YAML configuration files")
 
@@ -230,9 +243,7 @@ class CleanupConfig:
         return output_path
 
     def save_to_file(
-        self,
-        output_path: Union[str, Path],
-        format: Optional[str] = None
+        self, output_path: Union[str, Path], format: Optional[str] = None
     ) -> Path:
         """
         Save current configuration to a file.
@@ -247,18 +258,19 @@ class CleanupConfig:
         output_path = Path(output_path)
 
         if format is None:
-            format = output_path.suffix.lstrip('.').lower() or 'json'
+            format = output_path.suffix.lstrip(".").lower() or "json"
 
         config_dict = self.to_dict()
 
-        if format == 'json':
-            with open(output_path, 'w') as f:
+        if format == "json":
+            with open(output_path, "w") as f:
                 json.dump(config_dict, f, indent=2, sort_keys=True)
 
-        elif format == 'yaml':
+        elif format == "yaml":
             try:
                 import yaml
-                with open(output_path, 'w') as f:
+
+                with open(output_path, "w") as f:
                     yaml.dump(config_dict, f, default_flow_style=False, sort_keys=True)
             except ImportError:
                 raise ImportError("PyYAML is required for YAML configuration files")
@@ -277,10 +289,10 @@ class CleanupConfig:
             Dictionary representation of the configuration
         """
         return {
-            'safety': asdict(self.safety),
-            'detection': asdict(self.detection),
-            'patterns': asdict(self.patterns),
-            'reporting': asdict(self.reporting)
+            "safety": asdict(self.safety),
+            "detection": asdict(self.detection),
+            "patterns": asdict(self.patterns),
+            "reporting": asdict(self.reporting),
         }
 
     def update(self, updates: Dict[str, Any]) -> None:
@@ -307,10 +319,10 @@ class CleanupConfig:
             raise
 
         # Update the settings objects
-        self.safety = SafetySettings(**self._config['safety'])
-        self.detection = DetectionSettings(**self._config['detection'])
-        self.patterns = PatternSettings(**self._config['patterns'])
-        self.reporting = ReportingSettings(**self._config['reporting'])
+        self.safety = SafetySettings(**self._config["safety"])
+        self.detection = DetectionSettings(**self._config["detection"])
+        self.patterns = PatternSettings(**self._config["patterns"])
+        self.reporting = ReportingSettings(**self._config["reporting"])
 
         logger.info("Updated configuration")
 
@@ -323,13 +335,13 @@ class CleanupConfig:
         """
         mapping = {}
         category_map = {
-            'SAFE_TO_REMOVE': FileCategory.SAFE_TO_REMOVE,
-            'LEGACY': FileCategory.LEGACY,
-            'SYSTEM_GENERATED': FileCategory.SYSTEM_GENERATED,
-            'BUILD_ARTIFACT': FileCategory.BUILD_ARTIFACT,
-            'TEMPORARY': FileCategory.TEMPORARY,
-            'REVIEW_NEEDED': FileCategory.REVIEW_NEEDED,
-            'CRITICAL_KEEP': FileCategory.CRITICAL_KEEP
+            "SAFE_TO_REMOVE": FileCategory.SAFE_TO_REMOVE,
+            "LEGACY": FileCategory.LEGACY,
+            "SYSTEM_GENERATED": FileCategory.SYSTEM_GENERATED,
+            "BUILD_ARTIFACT": FileCategory.BUILD_ARTIFACT,
+            "TEMPORARY": FileCategory.TEMPORARY,
+            "REVIEW_NEEDED": FileCategory.REVIEW_NEEDED,
+            "CRITICAL_KEEP": FileCategory.CRITICAL_KEEP,
         }
 
         for pattern, category_name in self.patterns.custom_rules.items():
@@ -356,7 +368,7 @@ class CleanupConfig:
         for pattern in self.patterns.obsolete_patterns:
             try:
                 # Try to compile as regex or glob
-                if '*' in pattern or '?' in pattern:
+                if "*" in pattern or "?" in pattern:
                     fnmatch.translate(pattern)
                 else:
                     re.compile(pattern)
@@ -366,7 +378,7 @@ class CleanupConfig:
         # Check safe patterns
         for pattern in self.patterns.safe_patterns:
             try:
-                if '*' in pattern or '?' in pattern:
+                if "*" in pattern or "?" in pattern:
                     fnmatch.translate(pattern)
                 else:
                     re.compile(pattern)
@@ -376,7 +388,7 @@ class CleanupConfig:
         # Check exclude patterns
         for pattern in self.patterns.exclude_patterns:
             try:
-                if '*' in pattern or '?' in pattern:
+                if "*" in pattern or "?" in pattern:
                     fnmatch.translate(pattern)
                 else:
                     re.compile(pattern)
@@ -393,15 +405,18 @@ class CleanupConfig:
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
         try:
-            with open(config_path, 'r') as f:
-                if config_path.suffix.lower() == '.json':
+            with open(config_path, "r") as f:
+                if config_path.suffix.lower() == ".json":
                     return json.load(f)
-                elif config_path.suffix.lower() in ['.yaml', '.yml']:
+                elif config_path.suffix.lower() in [".yaml", ".yml"]:
                     try:
                         import yaml
+
                         return yaml.safe_load(f)
                     except ImportError:
-                        raise ImportError("PyYAML is required for YAML configuration files")
+                        raise ImportError(
+                            "PyYAML is required for YAML configuration files"
+                        )
                 else:
                     # Try JSON first, then YAML
                     content = f.read()
@@ -410,24 +425,29 @@ class CleanupConfig:
                     except json.JSONDecodeError:
                         try:
                             import yaml
+
                             return yaml.safe_load(content)
                         except ImportError:
-                            raise ValueError(f"Cannot determine format for {config_path}")
+                            raise ValueError(
+                                f"Cannot determine format for {config_path}"
+                            )
 
         except Exception as e:
             raise ValueError(f"Failed to load configuration from {config_path}: {e}")
 
     def _merge_config(
-        self,
-        source: Dict[str, Any],
-        target: Optional[Dict[str, Any]] = None
+        self, source: Dict[str, Any], target: Optional[Dict[str, Any]] = None
     ) -> None:
         """Recursively merge configuration dictionaries."""
         if target is None:
             target = self._config
 
         for key, value in source.items():
-            if key in target and isinstance(target[key], dict) and isinstance(value, dict):
+            if (
+                key in target
+                and isinstance(target[key], dict)
+                and isinstance(value, dict)
+            ):
                 self._merge_config(value, target[key])
             else:
                 target[key] = deepcopy(value)
@@ -435,40 +455,53 @@ class CleanupConfig:
     def _validate_config(self) -> None:
         """Validate configuration values."""
         # Validate safety settings
-        safety = self._config.get('safety', {})
-        if 'max_file_size_mb' in safety:
-            if not isinstance(safety['max_file_size_mb'], (int, float)) or safety['max_file_size_mb'] < 0:
+        safety = self._config.get("safety", {})
+        if "max_file_size_mb" in safety:
+            if (
+                not isinstance(safety["max_file_size_mb"], (int, float))
+                or safety["max_file_size_mb"] < 0
+            ):
                 raise ValueError("max_file_size_mb must be a non-negative number")
 
         # Validate detection settings
-        detection = self._config.get('detection', {})
-        if 'stale_threshold_days' in detection:
-            if not isinstance(detection['stale_threshold_days'], int) or detection['stale_threshold_days'] < 1:
+        detection = self._config.get("detection", {})
+        if "stale_threshold_days" in detection:
+            if (
+                not isinstance(detection["stale_threshold_days"], int)
+                or detection["stale_threshold_days"] < 1
+            ):
                 raise ValueError("stale_threshold_days must be a positive integer")
 
         # Validate reporting settings
-        reporting = self._config.get('reporting', {})
-        if 'log_level' in reporting:
-            valid_levels = {'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'}
-            if reporting['log_level'] not in valid_levels:
+        reporting = self._config.get("reporting", {})
+        if "log_level" in reporting:
+            valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+            if reporting["log_level"] not in valid_levels:
                 raise ValueError(f"log_level must be one of: {valid_levels}")
 
-        if 'report_format' in reporting:
-            valid_formats = {'json', 'yaml', 'text'}
-            if reporting['report_format'] not in valid_formats:
+        if "report_format" in reporting:
+            valid_formats = {"json", "yaml", "text"}
+            if reporting["report_format"] not in valid_formats:
                 raise ValueError(f"report_format must be one of: {valid_formats}")
 
         # Validate custom rules
-        patterns = self._config.get('patterns', {})
-        if 'custom_rules' in patterns:
+        patterns = self._config.get("patterns", {})
+        if "custom_rules" in patterns:
             valid_categories = {
-                'SAFE_TO_REMOVE', 'LEGACY', 'SYSTEM_GENERATED',
-                'BUILD_ARTIFACT', 'TEMPORARY', 'REVIEW_NEEDED', 'CRITICAL_KEEP'
+                "SAFE_TO_REMOVE",
+                "LEGACY",
+                "SYSTEM_GENERATED",
+                "BUILD_ARTIFACT",
+                "TEMPORARY",
+                "REVIEW_NEEDED",
+                "CRITICAL_KEEP",
             }
-            for pattern, category in patterns['custom_rules'].items():
+            for pattern, category in patterns["custom_rules"].items():
                 if category not in valid_categories:
-                    raise ValueError(f"Invalid category '{category}' for pattern '{pattern}'. "
-                                   f"Valid categories: {valid_categories}")
+                    raise ValueError(
+                        f"Invalid category '{category}' for pattern '{pattern}'. "
+                        f"Valid categories: {valid_categories}"
+                    )
 
         logger.debug("Configuration validation passed")
 
@@ -490,14 +523,14 @@ def load_project_config(project_root: Union[str, Path]) -> CleanupConfig:
 
     # Standard configuration file locations
     config_locations = [
-        project_root / '.cleanup.json',
-        project_root / '.cleanup.yaml',
-        project_root / '.cleanup.yml',
-        project_root / 'cleanup.json',
-        project_root / 'cleanup.yaml',
-        project_root / 'cleanup.yml',
-        project_root / '.config' / 'cleanup.json',
-        project_root / '.config' / 'cleanup.yaml'
+        project_root / ".cleanup.json",
+        project_root / ".cleanup.yaml",
+        project_root / ".cleanup.yml",
+        project_root / "cleanup.json",
+        project_root / "cleanup.yaml",
+        project_root / "cleanup.yml",
+        project_root / ".config" / "cleanup.json",
+        project_root / ".config" / "cleanup.yaml",
     ]
 
     # Try to find and load configuration file
@@ -512,8 +545,7 @@ def load_project_config(project_root: Union[str, Path]) -> CleanupConfig:
 
 
 def create_project_config(
-    project_root: Union[str, Path],
-    config_name: str = '.cleanup.json'
+    project_root: Union[str, Path], config_name: str = ".cleanup.json"
 ) -> Path:
     """
     Create a project-specific configuration file with defaults.

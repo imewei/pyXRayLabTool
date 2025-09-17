@@ -132,9 +132,9 @@ class TestVectorizedCalculations(BasePerformanceTest):
                 )
 
                 # Verify reasonable performance
-                assert calculations_per_second > 10, (
-                    f"Performance too low for {test_key}: {calculations_per_second:.1f} calc/sec"
-                )
+                assert (
+                    calculations_per_second > 10
+                ), f"Performance too low for {test_key}: {calculations_per_second:.1f} calc/sec"
                 assert result is not None, f"Calculation failed for {test_key}"
 
         # Store results for later comparison with optimized version
@@ -216,9 +216,9 @@ class TestVectorizedCalculations(BasePerformanceTest):
             energies = np.linspace(5.0, 25.0, size)
 
             # Ensure energies array is C-contiguous
-            assert energies.flags.c_contiguous, (
-                f"Energy array not C-contiguous for size {size}"
-            )
+            assert (
+                energies.flags.c_contiguous
+            ), f"Energy array not C-contiguous for size {size}"
 
             # Test calculation and check result array properties
             result = calculate_single_material_properties(test_formula, energies, 2.2)
@@ -403,27 +403,27 @@ class TestVectorizedCalculations(BasePerformanceTest):
                         beta = result.absorption_beta
 
                         # Test for common numerical issues
-                        assert np.all(np.isfinite(delta)), (
-                            f"Non-finite dispersion values for {formula}"
-                        )
-                        assert np.all(np.isfinite(beta)), (
-                            f"Non-finite absorption values for {formula}"
-                        )
-                        assert np.all(delta >= 0), (
-                            f"Negative dispersion values for {formula}"
-                        )
-                        assert np.all(beta >= 0), (
-                            f"Negative absorption values for {formula}"
-                        )
+                        assert np.all(
+                            np.isfinite(delta)
+                        ), f"Non-finite dispersion values for {formula}"
+                        assert np.all(
+                            np.isfinite(beta)
+                        ), f"Non-finite absorption values for {formula}"
+                        assert np.all(
+                            delta >= 0
+                        ), f"Negative dispersion values for {formula}"
+                        assert np.all(
+                            beta >= 0
+                        ), f"Negative absorption values for {formula}"
 
                         # Test precision preservation
                         # Values should not be exactly zero unless physically meaningful
-                        assert np.any(delta > 1e-15), (
-                            f"Suspiciously small dispersion for {formula}"
-                        )
-                        assert np.any(beta > 1e-15), (
-                            f"Suspiciously small absorption for {formula}"
-                        )
+                        assert np.any(
+                            delta > 1e-15
+                        ), f"Suspiciously small dispersion for {formula}"
+                        assert np.any(
+                            beta > 1e-15
+                        ), f"Suspiciously small absorption for {formula}"
 
                         # Record numerical health metrics
                         record_performance_metric(
@@ -490,9 +490,9 @@ class TestVectorizationRegressions(BasePerformanceTest):
 
         # Assert minimum performance threshold
         min_acceptable_performance = 100  # calc/sec
-        assert calc_per_second > min_acceptable_performance, (
-            f"Performance regression detected: {calc_per_second:.1f} < {min_acceptable_performance} calc/sec"
-        )
+        assert (
+            calc_per_second > min_acceptable_performance
+        ), f"Performance regression detected: {calc_per_second:.1f} < {min_acceptable_performance} calc/sec"
 
         print(
             f"Regression monitoring: {calc_per_second:.0f} calc/sec (stability: {np.std(times) / np.mean(times):.3f})"
@@ -532,9 +532,9 @@ class TestVectorizationRegressions(BasePerformanceTest):
 
         # Assert reasonable memory usage
         max_acceptable_memory = 500  # MB increase
-        assert memory_increase < max_acceptable_memory, (
-            f"Memory regression detected: {memory_increase:.1f}MB increase > {max_acceptable_memory}MB limit"
-        )
+        assert (
+            memory_increase < max_acceptable_memory
+        ), f"Memory regression detected: {memory_increase:.1f}MB increase > {max_acceptable_memory}MB limit"
 
         print(
             f"Memory usage: +{memory_increase:.1f}MB (baseline: {baseline_memory:.1f}MB)"
