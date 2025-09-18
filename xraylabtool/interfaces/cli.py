@@ -51,21 +51,30 @@ from xraylabtool.utils import (
 
 # Import monitoring and performance classes used in batch processing
 try:
+    from xraylabtool.data_handling.batch_processing import AdaptiveChunkSizer
     from xraylabtool.data_handling.memory_profiler import MemoryMonitor
     from xraylabtool.optimization.regression_detector import PerformanceMetrics
-    from xraylabtool.data_handling.batch_processing import AdaptiveChunkSizer
     from xraylabtool.progress import create_batch_progress_tracker
 except ImportError:
     # Fallback implementations for missing modules
     class MemoryMonitor:
-        def __init__(self): pass
+        def __init__(self):
+            pass
+
     class PerformanceMetrics:
-        def __init__(self): pass
+        def __init__(self):
+            pass
+
     class AdaptiveChunkSizer:
-        def __init__(self): pass
+        def __init__(self):
+            pass
+
     def create_batch_progress_tracker(**kwargs):
         from contextlib import nullcontext
+
         return nullcontext()
+
+
 # - export modules: imported in cmd_export function
 # - progress modules: imported in cmd_batch function
 # - validation modules: imported when needed

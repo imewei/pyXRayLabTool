@@ -1,0 +1,3908 @@
+{
+  "timestamp": "2025-09-18 03:17:02",
+  "analysis_duration": 0.8746038750032312,
+  "function_bottlenecks": [
+    {
+      "function_name": "wrapper",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_number": 37,
+      "total_time": 0.00042804100000000004,
+      "cumulative_time": 0.037614668000000004,
+      "call_count": 9,
+      "time_per_call": 4.7560111111111115e-05,
+      "percentage_of_total": 94.51000921453702,
+      "is_builtin": false
+    },
+    {
+      "function_name": "calculate_single_material_properties",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_number": 1404,
+      "total_time": 0.000344867,
+      "cumulative_time": 0.037376084000000004,
+      "call_count": 9,
+      "time_per_call": 3.8318555555555554e-05,
+      "percentage_of_total": 93.91054689737818,
+      "is_builtin": false
+    },
+    {
+      "function_name": "_calculate_single_material_xray_properties",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_number": 1198,
+      "total_time": 0.000613087,
+      "cumulative_time": 0.035635,
+      "call_count": 9,
+      "time_per_call": 6.812077777777778e-05,
+      "percentage_of_total": 89.5359272707133,
+      "is_builtin": false
+    },
+    {
+      "function_name": "_prepare_element_data",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_number": 1185,
+      "total_time": 0.000235621,
+      "cumulative_time": 0.029067289000000003,
+      "call_count": 9,
+      "time_per_call": 2.6180111111111113e-05,
+      "percentage_of_total": 73.03400235332693,
+      "is_builtin": false
+    },
+    {
+      "function_name": "create_scattering_factor_interpolators",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_number": 1025,
+      "total_time": 0.005226073,
+      "cumulative_time": 0.028749875,
+      "call_count": 3,
+      "time_per_call": 0.0017420243333333334,
+      "percentage_of_total": 72.23647304734386,
+      "is_builtin": false
+    },
+    {
+      "function_name": "load_scattering_factor_data",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_number": 502,
+      "total_time": 0.012125558000000002,
+      "cumulative_time": 0.017302999,
+      "call_count": 3,
+      "time_per_call": 0.0040418526666666675,
+      "percentage_of_total": 43.4752367063063,
+      "is_builtin": false
+    },
+    {
+      "function_name": "__init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/scipy/interpolate/_cubic.py",
+      "line_number": 239,
+      "total_time": 0.00016932900000000002,
+      "cumulative_time": 0.004547876,
+      "call_count": 6,
+      "time_per_call": 2.8221500000000004e-05,
+      "percentage_of_total": 11.42692001605788,
+      "is_builtin": false
+    },
+    {
+      "function_name": "calculate_scattering_factors",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_number": 812,
+      "total_time": 0.0007510450000000001,
+      "cumulative_time": 0.003726998,
+      "call_count": 9,
+      "time_per_call": 8.344944444444446e-05,
+      "percentage_of_total": 9.36439516952698,
+      "is_builtin": false
+    },
+    {
+      "function_name": "prepare_input",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/scipy/interpolate/_cubic.py",
+      "line_number": 16,
+      "total_time": 0.0006602930000000001,
+      "cumulative_time": 0.0023493340000000002,
+      "call_count": 12,
+      "time_per_call": 5.502441666666667e-05,
+      "percentage_of_total": 5.9028987837410964,
+      "is_builtin": false
+    },
+    {
+      "function_name": "__init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/scipy/interpolate/_cubic.py",
+      "line_number": 140,
+      "total_time": 0.000248872,
+      "cumulative_time": 0.002175834,
+      "call_count": 6,
+      "time_per_call": 4.147866666666667e-05,
+      "percentage_of_total": 5.46696547711927,
+      "is_builtin": false
+    },
+    {
+      "function_name": "wrapper",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/psutil/_common.py",
+      "line_number": 452,
+      "total_time": 0.00054688,
+      "cumulative_time": 0.001894459,
+      "call_count": 37,
+      "time_per_call": 1.4780540540540541e-05,
+      "percentage_of_total": 4.759987182302463,
+      "is_builtin": false
+    },
+    {
+      "function_name": "memory_info",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/psutil/__init__.py",
+      "line_number": 1113,
+      "total_time": 9.866200000000001e-05,
+      "cumulative_time": 0.0016349140000000001,
+      "call_count": 37,
+      "time_per_call": 2.6665405405405407e-06,
+      "percentage_of_total": 4.10785859401911,
+      "is_builtin": false
+    },
+    {
+      "function_name": "wrapper",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/psutil/_psosx.py",
+      "line_number": 343,
+      "total_time": 0.000301376,
+      "cumulative_time": 0.001536252,
+      "call_count": 37,
+      "time_per_call": 8.145297297297297e-06,
+      "percentage_of_total": 3.859962041293331,
+      "is_builtin": false
+    },
+    {
+      "function_name": "memory_info",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/psutil/_psosx.py",
+      "line_number": 445,
+      "total_time": 0.000326249,
+      "cumulative_time": 0.001395586,
+      "call_count": 37,
+      "time_per_call": 8.81754054054054e-06,
+      "percentage_of_total": 3.5065269144387736,
+      "is_builtin": false
+    },
+    {
+      "function_name": "<method 'append' of 'list' objects>",
+      "file_path": "~",
+      "line_number": 0,
+      "total_time": 0.001330701,
+      "cumulative_time": 0.001330701,
+      "call_count": 1435,
+      "time_per_call": 9.273177700348433e-07,
+      "percentage_of_total": 3.3434979080978104,
+      "is_builtin": false
+    },
+    {
+      "function_name": "calculate_derived_quantities",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_number": 932,
+      "total_time": 0.000722953,
+      "cumulative_time": 0.001228707,
+      "call_count": 9,
+      "time_per_call": 8.032811111111111e-05,
+      "percentage_of_total": 3.087229425817773,
+      "is_builtin": false
+    },
+    {
+      "function_name": "_find_derivatives",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/scipy/interpolate/_cubic.py",
+      "line_number": 266,
+      "total_time": 0.000626462,
+      "cumulative_time": 0.001173292,
+      "call_count": 6,
+      "time_per_call": 0.00010441033333333335,
+      "percentage_of_total": 2.9479945890082715,
+      "is_builtin": false
+    },
+    {
+      "function_name": "__call__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/scipy/interpolate/_interpolate.py",
+      "line_number": 762,
+      "total_time": 0.00037488200000000005,
+      "cumulative_time": 0.001133457,
+      "call_count": 30,
+      "time_per_call": 1.2496066666666669e-05,
+      "percentage_of_total": 2.84790580935824,
+      "is_builtin": false
+    },
+    {
+      "function_name": "<built-in method numpy.array>",
+      "file_path": "~",
+      "line_number": 0,
+      "total_time": 0.0011085420000000001,
+      "cumulative_time": 0.0011085420000000001,
+      "call_count": 12,
+      "time_per_call": 9.237850000000001e-05,
+      "percentage_of_total": 2.785304781493786,
+      "is_builtin": false
+    },
+    {
+      "function_name": "_wrapreduction_any_all",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/venv/lib/python3.13/site-packages/numpy/_core/fromnumeric.py",
+      "line_number": 89,
+      "total_time": 0.00048707700000000004,
+      "cumulative_time": 0.00108691,
+      "call_count": 132,
+      "time_per_call": 3.689977272727273e-06,
+      "percentage_of_total": 2.7309525665724985,
+      "is_builtin": false
+    }
+  ],
+  "line_bottlenecks": [],
+  "memory_bottlenecks": [],
+  "vectorization_opportunities": [
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/constants.py",
+      "line_range": [
+        171,
+        171
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "SQRT_2: Final[float] = np.sqrt(2.0)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "critical_angle_degrees",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/constants.py",
+      "line_range": [
+        332,
+        332
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "theta_c_rad = np.sqrt(2.0 * dispersion)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_constants",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/constants.py",
+      "line_range": [
+        397,
+        397
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if not np.isclose(ENERGY_TO_WAVELENGTH_FACTOR, expected_energy_factor, rtol=1e-10):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_constants",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/constants.py",
+      "line_range": [
+        401,
+        401
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if not np.isclose(SCATTERING_FACTOR, expected_scattering_factor, rtol=1e-10):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_constants",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/constants.py",
+      "line_range": [
+        405,
+        405
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if not np.isclose(KEV_TO_EV * EV_TO_KEV, 1.0):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_constants",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/constants.py",
+      "line_range": [
+        408,
+        408
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if not np.isclose(ANGSTROM_TO_METER * METER_TO_ANGSTROM, 1.0):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        126,
+        126
+      ],
+      "loop_type": "element_wise_ops",
+      "estimated_benefit": "high",
+      "current_pattern": "[[ \"${COMP_WORDS[i]}\" =~ ^[A-Z][a-z]?[0-9]*[A-Z][a-z]?[0-9]*$ ]]; then  # noqa: E501",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_create_venv_completion_structure",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        944,
+        953
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for shell_dir in shell_dirs.values():",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 7
+    },
+    {
+      "function_name": "_install_powershell_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        1441,
+        1450
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for ps_dir in powershell_dirs:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 17
+    },
+    {
+      "function_name": "_remove_completion_from_shell_configs",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        1693,
+        1702
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for j in range(i + 1, min(i + 5, len(lines))):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 15
+    },
+    {
+      "function_name": "_uninstall_fish_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        1910,
+        1919
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for fish_dir in fish_dirs:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 11
+    },
+    {
+      "function_name": "_uninstall_powershell_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        1949,
+        1958
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for ps_dir in powershell_dirs:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 6
+    },
+    {
+      "function_name": "_check_shell_available",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        2016,
+        2025
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for ps_cmd in [\"pwsh\", \"powershell\"]:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 9
+    },
+    {
+      "function_name": "_is_conda_completion_installed",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        2125,
+        2134
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for hooks_dir in [activate_d, deactivate_d]:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 22
+    },
+    {
+      "function_name": "_is_conda_completion_installed",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        2127,
+        2136
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for _hook_file in hooks_dir.glob(\"*xraylabtool*\"):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 17
+    },
+    {
+      "function_name": "_is_conda_completion_installed",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        2134,
+        2143
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for _completion_file in completions_dir.glob(\"*xraylabtool*\"):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 16
+    },
+    {
+      "function_name": "_uninstall_conda_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        2294,
+        2303
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for hook_dir in hook_dirs:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 15
+    },
+    {
+      "function_name": "_uninstall_conda_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        2296,
+        2305
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for hook_file in hook_dir.glob(\"*xraylabtool*\"):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 11
+    },
+    {
+      "function_name": "_discover_all_environments",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        2345,
+        2354
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for name in common_venv_names:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 17
+    },
+    {
+      "function_name": "_get_conda_base_path",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        2399,
+        2408
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for path in common_paths:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 18
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/completion_installer.py",
+      "line_range": [
+        2492,
+        2501
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for ps_cmd in [\"pwsh\", \"powershell\"]:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 8
+    },
+    {
+      "function_name": "bragg_angle",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        135,
+        135
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "theta_rad = np.arcsin(sin_theta)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "bragg_angle",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        136,
+        136
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "theta_deg = np.degrees(theta_rad)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "d_spacing_cubic",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        152,
+        152
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return float(a / np.sqrt(h**2 + k**2 + miller_l**2))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "d_spacing_tetragonal",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        169,
+        169
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return float(1 / np.sqrt((h**2 + k**2) / a**2 + miller_l**2 / c**2))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "d_spacing_orthorhombic",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        185,
+        185
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return float(1 / np.sqrt(h**2 / a**2 + k**2 / b**2 + miller_l**2 / c**2))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "q_from_angle",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        199,
+        199
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "theta_rad = np.radians(two_theta / 2)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "q_from_angle",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        200,
+        200
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "q = (4 * np.pi * np.sin(theta_rad)) / wavelength",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "angle_from_q",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        220,
+        220
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "theta_rad = np.arcsin(sin_theta)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "angle_from_q",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        221,
+        221
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "two_theta_deg = 2 * np.degrees(theta_rad)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "smooth_data",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        245,
+        245
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "y_arr = np.asarray(y)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "smooth_data",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        248,
+        248
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.full(len(y_arr), np.mean(y_arr), dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "smooth_data",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        251,
+        251
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "kernel = np.ones(window_size, dtype=np.float64) / window_size",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "smooth_data",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        255,
+        255
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "padded_y = np.pad(y_arr, half_window, mode=\"edge\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "smooth_data",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        256,
+        256
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "convolved = np.convolve(padded_y, kernel, mode=\"valid\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "find_peaks",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        280,
+        280
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "x_arr = np.asarray(x)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "find_peaks",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        281,
+        281
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "y_arr = np.asarray(y)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "background_subtraction",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        308,
+        308
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "x_arr = np.asarray(x)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "background_subtraction",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        309,
+        309
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "y_arr = np.asarray(y)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "background_subtraction",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        313,
+        313
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "background = np.linspace(y_arr[0], y_arr[-1], len(y_arr))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "background_subtraction",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        317,
+        317
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "min_idx = np.argmin(y_arr)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "background_subtraction",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        318,
+        318
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "x_points = np.array([x_arr[0], x_arr[min_idx], x_arr[-1]])",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "background_subtraction",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        319,
+        319
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "y_points = np.array([y_arr[0], y_arr[min_idx], y_arr[-1]])",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "background_subtraction",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        320,
+        320
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "coeffs = np.polyfit(x_points, y_points, 2)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "background_subtraction",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        321,
+        321
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "background = np.polyval(coeffs, x_arr)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "normalize_intensity",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        340,
+        340
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "y_arr = np.asarray(y)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "normalize_intensity",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        343,
+        343
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return y_arr / float(np.max(y_arr))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "normalize_intensity",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        345,
+        345
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return y_arr / float(np.trapezoid(y_arr))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "normalize_intensity",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        347,
+        347
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return (y_arr - float(np.mean(y_arr))) / float(np.std(y_arr))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "save_processed_data",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        387,
+        387
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "data = np.column_stack((x, y))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "save_processed_data",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py",
+      "line_range": [
+        388,
+        388
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.savetxt(filename, data, header=header, fmt=\"%.6f\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/typing_extensions.py",
+      "line_range": [
+        36,
+        36
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "ComplexArray = NDArray[np.complex128]  # Complex scattering factors (f1 + if2)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/typing_extensions.py",
+      "line_range": [
+        40,
+        40
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "OpticalConstantArray = NDArray[np.float64]  # Dispersion (\u03b4) and absorption (\u03b2)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_energy_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/typing_extensions.py",
+      "line_range": [
+        244,
+        244
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return not (np.any(energies < 0.03) or np.any(energies > 30.0))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "ensure_float64_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/typing_extensions.py",
+      "line_range": [
+        285,
+        285
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.asarray(array, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "ensure_complex128_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/typing_extensions.py",
+      "line_range": [
+        304,
+        304
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.asarray(array, dtype=np.complex128)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "is_real_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/typing_extensions.py",
+      "line_range": [
+        326,
+        326
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return isinstance(obj, np.ndarray) and np.issubdtype(obj.dtype, np.floating)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "optimize_array_memory_layout",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/typing_extensions.py",
+      "line_range": [
+        352,
+        352
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.ascontiguousarray(array)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "find_absorption_edges",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/analysis/__init__.py",
+      "line_range": [
+        32,
+        32
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "derivative = np.gradient(f2_values, energies)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "find_absorption_edges",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/analysis/__init__.py",
+      "line_range": [
+        36,
+        45
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for i in range(1, len(derivative) - 1):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 22
+    },
+    {
+      "function_name": "compare_materials",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/analysis/__init__.py",
+      "line_range": [
+        75,
+        75
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "values = np.array(values)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "compare_materials",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/analysis/__init__.py",
+      "line_range": [
+        77,
+        77
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "\"mean\": float(np.mean(values)),",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "compare_materials",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/analysis/__init__.py",
+      "line_range": [
+        78,
+        78
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "\"std\": float(np.std(values)),",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "compare_materials",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/analysis/__init__.py",
+      "line_range": [
+        79,
+        79
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "\"min\": float(np.min(values)),",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "compare_materials",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/analysis/__init__.py",
+      "line_range": [
+        80,
+        80
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "\"max\": float(np.max(values)),",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/adaptive_preloading.py",
+      "line_range": [
+        171,
+        180
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for element in sequence_elements:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 12
+    },
+    {
+      "function_name": "get_adaptive_preload_recommendations",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/adaptive_preloading.py",
+      "line_range": [
+        266,
+        275
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for element in current_elements:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 18
+    },
+    {
+      "function_name": "_update_performance_windows",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/hit_rate_monitor.py",
+      "line_range": [
+        179,
+        179
+      ],
+      "loop_type": "element_wise_ops",
+      "estimated_benefit": "high",
+      "current_pattern": "sum(w[\"hit_rate\"] * w[\"samples\"] for w in hour_windows)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_calculate_performance_trend",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/hit_rate_monitor.py",
+      "line_range": [
+        299,
+        308
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "recent_hit_rates = [w[\"hit_rate\"] for w in windows[-3:]]  # Last 30 minutes",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 23
+    },
+    {
+      "function_name": "_calculate_performance_trend",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/hit_rate_monitor.py",
+      "line_range": [
+        300,
+        309
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "earlier_hit_rates = [w[\"hit_rate\"] for w in windows[-6:-3]]  # 30-60 minutes ago",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 16
+    },
+    {
+      "function_name": "get_bulk_atomic_data_fast",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/atomic_cache.py",
+      "line_range": [
+        208,
+        217
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for element in elements_tuple:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 9
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/atomic_cache.py",
+      "line_range": [
+        332,
+        341
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for element in elements_to_warm:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 6
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/atomic_cache.py",
+      "line_range": [
+        366,
+        375
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for combo in common_combos:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 6
+    },
+    {
+      "function_name": "get_scattering_factors",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/atomic_cache.py",
+      "line_range": [
+        509,
+        509
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies_arr = np.asarray(energies, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "get_scattering_factors",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/atomic_cache.py",
+      "line_range": [
+        524,
+        524
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.asarray(complex_factors, dtype=np.complex128)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "chunk_iterator",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        127,
+        136
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for i in range(0, len(data), chunk_size):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 11
+    },
+    {
+      "function_name": "_prepare_energies_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        222,
+        222
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.isscalar(energies):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_prepare_energies_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        225,
+        225
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies_array = np.array([float(energies.real)], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_prepare_energies_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        227,
+        227
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies_array = np.array([float(energies)], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_prepare_energies_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        229,
+        229
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies_array = np.array(energies, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_prepare_energies_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        231,
+        231
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energies_array <= 0):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_prepare_energies_array",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        233,
+        233
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energies_array < 0.03) or np.any(energies_array > 30):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_process_chunks",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        263,
+        272
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for chunk in chunk_iterator(calculation_data, config.chunk_size):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 13
+    },
+    {
+      "function_name": "calculate_batch_properties",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        314,
+        314
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": ">>> energies = np.linspace(5, 15, 101)  # 101 energy points",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        505,
+        505
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies.append(np.array(energy_list))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py",
+      "line_range": [
+        507,
+        507
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies = [np.array([float(e)]) for e in energy_data]",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_record_cache_access",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/cache_metrics.py",
+      "line_range": [
+        155,
+        155
+      ],
+      "loop_type": "element_wise_ops",
+      "estimated_benefit": "high",
+      "current_pattern": "total_accesses = element_metrics[\"hits\"] + element_metrics[\"misses\"]",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "parse_chemical_formula",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/compound_analysis.py",
+      "line_range": [
+        154,
+        163
+      ],
+      "loop_type": "while_loop",
+      "estimated_benefit": "low",
+      "current_pattern": "while \"(\" in formula:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 9
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/compound_analysis.py",
+      "line_range": [
+        193,
+        193
+      ],
+      "loop_type": "element_wise_ops",
+      "estimated_benefit": "high",
+      "current_pattern": "formula = formula[:start] + expanded + formula[end + 1 :]",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "get_recommended_elements_for_warming",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/compound_analysis.py",
+      "line_range": [
+        373,
+        382
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for compound in recent_compounds:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 12
+    },
+    {
+      "function_name": "get_recommended_elements_for_warming",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/compound_analysis.py",
+      "line_range": [
+        380,
+        389
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for element in elements:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 17
+    },
+    {
+      "function_name": "get_recommended_elements_for_warming",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/compound_analysis.py",
+      "line_range": [
+        385,
+        394
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for element in common_elements:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 17
+    },
+    {
+      "function_name": "analyze_element_associations",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/compound_analysis.py",
+      "line_range": [
+        425,
+        434
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "element_associations[element] = [assoc[0] for assoc in sorted_associations[:5]]",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 13
+    },
+    {
+      "function_name": "wrapper",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        41,
+        50
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for arg in args:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 11
+    },
+    {
+      "function_name": "wrapper",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        43,
+        43
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "new_args.append(np.ascontiguousarray(arg))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "vectorized_interpolation_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        74,
+        74
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.zeros(n_energies, dtype=np.float64), np.zeros(",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "vectorized_interpolation_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        80,
+        80
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_total = np.zeros(n_energies, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "vectorized_interpolation_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        81,
+        81
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_total = np.zeros(n_energies, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "vectorized_interpolation_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        91,
+        91
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_values = np.asarray(f1_values, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "vectorized_interpolation_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        93,
+        93
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_values = np.asarray(f2_values, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        103,
+        103
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        104,
+        104
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        113,
+        113
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_total = np.einsum(\"i,ij->j\", element_counts, f1_matrix)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        114,
+        114
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_total = np.einsum(\"i,ij->j\", element_counts, f2_matrix)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "vectorized_multi_material_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        150,
+        150
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "wave_sq = np.square(wavelength)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "vectorized_multi_material_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        152,
+        152
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "wave_sq = np.ascontiguousarray(wave_sq)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_process_single_element_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        201,
+        201
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_batch = np.empty((len(materials), n_energies), dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_process_single_element_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        202,
+        202
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_batch = np.empty((len(materials), n_energies), dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_process_single_element_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        225,
+        225
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.ascontiguousarray(f1_values, dtype=np.float64),",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_process_single_element_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        226,
+        226
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.ascontiguousarray(f2_values, dtype=np.float64),",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_scattering_factors_vectorized",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        322,
+        322
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "dispersion = np.zeros(n_energies, dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_scattering_factors_vectorized",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        323,
+        323
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "absorption = np.zeros(n_energies, dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_scattering_factors_vectorized",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        324,
+        324
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_total = np.zeros(n_energies, dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_scattering_factors_vectorized",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        325,
+        325
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_total = np.zeros(n_energies, dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        333,
+        333
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "wave_sq = np.square(wavelength)  # More efficient than wavelength ** 2",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        337,
+        337
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "wave_sq = np.ascontiguousarray(wave_sq)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        347,
+        347
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_values = np.ascontiguousarray(f1_values, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        348,
+        348
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_values = np.ascontiguousarray(f2_values, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "benchmark_vectorization_improvement",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        416,
+        425
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for _ in range(iterations):",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 14
+    },
+    {
+      "function_name": "benchmark_vectorization_improvement",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        425,
+        434
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for _ in range(iterations):",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 11
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        433,
+        433
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "original_median = np.median(original_times)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        434,
+        434
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "vectorized_median = np.median(vectorized_times)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        443,
+        443
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if isinstance(orig, np.ndarray) and isinstance(vect, np.ndarray):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        444,
+        444
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "relative_error = np.max(np.abs((orig - vect) / (orig + 1e-15)))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "create_simd_optimized_arrays",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        479,
+        479
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.prod(shape) * np.dtype(dtype).itemsize",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "create_simd_optimized_arrays",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        483,
+        483
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "array = np.empty(shape, dtype=dtype, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "create_simd_optimized_arrays",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        487,
+        487
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "array = np.ascontiguousarray(array)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "simd_optimized_element_sum",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        511,
+        511
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_matrix = np.ascontiguousarray(f1_matrix)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "simd_optimized_element_sum",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        513,
+        513
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_matrix = np.ascontiguousarray(f2_matrix)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "simd_optimized_element_sum",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        515,
+        515
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "element_counts = np.ascontiguousarray(element_counts)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "simd_optimized_element_sum",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        519,
+        519
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_total = np.einsum(\"i,ij->j\", element_counts, f1_matrix, optimize=True)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "simd_optimized_element_sum",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        520,
+        520
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_total = np.einsum(\"i,ij->j\", element_counts, f2_matrix, optimize=True)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "simd_vectorized_wavelength_operations",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        540,
+        540
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "wavelength = np.ascontiguousarray(wavelength)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "simd_vectorized_wavelength_operations",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        544,
+        544
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "wave_sq = np.square(wavelength)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "simd_vectorized_wavelength_operations",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        551,
+        551
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "wave_factor = np.ascontiguousarray(wave_factor)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "adaptive_simd_interpolation_batch",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        579,
+        579
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.zeros(n_energies, dtype=np.float64), np.zeros(",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        606,
+        606
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_total = np.zeros(n_energies, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        607,
+        607
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_total = np.zeros(n_energies, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        616,
+        616
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_values = np.asarray(f1_values, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/vectorized_core.py",
+      "line_range": [
+        618,
+        618
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_values = np.asarray(f2_values, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_estimate_numpy_memory",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        133,
+        142
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for obj in gc.get_objects():",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 11
+    },
+    {
+      "function_name": "memory_monitor",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        203,
+        212
+      ],
+      "loop_type": "while_loop",
+      "estimated_benefit": "low",
+      "current_pattern": "while True:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 10
+    },
+    {
+      "function_name": "_count_numpy_arrays",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        248,
+        257
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for obj in gc.get_objects():",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 9
+    },
+    {
+      "function_name": "analyze_memory_leaks",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        275,
+        284
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for profile in self.profiles:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 5
+    },
+    {
+      "function_name": "get_memory_efficiency_report",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        376,
+        376
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.mean(allocation_rates) if allocation_rates else 0",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "get_memory_efficiency_report",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        379,
+        379
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.max(allocation_rates) if allocation_rates else 0",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        382,
+        382
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.std(allocation_rates) if allocation_rates else 0",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        387,
+        387
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.mean(peak_memory_usage) if peak_memory_usage else 0",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        390,
+        390
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.max(peak_memory_usage) if peak_memory_usage else 0",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        393,
+        393
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.std(peak_memory_usage) if peak_memory_usage else 0",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        397,
+        397
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "\"average_numpy_ratio\": np.mean(numpy_ratios) if numpy_ratios else 0,",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/memory_profiler.py",
+      "line_range": [
+        399,
+        399
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "\"numpy_ratio_std\": np.std(numpy_ratios) if numpy_ratios else 0,",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_analyze_file_for_vectorization",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/bottleneck_analyzer.py",
+      "line_range": [
+        544,
+        553
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for l in context_lines[1:6]",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 13
+    },
+    {
+      "function_name": "_extract_function_name",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/bottleneck_analyzer.py",
+      "line_range": [
+        582,
+        591
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for i in range(line_index, max(0, line_index - 50), -1):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 17
+    },
+    {
+      "function_name": "_calculate_complexity_score",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/bottleneck_analyzer.py",
+      "line_range": [
+        595,
+        604
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for line in context_lines:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 17
+    },
+    {
+      "function_name": "_calculate_complexity_score",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/bottleneck_analyzer.py",
+      "line_range": [
+        609,
+        618
+      ],
+      "loop_type": "while_loop",
+      "estimated_benefit": "low",
+      "current_pattern": "if \"for \" in stripped or \"while \" in stripped:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 13
+    },
+    {
+      "function_name": "_suggest_vectorization",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/bottleneck_analyzer.py",
+      "line_range": [
+        619,
+        628
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "elif \"for \" in line and any(\"*\" in l or \"+\" in l for l in context):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 20
+    },
+    {
+      "function_name": "get_trend_analysis",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/regression_detector.py",
+      "line_range": [
+        250,
+        250
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "x = np.array(timestamps)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "get_trend_analysis",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/regression_detector.py",
+      "line_range": [
+        251,
+        251
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "y = np.array(values)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "get_trend_analysis",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/regression_detector.py",
+      "line_range": [
+        254,
+        254
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "slope, _intercept = np.polyfit(x, y, 1)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/regression_detector.py",
+      "line_range": [
+        276,
+        276
+      ],
+      "loop_type": "element_wise_ops",
+      "estimated_benefit": "high",
+      "current_pattern": "(values[-1] - self.baselines[metric_name])",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_save_history",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/optimization/regression_detector.py",
+      "line_range": [
+        390,
+        399
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for metric_name in self.metrics_history:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 10
+    },
+    {
+      "function_name": "_format_as_json",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/data_export.py",
+      "line_range": [
+        59,
+        59
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "data[field] = np.round(value, precision).tolist()",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_format_as_csv",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/data_export.py",
+      "line_range": [
+        83,
+        83
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "data[field] = np.round(value, precision)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_format_as_csv",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/data_export.py",
+      "line_range": [
+        93,
+        93
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "len(v) if isinstance(v, list | np.ndarray) else 1 for v in data.values()",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "format_calculation_summary",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/data_export.py",
+      "line_range": [
+        165,
+        165
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if isinstance(value, np.ndarray) and len(value) == 1:",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "load_data_file",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/file_operations.py",
+      "line_range": [
+        39,
+        39
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "data = np.loadtxt(filename, comments=\"#\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "load_data_file",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/file_operations.py",
+      "line_range": [
+        43,
+        43
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "data = np.loadtxt(filename, delimiter=\",\", skiprows=1)  # Skip header",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "load_data_file",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/file_operations.py",
+      "line_range": [
+        46,
+        46
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "data = np.loadtxt(filename, comments=\"#\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "save_calculation_results",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/file_operations.py",
+      "line_range": [
+        99,
+        99
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.savetxt(filename, results, delimiter=\",\", fmt=\"%.6g\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_critical_angle",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/derived_quantities.py",
+      "line_range": [
+        23,
+        23
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "theta_c_rad = np.sqrt(2.0 * dispersion_delta)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_transmission",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/derived_quantities.py",
+      "line_range": [
+        58,
+        58
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.exp(-thickness_cm / attenuation_length_cm)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        123,
+        123
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": ">>> energies = np.linspace(8, 12, 5)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        147,
+        147
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "for analysis (e.g., np.min(), np.max(), np.argmin(), indexing).",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        189,
+        189
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.energy_kev = np.asarray(self.energy_kev)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        190,
+        190
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.wavelength_angstrom = np.asarray(self.wavelength_angstrom)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        191,
+        191
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.dispersion_delta = np.asarray(self.dispersion_delta)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        192,
+        192
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.absorption_beta = np.asarray(self.absorption_beta)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        193,
+        193
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.scattering_factor_f1 = np.asarray(self.scattering_factor_f1)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        194,
+        194
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.scattering_factor_f2 = np.asarray(self.scattering_factor_f2)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        195,
+        195
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.critical_angle_degrees = np.asarray(self.critical_angle_degrees)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        196,
+        196
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.attenuation_length_cm = np.asarray(self.attenuation_length_cm)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        197,
+        197
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.real_sld_per_ang2 = np.asarray(self.real_sld_per_ang2)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "__post_init__",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        198,
+        198
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "self.imaginary_sld_per_ang2 = np.asarray(self.imaginary_sld_per_ang2)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "from_legacy",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        401,
+        401
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energy if energy is not None else kwargs.get(\"energy_kev\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "from_legacy",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        406,
+        406
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "else kwargs.get(\"wavelength_angstrom\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "from_legacy",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        411,
+        411
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "else kwargs.get(\"dispersion_delta\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "from_legacy",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        416,
+        416
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "else kwargs.get(\"absorption_beta\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "from_legacy",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        421,
+        421
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "else kwargs.get(\"scattering_factor_f1\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        426,
+        426
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "else kwargs.get(\"scattering_factor_f2\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        431,
+        431
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "else kwargs.get(\"critical_angle_degrees\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        436,
+        436
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "else kwargs.get(\"attenuation_length_cm\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        441,
+        441
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "else kwargs.get(\"real_sld_per_ang2\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        446,
+        446
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "else kwargs.get(\"imaginary_sld_per_ang2\", np.array([]))",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_initialize_element_paths",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        494,
+        503
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for base_path in base_paths:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 13
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        578,
+        587
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for row in reader:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 18
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        591,
+        591
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "data_array = np.array(data_rows, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "get_scattering_factor",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        679,
+        679
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.ones_like(q_values)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        862,
+        862
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "dispersion = np.zeros(n_energies, dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        863,
+        863
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "absorption = np.zeros(n_energies, dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        864,
+        864
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_total = np.zeros(n_energies, dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        865,
+        865
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_total = np.zeros(n_energies, dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        870,
+        870
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "wave_sq = np.square(wavelength)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        880,
+        880
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        881,
+        881
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        882,
+        882
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "counts = np.empty(n_elements, dtype=np.float64, order=\"C\")",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        896,
+        896
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_total = np.sum(f1_weighted, axis=0)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        897,
+        897
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_total = np.sum(f2_weighted, axis=0)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        915,
+        915
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_values = np.asarray(f1_values, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        917,
+        917
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_values = np.asarray(f2_values, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_derived_quantities",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        968,
+        968
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(np.isnan(dispersion)) or np.any(np.isnan(absorption)):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_derived_quantities",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        971,
+        971
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(np.isinf(dispersion)) or np.any(np.isinf(absorption)):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_derived_quantities",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        977,
+        977
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(dispersion < 0):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        984,
+        984
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.asarray(mass_density).item()",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        985,
+        985
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.asarray(mass_density).size == 1",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        989,
+        989
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.asarray(molecular_weight).item()",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        990,
+        990
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.asarray(molecular_weight).size == 1",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        994,
+        994
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "np.asarray(number_of_electrons).item()",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        995,
+        995
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.asarray(number_of_electrons).size == 1",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1006,
+        1006
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "critical_angle = np.sqrt(np.maximum(2.0 * dispersion, 0.0)) * (180.0 / PI)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1011,
+        1011
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "absorption_safe = np.maximum(absorption, 1e-30)  # Minimum absorption to prevent inf",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "create_scattering_factor_interpolators",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1059,
+        1059
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": ">>> energies = np.array([100.0, 200.0, 300.0])",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1095,
+        1095
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energy_values = np.asarray(scattering_factor_data[\"E\"].values)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1096,
+        1096
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f1_values = np.asarray(scattering_factor_data[\"f1\"].values)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1097,
+        1097
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "f2_values = np.asarray(scattering_factor_data[\"f2\"].values)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1100,
+        1100
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if not np.all(energy_values[:-1] <= energy_values[1:]):",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1102,
+        1102
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "sort_indices = np.argsort(energy_values)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_single_material_inputs",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1132,
+        1132
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(np.asarray(mass_density) <= 0):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_single_material_inputs",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1138,
+        1138
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energy_kev <= 0):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_single_material_inputs",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1141,
+        1141
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energy_kev < 0.03) or np.any(energy_kev > 30):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_convert_energy_input",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1149,
+        1149
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.isscalar(energy_kev):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_convert_energy_input",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1151,
+        1151
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energy_kev = np.array([float(energy_kev.real)], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_convert_energy_input",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1153,
+        1153
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energy_kev = np.array([float(energy_kev)], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_convert_energy_input",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1156,
+        1156
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energy_kev = np.array([float(energy_kev)], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_convert_energy_input",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1160,
+        1160
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energy_kev = np.array(energy_kev, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_convert_energy_input",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1162,
+        1162
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.asarray(energy_kev)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1486,
+        1486
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": ">>> energies = np.linspace(5.0, 15.0, 11)  # 5-15 keV range",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1517,
+        1517
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energy_kev=np.ascontiguousarray(properties[\"energy\"], dtype=np.float64),",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1539,
+        1539
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "real_sld_per_ang2=np.ascontiguousarray(properties[\"re_sld\"], dtype=np.float64),",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_and_process_energies",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1575,
+        1575
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.isscalar(energies):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_and_process_energies",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1577,
+        1577
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies_array = np.array([float(energies.real)], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_and_process_energies",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1579,
+        1579
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies_array = np.array([float(energies)], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_and_process_energies",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1582,
+        1582
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies_array = np.array([float(energies)], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_and_process_energies",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1586,
+        1586
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energies_array = np.array(energies, dtype=np.float64)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_and_process_energies",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1591,
+        1591
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energies_array <= 0):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_and_process_energies",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1594,
+        1594
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energies_array < 0.03) or np.any(energies_array > 30):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "process_formula",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1637,
+        1637
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if not np.array_equal(sort_indices, np.arange(len(sort_indices))):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "process_formula",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1638,
+        1638
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "reverse_indices = np.argsort(sort_indices)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1757,
+        1757
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": ">>> energy_range = np.logspace(np.log10(1), np.log10(20), 50)  # 1-20 keV",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1763,
+        1772
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": ">>> for formula in materials:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 16
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1766,
+        1766
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "...     idx = np.argmin(np.abs(result.energy_kev - 10.0))",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1797,
+        1797
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "sort_indices = np.argsort(energies_array)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_optical_constants",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1855,
+        1855
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "dispersion = np.asarray(result_dict[\"dispersion\"], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "calculate_optical_constants",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py",
+      "line_range": [
+        1856,
+        1856
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "absorption = np.asarray(result_dict[\"absorption\"], dtype=np.float64)",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_energy_range",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/validation/validators.py",
+      "line_range": [
+        34,
+        34
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "energy_array = np.asarray(energies)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_energy_range",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/validation/validators.py",
+      "line_range": [
+        37,
+        37
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(~np.isfinite(energy_array)):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_energy_range",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/validation/validators.py",
+      "line_range": [
+        43,
+        43
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energy_array <= 0):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_energy_range",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/validation/validators.py",
+      "line_range": [
+        50,
+        50
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energy_array < min_energy):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_energy_range",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/validation/validators.py",
+      "line_range": [
+        57,
+        57
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energy_array > max_energy):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "validate_density",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/validation/validators.py",
+      "line_range": [
+        140,
+        140
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if not np.isfinite(density):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        123,
+        123
+      ],
+      "loop_type": "element_wise_ops",
+      "estimated_benefit": "high",
+      "current_pattern": "[[ \"${COMP_WORDS[i]}\" =~ ^[A-Z][a-z]?[0-9]*[A-Z][a-z]?[0-9]*$ ]]; then  # noqa: E501",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_install_powershell_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        947,
+        956
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for ps_dir in powershell_dirs:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 17
+    },
+    {
+      "function_name": "_remove_completion_from_shell_configs",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1199,
+        1208
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for j in range(i + 1, min(i + 5, len(lines))):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 15
+    },
+    {
+      "function_name": "_uninstall_fish_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1335,
+        1344
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for fish_dir in fish_dirs:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 11
+    },
+    {
+      "function_name": "_uninstall_powershell_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1374,
+        1383
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for ps_dir in powershell_dirs:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 6
+    },
+    {
+      "function_name": "_check_shell_available",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1451,
+        1460
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for ps_cmd in [\"pwsh\", \"powershell\"]:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 9
+    },
+    {
+      "function_name": "_is_conda_completion_installed",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1560,
+        1569
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for hooks_dir in [activate_d, deactivate_d]:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 21
+    },
+    {
+      "function_name": "_is_conda_completion_installed",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1562,
+        1571
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for _hook_file in hooks_dir.glob(\"*xraylabtool*\"):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 19
+    },
+    {
+      "function_name": "_uninstall_conda_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1720,
+        1729
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for hook_dir in hook_dirs:",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 15
+    },
+    {
+      "function_name": "_uninstall_conda_completion",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1722,
+        1731
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for hook_file in hook_dir.glob(\"*xraylabtool*\"):",
+      "suggested_optimization": "Use NumPy vectorized operations instead of explicit loops",
+      "complexity_score": 11
+    },
+    {
+      "function_name": "_discover_all_environments",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1812,
+        1821
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for name in common_venv_names:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 17
+    },
+    {
+      "function_name": "_get_conda_base_path",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1866,
+        1875
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for path in common_paths:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 18
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py",
+      "line_range": [
+        1959,
+        1968
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for ps_cmd in [\"pwsh\", \"powershell\"]:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 8
+    },
+    {
+      "function_name": "add_analyze_command",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py",
+      "line_range": [
+        727,
+        736
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "help=\"Energy range for analysis in keV (range format recommended: 1-30:1000)\",",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 9
+    },
+    {
+      "function_name": "parse_energy_string",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py",
+      "line_range": [
+        900,
+        900
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.array([float(x.strip()) for x in energy_str.split(\",\")])",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "parse_energy_string",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py",
+      "line_range": [
+        911,
+        911
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.logspace(np.log10(start), np.log10(end), count)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "parse_energy_string",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py",
+      "line_range": [
+        913,
+        913
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.linspace(start, end, count)",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "parse_energy_string",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py",
+      "line_range": [
+        916,
+        916
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "return np.array([float(energy_str)])",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "format_xray_result",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py",
+      "line_range": [
+        1254,
+        1254
+      ],
+      "loop_type": "element_wise_ops",
+      "estimated_benefit": "high",
+      "current_pattern": "if fields != _get_default_fields()[0] + _get_default_fields()[1]:",
+      "suggested_optimization": "Consider NumPy broadcasting to eliminate element-wise indexing",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_calc_inputs",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py",
+      "line_range": [
+        1276,
+        1276
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energies <= 0):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "_validate_calc_inputs",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py",
+      "line_range": [
+        1280,
+        1280
+      ],
+      "loop_type": "numpy_usage",
+      "estimated_benefit": "low",
+      "current_pattern": "if np.any(energies < 0.03) or np.any(energies > 30):",
+      "suggested_optimization": "Use NumPy vectorized functions where possible",
+      "complexity_score": 1
+    },
+    {
+      "function_name": "unknown_function",
+      "file_path": "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py",
+      "line_range": [
+        2621,
+        2630
+      ],
+      "loop_type": "for_loop",
+      "estimated_benefit": "medium",
+      "current_pattern": "for format_name in format_list:",
+      "suggested_optimization": "Consider NumPy array operations for better performance",
+      "complexity_score": 7
+    }
+  ],
+  "recommendations": [
+    "Focus optimization on wrapper - consumes 94.5% of total execution time",
+    "High-impact vectorization opportunity in unknown_function - Consider NumPy broadcasting to eliminate element-wise indexing"
+  ],
+  "summary_stats": {
+    "total_functions_analyzed": 20,
+    "total_memory_bottlenecks": 0,
+    "total_vectorization_opportunities": 282,
+    "high_impact_vectorization_count": 7,
+    "top_function_time_percentage": 94.51000921453702,
+    "total_memory_allocation_mb": 0
+  }
+}
