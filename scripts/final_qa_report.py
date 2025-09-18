@@ -6,9 +6,9 @@ This script generates a comprehensive final report of all documentation
 quality assurance tests and validation results.
 """
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def run_test_script(script_path: str, description: str):
@@ -16,31 +16,35 @@ def run_test_script(script_path: str, description: str):
     try:
         result = subprocess.run(
             [sys.executable, script_path],
+            check=False,
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent
+            cwd=Path(__file__).parent.parent,
         )
 
         # Parse success/failure from output
         success = result.returncode == 0
 
         # Get key metrics from output
-        output_lines = result.stdout.split('\n')
-        summary_lines = [line for line in output_lines if
-                        '📊' in line or 'Results:' in line or 'passed' in line.lower()]
+        output_lines = result.stdout.split("\n")
+        summary_lines = [
+            line
+            for line in output_lines
+            if "📊" in line or "Results:" in line or "passed" in line.lower()
+        ]
 
         return {
-            'success': success,
-            'description': description,
-            'summary': summary_lines[-1] if summary_lines else "No summary available",
-            'returncode': result.returncode
+            "success": success,
+            "description": description,
+            "summary": summary_lines[-1] if summary_lines else "No summary available",
+            "returncode": result.returncode,
         }
     except Exception as e:
         return {
-            'success': False,
-            'description': description,
-            'summary': f"Error running test: {e}",
-            'returncode': -1
+            "success": False,
+            "description": description,
+            "summary": f"Error running test: {e}",
+            "returncode": -1,
         }
 
 
@@ -53,7 +57,10 @@ def generate_final_report():
 
     # List of all QA tests
     qa_tests = [
-        ("scripts/test_documentation_integration.py", "Documentation Integration Tests"),
+        (
+            "scripts/test_documentation_integration.py",
+            "Documentation Integration Tests",
+        ),
         ("scripts/test_code_examples.py", "Code Examples Validation"),
         ("scripts/test_cli_examples.py", "CLI Examples Validation"),
         ("scripts/audit_documentation.py", "Documentation Audit"),
@@ -70,7 +77,7 @@ def generate_final_report():
         result = run_test_script(script_path, description)
         results.append(result)
 
-        if result['success']:
+        if result["success"]:
             print(f"   ✅ PASSED: {result['summary']}")
             passed_tests += 1
         else:
@@ -92,9 +99,9 @@ def generate_final_report():
     print("📋 DETAILED RESULTS:")
     print("-" * 30)
     for result in results:
-        status = "✅ PASS" if result['success'] else "❌ FAIL"
+        status = "✅ PASS" if result["success"] else "❌ FAIL"
         print(f"{status} {result['description']}")
-        if not result['success']:
+        if not result["success"]:
             print(f"      Issue: {result['summary']}")
     print()
 
@@ -110,7 +117,7 @@ def generate_final_report():
         "✅ Code examples syntax and imports 100% validated",
         "✅ CLI examples syntax 100% validated",
         "✅ Documentation builds successfully",
-        "✅ Integration tests framework established"
+        "✅ Integration tests framework established",
     ]
 
     for achievement in achievements:
@@ -124,7 +131,7 @@ def generate_final_report():
         "• Minor flowery language cleanup in specialized docs (18 instances)",
         "• RST header formatting consistency improvements (cosmetic)",
         "• Version synchronization in docs/conf.py (v0.1.0 → v0.2.3)",
-        "• Example file references validation (expected for docs)"
+        "• Example file references validation (expected for docs)",
     ]
 
     for rec in recommendations:
@@ -135,7 +142,9 @@ def generate_final_report():
     if success_rate >= 80:
         print("🎉 OVERALL ASSESSMENT: DOCUMENTATION QUALITY EXCELLENT")
         print("   All critical quality assurance requirements have been met.")
-        print("   Minor issues identified are cosmetic and do not affect functionality.")
+        print(
+            "   Minor issues identified are cosmetic and do not affect functionality."
+        )
         return True
     elif success_rate >= 60:
         print("⚠️  OVERALL ASSESSMENT: DOCUMENTATION QUALITY GOOD")
@@ -154,4 +163,4 @@ def main():
 
 if __name__ == "__main__":
     success = main()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

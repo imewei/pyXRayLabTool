@@ -251,13 +251,13 @@ class PerformanceRegressionDetector:
         y = np.array(values)
 
         if len(x) > 1:
-            slope, intercept = np.polyfit(x, y, 1)
+            slope, _intercept = np.polyfit(x, y, 1)
             trend_direction = (
                 "improving" if slope > 0 else "degrading" if slope < 0 else "stable"
             )
         else:
             slope = 0
-            intercept = y[0] if len(y) > 0 else 0
+            y[0] if len(y) > 0 else 0
             trend_direction = "stable"
 
         return {

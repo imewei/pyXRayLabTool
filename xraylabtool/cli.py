@@ -37,17 +37,17 @@ warnings.warn(
 )
 
 __all__ = [
-    "main",
-    "create_parser",
-    "cmd_calc",
+    "cmd_atomic",
     "cmd_batch",
+    "cmd_bragg",
+    "cmd_calc",
     "cmd_convert",
     "cmd_formula",
-    "cmd_atomic",
-    "cmd_bragg",
-    "cmd_list",
     "cmd_install_completion",
+    "cmd_list",
     "cmd_uninstall_completion",
+    "create_parser",
     "format_xray_result",
+    "main",
     "parse_energy_string",
 ]

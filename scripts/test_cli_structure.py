@@ -7,13 +7,13 @@ and help text without running the actual calculations.
 """
 
 import argparse
-import sys
 from pathlib import Path
-from typing import List, Dict
+import sys
 
 # Add project root to path to import CLI module
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
 
 def test_cli_parser_creation():
     """Test that the CLI parser can be created successfully."""
@@ -39,6 +39,7 @@ def test_cli_parser_creation():
     except Exception as e:
         print(f"❌ CLI parser creation test failed: {e}")
         return False
+
 
 def test_cli_help_generation():
     """Test that CLI help can be generated for all commands."""
@@ -68,9 +69,15 @@ def test_cli_help_generation():
 
             # Verify all expected commands are present
             expected_commands = [
-                'calc', 'batch', 'convert', 'formula',
-                'atomic', 'bragg', 'list', 'install-completion',
-                'uninstall-completion'
+                "calc",
+                "batch",
+                "convert",
+                "formula",
+                "atomic",
+                "bragg",
+                "list",
+                "install-completion",
+                "uninstall-completion",
             ]
 
             missing_commands = set(expected_commands) - set(commands)
@@ -100,18 +107,25 @@ def test_cli_help_generation():
         print(f"❌ CLI help generation test failed: {e}")
         return False
 
+
 def test_cli_command_documentation():
     """Test that CLI commands match their documentation."""
     cli_file = project_root / "xraylabtool" / "interfaces" / "cli.py"
 
     try:
-        content = cli_file.read_text(encoding='utf-8')
+        content = cli_file.read_text(encoding="utf-8")
 
         # Check that docstring contains all commands
         docstring_commands = [
-            'calc', 'batch', 'convert', 'formula',
-            'atomic', 'bragg', 'list', 'install-completion',
-            'uninstall-completion'
+            "calc",
+            "batch",
+            "convert",
+            "formula",
+            "atomic",
+            "bragg",
+            "list",
+            "install-completion",
+            "uninstall-completion",
         ]
 
         for command in docstring_commands:
@@ -126,6 +140,7 @@ def test_cli_command_documentation():
         print(f"❌ CLI documentation test failed: {e}")
         return False
 
+
 def test_cli_argument_structure():
     """Test CLI argument structure without executing commands."""
     try:
@@ -136,17 +151,17 @@ def test_cli_argument_structure():
         # Test parsing common argument patterns
         test_cases = [
             # Help commands
-            ['--help'],
-            ['--version'],
-            ['calc', '--help'],
-            ['batch', '--help'],
-            ['convert', '--help'],
-            ['formula', '--help'],
-            ['atomic', '--help'],
-            ['bragg', '--help'],
-            ['list', '--help'],
-            ['install-completion', '--help'],
-            ['uninstall-completion', '--help'],
+            ["--help"],
+            ["--version"],
+            ["calc", "--help"],
+            ["batch", "--help"],
+            ["convert", "--help"],
+            ["formula", "--help"],
+            ["atomic", "--help"],
+            ["bragg", "--help"],
+            ["list", "--help"],
+            ["install-completion", "--help"],
+            ["uninstall-completion", "--help"],
         ]
 
         passed = 0
@@ -174,6 +189,7 @@ def test_cli_argument_structure():
     except Exception as e:
         print(f"❌ CLI argument structure test failed: {e}")
         return False
+
 
 def main():
     """Run all CLI structure tests."""
@@ -207,6 +223,7 @@ def main():
         print("❌ Some CLI structure tests failed")
         return False
 
+
 if __name__ == "__main__":
     success = main()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

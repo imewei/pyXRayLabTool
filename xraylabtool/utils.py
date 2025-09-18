@@ -28,25 +28,25 @@ AVOGADRO_NUMBER: float = float(constants.N_A)  # mol⁻¹
 
 # Export all public functions
 __all__ = [
-    "wavelength_to_energy",
-    "energy_to_wavelength",
+    "angle_from_q",
+    "background_subtraction",
     "bragg_angle",
     "d_spacing_cubic",
-    "d_spacing_tetragonal",
     "d_spacing_orthorhombic",
-    "q_from_angle",
-    "angle_from_q",
-    "smooth_data",
+    "d_spacing_tetragonal",
+    "energy_to_wavelength",
     "find_peaks",
-    "background_subtraction",
-    "normalize_intensity",
-    "progress_bar",
-    "save_processed_data",
-    "parse_formula",  # Chemical formula parser
+    "get_atomic_data",
     "get_atomic_number",
     "get_atomic_weight",
-    "get_atomic_data",
     "load_atomic_data",  # Backward compatibility
+    "normalize_intensity",
+    "parse_formula",  # Chemical formula parser
+    "progress_bar",
+    "q_from_angle",
+    "save_processed_data",
+    "smooth_data",
+    "wavelength_to_energy",
     # Note: AtomicDataError and UnknownElementError are imported for internal use
     # but not exported to avoid duplicate documentation
 ]
@@ -223,9 +223,7 @@ def angle_from_q(q: FloatLike, wavelength: FloatLike) -> float:
     return float(two_theta_deg)
 
 
-def smooth_data(
-    x: ArrayLike, y: ArrayLike, window_size: int = 5
-) -> np.ndarray:  # noqa: ARG001
+def smooth_data(x: ArrayLike, y: ArrayLike, window_size: int = 5) -> np.ndarray:
     """
     Apply moving average smoothing to data using optimized NumPy convolution.
 

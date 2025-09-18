@@ -28,6 +28,11 @@ recursive-include xraylabtool/data_handling *.py
 recursive-include xraylabtool/interfaces *.py
 recursive-include xraylabtool/io *.py
 recursive-include xraylabtool/validation *.py
+recursive-include xraylabtool/analysis *.py
+recursive-include xraylabtool/api *.py
+recursive-include xraylabtool/cleanup *.py
+recursive-include xraylabtool/export *.py
+recursive-include xraylabtool/optimization *.py
 
 # Shell completion scripts (generated dynamically by completion installer)
 # Note: All completion scripts are generated at runtime by xraylabtool/completion_installer.py

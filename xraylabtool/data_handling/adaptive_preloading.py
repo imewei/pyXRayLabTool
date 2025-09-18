@@ -144,7 +144,7 @@ def predict_next_elements(
                         predictions[associated_elem] += confidence
 
         # Weight 2: Recent usage frequency
-        for element, access_times in _usage_history["element_access_times"].items():
+        for element, _access_times in _usage_history["element_access_times"].items():
             if element not in current_elements:
                 frequency = calculate_element_usage_frequency(element)
                 if frequency >= _adaptive_config["min_usage_frequency"]:
@@ -257,7 +257,7 @@ def get_adaptive_preload_recommendations(
             current_context = {}
 
         current_elements = current_context.get("elements", [])
-        current_compounds = current_context.get("compounds", [])
+        current_context.get("compounds", [])
 
         # Get predictions for current elements
         all_predictions: dict[str, float] = defaultdict(float)
@@ -269,7 +269,7 @@ def get_adaptive_preload_recommendations(
                 all_predictions[pred_element] += confidence
 
         # General high-frequency elements
-        for element, access_times in _usage_history["element_access_times"].items():
+        for element, _access_times in _usage_history["element_access_times"].items():
             if element not in current_elements:
                 frequency = calculate_element_usage_frequency(element)
                 if frequency >= _adaptive_config["min_usage_frequency"]:
@@ -407,7 +407,11 @@ def measure_preload_effectiveness(actual_elements_used: list[str]) -> dict[str, 
             "effectiveness": (
                 "excellent"
                 if hit_rate > 0.8
-                else "good" if hit_rate > 0.6 else "fair" if hit_rate > 0.4 else "poor"
+                else "good"
+                if hit_rate > 0.6
+                else "fair"
+                if hit_rate > 0.4
+                else "poor"
             ),
         }
 

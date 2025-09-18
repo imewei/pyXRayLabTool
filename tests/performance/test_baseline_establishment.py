@@ -103,9 +103,9 @@ class TestPerformanceBaselines(BasePerformanceTest):
                 }
 
                 # Verify reasonable performance
-                assert (
-                    calc_per_second > 1000
-                ), f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
+                assert calc_per_second > 1000, (
+                    f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
+                )
                 assert result is not None, f"Calculation failed for {test_name}"
 
     def test_compound_baselines(self):
@@ -167,9 +167,9 @@ class TestPerformanceBaselines(BasePerformanceTest):
                 }
 
                 # Compounds should be slower than elements but still performant
-                assert (
-                    calc_per_second > 500
-                ), f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
+                assert calc_per_second > 500, (
+                    f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
+                )
                 assert result is not None, f"Calculation failed for {test_name}"
 
     def test_complex_material_baselines(self):
@@ -231,15 +231,15 @@ class TestPerformanceBaselines(BasePerformanceTest):
                 }
 
                 # Complex materials should still meet minimum performance
-                assert (
-                    calc_per_second > 200
-                ), f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
+                assert calc_per_second > 200, (
+                    f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
+                )
                 assert result is not None, f"Calculation failed for {test_name}"
 
     def test_energy_scaling_baselines(self):
         """Test performance scaling with different energy array sizes."""
         test_material = ("Si", 2.33, "Silicon reference")
-        formula, density, description = test_material
+        formula, density, _description = test_material
 
         energy_sizes = [1, 10, 50, 100, 250, 500, 1000, 2000]
 
@@ -290,9 +290,9 @@ class TestPerformanceBaselines(BasePerformanceTest):
             }
 
             # Ensure scaling efficiency
-            assert (
-                calc_per_second > 100
-            ), f"Poor scaling performance for {size} points: {calc_per_second:.1f} calc/sec"
+            assert calc_per_second > 100, (
+                f"Poor scaling performance for {size} points: {calc_per_second:.1f} calc/sec"
+            )
             assert result is not None, f"Calculation failed for {test_name}"
 
     def test_memory_usage_baselines(self):
@@ -368,24 +368,18 @@ class TestPerformanceBaselines(BasePerformanceTest):
                     "stretch_target": "500,000 calc/sec aggregate",
                 },
                 "test_categories": {
-                    "elements": len(
-                        [k for k in self.baseline_data.keys() if "element_" in k]
-                    ),
+                    "elements": len([k for k in self.baseline_data if "element_" in k]),
                     "compounds": len(
-                        [k for k in self.baseline_data.keys() if "compound_" in k]
+                        [k for k in self.baseline_data if "compound_" in k]
                     ),
                     "complex_materials": len(
-                        [k for k in self.baseline_data.keys() if "complex_" in k]
+                        [k for k in self.baseline_data if "complex_" in k]
                     ),
                     "energy_scaling": len(
-                        [k for k in self.baseline_data.keys() if "energy_scaling_" in k]
+                        [k for k in self.baseline_data if "energy_scaling_" in k]
                     ),
                     "memory_tests": len(
-                        [
-                            k
-                            for k in self.baseline_data.keys()
-                            if "memory_baseline_" in k
-                        ]
+                        [k for k in self.baseline_data if "memory_baseline_" in k]
                     ),
                 },
             },
@@ -420,13 +414,14 @@ class TestBaselineValidation(BasePerformanceTest):
         try:
             detector = PerformanceRegressionDetector(data_file=temp_path)
 
-            # Record a test metric
-            detector.record_metric(
-                name="test_validation_metric",
-                value=12345.0,
-                unit="calc/sec",
-                context={"test": "validation"},
-            )
+            # Record enough test metrics to establish a baseline (minimum_samples = 5)
+            for _i in range(5):
+                detector.record_metric(
+                    name="test_validation_metric",
+                    value=12345.0,  # Same value to get median of 12345.0
+                    unit="calc/sec",
+                    context={"test": "validation"},
+                )
 
             # Verify it was recorded
             baseline = detector.get_baseline("test_validation_metric")
@@ -451,16 +446,13 @@ class TestBaselineValidation(BasePerformanceTest):
             temp_path = Path(temp_file.name)
 
         try:
-            # Create detector and record metric
-            detector1 = PerformanceRegressionDetector(
-                data_file=temp_path
-            )
-            detector1.record_metric("persistence_test", 9999.0, "calc/sec")
+            # Create detector and record enough metrics to establish baseline
+            detector1 = PerformanceRegressionDetector(data_file=temp_path)
+            for _i in range(5):
+                detector1.record_metric("persistence_test", 9999.0, "calc/sec")
 
             # Create new detector instance and verify data persists
-            detector2 = PerformanceRegressionDetector(
-                data_file=temp_path
-            )
+            detector2 = PerformanceRegressionDetector(data_file=temp_path)
             baseline = detector2.get_baseline("persistence_test")
             assert baseline == 9999.0
         finally:

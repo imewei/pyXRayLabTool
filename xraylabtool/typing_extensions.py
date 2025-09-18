@@ -241,10 +241,7 @@ def validate_energy_array(energies: Any) -> bool:
         return False
 
     # Check for valid energy range (0.03-30 keV)
-    if np.any(energies < 0.03) or np.any(energies > 30.0):
-        return False
-
-    return True
+    return not (np.any(energies < 0.03) or np.any(energies > 30.0))
 
 
 def validate_complex_array(array: Any) -> bool:
@@ -266,10 +263,7 @@ def validate_complex_array(array: Any) -> bool:
     if not isinstance(array, np.ndarray):
         return False
 
-    if array.dtype not in [np.complex64, np.complex128]:
-        return False
-
-    return True
+    return array.dtype in [np.complex64, np.complex128]
 
 
 def ensure_float64_array(array: ArrayLike) -> EnergyArray:

@@ -8,10 +8,10 @@ maintaining numerical accuracy and scientific precision.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import wraps
 import time
 from typing import TYPE_CHECKING, Any
-from collections.abc import Callable
 
 import numpy as np
 
@@ -75,8 +75,8 @@ def vectorized_interpolation_batch(
             n_energies, dtype=np.float64
         )
 
-    # For small numbers of elements or energies, use the original approach to avoid overhead
-    if n_elements <= 2 or n_energies <= 50:
+    # For small numbers of elements and energies, use the original approach to avoid overhead
+    if n_elements <= 2 and n_energies <= 200:
         f1_total = np.zeros(n_energies, dtype=np.float64)
         f2_total = np.zeros(n_energies, dtype=np.float64)
 
@@ -141,7 +141,7 @@ def vectorized_multi_material_batch(
     """
 
     n_materials = len(material_definitions)
-    n_energies = len(energy_ev)
+    len(energy_ev)
 
     if n_materials == 0:
         return []
@@ -476,7 +476,7 @@ def create_simd_optimized_arrays(
         SIMD-optimized array
     """
     # Calculate total size in bytes
-    size = np.prod(shape) * np.dtype(dtype).itemsize
+    np.prod(shape) * np.dtype(dtype).itemsize
 
     # Allocate aligned memory
     # Note: NumPy doesn't guarantee alignment, but we can try

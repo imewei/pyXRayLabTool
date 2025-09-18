@@ -376,7 +376,7 @@ def get_intelligent_warming_recommendations(max_elements: int = 15) -> dict[str,
 
         # Get family-based recommendations
         family_counts = {}
-        for formula, data in _cache_metrics["compound_patterns"].items():
+        for _formula, data in _cache_metrics["compound_patterns"].items():
             family = data.get("compound_family")
             if family:
                 family_counts[family] = (
@@ -390,7 +390,7 @@ def get_intelligent_warming_recommendations(max_elements: int = 15) -> dict[str,
 
         # Get family-based element recommendations
         family_elements = set()
-        for family, count in popular_families:
+        for family, _count in popular_families:
             if family in COMPOUND_FAMILIES:
                 for compound in COMPOUND_FAMILIES[family][
                     :3

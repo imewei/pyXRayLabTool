@@ -183,6 +183,31 @@ lint = [
     "types-psutil>=5.9.0",
 ]
 
+# Enhanced export functionality
+export = [
+    "openpyxl>=3.1.0",  # Excel export support
+    "seaborn>=0.12.0",  # Enhanced plotting styles
+    "plotly>=5.0.0",    # Interactive plotting
+    "jinja2>=3.1.0",    # HTML template rendering
+]
+
+# API server functionality
+api = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",  # File upload support
+    "python-jose[cryptography]>=3.3.0",  # JWT token support
+    "passlib[bcrypt]>=1.7.4",  # Password hashing
+    "python-dateutil>=2.8.2",  # Enhanced date parsing
+]
+
+# Advanced analysis functionality
+analysis = [
+    "scikit-learn>=1.3.0",  # Machine learning analysis
+    "scipy>=1.11.0",  # Already in core but ensure latest
+    "statsmodels>=0.14.0",  # Statistical modeling
+]
+
 # Performance profiling and optimization
 perf = [
     "memory-profiler>=0.60.0",
@@ -193,7 +218,7 @@ perf = [
 # Complete development environment
 all = [
     # Include all optional dependency groups
-    "xraylabtool[dev,docs,perf]",
+    "xraylabtool[dev,docs,perf,export,api,analysis]",
 ]
 
 [project.urls]

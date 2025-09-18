@@ -6,17 +6,17 @@ This script analyzes the CLI source code to verify the actual number
 and structure of commands without importing the module.
 """
 
-import re
 from pathlib import Path
-from typing import List, Dict
+import re
+import sys
 
 
-def extract_cli_commands(cli_file_path: Path) -> List[Dict]:
+def extract_cli_commands(cli_file_path: Path) -> list[dict]:
     """Extract CLI commands from the source code."""
     if not cli_file_path.exists():
         raise FileNotFoundError(f"CLI file not found: {cli_file_path}")
 
-    content = cli_file_path.read_text(encoding='utf-8')
+    content = cli_file_path.read_text(encoding="utf-8")
 
     # Find all add_parser calls
     parser_pattern = r'parser = subparsers\.add_parser\(\s*["\']([^"\']+)["\']'
@@ -25,19 +25,19 @@ def extract_cli_commands(cli_file_path: Path) -> List[Dict]:
     matches = re.finditer(parser_pattern, content)
     for match in matches:
         command_name = match.group(1)
-        commands.append({
-            'name': command_name,
-            'line': content[:match.start()].count('\n') + 1
-        })
+        commands.append(
+            {"name": command_name, "line": content[: match.start()].count("\n") + 1}
+        )
 
     return commands
 
-def extract_documented_commands(cli_file_path: Path) -> List[str]:
+
+def extract_documented_commands(cli_file_path: Path) -> list[str]:
     """Extract documented commands from the docstring."""
     if not cli_file_path.exists():
         raise FileNotFoundError(f"CLI file not found: {cli_file_path}")
 
-    content = cli_file_path.read_text(encoding='utf-8')
+    content = cli_file_path.read_text(encoding="utf-8")
 
     # Find the docstring with Available Commands
     docstring_pattern = r'Available Commands:(.*?)"""'
@@ -49,15 +49,16 @@ def extract_documented_commands(cli_file_path: Path) -> List[str]:
     commands_section = match.group(1)
 
     # Extract command names
-    command_pattern = r'^\s+(\w+(?:-\w+)*)\s+'
+    command_pattern = r"^\s+(\w+(?:-\w+)*)\s+"
     commands = []
 
-    for line in commands_section.split('\n'):
+    for line in commands_section.split("\n"):
         match = re.match(command_pattern, line)
         if match:
             commands.append(match.group(1))
 
     return commands
+
 
 def main():
     """Main verification function."""
@@ -83,9 +84,9 @@ def main():
             print(f"  {i}. {cmd}")
 
         # Verify consistency
-        actual_names = [cmd['name'] for cmd in actual_commands]
+        actual_names = [cmd["name"] for cmd in actual_commands]
 
-        print(f"\n✅ Command Count Verification:")
+        print("\n✅ Command Count Verification:")
         print(f"   Actual commands: {len(actual_names)}")
         print(f"   Documented commands: {len(documented_commands)}")
 
@@ -104,17 +105,22 @@ def main():
         if missing_in_code:
             print(f"\n❌ Commands documented but not in code: {missing_in_code}")
 
-        if not missing_in_docs and not missing_in_code and len(actual_names) == len(documented_commands):
+        if (
+            not missing_in_docs
+            and not missing_in_code
+            and len(actual_names) == len(documented_commands)
+        ):
             print("\n🎉 All CLI commands are properly documented!")
             return True
         else:
-            print(f"\n❌ CLI command documentation needs updates")
+            print("\n❌ CLI command documentation needs updates")
             return False
 
     except Exception as e:
         print(f"❌ Error during verification: {e}")
         return False
 
+
 if __name__ == "__main__":
     success = main()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

@@ -27,21 +27,21 @@ from xraylabtool.calculators.derived_quantities import (
 __all__ = [
     # Core calculation functions
     "XRayResult",
-    "calculate_single_material_properties",
-    "calculate_xray_properties",
+    # Derived quantities
+    "calculate_attenuation_length",
+    "calculate_critical_angle",
+    "calculate_derived_quantities",
     "calculate_multiple_xray_properties",
     "calculate_scattering_factors",
-    "calculate_derived_quantities",
+    "calculate_scattering_length_density",
+    "calculate_single_material_properties",
+    "calculate_transmission",
+    "calculate_xray_properties",
     # Cache management
     "clear_scattering_factor_cache",
+    "create_scattering_factor_interpolators",
     "get_cached_elements",
     "is_element_cached",
     # Data loading
     "load_scattering_factor_data",
-    "create_scattering_factor_interpolators",
-    # Derived quantities
-    "calculate_attenuation_length",
-    "calculate_critical_angle",
-    "calculate_scattering_length_density",
-    "calculate_transmission",
 ]

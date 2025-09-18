@@ -1,18 +1,54 @@
 """
-XRayLabTool codebase cleanup and maintenance utilities.
+Basic file cleanup utilities.
 
-This package provides tools for identifying and safely removing obsolete files,
-analyzing repository health, and maintaining a clean development environment.
+Simplified cleanup functionality for removing common build artifacts
+and cache files.
 """
 
-from .file_detector import ObsoleteFileDetector, DetectionResult, FileCategory
-from .safety_classifier import SafetyClassifier
-from .config import CleanupConfig
+import os
+from pathlib import Path
+import shutil
+from typing import List
 
-__all__ = [
-    "ObsoleteFileDetector",
-    "DetectionResult",
-    "FileCategory",
-    "SafetyClassifier",
-    "CleanupConfig",
-]
+
+def clean_build_artifacts(project_root: Path) -> list[str]:
+    """
+    Remove common build artifacts and cache files.
+
+    Args:
+        project_root: Root directory of the project
+
+    Returns:
+        List of removed items
+    """
+    removed_items = []
+
+    # Common patterns to remove
+    patterns = [
+        "**/__pycache__",
+        "**/*.pyc",
+        "**/*.pyo",
+        "**/.pytest_cache",
+        "**/build",
+        "**/dist",
+        "**/*.egg-info",
+        "**/.mypy_cache",
+        "**/.ruff_cache",
+        "**/.xraylabtool_cache",
+    ]
+
+    for pattern in patterns:
+        for path in project_root.glob(pattern):
+            try:
+                if path.is_dir():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink()
+                removed_items.append(str(path))
+            except (OSError, PermissionError):
+                continue
+
+    return removed_items
+
+
+__all__ = ["clean_build_artifacts"]

@@ -190,7 +190,7 @@ def _update_performance_windows() -> None:
 
 def _check_performance_alerts() -> None:
     """Check for performance alerts and regressions."""
-    current_time = datetime.now()
+    datetime.now()
     rt_metrics = _monitoring_data["real_time_metrics"]
 
     # Skip if not enough samples
@@ -244,7 +244,7 @@ def get_real_time_metrics() -> dict[str, Any]:
         Dictionary with current performance metrics
     """
     with _monitor_lock:
-        current_time = datetime.now()
+        datetime.now()
 
         # Ensure metrics are up to date
         _update_performance_windows()

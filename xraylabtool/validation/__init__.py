@@ -1,10 +1,11 @@
 """
-XRayLabTool Validation Module.
+Basic validation system for XRayLabTool.
 
-This module contains data validation, error handling, and exception classes.
+Simplified validation functionality for scientific input validation.
 """
 
-from xraylabtool.exceptions import (
+# Import exceptions from main exceptions module for compatibility
+from ..exceptions import (
     AtomicDataError,
     BatchProcessingError,
     CalculationError,
@@ -16,28 +17,26 @@ from xraylabtool.exceptions import (
     ValidationError,
     XRayLabToolError,
 )
-from xraylabtool.validation.validators import (
-    validate_calculation_parameters,
+from .validators import (
     validate_chemical_formula,
     validate_density,
     validate_energy_range,
 )
 
 __all__ = [
-    # Exception classes
-    "XRayLabToolError",
-    "CalculationError",
-    "FormulaError",
-    "EnergyError",
-    "DataFileError",
-    "ValidationError",
+    # Exceptions
     "AtomicDataError",
-    "UnknownElementError",
     "BatchProcessingError",
+    "CalculationError",
     "ConfigurationError",
+    "DataFileError",
+    "EnergyError",
+    "FormulaError",
+    "UnknownElementError",
+    "ValidationError",
+    "XRayLabToolError",
     # Validation functions
-    "validate_energy_range",
     "validate_chemical_formula",
     "validate_density",
-    "validate_calculation_parameters",
+    "validate_energy_range",
 ]

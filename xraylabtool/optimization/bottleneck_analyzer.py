@@ -7,7 +7,7 @@ and vectorization opportunities.
 """
 
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 import cProfile
 from dataclasses import asdict, dataclass
 from functools import wraps
@@ -25,6 +25,8 @@ try:
     LINE_PROFILER_AVAILABLE = True
 except ImportError:
     LINE_PROFILER_AVAILABLE = False
+
+import builtins
 
 from xraylabtool.optimization.memory_profiler import MemoryProfiler
 
@@ -135,23 +137,58 @@ class BottleneckAnalyzer:
         @wraps(func)
         def wrapper(*args, **kwargs) -> Any:
             profiler = cProfile.Profile()
+            line_profiler = None
 
-            if self.enable_line_profiling:
-                line_profiler = LineProfiler()
-                line_profiler.add_function(func)
-                line_profiler.enable_by_count()
+            # Check if there's already an active profiler
+            import sys
+
+            enable_line_profiling = False  # Disable line profiling to avoid conflicts
+
+            # Only enable if explicitly safe (no other monitoring active)
+            if (
+                self.enable_line_profiling
+                and hasattr(sys, "monitoring")
+                and not sys.monitoring.get_tool(sys.monitoring.PROFILER_ID)
+            ):
+                enable_line_profiling = True
+
+            if enable_line_profiling:
+                try:
+                    line_profiler = LineProfiler()
+                    line_profiler.add_function(func)
+                    line_profiler.enable_by_count()
+                except ValueError as e:
+                    if "Another profiling tool is already active" in str(e):
+                        # Gracefully fallback to function-level profiling only
+                        enable_line_profiling = False
+                        line_profiler = None
+                    else:
+                        raise
 
             try:
-                profiler.enable()
-                start_time = time.perf_counter()
+                try:
+                    profiler.enable()
+                    start_time = time.perf_counter()
 
-                result = func(*args, **kwargs)
+                    result = func(*args, **kwargs)
 
-                end_time = time.perf_counter()
-                profiler.disable()
+                    end_time = time.perf_counter()
+                    profiler.disable()
+                except ValueError as e:
+                    if "Another profiling tool is already active" in str(e):
+                        # Fallback: just measure execution time
+                        start_time = time.perf_counter()
+                        result = func(*args, **kwargs)
+                        end_time = time.perf_counter()
+                    else:
+                        raise
 
-                if self.enable_line_profiling:
-                    line_profiler.disable_by_count()
+                if enable_line_profiling and line_profiler:
+                    try:
+                        line_profiler.disable_by_count()
+                    except (ValueError, AttributeError):
+                        # Ignore line profiler errors during cleanup
+                        pass
 
                 # Store profiling data
                 profile_name = f"{func.__module__}.{func.__name__}"
@@ -161,15 +198,17 @@ class BottleneckAnalyzer:
                     "args_info": self._get_args_info(args, kwargs),
                 }
 
-                if self.enable_line_profiling:
+                if enable_line_profiling and line_profiler:
                     self.line_profiles[profile_name] = line_profiler
 
                 return result
 
             except Exception as e:
-                profiler.disable()
-                if self.enable_line_profiling:
-                    line_profiler.disable_by_count()
+                with suppress(builtins.BaseException):
+                    profiler.disable()
+                if enable_line_profiling and line_profiler:
+                    with suppress(builtins.BaseException):
+                        line_profiler.disable_by_count()
                 raise e
 
         return wrapper
@@ -187,10 +226,32 @@ class BottleneckAnalyzer:
             **context: Additional context information
         """
         profiler = cProfile.Profile()
+        line_profiler = None
 
-        if self.enable_line_profiling:
-            line_profiler = LineProfiler()
-            line_profiler.enable_by_count()
+        # Check if there's already an active profiler
+        import sys
+
+        enable_line_profiling = False  # Disable line profiling to avoid conflicts
+
+        # Only enable if explicitly safe (no other monitoring active)
+        if (
+            self.enable_line_profiling
+            and hasattr(sys, "monitoring")
+            and not sys.monitoring.get_tool(sys.monitoring.PROFILER_ID)
+        ):
+            enable_line_profiling = True
+
+        if enable_line_profiling:
+            try:
+                line_profiler = LineProfiler()
+                line_profiler.enable_by_count()
+            except ValueError as e:
+                if "Another profiling tool is already active" in str(e):
+                    # Gracefully fallback to function-level profiling only
+                    enable_line_profiling = False
+                    line_profiler = None
+                else:
+                    raise
 
         memory_context = None
         if enable_memory_tracking:
@@ -202,16 +263,31 @@ class BottleneckAnalyzer:
             if memory_context:
                 memory_context.__enter__()
 
-            profiler.enable()
-            start_time = time.perf_counter()
+            try:
+                profiler.enable()
+                start_time = time.perf_counter()
 
-            yield
+                yield
 
-            end_time = time.perf_counter()
-            profiler.disable()
+                end_time = time.perf_counter()
+                profiler.disable()
+            except ValueError as e:
+                if "Another profiling tool is already active" in str(e):
+                    # Fallback: just measure execution time
+                    start_time = time.perf_counter()
+                    yield
+                    end_time = time.perf_counter()
+                    # Create a dummy profiler for consistency
+                    profiler = None
+                else:
+                    raise
 
-            if self.enable_line_profiling:
-                line_profiler.disable_by_count()
+            if enable_line_profiling and line_profiler:
+                try:
+                    line_profiler.disable_by_count()
+                except (ValueError, AttributeError):
+                    # Ignore line profiler errors during cleanup
+                    pass
 
             # Store profiling data
             self.profiles[operation_name] = {
@@ -220,7 +296,7 @@ class BottleneckAnalyzer:
                 "context": context,
             }
 
-            if self.enable_line_profiling:
+            if enable_line_profiling and line_profiler:
                 self.line_profiles[operation_name] = line_profiler
 
         finally:
@@ -246,13 +322,21 @@ class BottleneckAnalyzer:
         profiler = self.profiles[profile_name]["profiler"]
         total_time = self.profiles[profile_name]["duration"]
 
+        # Handle case where profiler couldn't be used
+        if profiler is None:
+            return []
+
         # Capture profiler output
         s = io.StringIO()
-        ps = pstats.Stats(profiler, stream=s)
-        ps.sort_stats("cumulative")
+        try:
+            ps = pstats.Stats(profiler, stream=s)
+            ps.sort_stats("cumulative")
+        except (TypeError, ValueError):
+            # Profiler data is invalid or empty
+            return []
 
         bottlenecks = []
-        for func, (cc, nc, tt, ct, callers) in ps.stats.items():
+        for func, (cc, _nc, tt, ct, _callers) in ps.stats.items():
             filename, line_num, func_name = func
 
             # Skip built-in functions for now (focus on our code)
@@ -304,13 +388,12 @@ class BottleneckAnalyzer:
         lines = s.getvalue().split("\n")
         line_bottlenecks = []
 
-        current_function = None
         for line in lines:
             if "Line #" in line and "Hits" in line:
                 continue  # Header line
 
             if line.strip() and not line.startswith(" "):
-                current_function = line.strip()
+                line.strip()
                 continue
 
             # Parse line profile data
@@ -409,7 +492,7 @@ class BottleneckAnalyzer:
         opportunities = []
 
         for path in source_paths:
-            if not path.exists() or not path.suffix == ".py":
+            if not path.exists() or path.suffix != ".py":
                 continue
 
             try:

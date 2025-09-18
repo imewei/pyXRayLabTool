@@ -2063,11 +2063,8 @@ source ~/.bash_completion.d/xraylabtool"""
         env_type = self._detect_environment_type()
         if env_type == "conda" and os.environ.get("CONDA_PREFIX"):
             return Path(os.environ["CONDA_PREFIX"])
-        elif (
-            env_type == "venv"
-            and os.environ.get("VIRTUAL_ENV")
-            or env_type == "pipenv"
-            and os.environ.get("VIRTUAL_ENV")
+        elif (env_type == "venv" and os.environ.get("VIRTUAL_ENV")) or (
+            env_type == "pipenv" and os.environ.get("VIRTUAL_ENV")
         ):
             return Path(os.environ["VIRTUAL_ENV"])
         return None

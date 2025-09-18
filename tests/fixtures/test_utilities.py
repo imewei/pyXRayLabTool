@@ -284,20 +284,20 @@ class TestDataFactory:
     ]
 
     @classmethod
-    def get_materials(cls, count: int = None) -> list[tuple[str, float]]:
+    def get_materials(cls, count: int | None = None) -> list[tuple[str, float]]:
         """Get list of test materials."""
         if count is None:
             return cls.COMMON_MATERIALS.copy()
         return cls.COMMON_MATERIALS[:count]
 
     @classmethod
-    def get_material_formulas(cls, count: int = None) -> list[str]:
+    def get_material_formulas(cls, count: int | None = None) -> list[str]:
         """Get list of material formulas."""
         materials = cls.get_materials(count)
         return [material[0] for material in materials]
 
     @classmethod
-    def get_material_densities(cls, count: int = None) -> list[float]:
+    def get_material_densities(cls, count: int | None = None) -> list[float]:
         """Get list of material densities."""
         materials = cls.get_materials(count)
         return [material[1] for material in materials]
@@ -340,36 +340,36 @@ class ResultValidator:
         """Validate XRayResult object."""
         assert result is not None, "Result should not be None"
         assert hasattr(result, "formula"), "Result should have formula attribute"
-        assert (
-            result.formula == formula
-        ), f"Formula mismatch: {result.formula} != {formula}"
+        assert result.formula == formula, (
+            f"Formula mismatch: {result.formula} != {formula}"
+        )
 
         # Validate arrays
         assert hasattr(result, "energy_kev"), "Result should have energy_kev"
         assert len(result.energy_kev) == len(energies), "Energy array length mismatch"
 
         # Validate critical angle
-        assert hasattr(
-            result, "critical_angle_degrees"
-        ), "Result should have critical_angle_degrees"
-        assert len(result.critical_angle_degrees) == len(
-            energies
-        ), "Critical angle array length mismatch"
-        assert np.all(
-            np.isfinite(result.critical_angle_degrees)
-        ), "Critical angles should be finite"
-        assert np.all(
-            result.critical_angle_degrees >= 0
-        ), "Critical angles should be non-negative"
+        assert hasattr(result, "critical_angle_degrees"), (
+            "Result should have critical_angle_degrees"
+        )
+        assert len(result.critical_angle_degrees) == len(energies), (
+            "Critical angle array length mismatch"
+        )
+        assert np.all(np.isfinite(result.critical_angle_degrees)), (
+            "Critical angles should be finite"
+        )
+        assert np.all(result.critical_angle_degrees >= 0), (
+            "Critical angles should be non-negative"
+        )
 
         # Validate transmission
         assert hasattr(result, "transmission"), "Result should have transmission"
-        assert len(result.transmission) == len(
-            energies
-        ), "Transmission array length mismatch"
-        assert np.all(
-            np.isfinite(result.transmission)
-        ), "Transmission values should be finite"
+        assert len(result.transmission) == len(energies), (
+            "Transmission array length mismatch"
+        )
+        assert np.all(np.isfinite(result.transmission)), (
+            "Transmission values should be finite"
+        )
         assert np.all(result.transmission >= 0), "Transmission should be non-negative"
         assert np.all(result.transmission <= 1), "Transmission should not exceed 1"
 
@@ -387,9 +387,9 @@ class ResultValidator:
         # Validate each result
         for formula, result in results.items():
             if result is not None:  # Some results might be None due to errors
-                assert hasattr(
-                    result, "formula"
-                ), f"Result for {formula} should have formula"
+                assert hasattr(result, "formula"), (
+                    f"Result for {formula} should have formula"
+                )
                 assert result.formula == formula, f"Formula mismatch for {formula}"
 
     @staticmethod
@@ -560,22 +560,24 @@ def expect_no_warnings():
 
 
 @contextmanager
-def expect_warnings(expected_count: int = None, warning_type: type = None):
+def expect_warnings(
+    expected_count: int | None = None, warning_type: type | None = None
+):
     """Context manager to validate expected warnings."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
         yield warning_list
 
         if expected_count is not None:
-            assert (
-                len(warning_list) == expected_count
-            ), f"Expected {expected_count} warnings, got {len(warning_list)}"
+            assert len(warning_list) == expected_count, (
+                f"Expected {expected_count} warnings, got {len(warning_list)}"
+            )
 
         if warning_type is not None:
             for w in warning_list:
-                assert issubclass(
-                    w.category, warning_type
-                ), f"Expected warning type {warning_type}, got {w.category}"
+                assert issubclass(w.category, warning_type), (
+                    f"Expected warning type {warning_type}, got {w.category}"
+                )
 
 
 # System resource utilities

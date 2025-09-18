@@ -224,7 +224,7 @@ class MemoryProfiler:
             total_allocated_mb = 0.0
             allocations_count = 0
             if self.enable_tracemalloc and tracemalloc.is_tracing():
-                current, peak = tracemalloc.get_traced_memory()
+                _current, peak = tracemalloc.get_traced_memory()
                 total_allocated_mb = peak / 1024 / 1024
 
             # Update profile

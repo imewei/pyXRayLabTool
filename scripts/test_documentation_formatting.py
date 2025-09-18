@@ -6,72 +6,76 @@ This script validates documentation formatting, structure, and consistency
 across all documentation files.
 """
 
-import re
 from pathlib import Path
-from typing import List, Dict, Tuple
+import re
+import sys
 
 
-def check_rst_formatting(file_path: Path) -> List[str]:
+def check_rst_formatting(file_path: Path) -> list[str]:
     """Check RST file formatting."""
     issues = []
-    content = file_path.read_text(encoding='utf-8')
-    lines = content.split('\n')
+    content = file_path.read_text(encoding="utf-8")
+    lines = content.split("\n")
 
     # Check for proper section headers
     for i, line in enumerate(lines):
-        if line and line[0] in '=-~^*+#':
+        if line and line[0] in "=-~^*+#":
             # Check if header underline length matches title
             if i > 0:
-                title_line = lines[i-1]
+                title_line = lines[i - 1]
                 if len(line) != len(title_line):
-                    issues.append(f"Line {i+1}: Header underline length mismatch")
+                    issues.append(f"Line {i + 1}: Header underline length mismatch")
 
     # Check for proper code block formatting
-    code_block_pattern = r'\.\. code-block::'
+    code_block_pattern = r"\.\. code-block::"
     if re.search(code_block_pattern, content):
         # Ensure proper indentation after code-block
         for i, line in enumerate(lines):
-            if '.. code-block::' in line:
+            if ".. code-block::" in line:
                 # Check next few lines for proper indentation
-                for j in range(i+1, min(i+10, len(lines))):
-                    if lines[j].strip() and not lines[j].startswith('   '):
-                        if not lines[j].strip().startswith('..') and lines[j].strip():
-                            issues.append(f"Line {j+1}: Code block content not properly indented")
+                for j in range(i + 1, min(i + 10, len(lines))):
+                    if lines[j].strip() and not lines[j].startswith("   "):
+                        if not lines[j].strip().startswith("..") and lines[j].strip():
+                            issues.append(
+                                f"Line {j + 1}: Code block content not properly indented"
+                            )
                             break
 
     return issues
 
 
-def check_markdown_formatting(file_path: Path) -> List[str]:
+def check_markdown_formatting(file_path: Path) -> list[str]:
     """Check Markdown file formatting."""
     issues = []
-    content = file_path.read_text(encoding='utf-8')
-    lines = content.split('\n')
+    content = file_path.read_text(encoding="utf-8")
+    lines = content.split("\n")
 
     # Check for consistent heading styles
     heading_levels = []
     for i, line in enumerate(lines):
-        if line.startswith('#'):
-            level = len(line) - len(line.lstrip('#'))
-            heading_levels.append((i+1, level))
+        if line.startswith("#"):
+            level = len(line) - len(line.lstrip("#"))
+            heading_levels.append((i + 1, level))
 
     # Check for heading level skipping
     for i in range(1, len(heading_levels)):
-        prev_level = heading_levels[i-1][1]
+        prev_level = heading_levels[i - 1][1]
         curr_level = heading_levels[i][1]
         if curr_level > prev_level + 1:
             line_num = heading_levels[i][0]
-            issues.append(f"Line {line_num}: Heading level skipped (from h{prev_level} to h{curr_level})")
+            issues.append(
+                f"Line {line_num}: Heading level skipped (from h{prev_level} to h{curr_level})"
+            )
 
     # Check for code fence consistency
-    fence_count = content.count('```')
+    fence_count = content.count("```")
     if fence_count % 2 != 0:
         issues.append("Unmatched code fences (```)")
 
     return issues
 
 
-def check_content_consistency() -> List[str]:
+def check_content_consistency() -> list[str]:
     """Check content consistency across documentation."""
     issues = []
     project_root = Path(__file__).parent.parent
@@ -107,7 +111,7 @@ def check_content_consistency() -> List[str]:
     return issues
 
 
-def check_link_formatting() -> List[str]:
+def check_link_formatting() -> list[str]:
     """Check internal link formatting."""
     issues = []
     project_root = Path(__file__).parent.parent
@@ -120,22 +124,24 @@ def check_link_formatting() -> List[str]:
         if not rst_file.exists():
             continue
 
-        content = rst_file.read_text(encoding='utf-8')
+        content = rst_file.read_text(encoding="utf-8")
 
         # Check for broken internal references
-        ref_pattern = r':doc:`([^`]+)`'
+        ref_pattern = r":doc:`([^`]+)`"
         refs = re.findall(ref_pattern, content)
 
         for ref in refs:
             # Check if referenced file exists
             ref_file = docs_dir / f"{ref}.rst"
             if not ref_file.exists():
-                issues.append(f"{rst_file.name}: Reference to non-existent file '{ref}'")
+                issues.append(
+                    f"{rst_file.name}: Reference to non-existent file '{ref}'"
+                )
 
         # Check for malformed cross-references
         malformed_patterns = [
-            r':ref:`[^`]*`[^`]',  # Unclosed ref
-            r':doc:`[^`]*`[^`]',  # Unclosed doc
+            r":ref:`[^`]*`[^`]",  # Unclosed ref
+            r":doc:`[^`]*`[^`]",  # Unclosed doc
         ]
 
         for pattern in malformed_patterns:
@@ -145,7 +151,7 @@ def check_link_formatting() -> List[str]:
     return issues
 
 
-def validate_code_block_languages() -> List[str]:
+def validate_code_block_languages() -> list[str]:
     """Validate code block language specifications."""
     issues = []
     project_root = Path(__file__).parent.parent
@@ -153,8 +159,18 @@ def validate_code_block_languages() -> List[str]:
 
     # Valid language specifiers
     valid_languages = {
-        'python', 'bash', 'shell', 'console', 'text', 'json', 'yaml', 'rst',
-        'makefile', 'dockerfile', 'sql', 'none'
+        "python",
+        "bash",
+        "shell",
+        "console",
+        "text",
+        "json",
+        "yaml",
+        "rst",
+        "makefile",
+        "dockerfile",
+        "sql",
+        "none",
     }
 
     doc_files = list(docs_dir.rglob("*.rst")) + list(docs_dir.rglob("*.md"))
@@ -164,10 +180,10 @@ def validate_code_block_languages() -> List[str]:
         if not doc_file.exists():
             continue
 
-        content = doc_file.read_text(encoding='utf-8')
+        content = doc_file.read_text(encoding="utf-8")
 
         # Check RST code blocks
-        rst_pattern = r'\.\. code-block::\s*([^\s\n]+)'
+        rst_pattern = r"\.\. code-block::\s*([^\s\n]+)"
         rst_langs = re.findall(rst_pattern, content)
 
         for lang in rst_langs:
@@ -175,7 +191,7 @@ def validate_code_block_languages() -> List[str]:
                 issues.append(f"{doc_file.name}: Unknown code block language '{lang}'")
 
         # Check Markdown code blocks
-        md_pattern = r'```(\w+)'
+        md_pattern = r"```(\w+)"
         md_langs = re.findall(md_pattern, content)
 
         for lang in md_langs:
@@ -217,7 +233,7 @@ def main():
 
     # Check Markdown files
     print("🔍 Checking Markdown file formatting...")
-    md_files = list(docs_dir.rglob("*.md")) + [project_root / "README.md"]
+    md_files = [*list(docs_dir.rglob("*.md")), project_root / "README.md"]
     md_issues = 0
 
     for md_file in md_files:
@@ -273,7 +289,7 @@ def main():
     all_issues.extend(lang_issues)
 
     # Summary
-    print(f"\n📊 Documentation Formatting Summary:")
+    print("\n📊 Documentation Formatting Summary:")
     print(f"   Total issues found: {len(all_issues)}")
 
     if len(all_issues) == 0:
@@ -286,4 +302,4 @@ def main():
 
 if __name__ == "__main__":
     success = main()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

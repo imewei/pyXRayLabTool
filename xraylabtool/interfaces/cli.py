@@ -9,6 +9,9 @@ functions for X-ray analysis, and shell completion installation.
 Available Commands:
     calc                Calculate X-ray properties for a single material
     batch               Process multiple materials from CSV file
+    compare             Compare X-ray properties between multiple materials
+    analyze             Advanced analysis of single material properties
+    export              Export data with advanced formatting and visualization
     convert             Convert between energy and wavelength units
     formula             Parse and analyze chemical formulas
     atomic              Look up atomic data for elements
@@ -28,15 +31,11 @@ import sys
 from textwrap import dedent
 from typing import Any
 
-import numpy as np
-import pandas as pd
-
-# Import the main XRayLabTool functionality
+# Essential imports only - heavy modules imported lazily in functions
+# pandas import moved to function level to reduce startup time
 from xraylabtool import __version__
-from xraylabtool.calculators.core import (
-    XRayResult,
-    calculate_single_material_properties,
-)
+
+# These basic utilities are lightweight and used frequently
 from xraylabtool.utils import (
     bragg_angle,
     energy_to_wavelength,
@@ -45,6 +44,31 @@ from xraylabtool.utils import (
     parse_formula,
     wavelength_to_energy,
 )
+
+# Heavy imports moved to lazy loading:
+# - numpy, pandas: imported when needed for data processing
+# - analysis modules: imported in cmd_analyze, cmd_compare functions
+
+# Import monitoring and performance classes used in batch processing
+try:
+    from xraylabtool.data_handling.memory_profiler import MemoryMonitor
+    from xraylabtool.optimization.regression_detector import PerformanceMetrics
+    from xraylabtool.data_handling.batch_processing import AdaptiveChunkSizer
+    from xraylabtool.progress import create_batch_progress_tracker
+except ImportError:
+    # Fallback implementations for missing modules
+    class MemoryMonitor:
+        def __init__(self): pass
+    class PerformanceMetrics:
+        def __init__(self): pass
+    class AdaptiveChunkSizer:
+        def __init__(self): pass
+    def create_batch_progress_tracker(**kwargs):
+        from contextlib import nullcontext
+        return nullcontext()
+# - export modules: imported in cmd_export function
+# - progress modules: imported in cmd_batch function
+# - validation modules: imported when needed
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -88,6 +112,12 @@ def create_parser() -> argparse.ArgumentParser:
         "-v", "--verbose", action="store_true", help="Enable verbose output"
     )
 
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode for detailed error information",
+    )
+
     # Add completion installation flags
     completion_group = parser.add_argument_group("completion installation")
     completion_group.add_argument(
@@ -123,6 +153,9 @@ def create_parser() -> argparse.ArgumentParser:
     # Add subcommands
     add_calc_command(subparsers)
     add_batch_command(subparsers)
+    add_compare_command(subparsers)
+    add_analyze_command(subparsers)
+    add_export_command(subparsers)
     add_convert_command(subparsers)
     add_formula_command(subparsers)
     add_atomic_command(subparsers)
@@ -210,6 +243,12 @@ def add_calc_command(subparsers: Any) -> None:
         help="Number of decimal places for output (default: 6)",
     )
 
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode for detailed error information",
+    )
+
 
 def add_batch_command(subparsers: Any) -> None:
     """Add the 'batch' subcommand for processing multiple materials."""
@@ -263,6 +302,24 @@ def add_batch_command(subparsers: Any) -> None:
 
     parser.add_argument(
         "--fields", help="Comma-separated list of fields to include in output"
+    )
+
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode for detailed error information",
+    )
+
+    parser.add_argument(
+        "--progress",
+        action="store_true",
+        help="Show progress bar during batch processing",
+    )
+
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="Disable progress bar (overrides --progress)",
     )
 
 
@@ -340,6 +397,12 @@ def add_formula_command(subparsers: Any) -> None:
     )
 
     parser.add_argument("-o", "--output", help="Output filename (JSON format)")
+
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode for detailed error information",
+    )
 
 
 def add_atomic_command(subparsers: Any) -> None:
@@ -547,8 +610,282 @@ def add_uninstall_completion_command(subparsers: Any) -> None:
     )
 
 
-def parse_energy_string(energy_str: str) -> np.ndarray:
-    """Parse energy string into numpy array."""
+def add_compare_command(subparsers: Any) -> None:
+    """Add the 'compare' subcommand for material comparison."""
+    parser = subparsers.add_parser(
+        "compare",
+        help="Compare X-ray properties between multiple materials",
+        description="Compare X-ray optical properties across multiple materials with side-by-side analysis",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=dedent(
+            """
+        Examples:
+          # Compare two materials at single energy
+          xraylabtool compare SiO2,2.2 Al2O3,3.95 -e 10.0
+
+          # Compare materials across energy range
+          xraylabtool compare Si,2.33 Ge,5.32 -e 5-15:11
+
+          # Compare specific properties
+          xraylabtool compare SiO2,2.2 Si3N4,3.2 -e 8.0,10.0,12.0 --properties dispersion_delta,absorption_beta
+
+          # Save comparison to file
+          xraylabtool compare SiO2,2.2 Al2O3,3.95 -e 10.0 -o comparison.csv
+
+          # Generate detailed report
+          xraylabtool compare Si,2.33 GaAs,5.32 -e 10.0 --report --output comparison_report.txt
+        """
+        ),
+    )
+
+    parser.add_argument(
+        "materials",
+        nargs="+",
+        help="Materials in format 'formula,density' (e.g., SiO2,2.2 Al2O3,3.95)",
+    )
+
+    parser.add_argument(
+        "-e",
+        "--energy",
+        required=True,
+        help="X-ray energy in keV (single value, comma-separated, or range format)",
+    )
+
+    parser.add_argument(
+        "--properties",
+        help="Comma-separated list of properties to compare (default: all standard properties)",
+    )
+
+    parser.add_argument("-o", "--output", help="Output filename for comparison results")
+
+    parser.add_argument(
+        "--format",
+        choices=["table", "csv", "json"],
+        default="table",
+        help="Output format (default: table)",
+    )
+
+    parser.add_argument(
+        "--report", action="store_true", help="Generate detailed comparison report"
+    )
+
+    parser.add_argument(
+        "--precision",
+        type=int,
+        default=6,
+        help="Number of decimal places for output (default: 6)",
+    )
+
+
+def add_analyze_command(subparsers: Any) -> None:
+    """Add the 'analyze' subcommand for advanced single material analysis."""
+    parser = subparsers.add_parser(
+        "analyze",
+        help="Advanced analysis of single material properties",
+        description="Perform advanced analysis including edge detection, energy optimization, and property analysis",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=dedent(
+            """
+        Examples:
+          # Detect absorption edges
+          xraylabtool analyze SiO2 -d 2.2 --edges -e 1-20:1000
+
+          # Optimize energy for maximum critical angle
+          xraylabtool analyze Si -d 2.33 --optimize critical_angle_degrees -e 5-15:100
+
+          # Find energy for specific transmission
+          xraylabtool analyze Al -d 2.7 --transmission 0.5 --thickness 10.0 -e 1-30:200
+
+          # Comprehensive analysis with all features
+          xraylabtool analyze SiO2 -d 2.2 --edges --optimize dispersion_delta -e 1-25:500 -o analysis.json
+
+          # Statistical analysis of energy scan
+          xraylabtool analyze GaAs -d 5.32 --stats -e 5-15:100 --output stats_report.txt
+        """
+        ),
+    )
+
+    parser.add_argument("formula", help="Chemical formula (e.g., SiO2, Al2O3, GaAs)")
+
+    parser.add_argument(
+        "-d", "--density", type=float, required=True, help="Material density in g/cm³"
+    )
+
+    parser.add_argument(
+        "-e",
+        "--energy",
+        required=True,
+        help="Energy range for analysis in keV (range format recommended: 1-30:1000)",
+    )
+
+    parser.add_argument(
+        "--edges",
+        action="store_true",
+        help="Detect absorption edges using f2 derivative analysis",
+    )
+
+    parser.add_argument(
+        "--optimize",
+        help="Optimize energy for specific property (e.g., critical_angle_degrees, dispersion_delta)",
+    )
+
+    parser.add_argument(
+        "--transmission",
+        type=float,
+        help="Find energy for target transmission (0-1, requires --thickness)",
+    )
+
+    parser.add_argument(
+        "--thickness",
+        type=float,
+        help="Material thickness in micrometers (for transmission analysis)",
+    )
+
+    parser.add_argument(
+        "--stats",
+        action="store_true",
+        help="Perform statistical analysis of properties across energy range",
+    )
+
+    parser.add_argument("-o", "--output", help="Output filename for analysis results")
+
+    parser.add_argument(
+        "--format",
+        choices=["table", "csv", "json", "report"],
+        default="table",
+        help="Output format (default: table)",
+    )
+
+    parser.add_argument(
+        "--precision",
+        type=int,
+        default=6,
+        help="Number of decimal places for output (default: 6)",
+    )
+
+
+def add_export_command(subparsers: Any) -> None:
+    """Add the 'export' subcommand for advanced data export and visualization."""
+    parser = subparsers.add_parser(
+        "export",
+        help="Export data with advanced formatting and visualization",
+        description="Export X-ray calculation results with professional formatting, plots, and reports",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=dedent(
+            """
+        Examples:
+          # Export calculation results to Excel with charts
+          xraylabtool calc SiO2 -e 5-15:11 -d 2.2 | xraylabtool export --format excel --template material_characterization -o report.xlsx
+
+          # Create HTML report with interactive plots
+          xraylabtool export data.csv --format html --template research_report -o report.html --plots
+
+          # Export to multiple formats using template
+          xraylabtool export results.json --template publication_data -o publication_data --formats csv,excel,pdf
+
+          # Convert between data formats
+          xraylabtool export data.xlsx --format json -o converted_data.json
+
+          # Generate plots only
+          xraylabtool export data.csv --plots-only --plot-types line,scatter -o plots/
+        """
+        ),
+    )
+
+    parser.add_argument(
+        "input_file",
+        nargs="?",
+        help="Input data file (if not provided, reads from stdin)",
+    )
+
+    parser.add_argument(
+        "-o", "--output", required=True, help="Output file or directory path"
+    )
+
+    parser.add_argument(
+        "--format",
+        choices=["csv", "json", "excel", "html", "pdf", "hdf5", "xml"],
+        help="Output format (auto-detected from output path if not specified)",
+    )
+
+    parser.add_argument(
+        "--formats",
+        help="Comma-separated list of output formats for multi-format export",
+    )
+
+    parser.add_argument(
+        "--template",
+        choices=[
+            "material_characterization",
+            "beamline_optimization",
+            "publication_data",
+            "quality_control",
+            "research_report",
+            "comparison_study",
+            "energy_scan_analysis",
+            "absorption_edge_study",
+        ],
+        help="Export template for predefined workflows",
+    )
+
+    parser.add_argument("--plots", action="store_true", help="Include plots in export")
+
+    parser.add_argument(
+        "--plots-only", action="store_true", help="Generate plots only (no data export)"
+    )
+
+    parser.add_argument(
+        "--plot-types",
+        help="Comma-separated list of plot types (line, scatter, comparison, energy_scan, etc.)",
+    )
+
+    parser.add_argument(
+        "--excel-template",
+        choices=["basic", "comparison", "analysis", "report", "publication"],
+        default="basic",
+        help="Excel template style (default: basic)",
+    )
+
+    parser.add_argument(
+        "--html-template",
+        choices=["scientific", "executive", "technical", "presentation"],
+        default="scientific",
+        help="HTML report template (default: scientific)",
+    )
+
+    parser.add_argument(
+        "--include-metadata",
+        action="store_true",
+        default=True,
+        help="Include metadata in export (default: true)",
+    )
+
+    parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Generate interactive plots (requires plotly)",
+    )
+
+    parser.add_argument(
+        "--dpi",
+        type=int,
+        default=300,
+        help="Plot DPI for high-quality output (default: 300)",
+    )
+
+    parser.add_argument("--style", help="Plot style (matplotlib style name)")
+
+    parser.add_argument("--title", help="Custom title for plots and reports")
+
+    parser.add_argument("--author", help="Author name for reports")
+
+    parser.add_argument("--institution", help="Institution name for reports")
+
+
+def parse_energy_string(energy_str: str):
+    """Parse energy string and return numpy array."""
+    import numpy as np
+
     if "," in energy_str:
         # Comma-separated values
         return np.array([float(x.strip()) for x in energy_str.split(",")])
@@ -594,8 +931,10 @@ def _get_default_fields() -> tuple[list[str], list[str]]:
     return scalar_fields, array_fields
 
 
-def _format_as_json(result: XRayResult, fields: list[str]) -> str:
+def _format_as_json(result, fields: list[str]) -> str:
     """Format result as JSON."""
+    import numpy as np
+
     data = {}
     for field in fields:
         value = getattr(result, field)
@@ -606,8 +945,13 @@ def _format_as_json(result: XRayResult, fields: list[str]) -> str:
     return json.dumps(data, indent=2)
 
 
-def _format_as_csv(result: XRayResult, fields: list[str], precision: int) -> str:
+def _format_as_csv(result, fields: list[str], precision: int) -> str:
     """Format result as CSV."""
+    import csv
+    import io
+
+    import numpy as np
+
     data_rows = []
     n_energies = len(result.energy_kev)
 
@@ -622,13 +966,17 @@ def _format_as_csv(result: XRayResult, fields: list[str], precision: int) -> str
         data_rows.append(row)
 
     if data_rows:
-        df = pd.DataFrame(data_rows)
-        csv_output: str = df.to_csv(index=False)
-        return csv_output
+        # Use CSV module instead of pandas
+        output = io.StringIO()
+        fieldnames = fields
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(data_rows)
+        return output.getvalue()
     return ""
 
 
-def _format_material_properties(result: XRayResult, precision: int) -> list[str]:
+def _format_material_properties(result, precision: int) -> list[str]:
     """Format material properties section."""
     return [
         "Material Properties:",
@@ -644,7 +992,7 @@ def _format_material_properties(result: XRayResult, precision: int) -> list[str]
     ]
 
 
-def _format_single_energy(result: XRayResult, precision: int) -> list[str]:
+def _format_single_energy(result, precision: int) -> list[str]:
     """Format single energy point properties."""
     return [
         "X-ray Properties:",
@@ -661,25 +1009,49 @@ def _format_single_energy(result: XRayResult, precision: int) -> list[str]:
     ]
 
 
-def _format_multiple_energies(result: XRayResult, precision: int) -> list[str]:
+def _format_multiple_energies(result, precision: int) -> list[str]:
     """Format multiple energy points as table."""
+    import numpy as np
+
     output_lines = ["X-ray Properties (tabular):"]
 
-    df_data = {
-        "Energy (keV)": result.energy_kev,
-        "λ (Å)": result.wavelength_angstrom,
-        "δ": result.dispersion_delta,
-        "β": result.absorption_beta,
-        "f1": result.scattering_factor_f1,
-        "f2": result.scattering_factor_f2,
-        "θc (°)": result.critical_angle_degrees,
-        "μ (cm)": result.attenuation_length_cm,
-    }
+    # Create table without pandas
+    headers = ["Energy (keV)", "λ (Å)", "δ", "β", "f1", "f2", "θc (°)", "μ (cm)"]
+    data_arrays = [
+        result.energy_kev,
+        result.wavelength_angstrom,
+        result.dispersion_delta,
+        result.absorption_beta,
+        result.scattering_factor_f1,
+        result.scattering_factor_f2,
+        result.critical_angle_degrees,
+        result.attenuation_length_cm,
+    ]
 
-    df = pd.DataFrame(df_data)
-    pd.set_option("display.float_format", f"{{: .{precision}g}}".format)
-    table_str = df.to_string(index=False)
-    output_lines.append(table_str)
+    # Calculate column widths
+    col_widths = [max(len(header), 12) for header in headers]
+
+    # Format header
+    header_line = "  ".join(
+        header.ljust(width) for header, width in zip(headers, col_widths, strict=False)
+    )
+    output_lines.append(header_line)
+
+    # Format data rows
+    n_energies = len(result.energy_kev)
+    for i in range(n_energies):
+        row_values = []
+        for data_array in data_arrays:
+            if isinstance(data_array, np.ndarray):
+                value = data_array[i]
+            else:
+                value = data_array
+            row_values.append(f"{value:.{precision}g}")
+
+        row_line = "  ".join(
+            val.ljust(width) for val, width in zip(row_values, col_widths, strict=False)
+        )
+        output_lines.append(row_line)
 
     return output_lines
 
@@ -698,7 +1070,7 @@ def _format_scalar_field(field: str, value: Any, precision: int) -> str:
         "density_g_cm3": lambda v, p: f"  Density: {v: .{p}f} g/cm³",
         "electron_density_per_ang3": (
             lambda v, p: f"  Electron Density: {v: .{p}e} electrons/Å³"
-        ),  # noqa: E501
+        ),
     }
     formatter = formatters.get(field, default_formatter)
     return formatter(value, precision)
@@ -742,7 +1114,7 @@ def _get_field_labels() -> dict[str, str]:
 
 
 def _format_scalar_fields_section(
-    result: XRayResult, fields_to_show: list[str], precision: int
+    result, fields_to_show: list[str], precision: int
 ) -> list[str]:
     """Format scalar fields section."""
     if not fields_to_show:
@@ -759,7 +1131,7 @@ def _format_scalar_fields_section(
 
 
 def _format_single_energy_section(
-    result: XRayResult, fields_to_show: list[str], precision: int
+    result, fields_to_show: list[str], precision: int
 ) -> list[str]:
     """Format single energy point array fields."""
     if not fields_to_show:
@@ -775,33 +1147,57 @@ def _format_single_energy_section(
 
 
 def _format_multiple_energy_section(
-    result: XRayResult, fields_to_show: list[str], precision: int
+    result, fields_to_show: list[str], precision: int
 ) -> list[str]:
     """Format multiple energy points as tabular data."""
+    import numpy as np
+
     if not fields_to_show:
         return []
 
     output_lines = ["X-ray Properties (tabular):"]
     field_labels = _get_field_labels()
-    df_data = {}
 
+    # Collect headers and data arrays
+    headers = []
+    data_arrays = []
     for field in fields_to_show:
         label = field_labels.get(field, field)
-        df_data[label] = getattr(result, field)
+        headers.append(label)
+        data_arrays.append(getattr(result, field))
 
-    if df_data:
-        df = pd.DataFrame(df_data)
-        format_str = f"{{: .{precision}g}}"
-        pd.set_option("display.float_format", format_str.format)
-        table_str = df.to_string(index=False)
-        output_lines.append(table_str)
+    if headers:
+        # Calculate column widths
+        col_widths = [max(len(header), 12) for header in headers]
+
+        # Format header
+        header_line = "  ".join(
+            header.ljust(width)
+            for header, width in zip(headers, col_widths, strict=False)
+        )
+        output_lines.append(header_line)
+
+        # Format data rows
+        n_rows = len(data_arrays[0]) if data_arrays else 0
+        for i in range(n_rows):
+            row_values = []
+            for data_array in data_arrays:
+                if isinstance(data_array, np.ndarray):
+                    value = data_array[i]
+                else:
+                    value = data_array
+                row_values.append(f"{value:.{precision}g}")
+
+            row_line = "  ".join(
+                val.ljust(width)
+                for val, width in zip(row_values, col_widths, strict=False)
+            )
+            output_lines.append(row_line)
 
     return output_lines
 
 
-def _format_filtered_table(
-    result: XRayResult, fields: list[str], precision: int
-) -> str:
+def _format_filtered_table(result, fields: list[str], precision: int) -> str:
     """Format table with only specified fields."""
     # Separate scalar and array fields
     scalar_fields, array_fields = _get_default_fields()
@@ -830,7 +1226,7 @@ def _format_filtered_table(
 
 
 def format_xray_result(
-    result: XRayResult,
+    result,  # XRayResult - type hint removed for lazy loading
     format_type: str,
     precision: int = 6,
     fields: list[str] | None = None,
@@ -860,8 +1256,10 @@ def format_xray_result(
         return "\n".join(output_lines)
 
 
-def _validate_calc_inputs(args: Any, energies: np.ndarray) -> bool:
-    """Validate calc command inputs."""
+def _validate_calc_inputs(args: Any, energies) -> bool:
+    """Validate calculation inputs."""
+    import numpy as np
+
     if args.density <= 0:
         print("Error: Density must be positive", file=sys.stderr)
         return False
@@ -876,7 +1274,7 @@ def _validate_calc_inputs(args: Any, energies: np.ndarray) -> bool:
     return True
 
 
-def _print_calc_verbose_info(args: Any, energies: np.ndarray) -> None:
+def _print_calc_verbose_info(args: Any, energies) -> None:
     """Print verbose calculation information."""
     print(f"Calculating X-ray properties for {args.formula}...")
     print(
@@ -915,6 +1313,28 @@ def _save_or_print_output(formatted_output: str, args: Any) -> None:
 def cmd_calc(args: Any) -> int:
     """Handle the 'calc' command."""
     try:
+        # Lazy imports for this command
+        from xraylabtool.calculators.core import (
+            calculate_single_material_properties,
+        )
+        from xraylabtool.validation import validate_chemical_formula, validate_density
+
+        # Basic validation
+        try:
+            validate_chemical_formula(args.formula)
+        except Exception as e:
+            print(
+                f"Error: Invalid chemical formula '{args.formula}': {e}",
+                file=sys.stderr,
+            )
+            return 1
+
+        try:
+            validate_density(args.density)
+        except Exception as e:
+            print(f"Error: Invalid density '{args.density}': {e}", file=sys.stderr)
+            return 1
+
         energies = parse_energy_string(args.energy)
 
         if not _validate_calc_inputs(args, energies):
@@ -940,37 +1360,60 @@ def cmd_calc(args: Any) -> int:
         return 0
 
     except Exception as e:
+        debug_mode = getattr(args, "debug", False)
+        if debug_mode:
+            import traceback
+
+            print("🔍 Debug: Full traceback:", file=sys.stderr)
+            traceback.print_exc()
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
 
-def _validate_batch_input(args: Any) -> pd.DataFrame | None:
-    """Validate batch input file and columns."""
+def _validate_batch_input(args: Any):
+    """Validate batch input file and return data."""
+    import csv
+
     input_path = Path(args.input_file)
     if not input_path.exists():
         print(f"Error: Input file {args.input_file} not found", file=sys.stderr)
         return None
 
-    df_input = pd.read_csv(input_path)
+    try:
+        # Read CSV using standard library
+        with open(input_path, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            data_rows = list(reader)
 
-    required_columns = ["formula", "density", "energy"]
-    missing_columns = [col for col in required_columns if col not in df_input.columns]
-    if missing_columns:
-        print(f"Error: Missing required columns: {missing_columns}", file=sys.stderr)
+        if not data_rows:
+            print("Error: Input file is empty", file=sys.stderr)
+            return None
+
+        # Check for required columns
+        required_columns = ["formula", "density", "energy"]
+        actual_columns = set(data_rows[0].keys()) if data_rows else set()
+        missing_columns = [col for col in required_columns if col not in actual_columns]
+        if missing_columns:
+            print(
+                f"Error: Missing required columns: {missing_columns}", file=sys.stderr
+            )
+            return None
+
+        return data_rows
+    except Exception as e:
+        print(f"Error reading input file: {e}", file=sys.stderr)
         return None
-
-    return df_input
 
 
 def _parse_batch_data(
-    df_input: pd.DataFrame,
+    data_input,  # list of dict
 ) -> tuple[list[str] | None, list[float] | None, list[list[float]] | None]:
-    """Parse batch data from DataFrame."""
+    """Parse batch data from list of dictionaries."""
     formulas = []
     densities = []
     energy_sets = []
 
-    for _, row in df_input.iterrows():
+    for row in data_input:
         formulas.append(row["formula"])
         densities.append(float(row["density"]))
 
@@ -991,7 +1434,7 @@ def _parse_batch_data(
     return formulas, densities, energy_sets
 
 
-def _convert_result_to_dict(result: XRayResult, energy_index: int) -> dict[str, Any]:
+def _convert_result_to_dict(result, energy_index: int) -> dict[str, Any]:
     """Convert XRayResult to dictionary for specific energy point."""
     return {
         "formula": result.formula,
@@ -1018,28 +1461,81 @@ def _process_batch_materials(
     energy_sets: list[list[float]],
     args: Any,
 ) -> list[dict[str, Any]]:
-    """Process all materials and return results."""
+    """Process all materials and return results with progress tracking."""
+    # Import required calculation function
+    from xraylabtool.calculators.core import calculate_single_material_properties
+
     results = []
+
+    # Initialize progress tracking and performance monitoring
+    enable_progress = getattr(args, "progress", False) and not getattr(
+        args, "no_progress", False
+    )
+    # Auto-enable progress for large batches unless explicitly disabled
+    if len(formulas) > 10 and not getattr(args, "no_progress", False):
+        enable_progress = True
+
+    # Initialize monitoring
+    memory_monitor = MemoryMonitor()
+    performance_metrics = PerformanceMetrics()
+    chunk_sizer = AdaptiveChunkSizer()
 
     if args.verbose:
         print(f"Processing {len(formulas)} materials...")
+        if enable_progress:
+            print("Progress tracking enabled")
 
-    for i, (formula, density, energies) in enumerate(
-        zip(formulas, densities, energy_sets, strict=False)
-    ):
-        try:
-            if args.verbose:
-                print(f"  {i + 1}/{len(formulas)}: {formula}")
+    # Create progress tracker
+    with create_batch_progress_tracker(
+        total_items=len(formulas),
+        desc="Processing materials",
+        verbose=args.verbose,
+        disable_progress=not enable_progress,
+    ) as progress:
+        for i, (formula, density, energies) in enumerate(
+            zip(formulas, densities, energy_sets, strict=False)
+        ):
+            try:
+                # Update memory monitoring
+                memory_monitor.update()
 
-            result = calculate_single_material_properties(formula, energies, density)
+                # Time the operation for performance metrics
+                with performance_metrics.time_operation():
+                    if args.verbose and not enable_progress:
+                        print(f"  {i + 1}/{len(formulas)}: {formula}")
 
-            for j, _energy in enumerate(energies):
-                result_dict = _convert_result_to_dict(result, j)
-                results.append(result_dict)
+                    result = calculate_single_material_properties(
+                        formula, energies, density
+                    )
 
-        except Exception as e:
-            print(f"Warning: Failed to process {formula}: {e}")
-            continue
+                    for j, _energy in enumerate(energies):
+                        result_dict = _convert_result_to_dict(result, j)
+                        results.append(result_dict)
+
+                # Record the operation
+                performance_metrics.record_operations(len(energies))
+
+            except Exception as e:
+                if not enable_progress:  # Only print if progress bar isn't showing
+                    print(f"Warning: Failed to process {formula}: {e}")
+                continue
+
+            finally:
+                # Update progress
+                progress.update(1)
+
+    # Show performance summary if verbose
+    if args.verbose:
+        print("\n" + "=" * 50)
+        performance_metrics.print_summary(verbose=True)
+        memory_monitor.print_summary()
+
+        # Show chunk sizing recommendation for future runs
+        recommended_chunk = chunk_sizer.calculate_chunk_size(len(formulas))
+        if len(formulas) > recommended_chunk:
+            print(
+                f"💡 For optimal memory usage, consider processing in chunks of {recommended_chunk}"
+            )
 
     return results
 
@@ -1061,8 +1557,15 @@ def _save_batch_results(results: list[dict[str, Any]], args: Any) -> None:
         with open(args.output, "w") as f:
             json.dump(results, f, indent=2)
     else:
-        df_output = pd.DataFrame(results)
-        df_output.to_csv(args.output, index=False)
+        # Write CSV without pandas
+        import csv
+
+        if results:
+            with open(args.output, "w", newline="", encoding="utf-8") as f:
+                fieldnames = results[0].keys()
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(results)
 
     if args.verbose:
         print(f"Results saved to {args.output}")
@@ -1075,9 +1578,64 @@ def _save_batch_results(results: list[dict[str, Any]], args: Any) -> None:
 def cmd_batch(args: Any) -> int:
     """Handle the 'batch' command."""
     try:
+        # Lazy imports for batch processing
+        from xraylabtool.validation.enhanced_validator import EnhancedValidator
+        from xraylabtool.validation.error_recovery import ErrorRecoveryManager
+
         df_input = _validate_batch_input(args)
         if df_input is None:
             return 1
+
+        # Initialize enhanced error handling for batch processing
+        debug_mode = getattr(args, "debug", False)
+        validator = EnhancedValidator(debug=debug_mode)
+        recovery_manager = ErrorRecoveryManager(
+            validator, interactive=False
+        )  # Non-interactive for batch
+
+        # Validate all formulas in the batch
+        formulas = df_input["formula"].tolist()
+        validation_results = validator.validate_batch_formulas(
+            formulas, command_context="batch"
+        )
+
+        # Try to recover from validation errors
+        recovered_formulas = recovery_manager.recover_batch_errors(
+            validation_results, "batch processing", fail_fast=False
+        )
+
+        # Update the dataframe with recovered formulas
+        for i, (original_formula, recovered_formula) in enumerate(
+            zip(formulas, recovered_formulas, strict=False)
+        ):
+            if recovered_formula and recovered_formula != original_formula:
+                df_input.loc[i, "formula"] = recovered_formula
+                if args.verbose:
+                    print(
+                        f"✅ Auto-corrected formula {i + 1}: '{original_formula}' → '{recovered_formula}'"
+                    )
+            elif not recovered_formula:
+                if args.verbose:
+                    print(
+                        f"⚠️  Could not process formula {i + 1}: '{original_formula}' - skipping"
+                    )
+
+        # Generate batch improvement suggestions
+        batch_suggestions = recovery_manager.suggest_batch_improvements(
+            validation_results
+        )
+        if batch_suggestions["status"] == "errors_found":
+            if args.verbose or debug_mode:
+                print("\n📊 Batch Processing Summary:")
+                print(f"   Total items: {batch_suggestions['summary']['total_items']}")
+                print(
+                    f"   Success rate: {batch_suggestions['summary']['success_rate']}"
+                )
+                if batch_suggestions["recommendations"]:
+                    print("   Recommendations:")
+                    for rec in batch_suggestions["recommendations"]:
+                        print(f"   • {rec}")
+                print()
 
         parsed_data = _parse_batch_data(df_input)
         if parsed_data[0] is None:
@@ -1094,9 +1652,27 @@ def cmd_batch(args: Any) -> int:
             return 1
 
         _save_batch_results(results, args)
+
+        # Show recovery statistics if in verbose or debug mode
+        if args.verbose or debug_mode:
+            recovery_stats = recovery_manager.get_recovery_stats()
+            if recovery_stats["total_errors"] > 0:
+                print("\n📈 Error Recovery Statistics:")
+                print(f"   Total errors encountered: {recovery_stats['total_errors']}")
+                print(f"   Auto-recovery rate: {recovery_stats['auto_recovery_rate']}")
+                print(
+                    f"   Overall recovery rate: {recovery_stats['overall_recovery_rate']}"
+                )
+
         return 0
 
     except Exception as e:
+        debug_mode = getattr(args, "debug", False)
+        if debug_mode:
+            import traceback
+
+            print("🔍 Debug: Full traceback:", file=sys.stderr)
+            traceback.print_exc()
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
@@ -1124,13 +1700,14 @@ def cmd_convert(args: Any) -> int:
         # Format output
         if args.output:
             # Save to CSV
-            df = pd.DataFrame(
-                {
-                    f"{args.from_unit}": values,
-                    f"{args.to_unit} ({unit_label})": converted,
-                }
-            )
-            df.to_csv(args.output, index=False)
+            import csv
+
+            with open(args.output, "w", newline="", encoding="utf-8") as f:
+                fieldnames = [f"{args.from_unit}", f"{args.to_unit} ({unit_label})"]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for val, conv in zip(values, converted, strict=False):
+                    writer.writerow({fieldnames[0]: val, fieldnames[1]: conv})
             print(f"Conversion results saved to {args.output}")
         else:
             # Print to console
@@ -1218,16 +1795,34 @@ def cmd_formula(args: Any) -> int:
 
         for formula in formulas:
             try:
+                # Basic validation
+                from xraylabtool.validation import validate_chemical_formula
+
+                validate_chemical_formula(formula)
+
                 formula_info = _process_formula(formula, args.verbose)
                 results.append(formula_info)
+
             except Exception as e:
                 print(f"Error parsing formula {formula}: {e}", file=sys.stderr)
+                if len(formulas) == 1:
+                    return 1
                 continue
+
+        if not results:
+            print("No valid formulas were processed", file=sys.stderr)
+            return 1
 
         _output_formula_results(results, args)
         return 0
 
     except Exception as e:
+        debug_mode = getattr(args, "debug", False)
+        if debug_mode:
+            import traceback
+
+            print("🔍 Debug: Full traceback:", file=sys.stderr)
+            traceback.print_exc()
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
@@ -1265,8 +1860,14 @@ def cmd_atomic(args: Any) -> int:
                 with open(args.output, "w") as f:
                     json.dump(results, f, indent=2)
             else:  # CSV
-                df = pd.DataFrame(results)
-                df.to_csv(args.output, index=False)
+                import csv
+
+                if results:
+                    with open(args.output, "w", newline="", encoding="utf-8") as f:
+                        fieldnames = results[0].keys()
+                        writer = csv.DictWriter(f, fieldnames=fieldnames)
+                        writer.writeheader()
+                        writer.writerows(results)
             print(f"Atomic data saved to {args.output}")
         else:
             print("Atomic Data:")
@@ -1325,8 +1926,14 @@ def cmd_bragg(args: Any) -> int:
 
         # Output results
         if args.output:
-            df = pd.DataFrame(results)
-            df.to_csv(args.output, index=False)
+            import csv
+
+            if results:
+                with open(args.output, "w", newline="", encoding="utf-8") as f:
+                    fieldnames = results[0].keys()
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(results)
             print(f"Bragg angle results saved to {args.output}")
         else:
             print("Bragg Angle Calculations:")
@@ -1429,6 +2036,664 @@ def cmd_uninstall_completion(args: Any) -> int:
     return uninstall_completion_main(args)
 
 
+def cmd_compare(args: Any) -> int:
+    """Handle the 'compare' command for material comparison."""
+    try:
+        # Lazy imports for comparison functionality
+        from xraylabtool.analysis import MaterialComparator
+
+        # Parse materials input
+        materials = []
+        formulas = []
+        densities = []
+
+        for material_str in args.materials:
+            try:
+                parts = material_str.split(",")
+                if len(parts) != 2:
+                    raise ValueError(
+                        f"Invalid material format: {material_str}. Expected 'formula,density'"
+                    )
+
+                formula = parts[0].strip()
+                density = float(parts[1].strip())
+
+                formulas.append(formula)
+                densities.append(density)
+                materials.append((formula, density))
+
+            except ValueError as e:
+                print(f"Error parsing material '{material_str}': {e}", file=sys.stderr)
+                return 1
+
+        if len(materials) < 2:
+            print(
+                "Error: At least two materials required for comparison", file=sys.stderr
+            )
+            return 1
+
+        # Parse energies
+        try:
+            energies = parse_energy_string(args.energy).tolist()
+        except Exception as e:
+            print(f"Error parsing energy range: {e}", file=sys.stderr)
+            return 1
+
+        # Parse properties
+        properties = None
+        if args.properties:
+            properties = [prop.strip() for prop in args.properties.split(",")]
+
+        # Perform comparison
+        comparator = MaterialComparator()
+
+        try:
+            result = comparator.compare_materials(
+                formulas=formulas,
+                densities=densities,
+                energies=energies,
+                properties=properties,
+            )
+        except Exception as e:
+            print(f"Error during comparison: {e}", file=sys.stderr)
+            return 1
+
+        # Generate output
+        if args.report or args.format == "report":
+            report = comparator.generate_comparison_report(result)
+
+            if args.output:
+                with open(args.output, "w") as f:
+                    f.write(report)
+                print(f"Comparison report saved to {args.output}")
+            else:
+                print(report)
+
+        else:
+            # Create comparison table
+            table = comparator.create_comparison_table(result)
+
+            if args.output:
+                output_path = Path(args.output)
+                if output_path.suffix.lower() == ".json":
+                    # Convert to JSON format
+                    output_data = {
+                        "materials": result.materials,
+                        "energies": result.energies,
+                        "properties": result.properties,
+                        "data": result.data,
+                        "summary_stats": result.summary_stats,
+                        "recommendations": result.recommendations,
+                    }
+                    with open(args.output, "w") as f:
+                        json.dump(output_data, f, indent=2)
+                else:  # CSV
+                    table.to_csv(args.output, index=False)
+                print(f"Comparison results saved to {args.output}")
+            # Print table to console
+            elif args.format == "json":
+                output_data = {
+                    "materials": result.materials,
+                    "energies": result.energies,
+                    "properties": result.properties,
+                    "data": result.data,
+                    "summary_stats": result.summary_stats,
+                    "recommendations": result.recommendations,
+                }
+                print(json.dumps(output_data, indent=2))
+            elif args.format == "csv":
+                print(table.to_csv(index=False))
+            else:  # table
+                print(table.to_string(index=False))
+
+        return 0
+
+    except Exception as e:
+        print(f"Comparison failed: {e}", file=sys.stderr)
+        if hasattr(args, "debug") and args.debug:
+            import traceback
+
+            traceback.print_exc()
+        return 1
+
+
+def cmd_analyze(args: Any) -> int:
+    """Handle the 'analyze' command for advanced material analysis."""
+    try:
+        # Lazy imports for analysis functionality
+        from xraylabtool.analysis import (
+            AbsorptionEdgeDetector,
+            EnergyOptimizer,
+            StatisticalAnalyzer,
+        )
+
+        # Parse energies
+        try:
+            energies = parse_energy_string(args.energy)
+        except Exception as e:
+            print(f"Error parsing energy range: {e}", file=sys.stderr)
+            return 1
+
+        if len(energies) < 10:
+            print(
+                "Warning: Analysis works best with dense energy sampling (>=100 points)",
+                file=sys.stderr,
+            )
+
+        results = {}
+
+        # Absorption edge detection
+        if args.edges:
+            print("Detecting absorption edges...")
+            detector = AbsorptionEdgeDetector()
+
+            try:
+                edges = detector.detect_edges(
+                    formula=args.formula,
+                    density=args.density,
+                    energy_range=(float(energies.min()), float(energies.max())),
+                    energy_points=len(energies),
+                )
+
+                results["edges"] = []
+                for edge in edges:
+                    edge_data = {
+                        "energy_kev": edge.energy_kev,
+                        "element": edge.element,
+                        "edge_type": edge.edge_type,
+                        "strength": edge.strength,
+                        "confidence": edge.confidence,
+                    }
+                    if edge.theoretical_energy:
+                        edge_data["theoretical_energy"] = edge.theoretical_energy
+                    results["edges"].append(edge_data)
+
+                if args.format == "report":
+                    print(detector.generate_edge_report(edges))
+                else:
+                    print(f"Found {len(edges)} absorption edges")
+
+            except Exception as e:
+                print(f"Edge detection failed: {e}", file=sys.stderr)
+
+        # Energy optimization
+        if args.optimize:
+            print(f"Optimizing energy for {args.optimize}...")
+            optimizer = EnergyOptimizer()
+
+            try:
+                opt_result = optimizer.optimize_for_property(
+                    formula=args.formula,
+                    density=args.density,
+                    property_name=args.optimize,
+                    energy_range=(float(energies.min()), float(energies.max())),
+                    optimization_type="maximize",
+                )
+
+                results["optimization"] = {
+                    "optimal_energy": opt_result.optimal_energy,
+                    "optimal_value": opt_result.optimal_value,
+                    "property": opt_result.property_name,
+                    "type": opt_result.optimization_type,
+                }
+
+                if args.format == "report":
+                    print(optimizer.generate_optimization_report(opt_result))
+                else:
+                    print(
+                        f"Optimal energy for {args.optimize}: {opt_result.optimal_energy:.3f} keV"
+                    )
+                    print(f"Optimal value: {opt_result.optimal_value:.6g}")
+
+            except Exception as e:
+                print(f"Energy optimization failed: {e}", file=sys.stderr)
+
+        # Transmission analysis
+        if args.transmission is not None:
+            if args.thickness is None:
+                print(
+                    "Error: --thickness required for transmission analysis",
+                    file=sys.stderr,
+                )
+                return 1
+
+            print(
+                f"Finding energy for {args.transmission * 100}% transmission through {args.thickness} µm..."
+            )
+            optimizer = EnergyOptimizer()
+
+            try:
+                trans_result = optimizer.find_optimal_transmission_energy(
+                    formula=args.formula,
+                    density=args.density,
+                    thickness_um=args.thickness,
+                    target_transmission=args.transmission,
+                    energy_range=(float(energies.min()), float(energies.max())),
+                )
+
+                results["transmission"] = {
+                    "target_transmission": args.transmission,
+                    "thickness_um": args.thickness,
+                    "optimal_energy": trans_result.optimal_energy,
+                    "actual_transmission": trans_result.optimal_value,
+                }
+
+                print(f"Optimal energy: {trans_result.optimal_energy:.3f} keV")
+                print(f"Actual transmission: {trans_result.optimal_value:.1%}")
+
+            except Exception as e:
+                print(f"Transmission analysis failed: {e}", file=sys.stderr)
+
+        # Statistical analysis
+        if args.stats:
+            print("Performing statistical analysis...")
+            optimizer = EnergyOptimizer()
+
+            try:
+                # Scan properties across energy range
+                property_names = [
+                    "dispersion_delta",
+                    "absorption_beta",
+                    "critical_angle_degrees",
+                    "attenuation_length_cm",
+                    "scattering_factor_f1",
+                    "scattering_factor_f2",
+                ]
+
+                scan_data = optimizer.scan_energy_range(
+                    formula=args.formula,
+                    density=args.density,
+                    energy_range=(float(energies.min()), float(energies.max())),
+                    property_names=property_names,
+                    num_points=len(energies),
+                )
+
+                # Perform statistical analysis
+                analyzer = StatisticalAnalyzer()
+                stats_summary = analyzer.analyze_batch_results(
+                    scan_data, material_column="energies", exclude_columns=["energies"]
+                )
+
+                results["statistics"] = {
+                    "total_points": stats_summary.total_materials,
+                    "properties_analyzed": stats_summary.properties_analyzed,
+                    "summary_stats": stats_summary.summary_statistics,
+                }
+
+                if args.format == "report":
+                    print(analyzer.create_summary_report(stats_summary))
+                else:
+                    print(
+                        f"Statistical analysis completed for {len(property_names)} properties"
+                    )
+
+            except Exception as e:
+                print(f"Statistical analysis failed: {e}", file=sys.stderr)
+
+        # Save results if output specified
+        if args.output and results:
+            output_path = Path(args.output)
+
+            if args.format == "json" or output_path.suffix.lower() == ".json":
+                with open(args.output, "w") as f:
+                    json.dump(results, f, indent=2)
+            else:
+                # Generate comprehensive text report
+                with open(args.output, "w") as f:
+                    f.write("ADVANCED ANALYSIS REPORT\n")
+                    f.write(f"{'=' * 50}\n\n")
+                    f.write(f"Material: {args.formula}\n")
+                    f.write(f"Density: {args.density} g/cm³\n")
+                    f.write(
+                        f"Energy Range: {energies.min():.1f} - {energies.max():.1f} keV\n\n"
+                    )
+
+                    for analysis_type, data in results.items():
+                        f.write(f"{analysis_type.upper()} RESULTS\n")
+                        f.write(f"{'-' * 30}\n")
+                        f.write(f"{json.dumps(data, indent=2)}\n\n")
+
+            print(f"Analysis results saved to {args.output}")
+
+        return 0
+
+    except Exception as e:
+        print(f"Analysis failed: {e}", file=sys.stderr)
+        if hasattr(args, "debug") and args.debug:
+            import traceback
+
+            traceback.print_exc()
+        return 1
+
+
+def cmd_export(args: Any) -> int:
+    """Handle the 'export' command for advanced data export and visualization."""
+    try:
+        # Lazy imports for export functionality - these are the heaviest modules
+        from xraylabtool.export import (
+            DataExporter,
+            ExcelConfiguration,
+            ExcelExporter,
+            ExcelTemplate,
+            ExportFormat,
+            ExportTemplateManager,
+            HTMLReporter,
+            PlotConfiguration,
+            PlotGenerator,
+            PlotType,
+            ReportTemplate,
+            TemplateType,
+        )
+
+        # Determine input source
+        if args.input_file:
+            input_path = Path(args.input_file)
+            if not input_path.exists():
+                print(
+                    f"Error: Input file '{args.input_file}' not found", file=sys.stderr
+                )
+                return 1
+
+            # Read input data based on file extension
+            try:
+                if input_path.suffix.lower() == ".csv":
+                    import csv
+
+                    with open(input_path, newline="", encoding="utf-8") as f:
+                        reader = csv.DictReader(f)
+                        data = list(reader)
+                elif input_path.suffix.lower() == ".json":
+                    with open(input_path) as f:
+                        data = json.load(f)
+                elif input_path.suffix.lower() in [".xlsx", ".xls"]:
+                    print(
+                        "Error: Excel files (.xlsx/.xls) not supported without pandas. "
+                        "Please convert to CSV format.",
+                        file=sys.stderr,
+                    )
+                    return 1
+                else:
+                    print(
+                        f"Error: Unsupported input format '{input_path.suffix}'",
+                        file=sys.stderr,
+                    )
+                    return 1
+            except Exception as e:
+                print(f"Error reading input file: {e}", file=sys.stderr)
+                return 1
+        else:
+            # Read from stdin
+            try:
+                stdin_content = sys.stdin.read().strip()
+                if not stdin_content:
+                    print("Error: No input data provided", file=sys.stderr)
+                    return 1
+
+                # Try to parse as JSON first
+                try:
+                    data = json.loads(stdin_content)
+                except json.JSONDecodeError:
+                    # Try to parse as CSV
+                    import csv
+                    from io import StringIO
+
+                    reader = csv.DictReader(StringIO(stdin_content))
+                    data = list(reader)
+            except Exception as e:
+                print(f"Error reading input data: {e}", file=sys.stderr)
+                return 1
+
+        # Handle template-based export
+        if args.template:
+            try:
+                template_manager = ExportTemplateManager()
+                template_type = TemplateType(args.template)
+                template = template_manager.get_template(template_type)
+
+                # Apply template and export
+                if args.output:
+                    output_base = Path(args.output).stem
+                    output_dir = Path(args.output).parent
+                else:
+                    output_base = "export_output"
+                    output_dir = Path.cwd()
+
+                results = template_manager.apply_template(
+                    data=data,
+                    template=template,
+                    output_base_path=output_dir / output_base,
+                    metadata=getattr(args, "metadata", None),
+                )
+
+                print("Template export completed:")
+                for format_name, file_path in results.items():
+                    print(f"  {format_name}: {file_path}")
+
+                return 0
+
+            except ValueError:
+                print(f"Error: Invalid template '{args.template}'", file=sys.stderr)
+                print(
+                    f"Available templates: {', '.join([t.value for t in TemplateType])}"
+                )
+                return 1
+            except Exception as e:
+                print(f"Template export failed: {e}", file=sys.stderr)
+                return 1
+
+        # Handle plots-only export
+        if args.plots_only:
+            try:
+                plot_generator = PlotGenerator()
+
+                # Determine plot types
+                if args.plot_types:
+                    plot_types = [
+                        PlotType(t.strip()) for t in args.plot_types.split(",")
+                    ]
+                else:
+                    plot_types = [PlotType.LINE, PlotType.SCATTER]
+
+                # Generate plots
+                output_dir = Path(args.output) if args.output else Path.cwd() / "plots"
+                output_dir.mkdir(exist_ok=True)
+
+                for plot_type in plot_types:
+                    config = PlotConfiguration(
+                        plot_type=plot_type, interactive=args.interactive_plots
+                    )
+
+                    plot_path = plot_generator.generate_plot(
+                        data=data,
+                        config=config,
+                        output_path=(
+                            output_dir / f"{plot_type.value}_plot.html"
+                            if args.interactive_plots
+                            else output_dir / f"{plot_type.value}_plot.png"
+                        ),
+                    )
+                    print(f"Generated plot: {plot_path}")
+
+                return 0
+
+            except Exception as e:
+                print(f"Plot generation failed: {e}", file=sys.stderr)
+                return 1
+
+        # Handle standard format export
+        if args.format:
+            try:
+                # Single format export
+                if args.format == "excel":
+                    exporter = ExcelExporter()
+                    template = (
+                        ExcelTemplate(args.excel_template)
+                        if args.excel_template
+                        else ExcelTemplate.SCIENTIFIC
+                    )
+                    config = ExcelConfiguration(
+                        template=template,
+                        include_charts=args.excel_charts,
+                        auto_formatting=True,
+                    )
+
+                    output_path = args.output or "export_output.xlsx"
+                    result_path = exporter.export_to_excel(
+                        data=data,
+                        output_path=output_path,
+                        config=config,
+                        metadata=getattr(args, "metadata", None),
+                    )
+                    print(f"Excel export completed: {result_path}")
+
+                elif args.format == "html":
+                    reporter = HTMLReporter()
+                    template = (
+                        ReportTemplate(args.html_template)
+                        if args.html_template
+                        else ReportTemplate.SCIENTIFIC
+                    )
+
+                    output_path = args.output or "report.html"
+                    result_path = reporter.generate_report(
+                        data=data,
+                        output_path=output_path,
+                        template=template,
+                        metadata=getattr(args, "metadata", None),
+                        include_interactive_plots=args.interactive_plots,
+                    )
+                    print(f"HTML report generated: {result_path}")
+
+                else:
+                    # Use DataExporter for other formats
+                    exporter = DataExporter()
+                    export_format = ExportFormat(args.format)
+
+                    output_path = args.output or f"export_output.{args.format}"
+                    result = exporter.export_data(
+                        data=data,
+                        output_path=output_path,
+                        format=export_format,
+                        metadata=getattr(args, "metadata", None),
+                        compression=args.compression,
+                    )
+
+                    if result.success:
+                        print(f"Export completed: {result.output_path}")
+                        if result.metadata:
+                            print(
+                                f"Records exported: {result.metadata.get('record_count', 'N/A')}"
+                            )
+                    else:
+                        print(f"Export failed: {result.error_message}", file=sys.stderr)
+                        return 1
+
+                return 0
+
+            except ValueError:
+                print(f"Error: Invalid format '{args.format}'", file=sys.stderr)
+                print(
+                    f"Available formats: {', '.join([f.value for f in ExportFormat])}"
+                )
+                return 1
+            except Exception as e:
+                print(f"Export failed: {e}", file=sys.stderr)
+                return 1
+
+        # Handle multiple formats export
+        if args.formats:
+            try:
+                format_list = [f.strip() for f in args.formats.split(",")]
+                output_base = Path(args.output).stem if args.output else "export_output"
+                output_dir = Path(args.output).parent if args.output else Path.cwd()
+
+                exporter = DataExporter()
+
+                for format_name in format_list:
+                    try:
+                        export_format = ExportFormat(format_name)
+                        output_path = output_dir / f"{output_base}.{format_name}"
+
+                        result = exporter.export_data(
+                            data=data,
+                            output_path=output_path,
+                            format=export_format,
+                            metadata=getattr(args, "metadata", None),
+                        )
+
+                        if result.success:
+                            print(f"Exported {format_name}: {result.output_path}")
+                        else:
+                            print(
+                                f"Failed to export {format_name}: {result.error_message}",
+                                file=sys.stderr,
+                            )
+
+                    except ValueError:
+                        print(
+                            f"Warning: Skipping unsupported format '{format_name}'",
+                            file=sys.stderr,
+                        )
+
+                return 0
+
+            except Exception as e:
+                print(f"Multi-format export failed: {e}", file=sys.stderr)
+                return 1
+
+        # Generate plots if requested
+        if args.plots:
+            try:
+                plot_generator = PlotGenerator()
+                plot_types = (
+                    [PlotType(t.strip()) for t in args.plot_types.split(",")]
+                    if args.plot_types
+                    else [PlotType.LINE]
+                )
+
+                for plot_type in plot_types:
+                    config = PlotConfiguration(
+                        plot_type=plot_type, interactive=args.interactive_plots
+                    )
+
+                    plot_output = (
+                        Path(args.output).parent
+                        / f"{Path(args.output).stem}_{plot_type.value}_plot.html"
+                        if args.output
+                        else f"{plot_type.value}_plot.html"
+                    )
+
+                    plot_path = plot_generator.generate_plot(
+                        data=data, config=config, output_path=plot_output
+                    )
+                    print(f"Generated plot: {plot_path}")
+
+            except Exception as e:
+                print(f"Plot generation failed: {e}", file=sys.stderr)
+
+        # Default: show available options if no specific action was taken
+        if not any(
+            [args.template, args.format, args.formats, args.plots_only, args.plots]
+        ):
+            print("No export action specified. Use one of:")
+            print("  --format FORMAT    Export to specific format")
+            print("  --formats LIST     Export to multiple formats")
+            print("  --template NAME    Use predefined template")
+            print("  --plots-only       Generate plots only")
+            print("  --plots            Include plots with export")
+            return 1
+
+        return 0
+
+    except Exception as e:
+        print(f"Export command failed: {e}", file=sys.stderr)
+        if hasattr(args, "debug") and args.debug:
+            import traceback
+
+            traceback.print_exc()
+        return 1
+
+
 def main() -> int:
     """Execute the main CLI application."""
     parser = create_parser()
@@ -1442,6 +2707,13 @@ def main() -> int:
         else:
             # Invalid arguments - return error code instead of exiting
             return 1
+
+    # Show debug mode status if enabled
+    if getattr(args, "debug", False):
+        print(
+            "🔍 Debug mode enabled - detailed error information will be shown",
+            file=sys.stderr,
+        )
 
     # Handle --install-completion flag before checking for subcommands
     if hasattr(args, "install_completion") and args.install_completion is not None:
@@ -1481,6 +2753,9 @@ def main() -> int:
     command_handlers = {
         "calc": cmd_calc,
         "batch": cmd_batch,
+        "compare": cmd_compare,
+        "analyze": cmd_analyze,
+        "export": cmd_export,
         "convert": cmd_convert,
         "formula": cmd_formula,
         "atomic": cmd_atomic,

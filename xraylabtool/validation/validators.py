@@ -112,7 +112,7 @@ def validate_chemical_formula(formula: str) -> dict[str, float]:
     except Exception as e:
         if isinstance(e, FormulaError):
             raise
-        raise FormulaError(f"Error parsing formula: {str(e)}", formula) from e
+        raise FormulaError(f"Error parsing formula: {e!s}", formula) from e
 
 
 def validate_density(

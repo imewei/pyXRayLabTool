@@ -6,12 +6,12 @@ This script tests that CLI examples in documentation have correct syntax
 and structure without executing them.
 """
 
-import re
 from pathlib import Path
-from typing import List
+import re
+import sys
 
 
-def extract_cli_examples_from_docs(docs_dir: Path) -> List[str]:
+def extract_cli_examples_from_docs(docs_dir: Path) -> list[str]:
     """Extract CLI command examples from documentation files."""
     examples = []
 
@@ -28,20 +28,24 @@ def extract_cli_examples_from_docs(docs_dir: Path) -> List[str]:
             continue
 
         try:
-            content = doc_file.read_text(encoding='utf-8')
+            content = doc_file.read_text(encoding="utf-8")
 
             # Find CLI command examples
             # Pattern 1: xraylabtool commands in code blocks
-            bash_blocks = re.findall(r'.. code-block:: bash\s*\n\n(.*?)\n\n', content, re.DOTALL)
+            bash_blocks = re.findall(
+                r".. code-block:: bash\s*\n\n(.*?)\n\n", content, re.DOTALL
+            )
             for block in bash_blocks:
-                lines = block.split('\n')
+                lines = block.split("\n")
                 for line in lines:
                     line = line.strip()
-                    if line.startswith('xraylabtool'):
+                    if line.startswith("xraylabtool"):
                         examples.append(line)
 
             # Pattern 2: Direct xraylabtool commands
-            direct_commands = re.findall(r'^\s*xraylabtool\s+[^\n]+', content, re.MULTILINE)
+            direct_commands = re.findall(
+                r"^\s*xraylabtool\s+[^\n]+", content, re.MULTILINE
+            )
             examples.extend([cmd.strip() for cmd in direct_commands])
 
         except Exception as e:
@@ -49,10 +53,11 @@ def extract_cli_examples_from_docs(docs_dir: Path) -> List[str]:
 
     return list(set(examples))  # Remove duplicates
 
+
 def validate_cli_example_syntax(example: str) -> bool:
     """Validate that a CLI example has correct syntax."""
     # Basic validation of CLI command structure
-    if not example.startswith('xraylabtool'):
+    if not example.startswith("xraylabtool"):
         return False
 
     # Split into parts
@@ -63,21 +68,27 @@ def validate_cli_example_syntax(example: str) -> bool:
     command = parts[1]
 
     # Special handling for placeholder syntax (documentation examples)
-    if command.startswith('[') and command.endswith(']'):
+    if command.startswith("[") and command.endswith("]"):
         return True
 
     # Special handling for uppercase placeholders like COMMAND, OPTIONS
-    if command.isupper() or command == 'COMMAND':
+    if command.isupper() or command == "COMMAND":
         return True
 
     # Valid commands and global options
     valid_commands = [
-        'calc', 'batch', 'convert', 'formula',
-        'atomic', 'bragg', 'list', 'install-completion',
-        'uninstall-completion'
+        "calc",
+        "batch",
+        "convert",
+        "formula",
+        "atomic",
+        "bragg",
+        "list",
+        "install-completion",
+        "uninstall-completion",
     ]
 
-    valid_global_options = ['--help', '--version']
+    valid_global_options = ["--help", "--version"]
 
     # Special handling for global options
     if command in valid_global_options:
@@ -87,10 +98,10 @@ def validate_cli_example_syntax(example: str) -> bool:
         return False
 
     # Check for obvious syntax errors
-    if '--' in example and not any(part.startswith('--') for part in parts[2:]):
-        return False
+    return not (
+        "--" in example and not any(part.startswith("--") for part in parts[2:])
+    )
 
-    return True
 
 def test_cli_examples_in_documentation():
     """Test CLI examples found in documentation."""
@@ -111,10 +122,10 @@ def test_cli_examples_in_documentation():
         print(f"\n{i}. Testing: {example}")
 
         if validate_cli_example_syntax(example):
-            print(f"   ✅ Valid syntax")
+            print("   ✅ Valid syntax")
             passed += 1
         else:
-            print(f"   ❌ Invalid syntax")
+            print("   ❌ Invalid syntax")
             # Debug info for failed cases
             parts = example.split()
             if len(parts) >= 2:
@@ -131,15 +142,22 @@ def test_cli_examples_in_documentation():
         print("❌ Some CLI examples have invalid syntax")
         return False
 
+
 def test_cli_command_coverage_in_docs():
     """Test that all CLI commands are covered in documentation."""
     project_root = Path(__file__).parent.parent
     docs_dir = project_root / "docs"
 
     expected_commands = [
-        'calc', 'batch', 'convert', 'formula',
-        'atomic', 'bragg', 'list', 'install-completion',
-        'uninstall-completion'
+        "calc",
+        "batch",
+        "convert",
+        "formula",
+        "atomic",
+        "bragg",
+        "list",
+        "install-completion",
+        "uninstall-completion",
     ]
 
     # Check CLI reference documentation
@@ -149,7 +167,7 @@ def test_cli_command_coverage_in_docs():
         print("❌ CLI reference documentation not found")
         return False
 
-    content = cli_ref_file.read_text(encoding='utf-8')
+    content = cli_ref_file.read_text(encoding="utf-8")
 
     missing_commands = []
     for command in expected_commands:
@@ -162,6 +180,7 @@ def test_cli_command_coverage_in_docs():
 
     print("✅ All CLI commands are documented in CLI reference")
     return True
+
 
 def main():
     """Run all CLI documentation tests."""
@@ -193,6 +212,7 @@ def main():
         print("❌ Some CLI documentation tests failed")
         return False
 
+
 if __name__ == "__main__":
     success = main()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

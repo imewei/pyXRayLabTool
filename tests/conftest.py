@@ -241,7 +241,7 @@ class MemoryTracker:
         import tracemalloc
 
         self.end_memory = psutil.Process().memory_info().rss
-        current, peak = tracemalloc.get_traced_memory()
+        _current, peak = tracemalloc.get_traced_memory()
         self.peak_memory = peak
         tracemalloc.stop()
 

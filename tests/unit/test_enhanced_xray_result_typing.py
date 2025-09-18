@@ -314,9 +314,9 @@ class TestXRayResultTyping(BaseXRayLabToolTest):
         time_per_creation = total_time / n_iterations
 
         # Should be fast (< 1ms per creation for reasonable array sizes)
-        assert (
-            time_per_creation < 0.001
-        ), f"XRayResult creation too slow: {time_per_creation:.4f}s"
+        assert time_per_creation < 0.001, (
+            f"XRayResult creation too slow: {time_per_creation:.4f}s"
+        )
 
     def _create_test_result(self, array_size: int = 10) -> XRayResult:
         """Helper method to create test XRayResult instances."""

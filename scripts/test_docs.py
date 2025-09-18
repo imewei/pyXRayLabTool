@@ -18,12 +18,12 @@ import argparse
 import doctest
 import glob
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 import tempfile
 import time
-from pathlib import Path
 
 
 # Colors for output
@@ -45,7 +45,7 @@ def print_section(title: str, color: str = Colors.BLUE) -> None:
     print(f"{color}{Colors.BOLD}{'=' * 60}{Colors.END}\n")
 
 
-def print_status(message: str, status: str, details: str = None) -> None:
+def print_status(message: str, status: str, details: str | None = None) -> None:
     """Print a status message with color coding."""
     if status == "PASS":
         color = Colors.GREEN
@@ -462,8 +462,12 @@ def run_style_checks(verbose: bool = False) -> tuple[int, int]:
 
     try:
         result = subprocess.run(
-            ["rstcheck", "--report-level", "warning"]
-            + glob.glob("docs/**/*.rst", recursive=True),
+            [
+                "rstcheck",
+                "--report-level",
+                "warning",
+                *glob.glob("docs/**/*.rst", recursive=True),
+            ],
             capture_output=True,
             text=True,
             check=False,

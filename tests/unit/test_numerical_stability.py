@@ -103,7 +103,7 @@ class TestNumericalStabilityChecks:
         absorption = np.array([1e-8, 1e-8])
 
         # Should not raise error and handle zero dispersion gracefully
-        electron_density, critical_angle, attenuation_length, re_sld, im_sld = (
+        _electron_density, critical_angle, _attenuation_length, _re_sld, _im_sld = (
             calculate_derived_quantities(
                 wavelength,
                 dispersion,
@@ -128,7 +128,7 @@ class TestNumericalStabilityChecks:
         absorption = np.array([1e-8, 1e-50])  # One extremely small value
 
         # Should not raise error and handle small absorption gracefully
-        electron_density, critical_angle, attenuation_length, re_sld, im_sld = (
+        _electron_density, _critical_angle, attenuation_length, _re_sld, _im_sld = (
             calculate_derived_quantities(
                 wavelength,
                 dispersion,
@@ -152,7 +152,7 @@ class TestNumericalStabilityChecks:
         dispersion = np.array([1e-6, 1e-6])
         absorption = np.array([1e-8, 0.0])  # One zero value
 
-        electron_density, critical_angle, attenuation_length, re_sld, im_sld = (
+        _electron_density, _critical_angle, attenuation_length, _re_sld, _im_sld = (
             calculate_derived_quantities(
                 wavelength,
                 dispersion,
@@ -304,9 +304,9 @@ class TestPhysicalRealism:
         # Critical angle should generally decrease with increasing energy
         angles = result.critical_angle_degrees
         for i in range(len(angles) - 1):
-            assert (
-                angles[i] >= angles[i + 1]
-            ), "Critical angle should decrease with energy"
+            assert angles[i] >= angles[i + 1], (
+                "Critical angle should decrease with energy"
+            )
 
     def test_attenuation_length_positive(self):
         """Test that attenuation length is always positive."""
@@ -317,9 +317,9 @@ class TestPhysicalRealism:
             result = xlt.calculate_single_material_properties(
                 formula, energies, density
             )
-            assert np.all(
-                result.attenuation_length_cm > 0
-            ), f"Attenuation length should be positive for {formula}"
+            assert np.all(result.attenuation_length_cm > 0), (
+                f"Attenuation length should be positive for {formula}"
+            )
 
     def test_electron_density_consistency(self):
         """Test that electron density is consistent with formula and density."""

@@ -20,16 +20,16 @@ from xraylabtool.data_handling.batch_processing import (
 )
 
 __all__ = [
-    # Atomic data cache
-    "get_atomic_data_fast",
-    "get_bulk_atomic_data_fast",
-    "warm_up_cache",
-    "get_cache_stats",
-    "is_element_preloaded",
     # Batch processing
     "BatchConfig",
     "MemoryMonitor",
     "calculate_batch_properties",
+    # Atomic data cache
+    "get_atomic_data_fast",
+    "get_bulk_atomic_data_fast",
+    "get_cache_stats",
+    "is_element_preloaded",
     "load_batch_input",
     "save_batch_results",
+    "warm_up_cache",
 ]

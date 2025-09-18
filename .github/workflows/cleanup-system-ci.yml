@@ -418,14 +418,14 @@ jobs:
 
         # Create simple Makefile
         cat > Makefile << 'EOF'
-.PHONY: clean test
-clean:
-	rm -rf build/ dist/ *.egg-info/
-	find . -name "*.pyc" -delete
+        .PHONY: clean test
+        clean:
+        	rm -rf build/ dist/ *.egg-info/
+        	find . -name "*.pyc" -delete
 
-test:
-	echo "Running tests"
-EOF
+        test:
+        	echo "Running tests"
+        EOF
 
         # Create test files
         mkdir -p build dist

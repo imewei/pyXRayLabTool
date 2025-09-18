@@ -287,7 +287,7 @@ def warm_cache_for_compounds(
             # Track this compound calculation
             calc_start = time.perf_counter()
             track_compound_calculation(formula, elements, 0.0)  # Placeholder timing
-            calc_time = time.perf_counter() - calc_start
+            time.perf_counter() - calc_start
 
             # Find similar compounds if requested
             if include_similar:
@@ -396,7 +396,7 @@ def warm_cache_for_compounds(
         _usage_patterns["performance_metrics"]["warming_time_ms"] = total_time_ms
 
     return {
-        "elements_warmed": sorted(list(elements_to_warm)),
+        "elements_warmed": sorted(elements_to_warm),
         "compounds_processed": compound_info,
         "atomic_cache": {
             "success": atomic_success,
@@ -478,9 +478,9 @@ class FastAtomicDataProvider:
 
     def __init__(self) -> None:
         """Initialize the atomic data provider."""
-        self._scattering_cache: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]] = (
-            {}
-        )
+        self._scattering_cache: dict[
+            str, tuple[np.ndarray, np.ndarray, np.ndarray]
+        ] = {}
 
     def get_scattering_factors(
         self, element: str, energies: EnergyArray

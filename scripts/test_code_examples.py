@@ -7,15 +7,14 @@ to ensure they execute correctly with the current codebase.
 """
 
 import ast
+from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
-import subprocess
-from pathlib import Path
-from typing import List, Dict, Tuple
 
 
-def extract_python_code_examples(docs_dir: Path) -> List[Dict[str, str]]:
+def extract_python_code_examples(docs_dir: Path) -> list[dict[str, str]]:
     """Extract Python code examples from documentation files."""
     examples = []
 
@@ -34,57 +33,61 @@ def extract_python_code_examples(docs_dir: Path) -> List[Dict[str, str]]:
             continue
 
         try:
-            content = doc_file.read_text(encoding='utf-8')
+            content = doc_file.read_text(encoding="utf-8")
 
             # Pattern 1: RST code-block:: python
             python_blocks = re.findall(
-                r'.. code-block:: python\s*\n\n(.*?)(?=\n\n\*\*|\n\.\.|$)',
-                content, re.DOTALL
+                r".. code-block:: python\s*\n\n(.*?)(?=\n\n\*\*|\n\.\.|$)",
+                content,
+                re.DOTALL,
             )
 
             for i, block in enumerate(python_blocks):
                 # Clean up indentation
-                lines = block.split('\n')
+                lines = block.split("\n")
                 if lines:
                     # Find minimum indentation (excluding empty lines)
                     min_indent = min(
-                        len(line) - len(line.lstrip())
-                        for line in lines if line.strip()
+                        len(line) - len(line.lstrip()) for line in lines if line.strip()
                     )
                     cleaned_lines = [
                         line[min_indent:] if len(line) >= min_indent else line
                         for line in lines
                     ]
-                    cleaned_code = '\n'.join(cleaned_lines).strip()
+                    cleaned_code = "\n".join(cleaned_lines).strip()
 
                     # Skip incomplete or template examples
-                    if (cleaned_code and
-                        not cleaned_code.startswith('#') and
-                        not '[Title]' in cleaned_code and
-                        not 'Example: [' in cleaned_code and
-                        '"""' in cleaned_code and cleaned_code.count('"""') >= 2):
-                        examples.append({
-                            'file': str(doc_file),
-                            'type': 'rst_python',
-                            'code': cleaned_code,
-                            'id': f"{doc_file.name}_rst_{i}"
-                        })
+                    if (
+                        cleaned_code
+                        and not cleaned_code.startswith("#")
+                        and "[Title]" not in cleaned_code
+                        and "Example: [" not in cleaned_code
+                        and '"""' in cleaned_code
+                        and cleaned_code.count('"""') >= 2
+                    ):
+                        examples.append(
+                            {
+                                "file": str(doc_file),
+                                "type": "rst_python",
+                                "code": cleaned_code,
+                                "id": f"{doc_file.name}_rst_{i}",
+                            }
+                        )
 
             # Pattern 2: Markdown python code blocks
-            if doc_file.suffix == '.md':
-                md_blocks = re.findall(
-                    r'```python\s*\n(.*?)\n```',
-                    content, re.DOTALL
-                )
+            if doc_file.suffix == ".md":
+                md_blocks = re.findall(r"```python\s*\n(.*?)\n```", content, re.DOTALL)
 
                 for i, block in enumerate(md_blocks):
-                    if block.strip() and not block.strip().startswith('#'):
-                        examples.append({
-                            'file': str(doc_file),
-                            'type': 'md_python',
-                            'code': block.strip(),
-                            'id': f"{doc_file.name}_md_{i}"
-                        })
+                    if block.strip() and not block.strip().startswith("#"):
+                        examples.append(
+                            {
+                                "file": str(doc_file),
+                                "type": "md_python",
+                                "code": block.strip(),
+                                "id": f"{doc_file.name}_md_{i}",
+                            }
+                        )
 
         except Exception as e:
             print(f"Warning: Could not read {doc_file}: {e}")
@@ -92,7 +95,7 @@ def extract_python_code_examples(docs_dir: Path) -> List[Dict[str, str]]:
     return examples
 
 
-def validate_python_syntax(code: str) -> Tuple[bool, str]:
+def validate_python_syntax(code: str) -> tuple[bool, str]:
     """Validate Python code syntax without executing it."""
     try:
         ast.parse(code)
@@ -103,7 +106,7 @@ def validate_python_syntax(code: str) -> Tuple[bool, str]:
         return False, f"Parse error: {e}"
 
 
-def validate_imports(code: str) -> Tuple[bool, str]:
+def validate_imports(code: str) -> tuple[bool, str]:
     """Validate that imports in code are available."""
     try:
         # Extract import statements
@@ -114,36 +117,41 @@ def validate_imports(code: str) -> Tuple[bool, str]:
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     imports.append(alias.name)
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    for alias in node.names:
-                        imports.append(f"{node.module}.{alias.name}")
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                for alias in node.names:
+                    imports.append(f"{node.module}.{alias.name}")
 
         # Check if xraylabtool imports are valid
         valid_xraylabtool_imports = [
-            'xraylabtool',
-            'xraylabtool.calculators',
-            'xraylabtool.calculators.core',
-            'xraylabtool.utils',
-            'xraylabtool.data_handling',
-            'xraylabtool.data_handling.atomic_cache',
-            'xraylabtool.data_handling.batch_processing',
-            'xraylabtool.interfaces',
-            'xraylabtool.interfaces.cli',
-            'xraylabtool.io',
-            'xraylabtool.validation'
+            "xraylabtool",
+            "xraylabtool.calculators",
+            "xraylabtool.calculators.core",
+            "xraylabtool.utils",
+            "xraylabtool.data_handling",
+            "xraylabtool.data_handling.atomic_cache",
+            "xraylabtool.data_handling.batch_processing",
+            "xraylabtool.interfaces",
+            "xraylabtool.interfaces.cli",
+            "xraylabtool.io",
+            "xraylabtool.validation",
         ]
 
         for imp in imports:
-            if imp.startswith('xraylabtool'):
+            if imp.startswith("xraylabtool"):
                 # Split module and function/class name
-                parts = imp.split('.')
-                module_path = '.'.join(parts[:-1]) if len(parts) > 1 else imp
+                parts = imp.split(".")
+                module_path = ".".join(parts[:-1]) if len(parts) > 1 else imp
 
                 # Check if module path is valid
-                if module_path not in valid_xraylabtool_imports and imp not in valid_xraylabtool_imports:
+                if (
+                    module_path not in valid_xraylabtool_imports
+                    and imp not in valid_xraylabtool_imports
+                ):
                     # Allow imports from documented submodules
-                    if not any(imp.startswith(valid_mod) for valid_mod in valid_xraylabtool_imports):
+                    if not any(
+                        imp.startswith(valid_mod)
+                        for valid_mod in valid_xraylabtool_imports
+                    ):
                         return False, f"Invalid xraylabtool import: {imp}"
 
         return True, ""
@@ -152,26 +160,40 @@ def validate_imports(code: str) -> Tuple[bool, str]:
         return False, f"Import validation error: {e}"
 
 
-def execute_code_example(code: str) -> Tuple[bool, str]:
+def execute_code_example(code: str) -> tuple[bool, str]:
     """Execute a code example in a temporary environment."""
     # Skip examples that require matplotlib or other optional dependencies
-    if any(skip_pattern in code for skip_pattern in [
-        'matplotlib', 'plt.', 'import matplotlib',
-        'subprocess.run', 'subprocess.call',
-        'plt.show()', 'plt.tight_layout()'
-    ]):
+    if any(
+        skip_pattern in code
+        for skip_pattern in [
+            "matplotlib",
+            "plt.",
+            "import matplotlib",
+            "subprocess.run",
+            "subprocess.call",
+            "plt.show()",
+            "plt.tight_layout()",
+        ]
+    ):
         return True, "Skipped (optional dependencies)"
 
     # Skip examples with shell commands or file operations
-    if any(skip_pattern in code for skip_pattern in [
-        'subprocess', '#!/bin/bash', 'mkdir', 'rm -f',
-        'materials.csv', 'results.csv'
-    ]):
+    if any(
+        skip_pattern in code
+        for skip_pattern in [
+            "subprocess",
+            "#!/bin/bash",
+            "mkdir",
+            "rm -f",
+            "materials.csv",
+            "results.csv",
+        ]
+    ):
         return True, "Skipped (shell/file operations)"
 
     try:
         # Create a temporary file with the code
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             # Add project root to path for imports
             test_code = f"""
 import sys
@@ -187,9 +209,10 @@ sys.path.insert(0, str(project_root))
         # Execute the code
         result = subprocess.run(
             [sys.executable, temp_file],
+            check=False,
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
 
         # Clean up
@@ -226,17 +249,19 @@ def test_python_code_examples():
     total = len(examples)
 
     for i, example in enumerate(examples, 1):
-        print(f"\n{i}. Testing example from {Path(example['file']).name} ({example['id']})")
+        print(
+            f"\n{i}. Testing example from {Path(example['file']).name} ({example['id']})"
+        )
         print(f"   Type: {example['type']}")
 
         # Show first few lines of code
-        code_preview = '\n'.join(example['code'].split('\n')[:3])
-        if len(example['code'].split('\n')) > 3:
+        code_preview = "\n".join(example["code"].split("\n")[:3])
+        if len(example["code"].split("\n")) > 3:
             code_preview += "\n   ..."
         print(f"   Code: {code_preview}")
 
         # Test syntax
-        syntax_valid, syntax_error = validate_python_syntax(example['code'])
+        syntax_valid, syntax_error = validate_python_syntax(example["code"])
         if syntax_valid:
             print("   ✅ Valid syntax")
             passed_syntax += 1
@@ -245,7 +270,7 @@ def test_python_code_examples():
             continue
 
         # Test imports
-        imports_valid, import_error = validate_imports(example['code'])
+        imports_valid, import_error = validate_imports(example["code"])
         if imports_valid:
             print("   ✅ Valid imports")
             passed_imports += 1
@@ -254,14 +279,14 @@ def test_python_code_examples():
             continue
 
         # Test execution
-        exec_success, exec_result = execute_code_example(example['code'])
+        exec_success, exec_result = execute_code_example(example["code"])
         if exec_success:
             print(f"   ✅ {exec_result}")
             passed_execution += 1
         else:
             print(f"   ❌ {exec_result}")
 
-    print(f"\n📊 Python Code Examples Test Results:")
+    print("\n📊 Python Code Examples Test Results:")
     print(f"   Syntax validation: {passed_syntax}/{total}")
     print(f"   Import validation: {passed_imports}/{total}")
     print(f"   Execution tests: {passed_execution}/{total}")
@@ -296,4 +321,4 @@ def main():
 
 if __name__ == "__main__":
     success = main()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

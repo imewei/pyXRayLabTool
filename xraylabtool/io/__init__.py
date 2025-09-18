@@ -13,12 +13,12 @@ from xraylabtool.io.file_operations import (
 )
 
 __all__ = [
+    "export_to_csv",
+    "export_to_json",
+    "format_calculation_summary",
+    # Data formatting
+    "format_xray_result",
     # File operations
     "load_data_file",
     "save_calculation_results",
-    "export_to_csv",
-    "export_to_json",
-    # Data formatting
-    "format_xray_result",
-    "format_calculation_summary",
 ]

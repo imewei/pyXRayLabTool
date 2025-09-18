@@ -426,32 +426,32 @@ if __name__ != "__main__":
 # =====================================================================================
 
 __all__ = [
-    # Fundamental constants
-    "THOMPSON",
-    "SPEED_OF_LIGHT",
-    "PLANCK",
-    "ELEMENT_CHARGE",
+    "ANGSTROM_TO_METER",
     "AVOGADRO",
+    "CM_TO_METER",
+    "DEGREES_TO_RADIANS",
+    "ELEMENT_CHARGE",
     # Derived constants
     "ENERGY_TO_WAVELENGTH_FACTOR",
-    "SCATTERING_FACTOR",
-    # Mathematical constants
-    "PI",
-    "TWO_PI",
-    "SQRT_2",
+    "EV_TO_KEV",
     # Unit conversions
     "KEV_TO_EV",
-    "EV_TO_KEV",
-    "ANGSTROM_TO_METER",
     "METER_TO_ANGSTROM",
-    "CM_TO_METER",
     "METER_TO_CM",
-    "DEGREES_TO_RADIANS",
+    # Mathematical constants
+    "PI",
+    "PLANCK",
     "RADIANS_TO_DEGREES",
+    "SCATTERING_FACTOR",
+    "SPEED_OF_LIGHT",
+    "SQRT_2",
+    # Fundamental constants
+    "THOMPSON",
+    "TWO_PI",
+    "attenuation_length_cm",
+    "critical_angle_degrees",
     # Helper functions
     "energy_to_wavelength_angstrom",
-    "wavelength_angstrom_to_energy",
-    "critical_angle_degrees",
-    "attenuation_length_cm",
     "validate_constants",
+    "wavelength_angstrom_to_energy",
 ]

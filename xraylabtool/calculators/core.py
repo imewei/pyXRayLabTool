@@ -8,7 +8,8 @@ including atomic scattering factors and crystallographic calculations.
 from __future__ import annotations
 
 from collections.abc import Callable
-import concurrent.futures
+
+# concurrent.futures import moved to function level for parallel processing
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
@@ -17,10 +18,19 @@ from typing import TYPE_CHECKING, Any
 import warnings
 
 import numpy as np
-import pandas as pd
-from scipy.interpolate import PchipInterpolator
+
+# Lazy imports for heavy dependencies to reduce startup time
+# pandas and scipy imports moved to function level when needed
 
 # Import cache metrics with lazy loading to avoid circular imports
+# Import optimization decorators
+try:
+    from xraylabtool.optimization.vectorized_core import ensure_c_contiguous
+except ImportError:
+    # Fallback decorator if optimization module not available
+    def ensure_c_contiguous(func: Callable[..., Any]) -> Callable[..., Any]:
+        return func
+
 
 if TYPE_CHECKING:
     from xraylabtool.typing_extensions import (
@@ -338,6 +348,26 @@ class XRayResult:
         )
         return self.imaginary_sld_per_ang2
 
+    @property
+    def delta(self) -> np.ndarray:
+        """Deprecated: Use 'dispersion_delta' instead."""
+        warnings.warn(
+            "delta is deprecated, use 'dispersion_delta' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.dispersion_delta
+
+    @property
+    def beta(self) -> np.ndarray:
+        """Deprecated: Use 'absorption_beta' instead."""
+        warnings.warn(
+            "beta is deprecated, use 'absorption_beta' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.absorption_beta
+
     @classmethod
     def from_legacy(
         cls,
@@ -423,7 +453,8 @@ class XRayResult:
 # =====================================================================================
 
 # Module-level cache for f1/f2 scattering tables, keyed by element symbol
-_scattering_factor_cache: dict[str, pd.DataFrame] = {}
+# Using Any to avoid early pandas import
+_scattering_factor_cache: dict[str, Any] = {}
 
 # Module-level cache for interpolators to avoid repeated creation
 if TYPE_CHECKING:
@@ -431,10 +462,14 @@ if TYPE_CHECKING:
         str, tuple[InterpolatorProtocol, InterpolatorProtocol]
     ] = {}
 else:
-    _interpolator_cache: dict[str, tuple[PchipInterpolator, PchipInterpolator]] = {}
+    _interpolator_cache: dict[str, Any] = {}
 
 # Pre-computed element file paths for faster access
 _AVAILABLE_ELEMENTS: dict[str, Path] = {}
+
+# Cache for most commonly used elements to improve cold start performance
+_PRIORITY_ELEMENTS = ["H", "C", "N", "O", "Si", "Al", "Ca", "Fe", "Cu", "Zn"]
+_CACHE_WARMED = False
 
 # Atomic data cache for bulk lookups
 _atomic_data_cache: dict[str, dict[str, float]] = {}
@@ -464,29 +499,28 @@ def _initialize_element_paths() -> None:
                     _AVAILABLE_ELEMENTS[element] = nff_file
 
 
-def load_scattering_factor_data(element: str) -> pd.DataFrame:
+def load_scattering_factor_data(element: str) -> Any:
     """
     Load f1/f2 scattering factor data for a specific element from .nff files.
 
-    This function reads .nff files using pandas.read_csv and caches the results
-    in a module-level dictionary keyed by element symbol.
+    This function reads .nff files using CSV parsing and caches the results
+    in a module-level dictionary keyed by element symbol. Returns a pandas-compatible
+    data structure for accessing columns E, f1, f2.
 
     Args:
         element: Element symbol (e.g., 'H', 'C', 'N', 'O', 'Si', 'Ge')
 
     Returns:
-        DataFrame containing columns: E (energy), f1, f2
+        ScatteringData object with pandas-like interface containing columns: E (energy), f1, f2
 
     Raises:
         FileNotFoundError: If the .nff file for the element is not found
-        ValueError: If the element symbol is invalid or empty
-        pd.errors.EmptyDataError: If the .nff file is empty or corrupted
-        pd.errors.ParserError: If the .nff file format is invalid
+        ValueError: If the element symbol is invalid, empty, or file format is invalid
 
     Examples:
         >>> from xraylabtool.calculators.core import load_scattering_factor_data
         >>> data = load_scattering_factor_data('Si')
-        >>> print(data.columns.tolist())
+        >>> print(data.columns)
         ['E', 'f1', 'f2']
         >>> print(len(data) > 100)  # Verify we have enough data points
         True
@@ -494,9 +528,7 @@ def load_scattering_factor_data(element: str) -> pd.DataFrame:
 
     # Validate input
     if not element or not isinstance(element, str):
-        raise ValueError(
-            f"Element symbol must be a non-empty string, got: {repr(element)}"
-        )
+        raise ValueError(f"Element symbol must be a non-empty string, got: {element!r}")
 
     # Normalize element symbol (capitalize first letter, lowercase rest)
     element = element.capitalize()
@@ -515,44 +547,81 @@ def load_scattering_factor_data(element: str) -> pd.DataFrame:
     file_path = _AVAILABLE_ELEMENTS[element]
 
     try:
-        # Load .nff file using pandas.read_csv
+        # Load .nff file using numpy - faster and no pandas dependency
         # .nff files are CSV format with header: E,f1,f2
-        scattering_data = pd.read_csv(file_path)
+        import csv
 
-        # Verify expected columns exist
-        expected_columns = {"E", "f1", "f2"}
-        actual_columns = set(scattering_data.columns)
+        with open(file_path) as file:
+            # Read header
+            reader = csv.reader(file)
+            header = next(reader)
 
-        if not expected_columns.issubset(actual_columns):
-            missing_cols = expected_columns - actual_columns
-            raise ValueError(
-                f"Invalid .nff file format for element '{element}'. "
-                f"Missing required columns: {missing_cols}. "
-                f"Found columns: {list(actual_columns)}"
-            )
+            # Verify expected columns exist
+            expected_columns = {"E", "f1", "f2"}
+            actual_columns = set(header)
 
-        # Verify data is not empty
-        if scattering_data.empty:
+            if not expected_columns.issubset(actual_columns):
+                missing_cols = expected_columns - actual_columns
+                raise ValueError(
+                    f"Invalid .nff file format for element '{element}'. "
+                    f"Missing required columns: {missing_cols}. "
+                    f"Found columns: {list(actual_columns)}"
+                )
+
+            # Get column indices
+            e_idx = header.index("E")
+            f1_idx = header.index("f1")
+            f2_idx = header.index("f2")
+
+            # Read data rows
+            data_rows = []
+            for row in reader:
+                if len(row) >= max(e_idx, f1_idx, f2_idx) + 1:
+                    data_rows.append(
+                        [float(row[e_idx]), float(row[f1_idx]), float(row[f2_idx])]
+                    )
+
+        if not data_rows:
             raise ValueError(
                 f"Empty scattering factor data file for element "
                 f"'{element}': {file_path}"
             )
+
+        # Convert to numpy array for efficiency
+        data_array = np.array(data_rows, dtype=np.float64)
+
+        # Create a pandas-like interface using a simple class
+        class ScatteringData:
+            def __init__(self, data_array: np.ndarray, column_names: list[str]) -> None:
+                self.data = data_array
+                self.columns = column_names
+                self._column_indices = {name: i for i, name in enumerate(column_names)}
+
+            def __len__(self) -> int:
+                return len(self.data)
+
+            def __getitem__(self, column: str) -> Any:
+                idx = self._column_indices[column]
+
+                # Return object with .values attribute for compatibility
+                class ColumnProxy:
+                    def __init__(self, data: np.ndarray) -> None:
+                        self.values = data
+
+                return ColumnProxy(self.data[:, idx])
+
+        scattering_data = ScatteringData(data_array, ["E", "f1", "f2"])
 
         # Cache the data
         _scattering_factor_cache[element] = scattering_data
 
         return scattering_data
 
-    except pd.errors.EmptyDataError as e:
-        raise pd.errors.EmptyDataError(
-            f"Empty or corrupted scattering factor data file for element "
-            f"'{element}': {file_path}"
-        ) from e
-    except pd.errors.ParserError as e:
-        raise pd.errors.ParserError(
-            f"Invalid file format in scattering factor data file for element "
+    except (OSError, ValueError, csv.Error) as e:
+        raise ValueError(
+            f"Error parsing scattering factor data file for element "
             f"'{element}': {file_path}. "
-            f"Expected CSV format with columns: E,f1,f2"
+            f"Expected CSV format with columns: E,f1,f2. Error: {e}"
         ) from e
     except Exception as e:
         raise RuntimeError(
@@ -571,7 +640,7 @@ class AtomicScatteringFactor:
 
     def __init__(self) -> None:
         # Maintain backward compatibility with existing tests
-        self.data: dict[str, pd.DataFrame] = {}
+        self.data: dict[str, Any] = {}
         self.data_path = (
             Path(__file__).parent.parent / "data" / "AtomicScatteringFactor"
         )
@@ -579,7 +648,7 @@ class AtomicScatteringFactor:
         # Create data directory if it doesn't exist (for test compatibility)
         self.data_path.mkdir(parents=True, exist_ok=True)
 
-    def load_element_data(self, element: str) -> pd.DataFrame:
+    def load_element_data(self, element: str) -> Any:
         """
         Load scattering factor data for a specific element.
 
@@ -595,9 +664,7 @@ class AtomicScatteringFactor:
         """
         return load_scattering_factor_data(element)
 
-    def get_scattering_factor(
-        self, element: str, q_values: np.ndarray
-    ) -> np.ndarray:  # noqa: ARG002
+    def get_scattering_factor(self, element: str, q_values: np.ndarray) -> np.ndarray:
         """
         Calculate scattering factors for given q values.
 
@@ -644,9 +711,7 @@ class CrystalStructure:
             {"element": element, "position": position, "occupancy": occupancy}
         )
 
-    def calculate_structure_factor(
-        self, hkl: tuple[int, int, int]
-    ) -> complex:  # noqa: ARG002
+    def calculate_structure_factor(self, hkl: tuple[int, int, int]) -> complex:
         """
         Calculate structure factor for given Miller indices.
 
@@ -691,6 +756,28 @@ def get_bulk_atomic_data(
     return get_bulk_atomic_data_fast(elements_tuple)
 
 
+def _warm_priority_cache() -> None:
+    """
+    Warm the cache with priority elements for improved cold start performance.
+
+    This is called automatically on first calculation to pre-load common elements.
+    """
+    global _CACHE_WARMED
+    if _CACHE_WARMED:
+        return
+
+    # Pre-load atomic data for priority elements
+    from xraylabtool.data_handling.atomic_cache import get_bulk_atomic_data_fast
+
+    try:
+        priority_tuple = tuple(_PRIORITY_ELEMENTS)
+        get_bulk_atomic_data_fast(priority_tuple)
+        _CACHE_WARMED = True
+    except Exception:
+        # If warming fails, just continue - it's not critical
+        pass
+
+
 def clear_scattering_factor_cache() -> None:
     """
     Clear the module-level scattering factor cache.
@@ -698,9 +785,11 @@ def clear_scattering_factor_cache() -> None:
     This function removes all cached scattering factor data from memory.
     Useful for testing or memory management.
     """
+    global _CACHE_WARMED
     _scattering_factor_cache.clear()
     _interpolator_cache.clear()
     _atomic_data_cache.clear()
+    _CACHE_WARMED = False
 
     # Clear LRU caches
     get_bulk_atomic_data.cache_clear()
@@ -768,12 +857,12 @@ def calculate_scattering_factors(
     n_energies = len(energy_ev)
     n_elements = len(element_data)
 
-    # Pre-allocate arrays for better memory performance
+    # Pre-allocate C-contiguous arrays for better memory performance
     # Using specific dtypes for better numerical precision and speed
-    dispersion = np.zeros(n_energies, dtype=np.float64)
-    absorption = np.zeros(n_energies, dtype=np.float64)
-    f1_total = np.zeros(n_energies, dtype=np.float64)
-    f2_total = np.zeros(n_energies, dtype=np.float64)
+    dispersion = np.zeros(n_energies, dtype=np.float64, order="C")
+    absorption = np.zeros(n_energies, dtype=np.float64, order="C")
+    f1_total = np.zeros(n_energies, dtype=np.float64, order="C")
+    f2_total = np.zeros(n_energies, dtype=np.float64, order="C")
 
     # Pre-compute common constants outside the loop
     common_factor = SCATTERING_FACTOR * mass_density / molecular_weight
@@ -787,10 +876,10 @@ def calculate_scattering_factors(
 
     # Batch process elements for better vectorization
     if n_elements > 1:
-        # For multiple elements, use vectorized operations
-        f1_matrix = np.empty((n_elements, n_energies), dtype=np.float64)
-        f2_matrix = np.empty((n_elements, n_energies), dtype=np.float64)
-        counts = np.empty(n_elements, dtype=np.float64)
+        # For multiple elements, use vectorized operations with C-contiguous arrays
+        f1_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order="C")
+        f2_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order="C")
+        counts = np.empty(n_elements, dtype=np.float64, order="C")
 
         # Vectorized interpolation for all elements
         for i, (count, f1_interp, f2_interp) in enumerate(element_data):
@@ -890,8 +979,25 @@ def calculate_derived_quantities(
 
     # Calculate electron density (electrons per unit volume)
     # ρₑ = ρ × Nₐ × Z / M × 10⁻³⁰ (converted to electrons/Å³)
+    # Ensure scalar inputs for density calculation
+    density_val = (
+        np.asarray(mass_density).item()
+        if np.asarray(mass_density).size == 1
+        else mass_density
+    )
+    mol_weight_val = (
+        np.asarray(molecular_weight).item()
+        if np.asarray(molecular_weight).size == 1
+        else molecular_weight
+    )
+    electrons_val = (
+        np.asarray(number_of_electrons).item()
+        if np.asarray(number_of_electrons).size == 1
+        else number_of_electrons
+    )
+
     electron_density = float(
-        1e6 * mass_density / molecular_weight * AVOGADRO * number_of_electrons / 1e30
+        1e6 * density_val / mol_weight_val * AVOGADRO * electrons_val / 1e30
     )
 
     # Calculate critical angle for total external reflection
@@ -1002,6 +1108,9 @@ def create_scattering_factor_interpolators(
     # PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) preserves monotonicity
     # and provides smooth, shape-preserving interpolation similar to Julia's
     # behavior
+    # Lazy import scipy only when needed
+    from scipy.interpolate import PchipInterpolator
+
     f1_interpolator = PchipInterpolator(energy_values, f1_values, extrapolate=False)
     f2_interpolator = PchipInterpolator(energy_values, f2_values, extrapolate=False)
 
@@ -1086,6 +1195,7 @@ def _prepare_element_data(
     return element_data
 
 
+@ensure_c_contiguous
 def _calculate_single_material_xray_properties(
     formula_str: str,
     energy_kev: FloatLike | ArrayLike,
@@ -1180,6 +1290,7 @@ def _calculate_single_material_xray_properties(
     }
 
 
+@ensure_c_contiguous
 def calculate_multiple_xray_properties(
     formula_list: list[str],
     energy_kev: FloatLike | ArrayLike,
@@ -1257,7 +1368,7 @@ def calculate_multiple_xray_properties(
     return results
 
 
-def load_data_file(filename: str) -> pd.DataFrame:
+def load_data_file(filename: str) -> Any:
     """
     Load data from various file formats commonly used in X-ray analysis.
 
@@ -1271,6 +1382,9 @@ def load_data_file(filename: str) -> pd.DataFrame:
 
     if not file_path.exists():
         raise FileNotFoundError(f"Data file not found: {filename}")
+
+    # Lazy import pandas only when needed
+    import pandas as pd
 
     # Determine file format and load accordingly
     if file_path.suffix.lower() == ".csv":
@@ -1287,6 +1401,7 @@ def load_data_file(filename: str) -> pd.DataFrame:
 # =====================================================================================
 
 
+@ensure_c_contiguous
 def calculate_single_material_properties(
     formula: str, energy_keV: FloatLike | ArrayLike, density: FloatLike
 ) -> XRayResult:
@@ -1384,6 +1499,9 @@ def calculate_single_material_properties(
         XRayResult : Complete documentation of returned dataclass
         parse_formula : Parse chemical formulas into elements and counts
     """
+    # Warm cache with priority elements for better performance
+    _warm_priority_cache()
+
     # Calculate properties using the existing function
     properties = _calculate_single_material_xray_properties(
         formula, energy_keV, density
@@ -1396,16 +1514,32 @@ def calculate_single_material_properties(
         total_electrons=float(properties["number_of_electrons"]),
         density_g_cm3=float(properties["mass_density"]),
         electron_density_per_ang3=float(properties["electron_density"]),
-        energy_kev=np.asarray(properties["energy"]),
-        wavelength_angstrom=np.asarray(properties["wavelength"]),
-        dispersion_delta=np.asarray(properties["dispersion"]),
-        absorption_beta=np.asarray(properties["absorption"]),
-        scattering_factor_f1=np.asarray(properties["f1_total"]),
-        scattering_factor_f2=np.asarray(properties["f2_total"]),
-        critical_angle_degrees=np.asarray(properties["critical_angle"]),
-        attenuation_length_cm=np.asarray(properties["attenuation_length"]),
-        real_sld_per_ang2=np.asarray(properties["re_sld"]),
-        imaginary_sld_per_ang2=np.asarray(properties["im_sld"]),
+        energy_kev=np.ascontiguousarray(properties["energy"], dtype=np.float64),
+        wavelength_angstrom=np.ascontiguousarray(
+            properties["wavelength"], dtype=np.float64
+        ),
+        dispersion_delta=np.ascontiguousarray(
+            properties["dispersion"], dtype=np.float64
+        ),
+        absorption_beta=np.ascontiguousarray(
+            properties["absorption"], dtype=np.float64
+        ),
+        scattering_factor_f1=np.ascontiguousarray(
+            properties["f1_total"], dtype=np.float64
+        ),
+        scattering_factor_f2=np.ascontiguousarray(
+            properties["f2_total"], dtype=np.float64
+        ),
+        critical_angle_degrees=np.ascontiguousarray(
+            properties["critical_angle"], dtype=np.float64
+        ),
+        attenuation_length_cm=np.ascontiguousarray(
+            properties["attenuation_length"], dtype=np.float64
+        ),
+        real_sld_per_ang2=np.ascontiguousarray(properties["re_sld"], dtype=np.float64),
+        imaginary_sld_per_ang2=np.ascontiguousarray(
+            properties["im_sld"], dtype=np.float64
+        ),
     )
 
 
@@ -1426,7 +1560,7 @@ def _validate_xray_inputs(formulas: list[str], densities: list[float]) -> None:
     for i, formula in enumerate(formulas):
         if not isinstance(formula, str) or not formula.strip():
             raise ValueError(
-                f"Formula at index {i} must be a non-empty string, got: {repr(formula)}"
+                f"Formula at index {i} must be a non-empty string, got: {formula!r}"
             )
 
     for i, density in enumerate(densities):
@@ -1517,6 +1651,7 @@ def _process_formulas_parallel(
     process_func: Callable[[tuple[str, float]], tuple[str, XRayResult]],
 ) -> dict[str, XRayResult]:
     """Process formulas in parallel using ThreadPoolExecutor."""
+    import concurrent.futures
     import multiprocessing
 
     formula_density_pairs = list(zip(formulas, densities, strict=False))
@@ -1749,7 +1884,7 @@ class FastXRayCalculationEngine:
 
         # Convert energies to wavelengths
         wavelength = ENERGY_TO_WAVELENGTH_FACTOR / energies
-        wavelength_angstrom = wavelength * METER_TO_ANGSTROM
+        wavelength * METER_TO_ANGSTROM
 
         # Calculate derived quantities using internal function
         _, critical_angle, attenuation_length, re_sld, im_sld = (

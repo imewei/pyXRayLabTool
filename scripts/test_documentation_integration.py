@@ -7,11 +7,10 @@ updates to ensure consistency, accuracy, and completeness across the entire
 documentation system.
 """
 
+from pathlib import Path
 import re
 import subprocess
 import sys
-from pathlib import Path
-from typing import Dict, List, Tuple
 
 
 class DocumentationIntegrationTester:
@@ -81,12 +80,16 @@ class DocumentationIntegrationTester:
             for claim in claims:
                 if "calculations" in claim and "second" in claim:
                     # Extract numerical values
-                    numbers = re.findall(r'(\d+(?:,\d+)*)', claim)
+                    numbers = re.findall(r"(\d+(?:,\d+)*)", claim)
                     if numbers:
                         calculation_speeds.append((file_path, numbers[0], claim))
 
         # Verify all major performance claims are consistent
-        major_claims = [speed for _, speed, _ in calculation_speeds if "150" in speed or "100" in speed]
+        major_claims = [
+            speed
+            for _, speed, _ in calculation_speeds
+            if "150" in speed or "100" in speed
+        ]
 
         if not major_claims:
             print("   ❌ No major performance claims found")
@@ -105,17 +108,27 @@ class DocumentationIntegrationTester:
         # Check that legacy fields are only used in migration sections
         inappropriate_legacy_usage = []
         for file_path, fields in legacy_field_usage.items():
-            if "migration" not in file_path.lower() and "legacy" not in file_path.lower():
+            if (
+                "migration" not in file_path.lower()
+                and "legacy" not in file_path.lower()
+            ):
                 content = Path(file_path).read_text()
                 for field in fields:
-                    if "deprecation" not in content.lower() and "legacy" not in content.lower():
+                    if (
+                        "deprecation" not in content.lower()
+                        and "legacy" not in content.lower()
+                    ):
                         inappropriate_legacy_usage.append((file_path, field))
 
         if inappropriate_legacy_usage:
-            print(f"   ❌ Inappropriate legacy field usage: {inappropriate_legacy_usage}")
+            print(
+                f"   ❌ Inappropriate legacy field usage: {inappropriate_legacy_usage}"
+            )
             return False
 
-        print(f"   ✅ Field name usage is appropriate (found {len(documented_fields)} current fields)")
+        print(
+            f"   ✅ Field name usage is appropriate (found {len(documented_fields)} current fields)"
+        )
         return True
 
     def test_documentation_language_tone(self) -> bool:
@@ -124,15 +137,20 @@ class DocumentationIntegrationTester:
 
         # Check for remaining flowery language
         flowery_patterns = [
-            r'\bcomprehensive\b', r'\brobust\b', r'\bpowerful\b',
-            r'\bseamless\b', r'\befficient\b', r'\bunprecedented\b'
+            r"\bcomprehensive\b",
+            r"\brobust\b",
+            r"\bpowerful\b",
+            r"\bseamless\b",
+            r"\befficient\b",
+            r"\bunprecedented\b",
         ]
 
         flowery_found = []
         doc_files = [
-            self.readme_file, self.claude_file,
+            self.readme_file,
+            self.claude_file,
             *self.docs_dir.rglob("*.rst"),
-            *self.docs_dir.rglob("*.md")
+            *self.docs_dir.rglob("*.md"),
         ]
 
         for doc_file in doc_files:
@@ -160,13 +178,17 @@ class DocumentationIntegrationTester:
             # Run our existing code examples test
             result = subprocess.run(
                 [sys.executable, "scripts/test_code_examples.py"],
+                check=False,
                 cwd=self.project_root,
                 capture_output=True,
-                text=True
+                text=True,
             )
 
             # Parse results
-            if "All Python code examples have valid syntax and imports!" in result.stdout:
+            if (
+                "All Python code examples have valid syntax and imports!"
+                in result.stdout
+            ):
                 print("   ✅ All code examples have valid syntax and imports")
                 return True
             else:
@@ -186,9 +208,10 @@ class DocumentationIntegrationTester:
             # Run our existing CLI examples test
             result = subprocess.run(
                 [sys.executable, "scripts/test_cli_examples.py"],
+                check=False,
                 cwd=self.project_root,
                 capture_output=True,
-                text=True
+                text=True,
             )
 
             if "All CLI examples have valid syntax!" in result.stdout:
@@ -229,17 +252,29 @@ class DocumentationIntegrationTester:
 
                 # Look for documented commands
                 patterns = [
-                    r'``([a-z-]+)``',  # RST format
-                    r'`([a-z-]+)`',    # Markdown format
-                    r'xraylabtool\s+([a-z-]+)',  # Command examples
+                    r"``([a-z-]+)``",  # RST format
+                    r"`([a-z-]+)`",  # Markdown format
+                    r"xraylabtool\s+([a-z-]+)",  # Command examples
                 ]
 
                 for pattern in patterns:
                     matches = re.findall(pattern, content)
                     # Filter out common words that aren't commands
-                    valid_commands = [m for m in matches if len(m) > 2 and '-' in m or m in [
-                        'calc', 'batch', 'convert', 'formula', 'atomic', 'bragg', 'list'
-                    ]]
+                    valid_commands = [
+                        m
+                        for m in matches
+                        if (len(m) > 2 and "-" in m)
+                        or m
+                        in [
+                            "calc",
+                            "batch",
+                            "convert",
+                            "formula",
+                            "atomic",
+                            "bragg",
+                            "list",
+                        ]
+                    ]
                     commands.update(valid_commands)
 
         return commands
@@ -247,7 +282,9 @@ class DocumentationIntegrationTester:
     def _extract_example_commands(self) -> set:
         """Extract CLI commands from examples."""
         commands = set()
-        doc_files = list(self.docs_dir.rglob("*.rst")) + list(self.docs_dir.rglob("*.md"))
+        doc_files = list(self.docs_dir.rglob("*.rst")) + list(
+            self.docs_dir.rglob("*.md")
+        )
         doc_files.append(self.readme_file)
 
         for doc_file in doc_files:
@@ -255,16 +292,20 @@ class DocumentationIntegrationTester:
                 content = doc_file.read_text()
 
                 # Look for xraylabtool command examples
-                pattern = r'xraylabtool\s+([a-z-]+)'
+                pattern = r"xraylabtool\s+([a-z-]+)"
                 matches = re.findall(pattern, content)
                 commands.update(matches)
 
         return commands
 
-    def _extract_documented_imports(self) -> List[str]:
+    def _extract_documented_imports(self) -> list[str]:
         """Extract all documented import statements."""
         imports = []
-        doc_files = [self.readme_file, self.claude_file] + list(self.docs_dir.rglob("*.rst"))
+        doc_files = [
+            self.readme_file,
+            self.claude_file,
+            *list(self.docs_dir.rglob("*.rst")),
+        ]
 
         for doc_file in doc_files:
             if doc_file.exists():
@@ -272,8 +313,8 @@ class DocumentationIntegrationTester:
 
                 # Find import statements in code blocks
                 import_patterns = [
-                    r'from\s+(xraylabtool[.\w]*)\s+import',
-                    r'import\s+(xraylabtool[.\w]*)',
+                    r"from\s+(xraylabtool[.\w]*)\s+import",
+                    r"import\s+(xraylabtool[.\w]*)",
                 ]
 
                 for pattern in import_patterns:
@@ -286,24 +327,26 @@ class DocumentationIntegrationTester:
         """Validate that an import path exists."""
         # Check against known valid imports
         valid_imports = [
-            'xraylabtool',
-            'xraylabtool.calculators',
-            'xraylabtool.data_handling',
-            'xraylabtool.interfaces',
-            'xraylabtool.io',
-            'xraylabtool.utils',
-            'xraylabtool.validation',
+            "xraylabtool",
+            "xraylabtool.calculators",
+            "xraylabtool.data_handling",
+            "xraylabtool.interfaces",
+            "xraylabtool.io",
+            "xraylabtool.utils",
+            "xraylabtool.validation",
         ]
 
         return any(import_path.startswith(valid) for valid in valid_imports)
 
-    def _extract_performance_claims(self) -> Dict[str, List[str]]:
+    def _extract_performance_claims(self) -> dict[str, list[str]]:
         """Extract performance claims from documentation."""
         claims = {}
         doc_files = [
-            self.readme_file, self.claude_file,
-            self.project_root / "xraylabtool" / "__init__.py"
-        ] + list(self.docs_dir.rglob("*.rst"))
+            self.readme_file,
+            self.claude_file,
+            self.project_root / "xraylabtool" / "__init__.py",
+            *list(self.docs_dir.rglob("*.rst")),
+        ]
 
         for doc_file in doc_files:
             if doc_file.exists():
@@ -312,9 +355,9 @@ class DocumentationIntegrationTester:
 
                 # Look for performance-related statements
                 performance_patterns = [
-                    r'[0-9,]+\+?\s*calculations[/\s]*second',
-                    r'[0-9,]+x\s*speed',
-                    r'[0-9,]+\s*times faster',
+                    r"[0-9,]+\+?\s*calculations[/\s]*second",
+                    r"[0-9,]+x\s*speed",
+                    r"[0-9,]+\s*times faster",
                 ]
 
                 for pattern in performance_patterns:
@@ -329,28 +372,28 @@ class DocumentationIntegrationTester:
     def _extract_documented_field_names(self) -> set:
         """Extract documented XRayResult field names."""
         fields = set()
-        doc_files = [self.readme_file] + list(self.docs_dir.rglob("*.rst"))
+        doc_files = [self.readme_file, *list(self.docs_dir.rglob("*.rst"))]
 
         for doc_file in doc_files:
             if doc_file.exists():
                 content = doc_file.read_text()
 
                 # Look for result.field_name patterns
-                pattern = r'result\.([a-z_]+)'
+                pattern = r"result\.([a-z_]+)"
                 matches = re.findall(pattern, content)
                 fields.update(matches)
 
         return fields
 
-    def _find_legacy_field_usage(self) -> Dict[str, List[str]]:
+    def _find_legacy_field_usage(self) -> dict[str, list[str]]:
         """Find usage of legacy field names."""
         legacy_usage = {}
         legacy_patterns = [
-            r'result\.([A-Z][a-zA-Z_]*)',  # CamelCase fields
-            r'result\.(MW|Formula|Critical_Angle|Attenuation_Length)',  # Known legacy fields
+            r"result\.([A-Z][a-zA-Z_]*)",  # CamelCase fields
+            r"result\.(MW|Formula|Critical_Angle|Attenuation_Length)",  # Known legacy fields
         ]
 
-        doc_files = [self.readme_file] + list(self.docs_dir.rglob("*.rst"))
+        doc_files = [self.readme_file, *list(self.docs_dir.rglob("*.rst"))]
 
         for doc_file in doc_files:
             if doc_file.exists():
@@ -374,7 +417,10 @@ class DocumentationIntegrationTester:
         tests = [
             ("CLI Command Consistency", self.test_cli_command_consistency),
             ("Module Import Consistency", self.test_module_import_consistency),
-            ("Performance Claims Consistency", self.test_performance_claims_consistency),
+            (
+                "Performance Claims Consistency",
+                self.test_performance_claims_consistency,
+            ),
             ("Field Name Consistency", self.test_field_name_consistency),
             ("Documentation Language Tone", self.test_documentation_language_tone),
             ("Code Examples Integration", self.test_code_examples_integration),
@@ -411,7 +457,7 @@ def main():
     tester = DocumentationIntegrationTester()
     success = tester.run_all_tests()
 
-    print(f"\n📊 Final Results:")
+    print("\n📊 Final Results:")
     for test_name, result in tester.results.items():
         status = "✅" if result == "PASSED" else "❌"
         print(f"   {status} {test_name}: {result}")
@@ -421,4 +467,4 @@ def main():
 
 if __name__ == "__main__":
     success = main()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

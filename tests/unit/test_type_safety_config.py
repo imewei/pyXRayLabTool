@@ -44,9 +44,9 @@ class TestTypeSafetyConfig(BaseXRayLabToolTest):
         assert pyproject_file.exists(), "pyproject.toml not found"
 
         content = pyproject_file.read_text()
-        assert (
-            "[tool.mypy]" in content
-        ), "MyPy configuration section not found in pyproject.toml"
+        assert "[tool.mypy]" in content, (
+            "MyPy configuration section not found in pyproject.toml"
+        )
 
     def test_mypy_strict_mode_configuration(self):
         """Test that MyPy strict mode settings are properly configured."""
@@ -208,7 +208,7 @@ class TestTypeSafetyConfig(BaseXRayLabToolTest):
                 # Try to import the stub package to verify it's installed
                 import importlib
 
-                stub_module = stub_package.replace("-", "_").replace("types_", "")
+                stub_package.replace("-", "_").replace("types_", "")
 
                 # For pandas-stubs, check pandas
                 if stub_package == "pandas-stubs":

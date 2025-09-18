@@ -8,21 +8,21 @@ be used both in development and CI/CD environments.
 """
 
 import argparse
+from pathlib import Path
 import subprocess
 import sys
 import time
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 def run_mypy_check(
-    target_paths: List[str],
-    config_file: Optional[str] = None,
-    cache_dir: Optional[str] = None,
+    target_paths: list[str],
+    config_file: str | None = None,
+    cache_dir: str | None = None,
     strict_mode: bool = False,
     show_error_codes: bool = True,
     verbose: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Run MyPy type checking with enhanced configuration.
 
@@ -76,6 +76,7 @@ def run_mypy_check(
     try:
         result = subprocess.run(
             cmd,
+            check=False,
             capture_output=True,
             text=True,
             timeout=300,  # 5 minute timeout
@@ -112,7 +113,7 @@ def run_mypy_check(
         }
 
 
-def analyze_mypy_output(output: str) -> Dict[str, Any]:
+def analyze_mypy_output(output: str) -> dict[str, Any]:
     """
     Analyze MyPy output to extract metrics and insights.
 
@@ -165,7 +166,7 @@ def analyze_mypy_output(output: str) -> Dict[str, Any]:
     }
 
 
-def check_core_modules(project_root: Path, verbose: bool = False) -> Dict[str, Any]:
+def check_core_modules(project_root: Path, verbose: bool = False) -> dict[str, Any]:
     """
     Check core modules with enhanced strict mode.
 
@@ -215,7 +216,7 @@ def check_core_modules(project_root: Path, verbose: bool = False) -> Dict[str, A
     return result
 
 
-def check_type_definitions(project_root: Path, verbose: bool = False) -> Dict[str, Any]:
+def check_type_definitions(project_root: Path, verbose: bool = False) -> dict[str, Any]:
     """
     Specifically check the typing_extensions module.
 
@@ -250,7 +251,7 @@ def check_type_definitions(project_root: Path, verbose: bool = False) -> Dict[st
     return result
 
 
-def validate_cache_performance(cache_dir: Path) -> Dict[str, Any]:
+def validate_cache_performance(cache_dir: Path) -> dict[str, Any]:
     """
     Validate MyPy cache performance and setup.
 
@@ -328,7 +329,7 @@ def main():
     script_path = Path(__file__).resolve()
     project_root = script_path.parent.parent
 
-    print(f"🔍 XRayLabTool Type Checking")
+    print("🔍 XRayLabTool Type Checking")
     print(f"Project root: {project_root}")
     print(f"Target: {args.target}")
     print("-" * 50)
@@ -390,7 +391,7 @@ def main():
 
         # Show analysis
         analysis = analyze_mypy_output(all_result["stdout"])
-        print(f"📊 Analysis:")
+        print("📊 Analysis:")
         print(f"   Files checked: {analysis['files_checked_count']}")
         print(f"   Errors: {analysis['error_count']}")
         print(f"   Notes: {analysis['note_count']}")
