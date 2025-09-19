@@ -467,7 +467,7 @@ def get_adaptive_statistics() -> dict[str, Any]:
 def reset_adaptive_learning() -> None:
     """Reset all adaptive learning data for testing or new sessions."""
     with _adaptive_lock:
-        global _usage_history, _active_preloads
+        global _usage_history, _active_preloads  # noqa: PLW0603
 
         _usage_history = {
             "element_access_times": defaultdict(list),
