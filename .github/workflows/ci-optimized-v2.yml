@@ -134,7 +134,7 @@ jobs:
           .pre-commit-config.yaml
 
     - name: Cache pre-commit hooks
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pre-commit
         key: pre-commit-v4-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -142,7 +142,7 @@ jobs:
           pre-commit-v4-${{ runner.os }}-
 
     - name: Cache tool dependencies
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: tools-v4-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}-${{ env.RUFF_VERSION }}-${{ env.BLACK_VERSION }}
@@ -189,7 +189,7 @@ jobs:
 
     - name: Upload security report
       if: always()
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       with:
         name: security-report
         path: bandit-report.json
@@ -228,7 +228,7 @@ jobs:
         cache-dependency-path: 'pyproject.toml'
 
     - name: Cache test dependencies
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: test-deps-v4-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
@@ -272,7 +272,7 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
         path: |
@@ -283,7 +283,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
@@ -311,7 +311,7 @@ jobs:
         cache: 'pip'
 
     - name: Cache build tools
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: build-tools-v4-${{ runner.os }}
@@ -332,7 +332,7 @@ jobs:
         python -m twine check dist/*
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist/
@@ -357,7 +357,7 @@ jobs:
         python-version: '3.12'
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v4
       with:
         name: dist
         path: dist/

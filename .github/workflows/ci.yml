@@ -49,7 +49,7 @@ jobs:
           .pre-commit-config.yaml
 
     - name: Cache pre-commit hooks
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pre-commit
         key: pre-commit-v5-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -57,7 +57,7 @@ jobs:
           pre-commit-v5-${{ runner.os }}-
 
     - name: Cache lint dependencies
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: lint-deps-v5-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}-${{ env.RUFF_VERSION }}-${{ env.BLACK_VERSION }}
@@ -159,7 +159,7 @@ jobs:
           requirements.txt
 
     - name: Cache test dependencies
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: test-deps-v5-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
@@ -197,7 +197,7 @@ jobs:
         fi
 
     - name: Upload test results
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
@@ -208,7 +208,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
@@ -236,7 +236,7 @@ jobs:
         cache-dependency-path: pyproject.toml
 
     - name: Cache benchmark dependencies
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: benchmark-deps-v5-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
@@ -265,7 +265,7 @@ jobs:
         echo "Memory performance tests skipped - no tests with 'performance' marker found"
 
     - name: Upload benchmark results
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: |
@@ -291,7 +291,7 @@ jobs:
         cache: 'pip'
 
     - name: Cache build dependencies
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: build-deps-v5-${{ runner.os }}-build-twine
@@ -317,7 +317,7 @@ jobs:
         python -m twine check dist/*
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist/
@@ -340,7 +340,7 @@ jobs:
         python-version: '3.12'
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v4
       with:
         name: dist
         path: dist/
