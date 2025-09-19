@@ -6,9 +6,8 @@ and cache files.
 """
 
 import os
-from pathlib import Path
 import shutil
-from typing import List
+from pathlib import Path
 
 
 def clean_build_artifacts(project_root: Path) -> list[str]:

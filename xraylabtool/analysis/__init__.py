@@ -5,9 +5,14 @@ Simplified analysis functionality focused on core scientific calculations.
 """
 
 from functools import lru_cache
-from typing import List, Tuple
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 from xraylabtool.calculators.core import XRayResult
+
+from .comparator import MaterialComparator
 
 
 # Lazy-loaded numpy to improve startup performance
@@ -44,7 +49,7 @@ def find_absorption_edges(
         threshold: Minimum derivative threshold for edge detection
 
     Returns:
-        List of (energy, derivative_magnitude) tuples for detected edges
+        list of (energy, derivative_magnitude) tuples for detected edges
     """
     if len(energies) < 3:
         return []
@@ -72,7 +77,7 @@ def compare_materials(
     Simple material comparison for a given property.
 
     Args:
-        results: List of XRayResult objects to compare
+        results: list of XRayResult objects to compare
         property_name: Property to compare across materials
 
     Returns:
@@ -102,7 +107,5 @@ def compare_materials(
         "count": len(values),
     }
 
-
-from .comparator import MaterialComparator
 
 __all__ = ["MaterialComparator", "compare_materials", "find_absorption_edges"]

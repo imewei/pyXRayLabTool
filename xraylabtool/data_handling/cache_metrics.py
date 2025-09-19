@@ -42,7 +42,7 @@ _cache_misses = 0
 
 
 def cache_metrics(
-    cache_name: str = "default", track_timing: bool = False
+    _cache_name: str = "default", _track_timing: bool = False
 ) -> Callable[[F], F]:
     """
     Lightweight cache metrics decorator with minimal overhead.
@@ -51,8 +51,8 @@ def cache_metrics(
     Disabled by default for maximum performance.
 
     Args:
-        cache_name: Name of the cache being tracked (unused in simplified version)
-        track_timing: Whether to track timing (disabled for performance)
+        _cache_name: Name of the cache being tracked (unused in simplified version)
+        _track_timing: Whether to track timing (disabled for performance)
 
     Returns:
         Decorated function with optional lightweight metrics tracking
@@ -66,7 +66,7 @@ def cache_metrics(
                 return func(*args, **kwargs)
 
             # Lightweight tracking when enabled
-            global _cache_hits, _cache_misses
+            global _cache_hits, _cache_misses  # noqa: PLW0603
             try:
                 result = func(*args, **kwargs)
                 _cache_hits += 1
@@ -104,7 +104,7 @@ def get_cache_stats() -> dict[str, int]:
 
 def reset_cache_stats() -> None:
     """Reset cache statistics counters."""
-    global _cache_hits, _cache_misses
+    global _cache_hits, _cache_misses  # noqa: PLW0603
     _cache_hits = 0
     _cache_misses = 0
 

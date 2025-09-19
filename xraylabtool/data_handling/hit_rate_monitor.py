@@ -8,9 +8,9 @@ detailed analytics with 1% accuracy requirements.
 
 from __future__ import annotations
 
+import threading
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
-import threading
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ _monitoring_data = {
 }
 
 
-def record_cache_hit(element: str, cache_type: str) -> None:
+def record_cache_hit(element: str, _cache_type: str) -> None:
     """
     Record a cache hit for real-time monitoring.
 
@@ -89,7 +89,7 @@ def record_cache_hit(element: str, cache_type: str) -> None:
         _update_performance_windows()
 
 
-def record_cache_miss(element: str, cache_type: str) -> None:
+def record_cache_miss(element: str, _cache_type: str) -> None:
     """
     Record a cache miss for real-time monitoring.
 

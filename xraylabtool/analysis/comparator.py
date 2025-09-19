@@ -241,7 +241,7 @@ class MaterialComparator:
 
     def _generate_recommendations(
         self,
-        formulas: list[str],
+        _formulas: list[str],
         data: dict[str, Any],
         stats: dict[str, dict[str, float]],
         energies: list[float],

@@ -7,7 +7,7 @@ Simplified export capabilities for essential file formats.
 import csv
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from xraylabtool.calculators.core import XRayResult
 
