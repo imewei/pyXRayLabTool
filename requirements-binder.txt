@@ -1,5 +1,8 @@
 # Binder requirements for XRayLabTool notebooks
-# Minimal requirements for running interactive notebooks
+# ==============================================
+#
+# Minimal requirements for running interactive notebooks in Binder
+# This file ensures all necessary dependencies are available for online demos
 
 # Core XRayLabTool dependencies
 numpy>=1.26.0,<2.0.0

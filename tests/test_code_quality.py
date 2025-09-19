@@ -7,9 +7,9 @@ Consolidates functionality from multiple separate test files.
 """
 
 import ast
-from pathlib import Path
 import re
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -39,9 +39,9 @@ class TestCodeQuality(BaseUnitTest):
             if not any(allowed in v for allowed in allowed_violations)
         ]
 
-        assert len(filtered_violations) <= 50, (
-            f"Too many naming violations: {filtered_violations[:10]}"
-        )
+        assert (
+            len(filtered_violations) <= 50
+        ), f"Too many naming violations: {filtered_violations[:10]}"
 
     @pytest.mark.unit
     def test_import_patterns(self):
@@ -56,9 +56,9 @@ class TestCodeQuality(BaseUnitTest):
             if not any(allowed in v for allowed in allowed_relative)
         ]
 
-        assert len(filtered_violations) <= 5, (
-            f"Import pattern violations found: {filtered_violations[:5]}"
-        )
+        assert (
+            len(filtered_violations) <= 5
+        ), f"Import pattern violations found: {filtered_violations[:5]}"
 
     @pytest.mark.unit
     def test_type_hints_coverage(self):
@@ -70,9 +70,9 @@ class TestCodeQuality(BaseUnitTest):
         core_violations = [hint for hint in missing_hints if "tests/" not in str(hint)]
 
         # Core code should have high type hint coverage
-        assert len(core_violations) <= 5, (
-            f"Too many missing type hints in core code: {core_violations[:5]}"
-        )
+        assert (
+            len(core_violations) <= 5
+        ), f"Too many missing type hints in core code: {core_violations[:5]}"
 
     @pytest.mark.unit
     def test_docstring_coverage(self):
@@ -88,9 +88,9 @@ class TestCodeQuality(BaseUnitTest):
         ]
 
         # Allow some missing docstrings but ensure core functionality is documented
-        assert len(critical_missing) <= 20, (
-            f"Missing docstrings in critical modules: {critical_missing[:5]}"
-        )
+        assert (
+            len(critical_missing) <= 20
+        ), f"Missing docstrings in critical modules: {critical_missing[:5]}"
 
     def _check_naming_conventions(self):
         """Check for naming convention violations."""
@@ -205,7 +205,8 @@ class TestStyleCompliance(BaseUnitTest):
             if result.returncode != 0:
                 lines = result.stdout.count("\n")
                 assert lines <= 1000, (
-                    f"Too many Black formatting violations ({lines} lines):\n{result.stdout[:500]}"
+                    "Too many Black formatting violations"
+                    f" ({lines} lines):\n{result.stdout[:500]}"
                 )
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pytest.skip("Black not available or timeout")
@@ -225,9 +226,9 @@ class TestStyleCompliance(BaseUnitTest):
             # Allow some linting issues but ensure they're not excessive
             if result.returncode != 0:
                 lines = result.stdout.count("\n")
-                assert lines <= 5000, (
-                    f"Too many Ruff violations ({lines} lines):\n{result.stdout[:1000]}"
-                )
+                assert (
+                    lines <= 5000
+                ), f"Too many Ruff violations ({lines} lines):\n{result.stdout[:1000]}"
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pytest.skip("Ruff not available or timeout")
 
@@ -267,9 +268,9 @@ class TestDocumentationPatterns(BaseUnitTest):
         # Most documented imports should work
         if total_imports > 0:
             success_rate = working_imports / min(total_imports, 5)
-            assert success_rate >= 0.6, (
-                f"Too many broken import examples: {success_rate:.1%} success rate"
-            )
+            assert (
+                success_rate >= 0.6
+            ), f"Too many broken import examples: {success_rate:.1%} success rate"
 
     @pytest.mark.unit
     def test_basic_functionality_examples(self):

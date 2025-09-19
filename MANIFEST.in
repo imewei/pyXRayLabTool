@@ -17,7 +17,6 @@ include requirements*.txt
 include MANIFEST.in
 include Makefile
 include run_tests.py
-include install_completion.py
 
 # Package data (atomic scattering factor files)
 recursive-include xraylabtool/data *.nff
@@ -34,9 +33,9 @@ recursive-include xraylabtool/cleanup *.py
 recursive-include xraylabtool/export *.py
 recursive-include xraylabtool/optimization *.py
 
-# Shell completion scripts (generated dynamically by completion installer)
-# Note: All completion scripts are generated at runtime by xraylabtool/completion_installer.py
-# for bash, zsh, fish, and PowerShell shells
+# Shell completion scripts (generated dynamically by new completion system)
+# Note: All completion scripts are generated at runtime by xraylabtool/interfaces/completion_v2/
+# for bash, zsh, fish, and PowerShell shells with virtual environment isolation
 
 # Test files (for source distributions and development)
 recursive-include tests *.py

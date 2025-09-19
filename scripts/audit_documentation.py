@@ -6,8 +6,8 @@ This script scans documentation files for flowery language, technical
 inaccuracies, and outdated references that need to be updated.
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 
 class DocumentationAuditor:

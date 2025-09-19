@@ -7,24 +7,98 @@ mathematical operations, and other common tasks in X-ray analysis.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from functools import lru_cache
-import re
 from typing import TYPE_CHECKING, Any, NoReturn
 
-import numpy as np
-from scipy import constants
-
 from xraylabtool.exceptions import AtomicDataError, UnknownElementError
+
+
+# Lazy-loaded numpy to improve startup performance
+@lru_cache(maxsize=1)
+def _get_numpy():
+    """Lazy import numpy only when needed."""
+    import numpy as np
+
+    return np
+
+
+# Create a module-level numpy proxy
+class _NumpyProxy:
+    """Proxy object that provides numpy functions on demand."""
+
+    def __getattr__(self, name):
+        np = _get_numpy()
+        return getattr(np, name)
+
+
+# Replace np with the proxy
+np = _NumpyProxy()
 
 if TYPE_CHECKING:
     from xraylabtool.typing_extensions import ArrayLike, FloatLike
 
-# Physical constants
-PLANCK_CONSTANT: float = float(constants.h)  # J⋅s
-SPEED_OF_LIGHT: float = float(constants.c)  # m/s
-ELECTRON_CHARGE: float = float(constants.e)  # C
-AVOGADRO_NUMBER: float = float(constants.N_A)  # mol⁻¹
+
+# Lazy-loaded physical constants to improve startup performance
+@lru_cache(maxsize=1)
+def _get_scipy_constants():
+    """Lazy import scipy.constants only when needed."""
+    from scipy import constants
+
+    return constants
+
+
+@lru_cache(maxsize=1)
+def get_planck_constant() -> float:
+    """Get Planck constant (J⋅s)."""
+    return float(_get_scipy_constants().h)
+
+
+@lru_cache(maxsize=1)
+def get_speed_of_light() -> float:
+    """Get speed of light (m/s)."""
+    return float(_get_scipy_constants().c)
+
+
+@lru_cache(maxsize=1)
+def get_electron_charge() -> float:
+    """Get electron charge (C)."""
+    from xraylabtool.constants import ELEMENT_CHARGE
+
+    return float(ELEMENT_CHARGE)
+
+
+@lru_cache(maxsize=1)
+def get_avogadro_number() -> float:
+    """Get Avogadro number (mol⁻¹)."""
+    return float(_get_scipy_constants().N_A)
+
+
+# Module-level constants cache
+_constants_cache = {}
+
+
+def __getattr__(name: str):
+    """Lazy loading for module-level constants."""
+    if name == "PLANCK_CONSTANT":
+        if name not in _constants_cache:
+            _constants_cache[name] = get_planck_constant()
+        return _constants_cache[name]
+    elif name == "SPEED_OF_LIGHT":
+        if name not in _constants_cache:
+            _constants_cache[name] = get_speed_of_light()
+        return _constants_cache[name]
+    elif name == "ELECTRON_CHARGE":
+        if name not in _constants_cache:
+            _constants_cache[name] = get_electron_charge()
+        return _constants_cache[name]
+    elif name == "AVOGADRO_NUMBER":
+        if name not in _constants_cache:
+            _constants_cache[name] = get_avogadro_number()
+        return _constants_cache[name]
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 
 # Export all public functions
 __all__ = [
@@ -73,9 +147,14 @@ def wavelength_to_energy(wavelength: FloatLike, units: str = "angstrom") -> floa
     else:
         raise ValueError("Units must be 'angstrom', 'nm', or 'm'")
 
+    # Get constants explicitly
+    planck_const = get_planck_constant()
+    speed_light = get_speed_of_light()
+    electron_charge = get_electron_charge()
+
     # Calculate energy using E = hc/λ
-    energy_j = (PLANCK_CONSTANT * SPEED_OF_LIGHT) / wavelength_m
-    energy_kev = energy_j / (ELECTRON_CHARGE * 1000)
+    energy_j = (planck_const * speed_light) / wavelength_m
+    energy_kev = energy_j / (electron_charge * 1000)
 
     return float(energy_kev)
 
@@ -91,11 +170,16 @@ def energy_to_wavelength(energy: FloatLike, units: str = "angstrom") -> float:
     Returns:
         Wavelength in specified units
     """
+    # Get constants explicitly
+    planck_const = get_planck_constant()
+    speed_light = get_speed_of_light()
+    electron_charge = get_electron_charge()
+
     # Convert energy to Joules
-    energy_j = energy * ELECTRON_CHARGE * 1000
+    energy_j = energy * electron_charge * 1000
 
     # Calculate wavelength using λ = hc/E
-    wavelength_m = (PLANCK_CONSTANT * SPEED_OF_LIGHT) / energy_j
+    wavelength_m = (planck_const * speed_light) / energy_j
 
     # Convert to desired units
     if units == "angstrom":
@@ -510,7 +594,7 @@ def get_atomic_number(element_symbol: str) -> int:
         raise  # pragma: no cover
     except Exception as e:
         raise AtomicDataError(
-            f"Unexpected error loading atomic number for element "
+            "Unexpected error loading atomic number for element "
             f"'{element_symbol}': {e}"
         ) from e
 
@@ -576,7 +660,7 @@ def get_atomic_weight(element_symbol: str) -> float:
             ) from e
     except Exception as e:
         raise AtomicDataError(
-            f"Unexpected error loading atomic weight for element "
+            "Unexpected error loading atomic weight for element "
             f"'{element_symbol}': {e}"
         ) from e
 

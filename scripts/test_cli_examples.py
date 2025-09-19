@@ -6,9 +6,9 @@ This script tests that CLI examples in documentation have correct syntax
 and structure without executing them.
 """
 
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 
 def extract_cli_examples_from_docs(docs_dir: Path) -> list[str]:

@@ -7,8 +7,8 @@ This script scans documentation for architectural references and import
 patterns that need to be updated to reflect the modular design.
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 
 class ArchitectureAuditor:

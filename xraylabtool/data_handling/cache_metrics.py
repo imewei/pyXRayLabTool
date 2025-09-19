@@ -7,12 +7,12 @@ hit rates, access patterns, and performance metrics with 1% accuracy.
 
 from __future__ import annotations
 
+import threading
+import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
-import threading
-import time
 from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:

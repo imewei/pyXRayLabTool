@@ -9,7 +9,6 @@ import json
 from typing import Any
 
 import numpy as np
-import pandas as pd
 
 
 def format_xray_result(
@@ -98,6 +97,9 @@ def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str
         elif len(value) == 1 and max_length > 1:
             data[key] = [value[0]] * max_length
 
+    # Lazy import pandas only when needed
+    import pandas as pd
+
     df = pd.DataFrame(data)
     return df.to_csv(index=False)
 
@@ -167,6 +169,9 @@ def format_calculation_summary(results: list[Any], format_type: str = "table") -
                     elif not isinstance(value, np.ndarray):
                         result_dict[attr] = value
             all_data.append(result_dict)
+
+        # Lazy import pandas only when needed
+        import pandas as pd
 
         df = pd.DataFrame(all_data)
         return df.to_csv(index=False)

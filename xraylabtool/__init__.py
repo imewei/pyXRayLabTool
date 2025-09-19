@@ -53,84 +53,261 @@ __version__ = "0.2.3"
 __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"
 
-# Import main modules for easy access (excluding interfaces to avoid CLI startup cost)
-from xraylabtool import (
-    analysis,
-    calculators,
-    cleanup,
-    constants,
-    data_handling,
-    export,
-    io,
-    utils,
-    validation,
-)
+# All modules are now imported lazily via __getattr__ for ultra-fast startup
 
-# Import key classes and functions for easy access
-from xraylabtool.calculators import (
-    XRayResult,
-    calculate_derived_quantities,
-    calculate_scattering_factors,
-    calculate_single_material_properties,
-    calculate_xray_properties,
-    clear_scattering_factor_cache,
-    create_scattering_factor_interpolators,
-    get_cached_elements,
-    is_element_cached,
-    load_scattering_factor_data,
-)
 
-# Import useful constants
-from xraylabtool.constants import (
-    AVOGADRO,
-    ELEMENT_CHARGE,
-    PLANCK,
-    SPEED_OF_LIGHT,
-    THOMPSON,
-    attenuation_length_cm,
-    critical_angle_degrees,
-    energy_to_wavelength_angstrom,
-    wavelength_angstrom_to_energy,
-)
+# Lazy import heavy modules and functions to improve startup time
+def __getattr__(name):
+    # Lazy module imports
+    if name == "calculators":
+        from xraylabtool import calculators
 
-# Import export functions
-from xraylabtool.export import (
-    export_to_csv,
-    export_to_json,
-)
+        globals()["calculators"] = calculators
+        return calculators
+    elif name == "constants":
+        from xraylabtool import constants
 
-# Import I/O functions
-from xraylabtool.io import (
-    format_xray_result,
-    load_data_file,
-)
+        globals()["constants"] = constants
+        return constants
+    elif name == "data_handling":
+        from xraylabtool import data_handling
 
-# Import useful utility functions
-from xraylabtool.utils import (
-    bragg_angle,
-    energy_to_wavelength,
-    get_atomic_number,
-    get_atomic_weight,
-    parse_formula,
-    wavelength_to_energy,
-)
+        globals()["data_handling"] = data_handling
+        return data_handling
+    elif name == "io":
+        from xraylabtool import io
 
-# Import exceptions and validation functions for external use
-from xraylabtool.validation import (
-    AtomicDataError,
-    BatchProcessingError,
-    CalculationError,
-    ConfigurationError,
-    DataFileError,
-    EnergyError,
-    FormulaError,
-    UnknownElementError,
-    ValidationError,
-    XRayLabToolError,
-    validate_chemical_formula,
-    validate_density,
-    validate_energy_range,
-)
+        globals()["io"] = io
+        return io
+    elif name == "utils":
+        from xraylabtool import utils
+
+        globals()["utils"] = utils
+        return utils
+    elif name == "validation":
+        from xraylabtool import validation
+
+        globals()["validation"] = validation
+        return validation
+    elif name == "analysis":
+        from xraylabtool import analysis
+
+        globals()["analysis"] = analysis
+        return analysis
+    elif name == "cleanup":
+        from xraylabtool import cleanup
+
+        globals()["cleanup"] = cleanup
+        return cleanup
+    elif name == "export":
+        from xraylabtool import export
+
+        globals()["export"] = export
+        return export
+
+    # Lazy function imports from calculators
+    elif name in [
+        "XRayResult",
+        "calculate_derived_quantities",
+        "calculate_scattering_factors",
+        "calculate_single_material_properties",
+        "calculate_xray_properties",
+        "clear_scattering_factor_cache",
+        "create_scattering_factor_interpolators",
+        "get_cached_elements",
+        "is_element_cached",
+        "load_scattering_factor_data",
+    ]:
+        from xraylabtool.calculators import (
+            XRayResult,
+            calculate_derived_quantities,
+            calculate_scattering_factors,
+            calculate_single_material_properties,
+            calculate_xray_properties,
+            clear_scattering_factor_cache,
+            create_scattering_factor_interpolators,
+            get_cached_elements,
+            is_element_cached,
+            load_scattering_factor_data,
+        )
+
+        globals().update(
+            {
+                "XRayResult": XRayResult,
+                "calculate_derived_quantities": calculate_derived_quantities,
+                "calculate_scattering_factors": calculate_scattering_factors,
+                "calculate_single_material_properties": (
+                    calculate_single_material_properties
+                ),
+                "calculate_xray_properties": calculate_xray_properties,
+                "clear_scattering_factor_cache": clear_scattering_factor_cache,
+                "create_scattering_factor_interpolators": (
+                    create_scattering_factor_interpolators
+                ),
+                "get_cached_elements": get_cached_elements,
+                "is_element_cached": is_element_cached,
+                "load_scattering_factor_data": load_scattering_factor_data,
+            }
+        )
+        return globals()[name]
+
+    # Lazy function imports from constants
+    elif name in [
+        "AVOGADRO",
+        "ELEMENT_CHARGE",
+        "ELECTRON_CHARGE",
+        "PLANCK",
+        "SPEED_OF_LIGHT",
+        "THOMPSON",
+        "attenuation_length_cm",
+        "critical_angle_degrees",
+        "energy_to_wavelength_angstrom",
+        "wavelength_angstrom_to_energy",
+    ]:
+        from xraylabtool.constants import (
+            AVOGADRO,
+            ELEMENT_CHARGE,
+            PLANCK,
+            SPEED_OF_LIGHT,
+            THOMPSON,
+            attenuation_length_cm,
+            critical_angle_degrees,
+            energy_to_wavelength_angstrom,
+            wavelength_angstrom_to_energy,
+        )
+
+        globals().update(
+            {
+                "AVOGADRO": AVOGADRO,
+                "ELEMENT_CHARGE": ELEMENT_CHARGE,
+                "ELECTRON_CHARGE": ELEMENT_CHARGE,  # Alias for backward compatibility
+                "PLANCK": PLANCK,
+                "SPEED_OF_LIGHT": SPEED_OF_LIGHT,
+                "THOMPSON": THOMPSON,
+                "attenuation_length_cm": attenuation_length_cm,
+                "critical_angle_degrees": critical_angle_degrees,
+                "energy_to_wavelength_angstrom": energy_to_wavelength_angstrom,
+                "wavelength_angstrom_to_energy": wavelength_angstrom_to_energy,
+            }
+        )
+        return globals()[name]
+
+    # Lazy function imports from export
+    elif name in ["export_to_csv", "export_to_json"]:
+        from xraylabtool.export import export_to_csv, export_to_json
+
+        globals().update(
+            {
+                "export_to_csv": export_to_csv,
+                "export_to_json": export_to_json,
+            }
+        )
+        return globals()[name]
+
+    # Lazy function imports from io
+    elif name in ["format_xray_result", "load_data_file"]:
+        from xraylabtool.io import format_xray_result, load_data_file
+
+        globals().update(
+            {
+                "format_xray_result": format_xray_result,
+                "load_data_file": load_data_file,
+            }
+        )
+        return globals()[name]
+
+    # Lazy function imports from utils
+    elif name in [
+        "bragg_angle",
+        "energy_to_wavelength",
+        "get_atomic_number",
+        "get_atomic_weight",
+        "parse_formula",
+        "wavelength_to_energy",
+    ]:
+        from xraylabtool.utils import (
+            bragg_angle,
+            energy_to_wavelength,
+            get_atomic_number,
+            get_atomic_weight,
+            parse_formula,
+            wavelength_to_energy,
+        )
+
+        globals().update(
+            {
+                "bragg_angle": bragg_angle,
+                "energy_to_wavelength": energy_to_wavelength,
+                "get_atomic_number": get_atomic_number,
+                "get_atomic_weight": get_atomic_weight,
+                "parse_formula": parse_formula,
+                "wavelength_to_energy": wavelength_to_energy,
+            }
+        )
+        return globals()[name]
+
+    # Lazy function imports from validation (exceptions and functions)
+    elif name in [
+        "AtomicDataError",
+        "BatchProcessingError",
+        "CalculationError",
+        "ConfigurationError",
+        "DataFileError",
+        "EnergyError",
+        "FormulaError",
+        "UnknownElementError",
+        "ValidationError",
+        "XRayLabToolError",
+        "validate_chemical_formula",
+        "validate_density",
+        "validate_energy_range",
+    ]:
+        from xraylabtool.validation import (
+            AtomicDataError,
+            BatchProcessingError,
+            CalculationError,
+            ConfigurationError,
+            DataFileError,
+            EnergyError,
+            FormulaError,
+            UnknownElementError,
+            ValidationError,
+            XRayLabToolError,
+            validate_chemical_formula,
+            validate_density,
+            validate_energy_range,
+        )
+
+        globals().update(
+            {
+                "AtomicDataError": AtomicDataError,
+                "BatchProcessingError": BatchProcessingError,
+                "CalculationError": CalculationError,
+                "ConfigurationError": ConfigurationError,
+                "DataFileError": DataFileError,
+                "EnergyError": EnergyError,
+                "FormulaError": FormulaError,
+                "UnknownElementError": UnknownElementError,
+                "ValidationError": ValidationError,
+                "XRayLabToolError": XRayLabToolError,
+                "validate_chemical_formula": validate_chemical_formula,
+                "validate_density": validate_density,
+                "validate_energy_range": validate_energy_range,
+            }
+        )
+        return globals()[name]
+
+    # Lazy import for completion_installer module
+    elif name == "completion_installer":
+        from xraylabtool.interfaces import completion as completion_installer
+
+        globals().update({"completion_installer": completion_installer})
+        return globals()[name]
+
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+# All functions and constants are now imported lazily via __getattr__
 
 # CLI main function available via lazy import (use: from xraylabtool.interfaces import main)
 # Removed direct import to avoid startup performance penalty

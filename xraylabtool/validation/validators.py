@@ -6,10 +6,31 @@ chemical formulas, energy ranges, and other data used in calculations.
 """
 
 import re
-
-import numpy as np
+from functools import lru_cache
 
 from xraylabtool.exceptions import EnergyError, FormulaError, ValidationError
+
+
+# Lazy-loaded numpy to improve startup performance
+@lru_cache(maxsize=1)
+def _get_numpy():
+    """Lazy import numpy only when needed."""
+    import numpy as np
+
+    return np
+
+
+# Create a module-level numpy proxy
+class _NumpyProxy:
+    """Proxy object that provides numpy functions on demand."""
+
+    def __getattr__(self, name):
+        np = _get_numpy()
+        return getattr(np, name)
+
+
+# Replace np with the proxy
+np = _NumpyProxy()
 
 
 def validate_energy_range(

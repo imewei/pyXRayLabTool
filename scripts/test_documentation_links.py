@@ -6,9 +6,9 @@ This script validates that all internal links, references, and file paths
 in documentation are correct and point to existing resources.
 """
 
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 
 def find_rst_references(file_path: Path, docs_dir: Path) -> list[tuple[str, bool, str]]:

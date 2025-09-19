@@ -6,12 +6,12 @@ analysis, threshold monitoring, and alerting capabilities for maintaining
 calculation speed targets.
 """
 
+import json
+import statistics
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-import json
 from pathlib import Path
-import statistics
 from typing import Any
 
 import numpy as np

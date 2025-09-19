@@ -7,10 +7,10 @@ and automatically adjusts pre-loading strategies to maximize cache hit rates.
 
 from __future__ import annotations
 
-from collections import defaultdict, deque
-from datetime import datetime
 import threading
 import time
+from collections import defaultdict, deque
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -407,11 +407,7 @@ def measure_preload_effectiveness(actual_elements_used: list[str]) -> dict[str, 
             "effectiveness": (
                 "excellent"
                 if hit_rate > 0.8
-                else "good"
-                if hit_rate > 0.6
-                else "fair"
-                if hit_rate > 0.4
-                else "poor"
+                else "good" if hit_rate > 0.6 else "fair" if hit_rate > 0.4 else "poor"
             ),
         }
 

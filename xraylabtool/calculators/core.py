@@ -7,15 +7,15 @@ including atomic scattering factors and crystallographic calculations.
 
 from __future__ import annotations
 
+import types
+import warnings
 from collections.abc import Callable
 
 # concurrent.futures import moved to function level for parallel processing
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
-import types
 from typing import TYPE_CHECKING, Any
-import warnings
 
 import numpy as np
 
@@ -583,7 +583,7 @@ def load_scattering_factor_data(element: str) -> Any:
 
         if not data_rows:
             raise ValueError(
-                f"Empty scattering factor data file for element "
+                "Empty scattering factor data file for element "
                 f"'{element}': {file_path}"
             )
 
@@ -619,13 +619,13 @@ def load_scattering_factor_data(element: str) -> Any:
 
     except (OSError, ValueError, csv.Error) as e:
         raise ValueError(
-            f"Error parsing scattering factor data file for element "
+            "Error parsing scattering factor data file for element "
             f"'{element}': {file_path}. "
             f"Expected CSV format with columns: E,f1,f2. Error: {e}"
         ) from e
     except Exception as e:
         raise RuntimeError(
-            f"Unexpected error loading scattering factor data for element "
+            "Unexpected error loading scattering factor data for element "
             f"'{element}' from {file_path}: {e}"
         ) from e
 
@@ -1087,7 +1087,7 @@ def create_scattering_factor_interpolators(
     if len(scattering_factor_data) < 2:
         raise ValueError(
             f"Insufficient data points for element '{element}'. "
-            f"PCHIP interpolation requires at least 2 points, "
+            "PCHIP interpolation requires at least 2 points, "
             f"found {len(scattering_factor_data)}."
         )
 
@@ -1260,15 +1260,19 @@ def _calculate_single_material_xray_properties(
         energy_ev, wavelength, mass_density, molecular_weight, element_data
     )
 
-    electron_density, critical_angle, attenuation_length, re_sld, im_sld = (
-        calculate_derived_quantities(
-            wavelength,
-            dispersion,
-            absorption,
-            mass_density,
-            molecular_weight,
-            number_of_electrons,
-        )
+    (
+        electron_density,
+        critical_angle,
+        attenuation_length,
+        re_sld,
+        im_sld,
+    ) = calculate_derived_quantities(
+        wavelength,
+        dispersion,
+        absorption,
+        mass_density,
+        molecular_weight,
+        number_of_electrons,
     )
 
     return {
@@ -1887,15 +1891,19 @@ class FastXRayCalculationEngine:
         wavelength * METER_TO_ANGSTROM
 
         # Calculate derived quantities using internal function
-        _, critical_angle, attenuation_length, re_sld, im_sld = (
-            calculate_derived_quantities(
-                wavelength,
-                dispersion,
-                absorption,
-                1.0,
-                1.0,
-                1.0,  # dummy values for density/MW/electrons
-            )
+        (
+            _,
+            critical_angle,
+            attenuation_length,
+            re_sld,
+            im_sld,
+        ) = calculate_derived_quantities(
+            wavelength,
+            dispersion,
+            absorption,
+            1.0,
+            1.0,
+            1.0,  # dummy values for density/MW/electrons
         )
 
         return {

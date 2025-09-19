@@ -4,6 +4,12 @@ Basic validation system for XRayLabTool.
 Simplified validation functionality for scientific input validation.
 """
 
+from xraylabtool.validation.validators import (
+    validate_chemical_formula,
+    validate_density,
+    validate_energy_range,
+)
+
 # Import exceptions from main exceptions module for compatibility
 from ..exceptions import (
     AtomicDataError,
@@ -16,11 +22,6 @@ from ..exceptions import (
     UnknownElementError,
     ValidationError,
     XRayLabToolError,
-)
-from .validators import (
-    validate_chemical_formula,
-    validate_density,
-    validate_energy_range,
 )
 
 __all__ = [

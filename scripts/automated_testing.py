@@ -7,15 +7,15 @@ parallel execution, and intelligent test selection based on code changes.
 """
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import asdict, dataclass
 import json
 import logging
 import os
-from pathlib import Path
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
 import yaml

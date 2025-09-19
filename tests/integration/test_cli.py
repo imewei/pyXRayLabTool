@@ -9,15 +9,15 @@ edge cases.
 
 import csv
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tests.fixtures.test_base import BaseIntegrationTest
 import xraylabtool as xlt
+from tests.fixtures.test_base import BaseIntegrationTest
 from xraylabtool.interfaces.cli import (
     cmd_atomic,
     cmd_batch,
@@ -532,9 +532,9 @@ class TestMainFunction:
             ):
                 main()
             # Help should exit with code 0
-            assert excinfo.value.code == 0, (
-                f"Command '{command}' not available or failed"
-            )
+            assert (
+                excinfo.value.code == 0
+            ), f"Command '{command}' not available or failed"
 
 
 class TestCLIIntegration(BaseIntegrationTest):
@@ -653,12 +653,12 @@ class TestInstallCompletionCommand:
         # Test that the function exists and can be called
         # We can't test actual installation without affecting system
         try:
-            from xraylabtool.completion_installer import CompletionInstaller
+            from xraylabtool.interfaces.completion import CompletionInstaller
 
             installer = CompletionInstaller()
             assert installer is not None
         except ImportError:
-            pytest.skip("completion_installer module not available")
+            pytest.skip("completion module not available")
 
     def test_install_completion_test_mode(self):
         """Test install-completion --test functionality."""
@@ -714,7 +714,7 @@ class TestInstallCompletionCommand:
     def test_completion_installer_module_import(self):
         """Test that completion installer module can be imported."""
         try:
-            from xraylabtool.completion_installer import (
+            from xraylabtool.interfaces.completion import (
                 BASH_COMPLETION_SCRIPT,
                 CompletionInstaller,
                 install_completion_main,
@@ -733,7 +733,7 @@ class TestInstallCompletionCommand:
     def test_uninstall_completion_help(self):
         """Test uninstall-completion command shows help correctly."""
         try:
-            from xraylabtool.completion_installer import CompletionInstaller
+            from xraylabtool.interfaces.completion import CompletionInstaller
 
             installer = CompletionInstaller()
             assert installer is not None
@@ -763,10 +763,10 @@ class TestInstallCompletionCommand:
         args = MockArgs()
 
         try:
-            from xraylabtool.completion_installer import uninstall_completion_main
+            from xraylabtool.interfaces.completion import uninstall_completion_main
 
             with patch(
-                "xraylabtool.completion_installer.CompletionInstaller"
+                "xraylabtool.interfaces.completion_v2.integration.CompletionInstaller"
             ) as mock_installer_class:
                 mock_installer = MagicMock()
                 mock_installer_class.return_value = mock_installer
@@ -789,7 +789,7 @@ class TestInstallCompletionCommand:
     def test_completion_installer_methods(self, mock_exists, mock_subprocess):
         """Test CompletionInstaller methods with mocked dependencies."""
         try:
-            from xraylabtool.completion_installer import CompletionInstaller
+            from xraylabtool.interfaces.completion import CompletionInstaller
 
             # Mock that bash completion directories exist
             mock_exists.return_value = True
@@ -815,7 +815,7 @@ class TestInstallCompletionCommand:
     def test_bash_completion_script_content(self):
         """Test that bash completion script contains expected content."""
         try:
-            from xraylabtool.completion_installer import BASH_COMPLETION_SCRIPT
+            from xraylabtool.interfaces.completion import BASH_COMPLETION_SCRIPT
 
             # Check for key completion functions
             assert "_xraylabtool_complete" in BASH_COMPLETION_SCRIPT

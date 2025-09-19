@@ -4,11 +4,32 @@ Basic analysis functions for X-ray optical properties.
 Simplified analysis functionality focused on core scientific calculations.
 """
 
+from functools import lru_cache
 from typing import List, Tuple
 
-import numpy as np
-
 from xraylabtool.calculators.core import XRayResult
+
+
+# Lazy-loaded numpy to improve startup performance
+@lru_cache(maxsize=1)
+def _get_numpy():
+    """Lazy import numpy only when needed."""
+    import numpy as np
+
+    return np
+
+
+# Create a module-level numpy proxy
+class _NumpyProxy:
+    """Proxy object that provides numpy functions on demand."""
+
+    def __getattr__(self, name):
+        np = _get_numpy()
+        return getattr(np, name)
+
+
+# Replace np with the proxy
+np = _NumpyProxy()
 
 
 def find_absorption_edges(

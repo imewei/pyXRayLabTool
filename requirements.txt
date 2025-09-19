@@ -1,13 +1,25 @@
-# XRayLabTool Requirements
-# ========================
+# XRayLabTool Core Requirements
+# =============================
 #
 # For complete dependency management, see pyproject.toml
-# This file provides a simplified requirements list for quick installation.
+# This file provides core runtime dependencies only.
 #
 # Install options:
 # - Core only: pip install -r requirements.txt
 # - Development: pip install -e .[dev]
+# - Documentation: pip install -e .[docs]
 # - All features: pip install -e .[all]
+#
+# Available extras:
+# - [dev]: Development tools (testing, linting, type checking)
+# - [docs]: Documentation building tools
+# - [test]: Testing only
+# - [lint]: Linting and formatting only
+# - [export]: Enhanced export functionality (Excel, interactive plots)
+# - [api]: FastAPI server functionality
+# - [analysis]: Advanced analysis tools (scikit-learn, stats)
+# - [perf]: Performance profiling tools
+# - [all]: All dependencies for complete development environment
 
 # Core runtime dependencies only
 # These are the minimal dependencies required to run XRayLabTool

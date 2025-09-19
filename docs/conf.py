@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore", message=".*jupyter.*")
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "XRayLabTool"
-copyright = "2024, XRayLabTool Contributors"
+copyright = "2025, XRayLabTool Contributors"  # noqa: A001
 author = "XRayLabTool Contributors"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -77,8 +77,8 @@ html_static_path = ["_static"]
 # Furo theme options
 html_theme_options = {
     "sidebar_hide_name": False,
-    "light_logo": "logo-light.png",
-    "dark_logo": "logo-dark.png",
+    "light_logo": "logo-light.svg",
+    "dark_logo": "logo-dark.svg",
     "light_css_variables": {
         "color-brand-primary": "#2563eb",
         "color-brand-content": "#2563eb",
@@ -131,6 +131,7 @@ html_theme_options = {
 
 html_title = f"XRayLabTool v{version}"
 html_short_title = "XRayLabTool"
+# html_favicon = "favicon.ico"  # Temporarily disabled
 
 # -- Extension configuration -------------------------------------------------
 

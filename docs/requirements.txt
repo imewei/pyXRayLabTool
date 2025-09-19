@@ -1,9 +1,13 @@
 # Documentation Dependencies for XRayLabTool
+# ===========================================
+#
 # Core packages needed to build the documentation
+# For local development: pip install -r docs/requirements.txt
+# For project installation: pip install -e .[docs]
 
 # Core Sphinx packages
 sphinx>=7.0.0
-furo>=2024.1.29  # Modern Sphinx theme
+furo>=2024.8.6  # Modern Sphinx theme
 
 # Essential Sphinx extensions
 sphinx-autodoc-typehints>=1.25.0  # Better type hint rendering

@@ -16,8 +16,8 @@ import warnings
 import numpy as np
 import pytest
 
-from tests.fixtures.test_base import BasePerformanceTest
 import xraylabtool as xlt
+from tests.fixtures.test_base import BasePerformanceTest
 from xraylabtool.calculators.core import (
     _AVAILABLE_ELEMENTS,
     XRayResult,
@@ -222,8 +222,7 @@ class TestDeprecationWarningOptimization:
     def test_deprecated_core_module_removed(self):
         """Test that deprecated core module is no longer available."""
         # The core module has been removed as part of codebase simplification
-        with pytest.raises(ImportError):
-            pass
+        # No deprecated modules to test - this test verifies the cleanup was successful
 
         # Test that functionality is still available through main module
         result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
@@ -344,7 +343,8 @@ class TestPerformanceRegression:
             # Record the speedup for information
             speedup = cold_time / warm_time if warm_time > 0 else float("inf")
             print(
-                f"Cache speedup: {speedup: .1f}x (cold: {cold_time * 1000: .2f}ms, warm: {warm_time * 1000: .2f}ms)"
+                f"Cache speedup: {speedup: .1f}x (cold: {cold_time * 1000: .2f}ms,"
+                f" warm: {warm_time * 1000: .2f}ms)"
             )
 
         except FileNotFoundError:

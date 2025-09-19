@@ -8,9 +8,9 @@ detailed analytics with 1% accuracy requirements.
 
 from __future__ import annotations
 
+import threading
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
-import threading
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -203,7 +203,8 @@ def _check_performance_alerts() -> None:
     if current_hit_rate < _monitor_config["alert_threshold"]:
         _create_alert(
             "low_hit_rate",
-            f"Hit rate dropped to {current_hit_rate:.2f}% (below {_monitor_config['alert_threshold']}%)",
+            f"Hit rate dropped to {current_hit_rate:.2f}% (below"
+            f" {_monitor_config['alert_threshold']}%)",
             "warning",
         )
 
@@ -217,8 +218,8 @@ def _check_performance_alerts() -> None:
             if baseline_avg - recent_avg > _monitor_config["regression_threshold"]:
                 _create_alert(
                     "performance_regression",
-                    f"Performance regression detected: {baseline_avg:.2f}% → {recent_avg:.2f}% "
-                    f"(drop of {baseline_avg - recent_avg:.2f}%)",
+                    f"Performance regression detected: {baseline_avg:.2f}% →"
+                    f" {recent_avg:.2f}% (drop of {baseline_avg - recent_avg:.2f}%)",
                     "critical",
                 )
                 _monitoring_data["regression_detection"]["recent_degradation"] = True

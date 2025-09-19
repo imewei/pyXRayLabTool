@@ -79,7 +79,7 @@ keywords = [
     # Interface and usability
     "cli", "command-line", "python-package", "api", "cross-platform",
     "shell-completion", "bash-completion", "zsh-completion", "fish-completion",
-    "powershell-completion", "tab-completion", "windows-powershell", "pwsh",
+    "powershell-completion", "tab-completion", "virtual-environment", "environment-isolation",
 
     # Applications
     "materials-characterization", "structure-analysis", "quality-control",
@@ -88,9 +88,9 @@ keywords = [
 
 # Core runtime dependencies
 dependencies = [
-    "numpy>=1.26.0,<2.0.0",
+    "numpy>=1.26.0",
     "pandas>=2.1.0,<3.0.0",
-    "scipy>=1.11.0,<2.0.0",
+    "scipy>=1.11.0",
     "matplotlib>=3.8.0",
     "mendeleev>=0.15.0",
     "tqdm>=4.66.0",
@@ -215,10 +215,82 @@ perf = [
     "py-spy>=0.3.0",
 ]
 
-# Complete development environment
+# Complete development environment (all dependencies)
 all = [
-    # Include all optional dependency groups
-    "xraylabtool[dev,docs,perf,export,api,analysis]",
+    # Testing dependencies
+    "pytest>=7.4.0,<8.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-benchmark>=4.0.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-timeout>=2.1.0",
+
+    # Code quality and linting
+    "black>=23.12.0,<24.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.6.0,<2.0.0",
+    "ruff>=0.1.7,<1.0.0",
+    "isort>=5.12.0",
+
+    # Security analysis
+    "bandit[toml]>=1.7.0,<2.0.0",
+    "pbr>=3.1.0",
+    "safety>=2.3.0,<3.0.0",
+
+    # Type stubs
+    "pandas-stubs>=2.1.0",
+    "types-tqdm>=4.66.0",
+    "types-psutil>=5.9.0",
+
+    # Pre-commit hooks
+    "pre-commit>=3.6.0",
+
+    # Coverage and security
+    "codecov>=2.1.0,<3.0.0",
+
+    # Documentation dependencies
+    "sphinx>=7.0.0",
+    "furo>=2023.9.10",
+    "sphinx-autodoc-typehints>=1.24.0",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-design>=0.5.0",
+    "sphinx-tabs>=3.4.0",
+    "sphinx-togglebutton>=0.3.2",
+    "myst-parser>=2.0.0",
+    "sphinxcontrib-napoleon>=0.7.0",
+    "doc8>=1.1.0",
+    "rstcheck>=6.2.0",
+    "Pygments>=2.16.0",
+    "docutils>=0.19.0",
+
+    # Enhanced export functionality
+    "openpyxl>=3.1.0",
+    "seaborn>=0.12.0",
+    "plotly>=5.0.0",
+    "jinja2>=3.1.0",
+
+    # API server functionality
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-dateutil>=2.8.2",
+
+    # Advanced analysis functionality
+    "scikit-learn>=1.3.0",
+    "statsmodels>=0.14.0",
+
+    # Performance profiling and optimization
+    "memory-profiler>=0.60.0",
+    "line-profiler>=4.0.0",
+    "py-spy>=0.3.0",
+
+    # Jupyter and notebook support
+    "jupyter>=1.0.0",
+    "jupyterlab>=4.0.0",
+    "ipywidgets>=8.0.0",
+    "nbsphinx>=0.9.0",
+    "ipykernel>=6.0.0",
 ]
 
 [project.urls]
@@ -229,7 +301,7 @@ Repository = "https://github.com/imewei/pyXRayLabTool"
 "Bug Tracker" = "https://github.com/imewei/pyXRayLabTool/issues"
 "Changelog" = "https://github.com/imewei/pyXRayLabTool/blob/main/CHANGELOG.md"
 "CLI Reference" = "https://pyxraylabtool.readthedocs.io/en/latest/cli_guide.html"
-"Shell Completion" = "https://pyxraylabtool.readthedocs.io/en/latest/cli_guide.html#install-completion-shell-completion-setup"
+"Shell Completion Guide" = "https://pyxraylabtool.readthedocs.io/en/latest/completion_guide.html"
 "Discussions" = "https://github.com/imewei/pyXRayLabTool/discussions"
 "Release Notes" = "https://github.com/imewei/pyXRayLabTool/releases"
 
@@ -253,6 +325,7 @@ xraylabtool = [
     "data/AtomicScatteringFactor/*.nff",
     "py.typed",  # PEP 561 typing marker
 ]
+
 
 [tool.pytest.ini_options]
 minversion = "7.0"
@@ -283,9 +356,13 @@ markers = [
     # Sub-package markers
     "calculators: marks tests for calculators module",
     "data_handling: marks tests for data handling module",
-    "interfaces: marks tests for interfaces module (CLI, etc.)",
+    "interfaces: marks tests for interfaces module (CLI, completion, etc.)",
     "io: marks tests for I/O operations",
     "validation: marks tests for validation and error handling",
+    "analysis: marks tests for analysis module",
+    "export: marks tests for export functionality",
+    "cleanup: marks tests for cleanup utilities",
+    "optimization: marks tests for optimization features",
 
     # Performance and optimization markers
     "memory: marks tests that check memory usage and management",
@@ -525,9 +602,9 @@ exclude = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ARG", "S101"]  # Allow unused args and asserts in tests
 "__init__.py" = ["F401"]     # Allow unused imports in __init__.py
-# Relax rules for generated/complex completion files to avoid CI failures
-"**/completion_installer.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112"]
+# Relax rules for completion system files (complex generated/template code)
 "**/interfaces/completion.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM102"]
+"**/interfaces/completion_v2/*.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112", "B006"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["xraylabtool"]
@@ -542,11 +619,13 @@ omit = [
     "*/__init__.py",
     "*/conftest.py",
     # Exclude modules with specialized functionality that have limited test coverage
-    "*/interfaces/completion.py",  # Shell completion installer - complex to test
-    "*/io/data_export.py",         # Data export utilities - basic functionality
-    "*/io/file_operations.py",     # File I/O operations - basic functionality
-    "*/validation/exceptions.py",   # Exception definitions - simple classes
-    "*/validation/validators.py",   # Validation utilities - limited usage
+    "*/interfaces/completion.py",          # Shell completion bridge - basic functionality
+    "*/interfaces/completion_legacy.py",   # Legacy completion system - deprecated
+    "*/interfaces/completion_v2/*.py",     # New completion system - complex to test
+    "*/io/data_export.py",                 # Data export utilities - basic functionality
+    "*/io/file_operations.py",             # File I/O operations - basic functionality
+    "*/validation/exceptions.py",          # Exception definitions - simple classes
+    "*/validation/validators.py",          # Validation utilities - limited usage
 ]
 
 [tool.coverage.report]

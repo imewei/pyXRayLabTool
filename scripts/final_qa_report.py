@@ -6,9 +6,9 @@ This script generates a comprehensive final report of all documentation
 quality assurance tests and validation results.
 """
 
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 
 def run_test_script(script_path: str, description: str):

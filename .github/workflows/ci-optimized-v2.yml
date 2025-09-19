@@ -1,0 +1,423 @@
+name: Optimized CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+  pull_request:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: 1
+  PYTHONDONTWRITEBYTECODE: 1
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  PIP_NO_PYTHON_VERSION_WARNING: 1
+  PIP_ROOT_USER_ACTION: ignore
+
+  # Latest tool versions for 2025
+  RUFF_VERSION: "0.13.1"
+  BLACK_VERSION: "25.1.0"
+  ISORT_VERSION: "6.0.1"
+  MYPY_VERSION: "1.18.1"
+  PYTEST_VERSION: "8.3.4"
+
+jobs:
+  # Fast feedback job - runs first for immediate developer feedback
+  quick-check:
+    name: Quick Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      should-run-full: ${{ steps.changes.outputs.should-run-full }}
+      python-files-changed: ${{ steps.changes.outputs.python-files }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0  # Need full history for proper change detection
+
+    - name: Detect changes
+      id: changes
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+        else
+          BASE_SHA="${{ github.event.before }}"
+        fi
+
+        echo "Base SHA: $BASE_SHA"
+        echo "Current SHA: ${{ github.sha }}"
+
+        # Check if this is an initial commit or if base SHA is available
+        if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]] || ! git cat-file -e "$BASE_SHA" 2>/dev/null; then
+          echo "Initial commit or base SHA not available, running full checks"
+          echo "should-run-full=true" >> $GITHUB_OUTPUT
+          echo "python-files=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Get changed files
+        CHANGED_FILES=$(git diff --name-only "$BASE_SHA"..."${{ github.sha }}")
+        echo "Changed files:"
+        echo "$CHANGED_FILES"
+
+        # Check for Python files
+        PYTHON_CHANGED=$(echo "$CHANGED_FILES" | grep -E '\.(py|pyi)$' || true)
+
+        # Check for critical files that require full test suite
+        CRITICAL_CHANGED=$(echo "$CHANGED_FILES" | grep -E '(pyproject\.toml|setup\.|requirements.*\.txt|\.github/workflows/|conftest\.py)' || true)
+
+        if [[ -n "$PYTHON_CHANGED" ]] || [[ -n "$CRITICAL_CHANGED" ]]; then
+          echo "should-run-full=true" >> $GITHUB_OUTPUT
+          echo "python-files=true" >> $GITHUB_OUTPUT
+        else
+          echo "should-run-full=false" >> $GITHUB_OUTPUT
+          echo "python-files=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Set up Python 3.12
+      if: steps.changes.outputs.python-files == 'true'
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Install minimal dependencies
+      if: steps.changes.outputs.python-files == 'true'
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff==${{ env.RUFF_VERSION }}
+
+    - name: Quick syntax check
+      if: steps.changes.outputs.python-files == 'true'
+      run: |
+        # Fast syntax check only
+        ruff check --select E9,F63,F7,F82 xraylabtool/ tests/ --output-format=github
+
+  # Optimized linting with latest tools
+  lint:
+    name: Code Quality
+    needs: quick-check
+    if: needs.quick-check.outputs.should-run-full == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          .pre-commit-config.yaml
+
+    - name: Cache pre-commit hooks
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit-v4-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+        restore-keys: |
+          pre-commit-v4-${{ runner.os }}-
+
+    - name: Cache tool dependencies
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/pip
+        key: tools-v4-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}-${{ env.RUFF_VERSION }}-${{ env.BLACK_VERSION }}
+        restore-keys: |
+          tools-v4-${{ runner.os }}-
+
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install \
+          ruff==${{ env.RUFF_VERSION }} \
+          black==${{ env.BLACK_VERSION }} \
+          isort==${{ env.ISORT_VERSION }} \
+          mypy==${{ env.MYPY_VERSION }} \
+          bandit[toml]==1.8.6 \
+          pre-commit==4.3.0
+
+    - name: Run ruff (fast linting and formatting)
+      run: |
+        echo "::group::Ruff Format Check"
+        ruff format --check --diff xraylabtool/ tests/
+        echo "::endgroup::"
+
+        echo "::group::Ruff Lint"
+        ruff check xraylabtool/ tests/ --output-format=github
+        echo "::endgroup::"
+
+    - name: Run black (backup formatting check)
+      run: |
+        black --check --diff xraylabtool/ tests/
+
+    - name: Run isort
+      run: |
+        isort --check-only --diff xraylabtool/ tests/
+
+    - name: Run mypy
+      run: |
+        mypy xraylabtool/ --show-error-codes --pretty
+
+    - name: Run bandit security check
+      run: |
+        bandit -r xraylabtool/ -f json -o bandit-report.json --quiet || true
+        bandit -r xraylabtool/ --skip B101,B603,B110,B324 --quiet
+
+    - name: Upload security report
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: security-report
+        path: bandit-report.json
+        retention-days: 7
+
+  # Fast test execution with smart parallelization
+  test:
+    name: Tests
+    needs: [quick-check, lint]
+    if: always() && needs.quick-check.outputs.should-run-full == 'true' && (needs.lint.result == 'success' || needs.lint.result == 'skipped')
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.11', '3.12', '3.13']
+        # Reduce matrix for non-critical changes
+        exclude:
+          - os: macos-latest
+            python-version: '3.11'
+          - os: windows-latest
+            python-version: '3.11'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+
+    - name: Cache test dependencies
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/pip
+        key: test-deps-v4-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          test-deps-v4-${{ runner.os }}-py${{ matrix.python-version }}-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev] pytest==${{ env.PYTEST_VERSION }}
+
+    - name: Run tests with smart parallelization
+      shell: bash
+      run: |
+        # Use all available cores but cap at 4 for stability
+        WORKERS=$(python -c "import os; print(min(4, os.cpu_count() or 1))")
+        echo "Running tests with $WORKERS workers"
+
+        # Fast test execution with coverage only on ubuntu-latest Python 3.12
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.python-version }}" == "3.12" ]]; then
+          pytest \
+            tests/ \
+            -v \
+            --cov=xraylabtool \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=40 \
+            --junit-xml=pytest-results.xml \
+            -n $WORKERS \
+            --maxfail=5 \
+            --tb=short
+        else
+          pytest \
+            tests/ \
+            -v \
+            --junit-xml=pytest-results.xml \
+            -n $WORKERS \
+            --maxfail=3 \
+            --tb=line
+        fi
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
+        path: |
+          pytest-results.xml
+          .coverage
+          coverage.xml
+        retention-days: 7
+
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      uses: codecov/codecov-action@v5
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  # Optimized build process
+  build:
+    name: Build & Package
+    needs: [lint, test]
+    if: always() && (needs.lint.result == 'success' || needs.lint.result == 'skipped') && needs.test.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Cache build tools
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/pip
+        key: build-tools-v4-${{ runner.os }}
+        restore-keys: |
+          build-tools-v4-${{ runner.os }}-
+
+    - name: Install build tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install build==1.2.2 twine==6.0.1
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Check package integrity
+      run: |
+        python -m twine check dist/*
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v5
+      with:
+        name: dist
+        path: dist/
+        retention-days: 30
+
+  # Fast integration tests
+  integration:
+    name: Integration Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v5
+      with:
+        name: dist
+        path: dist/
+
+    - name: Install from wheel
+      run: |
+        python -m pip install --upgrade pip
+        pip install dist/*.whl
+
+    - name: Test CLI functionality
+      run: |
+        xraylabtool --version
+        xraylabtool calc Si -e 10.0 -d 2.33 --fields energy_kev,wavelength_angstrom
+
+    - name: Test package import
+      run: |
+        python -c "
+        import xraylabtool
+        from xraylabtool import calculate_xray_properties
+        print('✅ Package import successful')
+        print(f'Version: {xraylabtool.__version__}')
+        "
+
+  # Status check with improved reporting
+  status-check:
+    name: Status Check
+    if: always()
+    needs: [quick-check, lint, test, build, integration]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check job statuses
+      run: |
+        echo "📊 CI/CD Pipeline Status Report"
+        echo "================================"
+        echo "Quick Check: ${{ needs.quick-check.result }}"
+        echo "Lint: ${{ needs.lint.result }}"
+        echo "Test: ${{ needs.test.result }}"
+        echo "Build: ${{ needs.build.result }}"
+        echo "Integration: ${{ needs.integration.result }}"
+        echo ""
+
+        # Determine overall status
+        if [[ "${{ needs.quick-check.result }}" == "failure" ]]; then
+          echo "❌ Quick check failed - critical syntax errors detected"
+          exit 1
+        elif [[ "${{ needs.lint.result }}" == "failure" ]]; then
+          echo "❌ Code quality checks failed"
+          exit 1
+        elif [[ "${{ needs.test.result }}" == "failure" ]]; then
+          echo "❌ Tests failed"
+          exit 1
+        elif [[ "${{ needs.build.result }}" == "failure" ]]; then
+          echo "❌ Build failed"
+          exit 1
+        elif [[ "${{ needs.integration.result }}" == "failure" ]]; then
+          echo "❌ Integration tests failed"
+          exit 1
+        else
+          echo "✅ All checks passed successfully!"
+          echo ""
+          echo "🚀 Ready for deployment!"
+        fi

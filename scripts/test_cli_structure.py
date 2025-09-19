@@ -7,8 +7,8 @@ and help text without running the actual calculations.
 """
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Add project root to path to import CLI module
 project_root = Path(__file__).parent.parent

@@ -6,17 +6,16 @@ parallel execution, and progress tracking for large-scale X-ray property calcula
 
 """
 
-from collections.abc import Iterator
 import concurrent.futures
-from dataclasses import dataclass
 import gc
 import os
+import warnings
+from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-import warnings
 
 import numpy as np
-import pandas as pd
 import psutil
 
 from xraylabtool.calculators.core import (
@@ -374,9 +373,7 @@ def _get_energy_point_data(result: XRayResult, index: int) -> dict[str, Any]:
     }
 
 
-def _filter_dataframe_fields(
-    df: pd.DataFrame, fields: list[str] | None
-) -> pd.DataFrame:
+def _filter_dataframe_fields(df, fields: list[str] | None):
     """Filter DataFrame columns based on requested fields."""
     if fields is None:
         return df
@@ -392,7 +389,7 @@ def _filter_dataframe_fields(
     return df[valid_fields] if valid_fields else df
 
 
-def _save_dataframe(df: pd.DataFrame, output_path: Path, format: str) -> None:
+def _save_dataframe(df, output_path: Path, format: str) -> None:
     """Save DataFrame to file in specified format."""
     format_lower = format.lower()
 
@@ -438,6 +435,10 @@ def save_batch_results(
         raise ValueError("No valid results to save")
 
     data_rows = _prepare_result_data(valid_results)
+
+    # Lazy import pandas only when needed
+    import pandas as pd
+
     df = pd.DataFrame(data_rows)
     df = _filter_dataframe_fields(df, fields)
     _save_dataframe(df, output_path, format)
@@ -470,6 +471,9 @@ def load_batch_input(
 
     if not input_path.exists():
         raise FileNotFoundError(f"Input file not found: {input_file}")
+
+    # Lazy import pandas only when needed
+    import pandas as pd
 
     # Load data based on file extension
     if input_path.suffix.lower() == ".csv":

@@ -89,27 +89,27 @@ Quick Reference
 Exception Hierarchy
 -------------------
 
-.. autoclass:: xraylabtool.validation.exceptions.XRayLabToolError
+.. autoclass:: xraylabtool.exceptions.XRayLabToolError
    :members:
    :show-inheritance:
    :no-index:
 
-.. autoclass:: xraylabtool.validation.exceptions.ValidationError
+.. autoclass:: xraylabtool.exceptions.ValidationError
    :members:
    :show-inheritance:
    :no-index:
 
-.. autoclass:: xraylabtool.validation.exceptions.FormulaError
+.. autoclass:: xraylabtool.exceptions.FormulaError
    :members:
    :show-inheritance:
    :no-index:
 
-.. autoclass:: xraylabtool.validation.exceptions.EnergyError
+.. autoclass:: xraylabtool.exceptions.EnergyError
    :members:
    :show-inheritance:
    :no-index:
 
-.. autoclass:: xraylabtool.validation.exceptions.CalculationError
+.. autoclass:: xraylabtool.exceptions.CalculationError
    :members:
    :show-inheritance:
    :no-index:

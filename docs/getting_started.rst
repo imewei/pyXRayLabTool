@@ -23,7 +23,7 @@ Install XRayLabTool using pip:
 
 .. code-block:: bash
 
-   pip install xraylabtool
+   pip install xraylabtool[all]
 
 This installs the package with required dependencies.
 
@@ -52,14 +52,34 @@ Verify installation:
    # Test Python API
    python -c "import xraylabtool; print('Installation successful!')"
 
-Shell Completion (Optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Shell Completion (Virtual Environment-Centric)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Install Bash completion:
+Install completion in your current virtual environment:
 
 .. code-block:: bash
 
-   xraylabtool install-completion
+   # Install completion in current environment
+   xraylabtool completion install
+
+   # Verify installation
+   xraylabtool completion status
+
+   # List all environments with completion status
+   xraylabtool completion list
+
+The new completion system provides:
+
+- **Environment Isolation**: Completion only available when environment is active
+- **Multi-Shell Support**: Native completion for bash, zsh, fish, PowerShell
+- **No System Changes**: No sudo required, installs per environment
+- **Auto-Activation**: Completion activates/deactivates with environment
+
+For legacy compatibility, the old commands still work:
+
+.. code-block:: bash
+
+   xraylabtool install-completion    # Uses new system backend
 
 First Steps
 -----------

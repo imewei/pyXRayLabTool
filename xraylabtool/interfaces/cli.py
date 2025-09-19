@@ -26,8 +26,8 @@ precision control, and comprehensive shell completion for enhanced usability.
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
@@ -135,8 +135,10 @@ def create_parser() -> argparse.ArgumentParser:
         const="auto",
         choices=["auto", "bash", "zsh", "fish", "powershell"],
         metavar="SHELL",
-        help="Install shell completion for specified shell "
-        "(auto-detects if not specified)",
+        help=(
+            "Install shell completion for specified shell "
+            "(auto-detects if not specified)"
+        ),
     )
     completion_group.add_argument(
         "--test",
@@ -170,6 +172,7 @@ def create_parser() -> argparse.ArgumentParser:
     add_atomic_command(subparsers)
     add_bragg_command(subparsers)
     add_list_command(subparsers)
+    add_completion_command(subparsers)
     add_install_completion_command(subparsers)
     add_uninstall_completion_command(subparsers)
 
@@ -565,6 +568,53 @@ def add_install_completion_command(subparsers: Any) -> None:
     )
 
 
+def add_completion_command(subparsers: Any) -> None:
+    """Add the 'completion' subcommand for the new completion system."""
+    parser = subparsers.add_parser(
+        "completion",
+        help="Manage virtual environment-centric shell completion",
+        description=(
+            "Manage shell completion that activates/deactivates with virtual"
+            " environments"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=dedent(
+            """
+        Examples:
+          # Install completion in current virtual environment
+          xraylabtool completion install
+
+          # Install for specific shell
+          xraylabtool completion install --shell zsh
+
+          # List all environments with completion status
+          xraylabtool completion list
+
+          # Show completion status for current environment
+          xraylabtool completion status
+
+          # Uninstall from current environment
+          xraylabtool completion uninstall
+
+          # Uninstall from all environments
+          xraylabtool completion uninstall --all
+
+          # Show system information
+          xraylabtool completion info
+
+        The new completion system:
+          • Installs per virtual environment (no system-wide changes)
+          • Automatically activates/deactivates with environment
+          • Supports venv, conda, Poetry, Pipenv environments
+          • Provides native completion for multiple shells
+        """
+        ),
+    )
+
+    # Forward all arguments to the completion subcommand handler
+    parser.set_defaults(completion_subcommand=True)
+
+
 def add_uninstall_completion_command(subparsers: Any) -> None:
     """Add the 'uninstall-completion' subcommand for shell completion removal."""
     parser = subparsers.add_parser(
@@ -624,7 +674,10 @@ def add_compare_command(subparsers: Any) -> None:
     parser = subparsers.add_parser(
         "compare",
         help="Compare X-ray properties between multiple materials",
-        description="Compare X-ray optical properties across multiple materials with side-by-side analysis",
+        description=(
+            "Compare X-ray optical properties across multiple materials with"
+            " side-by-side analysis"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=dedent(
             """
@@ -662,7 +715,10 @@ def add_compare_command(subparsers: Any) -> None:
 
     parser.add_argument(
         "--properties",
-        help="Comma-separated list of properties to compare (default: all standard properties)",
+        help=(
+            "Comma-separated list of properties to compare (default: all standard"
+            " properties)"
+        ),
     )
 
     parser.add_argument("-o", "--output", help="Output filename for comparison results")
@@ -691,7 +747,10 @@ def add_analyze_command(subparsers: Any) -> None:
     parser = subparsers.add_parser(
         "analyze",
         help="Advanced analysis of single material properties",
-        description="Perform advanced analysis including edge detection, energy optimization, and property analysis",
+        description=(
+            "Perform advanced analysis including edge detection, energy optimization,"
+            " and property analysis"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=dedent(
             """
@@ -735,7 +794,10 @@ def add_analyze_command(subparsers: Any) -> None:
 
     parser.add_argument(
         "--optimize",
-        help="Optimize energy for specific property (e.g., critical_angle_degrees, dispersion_delta)",
+        help=(
+            "Optimize energy for specific property (e.g., critical_angle_degrees,"
+            " dispersion_delta)"
+        ),
     )
 
     parser.add_argument(
@@ -778,7 +840,10 @@ def add_export_command(subparsers: Any) -> None:
     parser = subparsers.add_parser(
         "export",
         help="Export data with advanced formatting and visualization",
-        description="Export X-ray calculation results with professional formatting, plots, and reports",
+        description=(
+            "Export X-ray calculation results with professional formatting, plots, and"
+            " reports"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=dedent(
             """
@@ -845,7 +910,10 @@ def add_export_command(subparsers: Any) -> None:
 
     parser.add_argument(
         "--plot-types",
-        help="Comma-separated list of plot types (line, scatter, comparison, energy_scan, etc.)",
+        help=(
+            "Comma-separated list of plot types (line, scatter, comparison,"
+            " energy_scan, etc.)"
+        ),
     )
 
     parser.add_argument(
@@ -1077,8 +1145,8 @@ def _format_scalar_field(field: str, value: Any, precision: int) -> str:
         "molecular_weight_g_mol": lambda v, p: f"  Molecular Weight: {v: .{p}f} g/mol",
         "total_electrons": lambda v, p: f"  Total Electrons: {v: .{p}f}",
         "density_g_cm3": lambda v, p: f"  Density: {v: .{p}f} g/cm³",
-        "electron_density_per_ang3": (
-            lambda v, p: f"  Electron Density: {v: .{p}e} electrons/Å³"
+        "electron_density_per_ang3": lambda v, p: (
+            f"  Electron Density: {v: .{p}e} electrons/Å³"
         ),
     }
     formatter = formatters.get(field, default_formatter)
@@ -1323,9 +1391,7 @@ def cmd_calc(args: Any) -> int:
     """Handle the 'calc' command."""
     try:
         # Lazy imports for this command
-        from xraylabtool.calculators.core import (
-            calculate_single_material_properties,
-        )
+        from xraylabtool.calculators.core import calculate_single_material_properties
         from xraylabtool.validation import validate_chemical_formula, validate_density
 
         # Basic validation
@@ -1543,7 +1609,8 @@ def _process_batch_materials(
         recommended_chunk = chunk_sizer.calculate_chunk_size(len(formulas))
         if len(formulas) > recommended_chunk:
             print(
-                f"💡 For optimal memory usage, consider processing in chunks of {recommended_chunk}"
+                "💡 For optimal memory usage, consider processing in chunks of"
+                f" {recommended_chunk}"
             )
 
     return results
@@ -1621,12 +1688,14 @@ def cmd_batch(args: Any) -> int:
                 df_input.loc[i, "formula"] = recovered_formula
                 if args.verbose:
                     print(
-                        f"✅ Auto-corrected formula {i + 1}: '{original_formula}' → '{recovered_formula}'"
+                        f"✅ Auto-corrected formula {i + 1}: '{original_formula}' →"
+                        f" '{recovered_formula}'"
                     )
             elif not recovered_formula:
                 if args.verbose:
                     print(
-                        f"⚠️  Could not process formula {i + 1}: '{original_formula}' - skipping"
+                        f"⚠️  Could not process formula {i + 1}: '{original_formula}' -"
+                        " skipping"
                     )
 
         # Generate batch improvement suggestions
@@ -1670,7 +1739,8 @@ def cmd_batch(args: Any) -> int:
                 print(f"   Total errors encountered: {recovery_stats['total_errors']}")
                 print(f"   Auto-recovery rate: {recovery_stats['auto_recovery_rate']}")
                 print(
-                    f"   Overall recovery rate: {recovery_stats['overall_recovery_rate']}"
+                    "   Overall recovery rate:"
+                    f" {recovery_stats['overall_recovery_rate']}"
                 )
 
         return 0
@@ -2033,16 +2103,28 @@ def cmd_list(args: Any) -> int:
 
 def cmd_install_completion(args: Any) -> int:
     """Handle the 'install-completion' command."""
-    from .completion import install_completion_main
+    from xraylabtool.interfaces.completion import install_completion_main
 
     return install_completion_main(args)
 
 
 def cmd_uninstall_completion(args: Any) -> int:
     """Handle the 'uninstall-completion' command."""
-    from ..completion_installer import uninstall_completion_main
+    from xraylabtool.interfaces.completion import uninstall_completion_main
 
     return uninstall_completion_main(args)
+
+
+def cmd_completion(args: Any) -> int:
+    """Handle the 'completion' command for the new completion system."""
+    # Extract the remaining arguments after 'completion'
+    import sys
+
+    from xraylabtool.interfaces.completion_v2.cli import completion_main
+
+    remaining_args = sys.argv[2:]  # Skip 'xraylabtool' and 'completion'
+
+    return completion_main(remaining_args)
 
 
 def cmd_compare(args: Any) -> int:
@@ -2061,7 +2143,8 @@ def cmd_compare(args: Any) -> int:
                 parts = material_str.split(",")
                 if len(parts) != 2:
                     raise ValueError(
-                        f"Invalid material format: {material_str}. Expected 'formula,density'"
+                        f"Invalid material format: {material_str}. Expected"
+                        " 'formula,density'"
                     )
 
                 formula = parts[0].strip()
@@ -2185,7 +2268,8 @@ def cmd_analyze(args: Any) -> int:
 
         if len(energies) < 10:
             print(
-                "Warning: Analysis works best with dense energy sampling (>=100 points)",
+                "Warning: Analysis works best with dense energy sampling (>=100"
+                " points)",
                 file=sys.stderr,
             )
 
@@ -2250,7 +2334,8 @@ def cmd_analyze(args: Any) -> int:
                     print(optimizer.generate_optimization_report(opt_result))
                 else:
                     print(
-                        f"Optimal energy for {args.optimize}: {opt_result.optimal_energy:.3f} keV"
+                        f"Optimal energy for {args.optimize}:"
+                        f" {opt_result.optimal_energy:.3f} keV"
                     )
                     print(f"Optimal value: {opt_result.optimal_value:.6g}")
 
@@ -2267,7 +2352,8 @@ def cmd_analyze(args: Any) -> int:
                 return 1
 
             print(
-                f"Finding energy for {args.transmission * 100}% transmission through {args.thickness} µm..."
+                f"Finding energy for {args.transmission * 100}% transmission through"
+                f" {args.thickness} µm..."
             )
             optimizer = EnergyOptimizer()
 
@@ -2333,7 +2419,8 @@ def cmd_analyze(args: Any) -> int:
                     print(analyzer.create_summary_report(stats_summary))
                 else:
                     print(
-                        f"Statistical analysis completed for {len(property_names)} properties"
+                        "Statistical analysis completed for"
+                        f" {len(property_names)} properties"
                     )
 
             except Exception as e:
@@ -2354,7 +2441,8 @@ def cmd_analyze(args: Any) -> int:
                     f.write(f"Material: {args.formula}\n")
                     f.write(f"Density: {args.density} g/cm³\n")
                     f.write(
-                        f"Energy Range: {energies.min():.1f} - {energies.max():.1f} keV\n\n"
+                        f"Energy Range: {energies.min():.1f} -"
+                        f" {energies.max():.1f} keV\n\n"
                     )
 
                     for analysis_type, data in results.items():
@@ -2591,7 +2679,8 @@ def cmd_export(args: Any) -> int:
                         print(f"Export completed: {result.output_path}")
                         if result.metadata:
                             print(
-                                f"Records exported: {result.metadata.get('record_count', 'N/A')}"
+                                "Records exported:"
+                                f" {result.metadata.get('record_count', 'N/A')}"
                             )
                     else:
                         print(f"Export failed: {result.error_message}", file=sys.stderr)
@@ -2634,7 +2723,8 @@ def cmd_export(args: Any) -> int:
                             print(f"Exported {format_name}: {result.output_path}")
                         else:
                             print(
-                                f"Failed to export {format_name}: {result.error_message}",
+                                f"Failed to export {format_name}:"
+                                f" {result.error_message}",
                                 file=sys.stderr,
                             )
 
@@ -2726,7 +2816,7 @@ def main() -> int:
 
     # Handle --install-completion flag before checking for subcommands
     if hasattr(args, "install_completion") and args.install_completion is not None:
-        from .completion import install_completion_main
+        from xraylabtool.interfaces.completion import install_completion_main
 
         # Create a mock args object that matches the install-completion
         # subcommand format
@@ -2770,6 +2860,7 @@ def main() -> int:
         "atomic": cmd_atomic,
         "bragg": cmd_bragg,
         "list": cmd_list,
+        "completion": cmd_completion,
         "install-completion": cmd_install_completion,
         "uninstall-completion": cmd_uninstall_completion,
     }

@@ -13,12 +13,27 @@ in X-ray optical property computations.
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING, Final
-
-import numpy as np
 
 if TYPE_CHECKING:
     from xraylabtool.typing_extensions import FloatLike
+
+
+def _isclose(a: float, b: float, rtol: float = 1e-05, atol: float = 1e-08) -> bool:
+    """
+    Pure Python implementation of numpy.isclose for constants validation.
+
+    Args:
+        a, b: Values to compare
+        rtol: Relative tolerance
+        atol: Absolute tolerance
+
+    Returns:
+        True if values are close within tolerance
+    """
+    return abs(a - b) <= (atol + rtol * abs(b))
+
 
 # =====================================================================================
 # FUNDAMENTAL PHYSICAL CONSTANTS
@@ -118,7 +133,7 @@ Units: meter-keV (m⋅keV)
 Usage: wavelength_m = ENERGY_TO_WAVELENGTH_FACTOR / energy_keV
 """
 
-SCATTERING_FACTOR: Final[float] = THOMPSON * AVOGADRO * 1e6 / (2 * np.pi)
+SCATTERING_FACTOR: Final[float] = THOMPSON * AVOGADRO * 1e6 / (2 * math.pi)
 """
 Pre-computed factor for X-ray scattering calculations.
 
@@ -146,7 +161,7 @@ Usage: Used in calculating δ = (λ²/2π) × rₑ × ρ × Nₐ × (Σf₁) / M
 # MATHEMATICAL CONSTANTS
 # =====================================================================================
 
-PI: Final[float] = np.pi
+PI: Final[float] = math.pi
 """
 The mathematical constant π.
 
@@ -157,7 +172,7 @@ Value: 3.141592653589793...
 Units: dimensionless
 """
 
-TWO_PI: Final[float] = 2.0 * np.pi
+TWO_PI: Final[float] = 2.0 * math.pi
 """
 Mathematical constant 2π.
 
@@ -168,7 +183,7 @@ Value: 6.283185307179586...
 Units: dimensionless
 """
 
-SQRT_2: Final[float] = np.sqrt(2.0)
+SQRT_2: Final[float] = math.sqrt(2.0)
 """
 Square root of 2.
 
@@ -241,7 +256,7 @@ Usage: length_cm = length_m * METER_TO_CM
 # X-RAY SPECIFIC CONSTANTS
 # =====================================================================================
 
-DEGREES_TO_RADIANS: Final[float] = np.pi / 180.0
+DEGREES_TO_RADIANS: Final[float] = math.pi / 180.0
 """
 Conversion factor from degrees to radians.
 
@@ -250,7 +265,7 @@ Units: rad/°
 Usage: angle_rad = angle_deg * DEGREES_TO_RADIANS
 """
 
-RADIANS_TO_DEGREES: Final[float] = 180.0 / np.pi
+RADIANS_TO_DEGREES: Final[float] = 180.0 / math.pi
 """
 Conversion factor from radians to degrees.
 
@@ -329,7 +344,7 @@ def critical_angle_degrees(dispersion: FloatLike) -> float:
     if dispersion <= 0:
         raise ValueError("Dispersion coefficient must be positive")
 
-    theta_c_rad = np.sqrt(2.0 * dispersion)
+    theta_c_rad = math.sqrt(2.0 * dispersion)
     return float(theta_c_rad * RADIANS_TO_DEGREES)
 
 
@@ -394,31 +409,31 @@ def validate_constants() -> bool:
 
     # Check derived constants
     expected_energy_factor = (SPEED_OF_LIGHT * PLANCK / ELEMENT_CHARGE) / 1000.0
-    if not np.isclose(ENERGY_TO_WAVELENGTH_FACTOR, expected_energy_factor, rtol=1e-10):
+    if not _isclose(ENERGY_TO_WAVELENGTH_FACTOR, expected_energy_factor, rtol=1e-10):
         raise ValueError("ENERGY_TO_WAVELENGTH_FACTOR calculation error")
 
-    expected_scattering_factor = THOMPSON * AVOGADRO * 1e6 / (2 * np.pi)
-    if not np.isclose(SCATTERING_FACTOR, expected_scattering_factor, rtol=1e-10):
+    expected_scattering_factor = THOMPSON * AVOGADRO * 1e6 / (2 * math.pi)
+    if not _isclose(SCATTERING_FACTOR, expected_scattering_factor, rtol=1e-10):
         raise ValueError("SCATTERING_FACTOR calculation error")
 
     # Validate conversion factors
-    if not np.isclose(KEV_TO_EV * EV_TO_KEV, 1.0):
+    if not _isclose(KEV_TO_EV * EV_TO_KEV, 1.0):
         raise ValueError("keV/eV conversion factors are inconsistent")
 
-    if not np.isclose(ANGSTROM_TO_METER * METER_TO_ANGSTROM, 1.0):
+    if not _isclose(ANGSTROM_TO_METER * METER_TO_ANGSTROM, 1.0):
         raise ValueError("Angstrom/meter conversion factors are inconsistent")
 
     return True
 
 
-# Run validation when module is imported
-if __name__ != "__main__":
-    try:
-        validate_constants()
-    except ValueError as e:
-        import warnings
-
-        warnings.warn(f"Constants validation failed: {e}", UserWarning, stacklevel=2)
+# Run validation when module is imported (disabled for faster startup)
+# Validation can be run explicitly by calling validate_constants() if needed
+# if __name__ != "__main__":
+#     try:
+#         validate_constants()
+#     except ValueError as e:
+#         import warnings
+#         warnings.warn(f"Constants validation failed: {e}", UserWarning, stacklevel=2)
 
 
 # =====================================================================================

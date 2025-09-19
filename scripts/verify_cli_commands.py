@@ -6,9 +6,9 @@ This script analyzes the CLI source code to verify the actual number
 and structure of commands without importing the module.
 """
 
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 
 def extract_cli_commands(cli_file_path: Path) -> list[dict]:

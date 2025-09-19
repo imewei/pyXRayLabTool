@@ -86,14 +86,14 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         for key, data in benchmark_results.items():
             if data["energy_points"] == 1:
                 # Single energy calculations should be reasonably fast
-                assert data["calculations_per_second"] > 5000, (
-                    f"Single energy calc too slow: {data['calculations_per_second']}"
-                )
+                assert (
+                    data["calculations_per_second"] > 5000
+                ), f"Single energy calc too slow: {data['calculations_per_second']}"
             elif data["energy_points"] <= 100:
                 # Small arrays should still be reasonably fast
-                assert data["calculations_per_second"] > 500, (
-                    f"Small array calc too slow: {data['calculations_per_second']}"
-                )
+                assert (
+                    data["calculations_per_second"] > 500
+                ), f"Small array calc too slow: {data['calculations_per_second']}"
 
         return benchmark_results
 
@@ -164,9 +164,9 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
 
         # Batch processing should be more efficient than individual calculations
         # Expect at least 1.3x improvement for batch size 10 vs 1 (conservative)
-        assert batch_10_rate > batch_1_rate * 1.3, (
-            f"Batch processing not scaling well: {batch_10_rate} vs {batch_1_rate}"
-        )
+        assert (
+            batch_10_rate > batch_1_rate * 1.3
+        ), f"Batch processing not scaling well: {batch_10_rate} vs {batch_1_rate}"
 
         return benchmark_results
 
@@ -252,16 +252,16 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         # Assert reasonable memory behavior
         for scenario, data in memory_results.items():
             # Memory growth should be reasonable
-            assert data["memory_growth_mb"] < 500, (
-                f"Excessive memory growth in {scenario}: {data['memory_growth_mb']}MB"
-            )
+            assert (
+                data["memory_growth_mb"] < 500
+            ), f"Excessive memory growth in {scenario}: {data['memory_growth_mb']}MB"
 
             # Garbage collection should recover most temporary memory
             if data["memory_growth_mb"] > 10:  # Only check if significant growth
                 gc_efficiency = data["gc_recovered_mb"] / data["memory_growth_mb"]
-                assert gc_efficiency > 0.5, (
-                    f"Poor GC efficiency in {scenario}: {gc_efficiency:.2f}"
-                )
+                assert (
+                    gc_efficiency > 0.5
+                ), f"Poor GC efficiency in {scenario}: {gc_efficiency:.2f}"
 
         return memory_results
 
@@ -304,9 +304,10 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
             # Benchmark cached access
             start_time = time.perf_counter()
             for _ in range(100):
-                _f1_interp_cached, _f2_interp_cached = (
-                    create_scattering_factor_interpolators(element)
-                )
+                (
+                    _f1_interp_cached,
+                    _f2_interp_cached,
+                ) = create_scattering_factor_interpolators(element)
             cached_time = (time.perf_counter() - start_time) / 100
 
             # Test interpolation speed
@@ -342,18 +343,19 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         for element, data in interpolator_results.items():
             # First creation should complete reasonably quickly
             assert data["first_creation_time"] < 0.1, (
-                f"Slow interpolator creation for {element}: {data['first_creation_time']}s"
+                f"Slow interpolator creation for {element}:"
+                f" {data['first_creation_time']}s"
             )
 
             # Cached access should be very fast
-            assert data["cached_access_time"] < 0.001, (
-                f"Slow cached access for {element}: {data['cached_access_time']}s"
-            )
+            assert (
+                data["cached_access_time"] < 0.001
+            ), f"Slow cached access for {element}: {data['cached_access_time']}s"
 
             # Cache should provide significant speedup
-            assert data["cache_speedup"] > 10, (
-                f"Poor cache speedup for {element}: {data['cache_speedup']}x"
-            )
+            assert (
+                data["cache_speedup"] > 10
+            ), f"Poor cache speedup for {element}: {data['cache_speedup']}x"
 
         return interpolator_results
 
@@ -432,7 +434,9 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         # We mainly want to verify no severe degradation
         min_expected_rate = single_thread_rate * 0.8  # Allow up to 20% degradation
         assert concurrency_results[4]["calculations_per_second"] > min_expected_rate, (
-            f"Severe performance degradation with 4 threads: expected > {min_expected_rate:.0f}, got {concurrency_results[4]['calculations_per_second']:.0f}"
+            "Severe performance degradation with 4 threads: expected >"
+            f" {min_expected_rate:.0f}, got"
+            f" {concurrency_results[4]['calculations_per_second']:.0f}"
         )
 
         return concurrency_results
@@ -488,33 +492,41 @@ class TestPerformanceRegressionDetection(BasePerformanceTest):
 
         # Assert thresholds
         assert single_energy_rate >= THRESHOLDS["single_energy_calc_per_sec"], (
-            f"Single energy performance regression: {single_energy_rate:.0f} < {THRESHOLDS['single_energy_calc_per_sec']}"
+            f"Single energy performance regression: {single_energy_rate:.0f} <"
+            f" {THRESHOLDS['single_energy_calc_per_sec']}"
         )
 
         assert array_100_rate >= THRESHOLDS["array_100_calc_per_sec"], (
-            f"Array 100 performance regression: {array_100_rate:.0f} < {THRESHOLDS['array_100_calc_per_sec']}"
+            f"Array 100 performance regression: {array_100_rate:.0f} <"
+            f" {THRESHOLDS['array_100_calc_per_sec']}"
         )
 
         assert array_1000_rate >= THRESHOLDS["array_1000_calc_per_sec"], (
-            f"Array 1000 performance regression: {array_1000_rate:.0f} < {THRESHOLDS['array_1000_calc_per_sec']}"
+            f"Array 1000 performance regression: {array_1000_rate:.0f} <"
+            f" {THRESHOLDS['array_1000_calc_per_sec']}"
         )
 
         assert memory_growth <= THRESHOLDS["memory_growth_per_1000_calc_mb"], (
-            f"Memory growth regression: {memory_growth:.1f}MB > {THRESHOLDS['memory_growth_per_1000_calc_mb']}MB"
+            f"Memory growth regression: {memory_growth:.1f}MB >"
+            f" {THRESHOLDS['memory_growth_per_1000_calc_mb']}MB"
         )
 
         print("\n=== PERFORMANCE THRESHOLD VALIDATION ===")
         print(
-            f"Single energy: {single_energy_rate:.0f} calc/sec (threshold: {THRESHOLDS['single_energy_calc_per_sec']})"
+            f"Single energy: {single_energy_rate:.0f} calc/sec (threshold:"
+            f" {THRESHOLDS['single_energy_calc_per_sec']})"
         )
         print(
-            f"Array 100: {array_100_rate:.0f} calc/sec (threshold: {THRESHOLDS['array_100_calc_per_sec']})"
+            f"Array 100: {array_100_rate:.0f} calc/sec (threshold:"
+            f" {THRESHOLDS['array_100_calc_per_sec']})"
         )
         print(
-            f"Array 1000: {array_1000_rate:.0f} calc/sec (threshold: {THRESHOLDS['array_1000_calc_per_sec']})"
+            f"Array 1000: {array_1000_rate:.0f} calc/sec (threshold:"
+            f" {THRESHOLDS['array_1000_calc_per_sec']})"
         )
         print(
-            f"Memory growth: {memory_growth:.1f}MB (threshold: {THRESHOLDS['memory_growth_per_1000_calc_mb']}MB)"
+            f"Memory growth: {memory_growth:.1f}MB (threshold:"
+            f" {THRESHOLDS['memory_growth_per_1000_calc_mb']}MB)"
         )
 
         return {

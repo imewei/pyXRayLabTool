@@ -7,13 +7,13 @@ trend tracking, and reporting for continuous quality improvement.
 """
 
 import argparse
-from dataclasses import asdict, dataclass
 import json
 import logging
-from pathlib import Path
 import subprocess
 import sys
 import time
+from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
 # Setup logging

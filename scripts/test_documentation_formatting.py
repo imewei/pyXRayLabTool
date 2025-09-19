@@ -6,9 +6,9 @@ This script validates documentation formatting, structure, and consistency
 across all documentation files.
 """
 
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 
 def check_rst_formatting(file_path: Path) -> list[str]:

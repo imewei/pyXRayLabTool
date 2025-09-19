@@ -8,13 +8,13 @@ memory leaks in scientific computing workloads.
 
 from __future__ import annotations
 
-from collections import defaultdict, deque
-from contextlib import contextmanager
-from dataclasses import dataclass, field
 import gc
 import threading
 import time
 import tracemalloc
+from collections import defaultdict, deque
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -421,8 +421,9 @@ class MemoryProfiler:
 
         if high_allocation_ops:
             recommendations.append(
-                f"High memory allocation rate detected in {len(high_allocation_ops)} operations. "
-                "Consider object pooling or pre-allocation strategies."
+                "High memory allocation rate detected in"
+                f" {len(high_allocation_ops)} operations. Consider object pooling or"
+                " pre-allocation strategies."
             )
 
         # Analyze peak memory usage
@@ -432,8 +433,8 @@ class MemoryProfiler:
 
         if high_peak_ops:
             recommendations.append(
-                f"High peak memory usage in {len(high_peak_ops)} operations. "
-                "Consider streaming processing or memory-mapped arrays for large datasets."
+                f"High peak memory usage in {len(high_peak_ops)} operations. Consider"
+                " streaming processing or memory-mapped arrays for large datasets."
             )
 
         # Analyze NumPy array creation
@@ -454,8 +455,9 @@ class MemoryProfiler:
 
         if low_gc_ops:
             recommendations.append(
-                f"Low garbage collection activity in {len(low_gc_ops)} memory-intensive operations. "
-                "Consider explicit gc.collect() calls or object lifecycle management."
+                f"Low garbage collection activity in {len(low_gc_ops)} memory-intensive"
+                " operations. Consider explicit gc.collect() calls or object lifecycle"
+                " management."
             )
 
         if not recommendations:

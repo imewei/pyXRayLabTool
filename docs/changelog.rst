@@ -234,10 +234,8 @@ Development History
 XRayLabTool was developed to provide accurate X-ray optical property calculations for synchrotron science and materials research.
 
 **Key Milestones:**
-- **2024-Q1**: Initial development and core algorithms
-- **2024-Q2**: Performance optimization and testing framework
-- **2024-Q3**: CLI development and documentation
-- **2024-Q4**: Community release and feedback integration
+- **2024**: Core development, performance optimization, CLI, and community release
+- **2025**: Continued development and community feedback integration
 
 **Contributors:**
 - Core development team

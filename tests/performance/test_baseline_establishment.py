@@ -5,10 +5,10 @@ This module establishes comprehensive performance baselines across different
 material types, complexities, and energy ranges to support optimization efforts.
 """
 
-from datetime import datetime
 import json
-from pathlib import Path
 import time
+from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -104,7 +104,8 @@ class TestPerformanceBaselines(BasePerformanceTest):
 
                 # Verify reasonable performance
                 assert calc_per_second > 1000, (
-                    f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
+                    f"Performance too low for {test_name}:"
+                    f" {calc_per_second:.1f} calc/sec"
                 )
                 assert result is not None, f"Calculation failed for {test_name}"
 
@@ -168,7 +169,8 @@ class TestPerformanceBaselines(BasePerformanceTest):
 
                 # Compounds should be slower than elements but still performant
                 assert calc_per_second > 500, (
-                    f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
+                    f"Performance too low for {test_name}:"
+                    f" {calc_per_second:.1f} calc/sec"
                 )
                 assert result is not None, f"Calculation failed for {test_name}"
 
@@ -232,7 +234,8 @@ class TestPerformanceBaselines(BasePerformanceTest):
 
                 # Complex materials should still meet minimum performance
                 assert calc_per_second > 200, (
-                    f"Performance too low for {test_name}: {calc_per_second:.1f} calc/sec"
+                    f"Performance too low for {test_name}:"
+                    f" {calc_per_second:.1f} calc/sec"
                 )
                 assert result is not None, f"Calculation failed for {test_name}"
 
@@ -291,7 +294,8 @@ class TestPerformanceBaselines(BasePerformanceTest):
 
             # Ensure scaling efficiency
             assert calc_per_second > 100, (
-                f"Poor scaling performance for {size} points: {calc_per_second:.1f} calc/sec"
+                f"Poor scaling performance for {size} points:"
+                f" {calc_per_second:.1f} calc/sec"
             )
             assert result is not None, f"Calculation failed for {test_name}"
 

@@ -6,16 +6,16 @@ performance bottlenecks in calculation pipelines, memory allocation patterns,
 and vectorization opportunities.
 """
 
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager, suppress
 import cProfile
-from dataclasses import asdict, dataclass
-from functools import wraps
 import io
 import json
-from pathlib import Path
 import pstats
 import time
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager, suppress
+from dataclasses import asdict, dataclass
+from functools import wraps
+from pathlib import Path
 from typing import Any
 
 # Try to import line_profiler if available
@@ -702,8 +702,8 @@ class BottleneckAnalyzer:
             top_function = function_bottlenecks[0]
             if top_function.percentage_of_total > 30:
                 recommendations.append(
-                    f"Focus optimization on {top_function.function_name} - "
-                    f"consumes {top_function.percentage_of_total:.1f}% of total execution time"
+                    f"Focus optimization on {top_function.function_name} - consumes"
+                    f" {top_function.percentage_of_total:.1f}% of total execution time"
                 )
 
         # Memory recommendations
@@ -712,8 +712,9 @@ class BottleneckAnalyzer:
         ]
         if high_memory_bottlenecks:
             recommendations.append(
-                f"Address memory allocation in {high_memory_bottlenecks[0].location} - "
-                f"accounts for {high_memory_bottlenecks[0].percentage_of_total:.1f}% of allocations"
+                f"Address memory allocation in {high_memory_bottlenecks[0].location} -"
+                f" accounts for {high_memory_bottlenecks[0].percentage_of_total:.1f}%"
+                " of allocations"
             )
 
         # Vectorization recommendations
@@ -722,8 +723,9 @@ class BottleneckAnalyzer:
         ]
         if high_value_vectorization:
             recommendations.append(
-                f"High-impact vectorization opportunity in {high_value_vectorization[0].function_name} - "
-                f"{high_value_vectorization[0].suggested_optimization}"
+                "High-impact vectorization opportunity in"
+                f" {high_value_vectorization[0].function_name} -"
+                f" {high_value_vectorization[0].suggested_optimization}"
             )
 
         # Line-level recommendations
@@ -731,8 +733,9 @@ class BottleneckAnalyzer:
             top_line = line_bottlenecks[0]
             if top_line.percentage > 10:
                 recommendations.append(
-                    f"Optimize line {top_line.line_number}: {top_line.line_contents.strip()[:50]}... - "
-                    f"consumes {top_line.percentage:.1f}% of execution time"
+                    f"Optimize line {top_line.line_number}:"
+                    f" {top_line.line_contents.strip()[:50]}... - consumes"
+                    f" {top_line.percentage:.1f}% of execution time"
                 )
 
         if not recommendations:

@@ -7,11 +7,11 @@ to ensure they execute correctly with the current codebase.
 """
 
 import ast
-from pathlib import Path
 import re
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 
 def extract_python_code_examples(docs_dir: Path) -> list[dict[str, str]]:

@@ -120,7 +120,8 @@ class TestVectorizedCore(BasePerformanceTest):
                             rel_error = np.max(abs_diff)
 
                         assert rel_error < self.accuracy_tolerance, (
-                            f"Accuracy failure for {formula}, result {j}: relative error {rel_error:.2e} > {self.accuracy_tolerance:.2e}"
+                            f"Accuracy failure for {formula}, result {j}: relative"
+                            f" error {rel_error:.2e} > {self.accuracy_tolerance:.2e}"
                         )
 
                         print(f"{formula}[{i}][{j}]: max rel error = {rel_error:.2e}")
@@ -199,25 +200,29 @@ class TestVectorizedCore(BasePerformanceTest):
                 )
 
                 # Check accuracy is preserved
-                assert benchmark_result["accuracy_preserved"], (
-                    f"Accuracy not preserved for {test_key}"
-                )
+                assert benchmark_result[
+                    "accuracy_preserved"
+                ], f"Accuracy not preserved for {test_key}"
 
                 # Check for reasonable performance (vectorization may have overhead on small datasets)
                 # Focus on correctness rather than strict performance requirements since benefits vary by hardware
                 if benchmark_result["speedup"] < 0.2:
                     print(
-                        f"Warning: Significant performance regression for {test_key}: {benchmark_result['speedup']:.2f}x"
+                        f"Warning: Significant performance regression for {test_key}:"
+                        f" {benchmark_result['speedup']:.2f}x"
                     )
 
                 # Record but don't fail on performance - hardware and dataset size dependent
                 if benchmark_result["speedup"] >= 1.0:
                     print(
-                        f"✓ Performance improvement for {test_key}: {benchmark_result['speedup']:.2f}x"
+                        f"✓ Performance improvement for {test_key}:"
+                        f" {benchmark_result['speedup']:.2f}x"
                     )
                 else:
                     print(
-                        f"⚠ Vectorization overhead for {test_key}: {benchmark_result['speedup']:.2f}x (common for small datasets)"
+                        f"⚠ Vectorization overhead for {test_key}:"
+                        f" {benchmark_result['speedup']:.2f}x (common for small"
+                        " datasets)"
                     )
 
                 print(
@@ -238,7 +243,8 @@ class TestVectorizedCore(BasePerformanceTest):
         )
         if mean_speedup < min_acceptable_speedup:
             print(
-                f"Warning: Significant vectorization overhead detected: {mean_speedup:.2f}x"
+                "Warning: Significant vectorization overhead detected:"
+                f" {mean_speedup:.2f}x"
             )
         else:
             print(f"✓ Vectorization performance acceptable: {mean_speedup:.2f}x")
@@ -374,12 +380,13 @@ class TestVectorizedCore(BasePerformanceTest):
                 zip(individual_result, batch_result, strict=False)
             ):
                 rel_error = np.max(np.abs((individual - batch) / (individual + 1e-15)))
-                assert rel_error < 1e-12, (
-                    f"Material {i}, result {j}: relative error {rel_error:.2e}"
-                )
+                assert (
+                    rel_error < 1e-12
+                ), f"Material {i}, result {j}: relative error {rel_error:.2e}"
 
         print(
-            f"Multi-material batch processing validated for {len(test_materials)} materials"
+            "Multi-material batch processing validated for"
+            f" {len(test_materials)} materials"
         )
 
     def test_simd_optimized_functions(self):
@@ -521,7 +528,8 @@ class TestVectorizedCore(BasePerformanceTest):
             )
 
             print(
-                f"{case_name}: {calc_per_second:.0f} calc/sec ({n_elements} elements, {n_energies} energies)"
+                f"{case_name}: {calc_per_second:.0f} calc/sec ({n_elements} elements,"
+                f" {n_energies} energies)"
             )
 
             # Verify results are valid
@@ -620,11 +628,13 @@ class TestVectorizedCore(BasePerformanceTest):
         # Memory usage should be reasonable
         max_acceptable_memory = 200  # MB
         assert memory_increase < max_acceptable_memory, (
-            f"Excessive memory usage: {memory_increase:.1f}MB > {max_acceptable_memory}MB"
+            f"Excessive memory usage: {memory_increase:.1f}MB >"
+            f" {max_acceptable_memory}MB"
         )
 
         print(
-            f"Memory usage: +{memory_increase:.1f}MB for {len(energies)} energies, {len(element_data)} elements"
+            f"Memory usage: +{memory_increase:.1f}MB for {len(energies)} energies,"
+            f" {len(element_data)} elements"
         )
 
     def _get_atomic_weight(self, element: str) -> float:
@@ -700,7 +710,8 @@ class TestVectorizationRegression(BasePerformanceTest):
         # Assert minimum performance
         min_performance = 500  # calc/sec - should be much higher with vectorization
         assert calc_per_second > min_performance, (
-            f"Vectorized performance regression: {calc_per_second:.0f} < {min_performance} calc/sec"
+            f"Vectorized performance regression: {calc_per_second:.0f} <"
+            f" {min_performance} calc/sec"
         )
 
         print(f"Vectorized performance: {calc_per_second:.0f} calc/sec")

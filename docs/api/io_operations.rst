@@ -163,7 +163,7 @@ The I/O module provides error handling:
 .. code-block:: python
 
    from xraylabtool.io.file_operations import load_data_file
-   from xraylabtool.validation.exceptions import DataFileError
+   from xraylabtool.exceptions import DataFileError
 
    try:
        data = load_data_file("data.nff")

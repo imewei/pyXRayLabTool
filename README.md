@@ -28,7 +28,7 @@ XRayLabTool is a Python package and command-line tool for calculating X-ray opti
 ### From PyPI (Recommended)
 
 ```bash
-pip install xraylabtool
+pip install xraylabtool[all]
 ```
 
 ### From Source (Development)
@@ -36,25 +36,49 @@ pip install xraylabtool
 ```bash
 git clone https://github.com/imewei/pyXRayLabTool.git
 cd pyXRayLabTool
-pip install -e .
+pip install -e .[all]
 ```
 
-### Shell Completion Setup
+### Shell Completion Setup (Virtual Environment-Centric)
 
-After installation, enable tab completion:
+XRayLabTool features a modern virtual environment-centric completion system that automatically activates/deactivates with your Python environments.
 
+#### Quick Setup
 ```bash
-# Install shell completion (auto-detects shell)
-xraylabtool install-completion
+# Install in current virtual environment
+xraylabtool completion install
 
-# Alternative: using flag syntax
-xraylabtool --install-completion
+# List all environments with completion status
+xraylabtool completion list
 
-# Test if completion is working
-xraylabtool install-completion --test
+# Show status for current environment
+xraylabtool completion status
 ```
 
-**Prerequisites by Shell:**
+#### Key Features
+- **Virtual Environment Isolation**: Completion only available when environment is active
+- **Multiple Environment Support**: venv, conda, Poetry, Pipenv
+- **Multi-Shell Support**: Native completion for bash, zsh, fish, PowerShell
+- **No System-Wide Changes**: No sudo required, environment-specific installation
+- **Auto-Activation**: Completion activates/deactivates with environment changes
+
+#### Installation Commands
+```bash
+# New completion system (recommended)
+xraylabtool completion install              # Current environment, auto-detect shell
+xraylabtool completion install --shell zsh  # Install for specific shell
+xraylabtool completion list                 # List all environments
+xraylabtool completion status               # Show current environment status
+xraylabtool completion uninstall            # Remove from current environment
+xraylabtool completion uninstall --all      # Remove from all environments
+xraylabtool completion info                 # Show system information
+
+# Legacy commands (still supported)
+xraylabtool install-completion              # Uses new system backend
+xraylabtool uninstall-completion            # Uses new system backend
+```
+
+#### Prerequisites by Shell
 
 **Bash users:**
 ```bash
@@ -94,15 +118,25 @@ sudo yum install zsh-autosuggestions
 - Fish: No additional prerequisites (built-in completion system)
 - PowerShell: No additional prerequisites (built-in completion system)
 
-**Uninstalling completion:**
+#### Virtual Environment Workflow
 ```bash
-# Remove shell completion
-xraylabtool uninstall-completion
+# 1. Activate your environment
+conda activate myproject
+# or: source venv/bin/activate
+# or: poetry shell
+
+# 2. Install completion in the environment
+xraylabtool completion install
+
+# 3. Completion is now available when environment is active
+xraylabtool <TAB>  # Shows available commands
+
+# 4. Deactivate environment - completion automatically unavailable
+conda deactivate
+xraylabtool <TAB>  # No completion (unless installed in base environment)
 ```
 
-Restart your shell or source your config file after installation.
-
-> **Note**: Shell completion supports bash, zsh, fish, and PowerShell. Use `xraylabtool install-completion <shell>` for a specific shell, or `xraylabtool install-completion` for auto-detection.
+> **Migration Note**: If you previously used system-wide completion, the new system provides better isolation and no longer requires sudo. Run `xraylabtool completion install` in each virtual environment where you want completion available.
 
 ### Requirements
 
@@ -192,11 +226,11 @@ pip install xraylabtool
 # Verify CLI installation
 xraylabtool --version
 
-# Install shell completion (auto-detects shell)
-xraylabtool install-completion
+# Install shell completion in current environment
+xraylabtool completion install
 
-# Test completion is working
-xraylabtool install-completion --test
+# Verify completion status
+xraylabtool completion status
 ```
 
 ### Quick CLI Examples
@@ -257,37 +291,41 @@ xraylabtool bragg -d 3.14,2.45,1.92 -e 8.048
 | `atomic` | Atomic data lookup | `xraylabtool atomic Si,Al,Fe` |
 | `bragg` | Diffraction angle calculations | `xraylabtool bragg -d 3.14 -e 8.0` |
 | `list` | Show constants/fields/examples | `xraylabtool list constants` |
-| `install-completion` | Install shell completion | `xraylabtool install-completion` |
-| `uninstall-completion` | Remove shell completion | `xraylabtool uninstall-completion` |
+| `completion` | Manage virtual environment completion | `xraylabtool completion install` |
+| `install-completion` | Install shell completion (legacy) | `xraylabtool install-completion` |
+| `uninstall-completion` | Remove shell completion (legacy) | `xraylabtool uninstall-completion` |
 
 ### Shell Completion Usage
 
-Both command and flag syntaxes are supported:
+The new virtual environment-centric completion system provides better isolation and management:
 
 ```bash
-# Subcommand syntax (recommended)
-xraylabtool install-completion           # Install shell completion (auto-detect)
-xraylabtool install-completion --test    # Test installation
-xraylabtool uninstall-completion         # Remove completion
+# New completion system (recommended)
+xraylabtool completion install              # Install in current environment
+xraylabtool completion install --shell zsh  # Install for specific shell
+xraylabtool completion list                 # List all environments with status
+xraylabtool completion status               # Show current environment status
+xraylabtool completion uninstall            # Remove from current environment
+xraylabtool completion uninstall --all      # Remove from all environments
+xraylabtool completion info                 # Show system information
 
-# Flag syntax (alternative)
-xraylabtool --install-completion         # Install shell completion (auto-detect)
+# Legacy commands (still supported via new backend)
+xraylabtool install-completion              # Install in current environment
+xraylabtool uninstall-completion            # Remove from current environment
 
-# Install for specific shells
-xraylabtool install-completion bash      # Bash completion
-xraylabtool install-completion zsh       # Zsh completion (requires zsh-completions)
-xraylabtool install-completion fish      # Fish completion
-xraylabtool install-completion powershell # PowerShell completion
+# Flag syntax (legacy compatibility)
+xraylabtool --install-completion            # Install in current environment
 ```
 
-> **Shell Requirements**: Install the shell-specific prerequisites above before installing completion. Zsh users need `zsh-completions`.
+> **Virtual Environment Benefits**: The new system installs completion per environment, so it's only available when the relevant environment is active. This eliminates conflicts and provides better project isolation.
 
 **Tab Completion Features:**
-- **Command completion**: Complete all 9 available commands
+- **Command completion**: Complete all available commands including new `completion` command
 - **Option completion**: Complete command-line options and flags
 - **File path completion**: Complete file paths for input/output files
 - **Chemical formulas**: Complete common chemical formulas
 - **Energy values**: Complete common X-ray energies (8.048, 10.0, 12.4 keV)
+- **Environment awareness**: Completion only active when virtual environment is active
 
 ### Output Formats
 
@@ -302,7 +340,9 @@ xraylabtool install-completion powershell # PowerShell completion
 - **Field Selection**: Choose specific output fields with `--fields`
 - **Precision Control**: Set decimal places with `--precision`
 - **File Output**: Save results to CSV or JSON files
-- **Multi-Shell Tab Completion**: Completion for bash, zsh, fish, and PowerShell
+- **Virtual Environment-Centric Completion**: Modern completion system that activates/deactivates with environments
+  - **Multi-Shell Support**: Native completion for bash, zsh, fish, and PowerShell
+  - **Environment Isolation**: Completion only available when virtual environment is active
   - **Context-aware**: Suggests values based on current command
   - **File completion**: Complete file paths for input/output files
   - **Chemical formulas**: Complete common materials and elements
@@ -320,6 +360,7 @@ xraylabtool --help
 # Command-specific help
 xraylabtool calc --help
 xraylabtool batch --help
+xraylabtool completion --help
 xraylabtool install-completion --help
 
 # List available options and examples
@@ -327,12 +368,12 @@ xraylabtool list --help
 ```
 
 **CLI Features:**
-- 9 commands for X-ray analysis
+- 10+ commands for X-ray analysis and completion management
 - Energy input formats: Single values, ranges, lists, and logarithmic spacing
 - Batch processing from CSV files
 - Output formats: Table, CSV, and JSON
-- Shell completion for bash, zsh, fish, and PowerShell
-- Cross-platform support
+- Virtual environment-centric shell completion for bash, zsh, fish, and PowerShell
+- Cross-platform support with environment isolation
 
 ---
 
