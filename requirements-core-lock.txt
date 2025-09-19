@@ -1,0 +1,11 @@
+# Core dependencies with exact versions for CI reproducibility
+# Generated from local environment to ensure GitHub CI matches
+# To update: run pip freeze and filter for core dependencies
+
+matplotlib==3.10.6
+mendeleev==1.1.0
+numpy==2.3.3
+pandas==2.3.2
+psutil==7.0.0
+scipy==1.16.2
+tqdm==4.67.1

@@ -281,6 +281,9 @@ jobs:
     - name: Install dependencies (ultra-fast)
       run: |
         # Use uv for lightning-fast dependency resolution and installation
+        # First install core dependencies with exact versions for reproducibility
+        uv pip install --system -r requirements-core-lock.txt
+        # Then install development dependencies
         uv pip install --system -e .[dev] pytest==${{ env.PYTEST_VERSION }} pytest-xdist pytest-cov
 
     - name: Intelligent test selection and execution

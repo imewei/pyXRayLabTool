@@ -88,9 +88,9 @@ keywords = [
 
 # Core runtime dependencies
 dependencies = [
-    "numpy>=1.26.0",
+    "numpy>=1.26.0,<3.0.0",  # Support numpy 2.x
     "pandas>=2.1.0,<3.0.0",
-    "scipy>=1.11.0",
+    "scipy>=1.11.0,<2.0.0",
     "matplotlib>=3.8.0",
     "mendeleev>=0.15.0",
     "tqdm>=4.66.0",
