@@ -126,9 +126,9 @@ class TestAdaptiveBatchProcessing:
             assert callable(_process_formulas_parallel)
 
             # Test the threshold logic - function should be designed for >=20 items
-            assert len(formulas) >= 20, (
-                "Test formulas should exceed the 20-item threshold"
-            )
+            assert (
+                len(formulas) >= 20
+            ), "Test formulas should exceed the 20-item threshold"
 
         except ImportError:
             pytest.skip("Batch processing function not available")
@@ -272,9 +272,9 @@ class TestColdStartOptimization:
 
         # Should be significantly faster than v0.2.4's 912ms
         # Target is <100ms, but we'll be lenient for test stability
-        assert cold_start_time < 0.5, (
-            f"Cold start too slow: {cold_start_time * 1000:.1f}ms"
-        )
+        assert (
+            cold_start_time < 0.5
+        ), f"Cold start too slow: {cold_start_time * 1000:.1f}ms"
         assert result is not None
 
     def test_warm_cache_performance(self):
@@ -295,9 +295,9 @@ class TestColdStartOptimization:
         avg_warm_time = np.mean(times)
 
         # Warm cache should be very fast
-        assert avg_warm_time < 0.01, (
-            f"Warm cache too slow: {avg_warm_time * 1000:.1f}ms"
-        )
+        assert (
+            avg_warm_time < 0.01
+        ), f"Warm cache too slow: {avg_warm_time * 1000:.1f}ms"
 
 
 class TestEnvironmentBasedControls:

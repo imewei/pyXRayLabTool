@@ -9,15 +9,15 @@ edge cases.
 
 import csv
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tests.fixtures.test_base import BaseIntegrationTest
 import xraylabtool as xlt
+from tests.fixtures.test_base import BaseIntegrationTest
 from xraylabtool.interfaces.cli import (
     cmd_atomic,
     cmd_batch,
@@ -532,9 +532,9 @@ class TestMainFunction:
             ):
                 main()
             # Help should exit with code 0
-            assert excinfo.value.code == 0, (
-                f"Command '{command}' not available or failed"
-            )
+            assert (
+                excinfo.value.code == 0
+            ), f"Command '{command}' not available or failed"
 
 
 class TestCLIIntegration(BaseIntegrationTest):
