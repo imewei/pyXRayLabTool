@@ -5,13 +5,13 @@ Enhanced workflow monitoring and reporting script.
 Provides detailed analysis and recommendations for GitHub Actions workflows.
 """
 
-from collections import Counter, defaultdict
 import datetime
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from collections import Counter, defaultdict
+from pathlib import Path
 from typing import Any
 
 

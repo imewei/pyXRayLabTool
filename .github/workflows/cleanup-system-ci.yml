@@ -479,54 +479,54 @@ jobs:
       run: |
         # Test that cleanup operations don't expose sensitive data
         python -c "
-import tempfile
-import os
-from pathlib import Path
-from xraylabtool.cleanup.safety_integration import SafetyIntegratedCleanup
-from xraylabtool.cleanup.config import CleanupConfig
+        import tempfile
+        import os
+        from pathlib import Path
+        from xraylabtool.cleanup.safety_integration import SafetyIntegratedCleanup
+        from xraylabtool.cleanup.config import CleanupConfig
 
-# Create test environment with sensitive-looking files
-with tempfile.TemporaryDirectory() as temp_dir:
-    project_root = Path(temp_dir) / 'test_project'
-    project_root.mkdir()
+        # Create test environment with sensitive-looking files
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_root = Path(temp_dir) / 'test_project'
+            project_root.mkdir()
 
-    # Create files that should NOT be cleaned
-    (project_root / 'config.json').write_text('{\"api_key\": \"secret\"}')
-    (project_root / '.env').write_text('SECRET_KEY=mysecret')
-    (project_root / 'private_key.pem').write_text('-----BEGIN PRIVATE KEY-----')
+            # Create files that should NOT be cleaned
+            (project_root / 'config.json').write_text('{\"api_key\": \"secret\"}')
+            (project_root / '.env').write_text('SECRET_KEY=mysecret')
+            (project_root / 'private_key.pem').write_text('-----BEGIN PRIVATE KEY-----')
 
-    # Create files that should be cleaned
-    cache_dir = project_root / '__pycache__'
-    cache_dir.mkdir()
-    (cache_dir / 'test.pyc').write_bytes(b'cache data')
+            # Create files that should be cleaned
+            cache_dir = project_root / '__pycache__'
+            cache_dir.mkdir()
+            (cache_dir / 'test.pyc').write_bytes(b'cache data')
 
-    # Test cleanup
-    safety_cleanup = SafetyIntegratedCleanup(
-        project_root=project_root,
-        config=CleanupConfig(),
-        dry_run=True
-    )
+            # Test cleanup
+            safety_cleanup = SafetyIntegratedCleanup(
+                project_root=project_root,
+                config=CleanupConfig(),
+                dry_run=True
+            )
 
-    cleanup_targets = list(project_root.glob('**/__pycache__'))
-    result = safety_cleanup.execute_safe_cleanup(
-        files_to_cleanup=cleanup_targets,
-        operation_type='security_test',
-        force_backup=False,
-        user_confirmation=False
-    )
+            cleanup_targets = list(project_root.glob('**/__pycache__'))
+            result = safety_cleanup.execute_safe_cleanup(
+                files_to_cleanup=cleanup_targets,
+                operation_type='security_test',
+                force_backup=False,
+                user_confirmation=False
+            )
 
-    # Verify sensitive files are not in cleanup targets
-    all_files = list(project_root.rglob('*'))
-    sensitive_files = [f for f in all_files if any(sensitive in f.name.lower()
-                      for sensitive in ['key', 'secret', 'password', 'token', '.env'])]
+            # Verify sensitive files are not in cleanup targets
+            all_files = list(project_root.rglob('*'))
+            sensitive_files = [f for f in all_files if any(sensitive in f.name.lower()
+                              for sensitive in ['key', 'secret', 'password', 'token', '.env'])]
 
-    cleanup_file_names = [str(f) for f in cleanup_targets]
-    for sensitive_file in sensitive_files:
-        if str(sensitive_file) in cleanup_file_names:
-            raise Exception(f'Security violation: Sensitive file {sensitive_file} was targeted for cleanup')
+            cleanup_file_names = [str(f) for f in cleanup_targets]
+            for sensitive_file in sensitive_files:
+                if str(sensitive_file) in cleanup_file_names:
+                    raise Exception(f'Security violation: Sensitive file {sensitive_file} was targeted for cleanup')
 
-    print('Security test passed: No sensitive files targeted for cleanup')
-"
+            print('Security test passed: No sensitive files targeted for cleanup')
+        "
 
     - name: Upload security reports
       uses: actions/upload-artifact@v3
