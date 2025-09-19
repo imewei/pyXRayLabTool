@@ -117,7 +117,9 @@ def legacy_uninstall_completion_main(args: Any) -> int:
         else:
             # Regular uninstallation from current environment
             # Use the legacy method for backward compatibility with tests
-            success = installer.uninstall_completion(shell_type=shell, cleanup_session=True)
+            success = installer.uninstall_completion(
+                shell_type=shell, cleanup_session=True
+            )
             return 0 if success else 1
 
     except KeyboardInterrupt:

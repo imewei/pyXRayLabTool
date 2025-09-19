@@ -66,7 +66,7 @@ class TestCodeQuality(BaseUnitTest):
         missing_hints = self._find_missing_type_hints()
 
         # Allow some missing type hints in test files
-        test_file_violations = [hint for hint in missing_hints if "tests/" in str(hint)]
+        [hint for hint in missing_hints if "tests/" in str(hint)]
         core_violations = [hint for hint in missing_hints if "tests/" not in str(hint)]
 
         # Core code should have high type hint coverage

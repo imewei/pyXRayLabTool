@@ -292,7 +292,7 @@ class TestCLIIntegrationScenarios:
 
         # Simulate calc command with invalid formula
         with patch("sys.stderr", new=StringIO()) as fake_stderr:
-            with patch("sys.exit") as mock_exit:
+            with patch("sys.exit"):
                 error_msg = handler.handle_formula_error("SiO2O", command="calc")
                 print(error_msg, file=sys.stderr)
 
@@ -405,7 +405,7 @@ class TestCLIErrorHandlingPerformance:
 
         # Generate many errors
         for i in range(1000):
-            error_msg = handler.handle_formula_error(f"invalid{i}", command="calc")
+            handler.handle_formula_error(f"invalid{i}", command="calc")
 
         gc.collect()  # Force garbage collection
         final_memory = process.memory_info().rss

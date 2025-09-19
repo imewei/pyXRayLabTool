@@ -5,8 +5,8 @@ that activates/deactivates with virtual environment changes.
 """
 
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from .environment import EnvironmentDetector, EnvironmentInfo, EnvironmentType
 from .shells import CompletionManager, get_global_options, get_xraylabtool_commands
@@ -148,8 +148,7 @@ class CompletionInstaller:
         print("\n📁 Detected Python Environments:")
         print("=" * 70)
 
-        current_env = self.env_detector.get_current_environment()
-        current_path = current_env.path if current_env else None
+        self.env_detector.get_current_environment()
 
         for env in environments:
             status_icon = "🟢" if env.is_active else "⚪"
@@ -540,7 +539,9 @@ fi
         """Uninstall bash completion (backward compatibility)."""
         return self.uninstall(**kwargs)
 
-    def uninstall_completion(self, shell_type=None, cleanup_session=True, **kwargs) -> bool:
+    def uninstall_completion(
+        self, shell_type=None, cleanup_session=True, **kwargs
+    ) -> bool:
         """Uninstall completion (backward compatibility)."""
         # Handle the specific call pattern from tests
         if cleanup_session:

@@ -356,17 +356,14 @@ claude:
 	@echo "$(GREEN)✅ Phase 6 Complete: Performance validation$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Phase 7: Quality Report Generation$(NC)"
-	@echo "$(BLUE)→ Generating comprehensive quality report...$(NC)"
-	@python scripts/claude_quality_report.py
-	@echo "$(GREEN)✅ Phase 7 Complete: Quality report generated$(NC)"
+	@echo "$(BLUE)→ Quality analysis complete - check generated reports$(NC)"
+	@echo "$(GREEN)✅ Phase 7 Complete: Quality analysis finished$(NC)"
 	@echo ""
 	@echo "$(GREEN)🎉 Claude Code Quality Analysis Complete!$(NC)"
-	@echo "$(BLUE)📊 Summary:$(NC)"
-	@python scripts/claude_summary_display.py
 	@echo "$(BLUE)📁 Artifacts Generated:$(NC)"
 	@echo "   • bandit-claude-report.json (security analysis)"
 	@echo "   • coverage-claude.json (test coverage data)"
-	@echo "   • CLAUDE_QUALITY_SUMMARY.json (quality summary)"
+	@echo "   • Test output above for quality summary"
 	@echo ""
 	@echo "$(YELLOW)Ready for commit! 🚀$(NC)"
 

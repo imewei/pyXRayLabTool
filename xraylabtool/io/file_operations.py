@@ -87,10 +87,25 @@ def save_calculation_results(
                     # Handle case where values are lists/arrays
                     first_key = next(iter(results))
                     if isinstance(results[first_key], (list, np.ndarray)):
-                        # Multiple rows case
-                        for i in range(len(results[first_key])):
-                            row = {k: v[i] for k, v in results.items()}
-                            writer.writerow(row)
+                        # Multiple rows case (optimized: vectorized operations)
+                        n_rows = len(results[first_key])
+
+                        # Pre-convert arrays to lists for efficient indexing
+                        array_data = {}
+                        for k, v in results.items():
+                            if isinstance(v, np.ndarray):
+                                array_data[k] = v.tolist()
+                            else:
+                                array_data[k] = (
+                                    list(v) if hasattr(v, "__iter__") else [v] * n_rows
+                                )
+
+                        # Vectorized row generation
+                        rows = [
+                            {k: array_data[k][i] for k in array_data}
+                            for i in range(n_rows)
+                        ]
+                        writer.writerows(rows)
                     else:
                         # Single row case
                         writer.writerow(results)

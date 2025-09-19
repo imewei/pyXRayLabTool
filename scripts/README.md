@@ -1,6 +1,6 @@
 # Scripts Directory
 
-This directory contains utility scripts for XRayLabTool development and maintenance.
+This directory contains essential utility scripts for XRayLabTool development and maintenance.
 
 ## Available Scripts
 
@@ -91,11 +91,47 @@ This script integrates with:
 🎉 ALL DOCUMENTATION TESTS PASSED! 🎉
 ```
 
-### Future Scripts
+### `run_type_check.py` - Type Checking
 
-Additional utility scripts may be added for:
+Advanced type checking script with scientific computing focus:
 
-- **Performance benchmarking**: `benchmark.py`
-- **Release preparation**: `prepare_release.py`
-- **Code generation**: `generate_api_docs.py`
-- **Data validation**: `validate_atomic_data.py`
+- **MyPy Integration**: Comprehensive static type analysis
+- **Cache Management**: Optimized caching for faster subsequent runs
+- **Target Selection**: Core packages, all packages, or strict mode
+- **Scientific Libraries**: Enhanced type checking for NumPy, SciPy, etc.
+
+#### Usage:
+```bash
+python scripts/run_type_check.py --target core    # Core packages only
+python scripts/run_type_check.py --target all     # All packages
+python scripts/run_type_check.py --strict         # Strict mode
+python scripts/run_type_check.py --cache-info     # Cache information
+```
+
+### `validate_style_guide.py` - Style Guide Validation
+
+Comprehensive style guide validation for scientific computing:
+
+- **Import Organization**: Scientific library import patterns
+- **Naming Conventions**: PEP 8 and scientific computing standards
+- **Documentation**: NumPy-style docstring validation
+- **Code Patterns**: Scientific computing best practices
+
+#### Usage:
+```bash
+python scripts/validate_style_guide.py           # Full validation
+python scripts/validate_style_guide.py --verbose # Detailed output
+python scripts/validate_style_guide.py --fix     # Apply fixes
+```
+
+### `format-code.sh` - Code Formatting
+
+Shell script for automated code formatting using modern tools.
+
+### `setup-githooks.sh` - Git Hooks Setup
+
+Sets up pre-commit and pre-push hooks for quality assurance.
+
+## Maintenance Notes
+
+This directory has been cleaned up to contain only essential scripts actively used in the development workflow. All scripts maintain compatibility with the Makefile targets and CI/CD pipelines.

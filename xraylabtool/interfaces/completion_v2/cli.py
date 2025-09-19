@@ -61,19 +61,19 @@ def create_completion_parser() -> argparse.ArgumentParser:
     )
 
     # List command
-    list_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "list",
         help="List environments with completion status",
     )
 
     # Status command
-    status_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "status",
         help="Show completion status for current environment",
     )
 
     # Info command
-    info_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "info",
         help="Show information about the completion system",
     )

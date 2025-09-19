@@ -6,8 +6,8 @@ to make completion faster and more responsive.
 
 import hashlib
 import json
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import Any
 
 
@@ -33,7 +33,7 @@ class CompletionCache:
         else:
             data_str = str(data)
 
-        return hashlib.md5(data_str.encode()).hexdigest()
+        return hashlib.md5(data_str.encode(), usedforsecurity=False).hexdigest()
 
     def get(self, key: str, timeout: int | None = None) -> Any | None:
         """Get cached data by key."""
@@ -188,7 +188,7 @@ class FastCompletionProvider:
 
         # Fast prefix matching
         matches = []
-        for cmd in commands.keys():
+        for cmd in commands:
             if cmd.startswith(partial_command):
                 matches.append(cmd)
 
@@ -206,7 +206,7 @@ class FastCompletionProvider:
             options.update(cmd_options)
 
         if not partial_option:
-            return sorted(list(options))
+            return sorted(options)
 
         # Fast prefix matching
         matches = []
@@ -258,7 +258,7 @@ class FastCompletionProvider:
 
         # Pre-generate common completions
         commands = self.data_manager.get_commands()
-        for cmd in commands.keys():
+        for cmd in commands:
             self.get_option_completions(cmd, "")
 
 

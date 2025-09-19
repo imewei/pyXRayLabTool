@@ -13,7 +13,7 @@ from xraylabtool.calculators.core import XRayResult
 
 
 def export_to_csv(
-    results: list[XRayResult], output_path: Path, fields: list[str] = None
+    results: list[XRayResult], output_path: Path, fields: list[str] | None = None
 ) -> None:
     """
     Export X-ray results to CSV format.
@@ -40,12 +40,12 @@ def export_to_csv(
     with open(output_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
 
-        # Write header
-        header = ["formula"] + [
-            f"{field}_energy_{i}"
-            for field in fields[1:]
-            for i in range(len(results[0].energy_kev))
-        ]
+        # Write header (optimized: vectorized generation)
+        n_energies = len(results[0].energy_kev)
+        header_parts = []
+        for field in fields[1:]:
+            header_parts.extend([f"{field}_energy_{i}" for i in range(n_energies)])
+        header = ["formula"] + header_parts
         writer.writerow(header)
 
         # Write data

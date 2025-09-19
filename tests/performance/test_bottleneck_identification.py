@@ -403,8 +403,12 @@ class TestBottleneckAnalysisIntegration(BasePerformanceTest):
         # Performance can vary dramatically on different systems and under different load conditions
         variance = abs(baseline - calc_per_second) / calc_per_second
         if variance >= 3.0:
-            pytest.skip(f"Performance variance too high ({variance:.2f}x) - system may be under load")
-        assert variance < 3.0, f"Performance variance {variance:.2f}x exceeds maximum threshold"
+            pytest.skip(
+                f"Performance variance too high ({variance:.2f}x) - system may be under load"
+            )
+        assert (
+            variance < 3.0
+        ), f"Performance variance {variance:.2f}x exceeds maximum threshold"
 
         function_bottlenecks = analyzer.analyze_function_bottlenecks("integration_test")
         assert len(function_bottlenecks) > 0

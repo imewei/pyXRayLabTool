@@ -1029,18 +1029,28 @@ def _format_as_csv(result, fields: list[str], precision: int) -> str:
 
     import numpy as np
 
-    data_rows = []
     n_energies = len(result.energy_kev)
 
-    for i in range(n_energies):
-        row = {}
-        for field in fields:
-            value = getattr(result, field)
-            if isinstance(value, np.ndarray):
-                row[field] = round(value[i], precision)
-            else:
-                row[field] = value
-        data_rows.append(row)
+    # Vectorized approach: separate array and scalar fields for efficiency
+    array_fields = [f for f in fields if isinstance(getattr(result, f), np.ndarray)]
+    scalar_fields = [
+        f for f in fields if not isinstance(getattr(result, f), np.ndarray)
+    ]
+
+    # Vectorize array operations
+    data_arrays = {
+        field: np.round(getattr(result, field), precision) for field in array_fields
+    }
+    scalar_data = {field: getattr(result, field) for field in scalar_fields}
+
+    # Create rows efficiently using vectorized data
+    data_rows = [
+        {
+            **scalar_data,
+            **{field: float(data_arrays[field][i]) for field in array_fields},
+        }
+        for i in range(n_energies)
+    ]
 
     if data_rows:
         # Use CSV module instead of pandas
@@ -1119,10 +1129,7 @@ def _format_multiple_energies(result, precision: int) -> list[str]:
     for i in range(n_energies):
         row_values = []
         for data_array in data_arrays:
-            if isinstance(data_array, np.ndarray):
-                value = data_array[i]
-            else:
-                value = data_array
+            value = data_array[i] if isinstance(data_array, np.ndarray) else data_array
             row_values.append(f"{value:.{precision}g}")
 
         row_line = "  ".join(

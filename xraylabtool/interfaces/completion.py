@@ -14,7 +14,12 @@ from .completion_v2.integration import (
     show_migration_notice,
     uninstall_completion_main,
 )
-from .completion_v2.shells import CompletionManager, get_global_options, get_xraylabtool_commands
+from .completion_v2.shells import (
+    CompletionManager,
+    get_global_options,
+    get_xraylabtool_commands,
+)
+
 
 # Generate BASH_COMPLETION_SCRIPT for backward compatibility
 def _generate_bash_completion_script():
@@ -23,7 +28,9 @@ def _generate_bash_completion_script():
         completion_manager = CompletionManager()
         commands = get_xraylabtool_commands()
         global_options = get_global_options()
-        script = completion_manager.generate_completion("bash", commands, global_options)
+        script = completion_manager.generate_completion(
+            "bash", commands, global_options
+        )
 
         # Add backward compatibility functions expected by tests
         compatibility_functions = """
@@ -37,7 +44,9 @@ _xraylabtool_install_completion_complete() { _xraylabtool_complete; }
 # SiO2 Si Al2O3 Fe2O3 CaO MgO Na2O K2O TiO2 P2O5
 """
         # Insert before the final 'complete' command
-        script = script.replace("# Register completion", compatibility_functions + "\n# Register completion")
+        script = script.replace(
+            "# Register completion", compatibility_functions + "\n# Register completion"
+        )
         return script
     except Exception:
         # Fallback minimal script if generation fails
@@ -62,6 +71,7 @@ _xraylabtool_install_completion_complete() { _xraylabtool_complete; }
 
 complete -F _xraylabtool_complete xraylabtool
 """
+
 
 BASH_COMPLETION_SCRIPT = _generate_bash_completion_script()
 

@@ -5,6 +5,7 @@ replacing the large hardcoded strings with template-based generation.
 """
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class CompletionGenerator(ABC):
@@ -14,7 +15,9 @@ class CompletionGenerator(ABC):
         self.command_name = command_name
 
     @abstractmethod
-    def generate(self, commands: dict[str, dict], global_options: list[str]) -> str:
+    def generate(
+        self, commands: dict[str, dict[str, Any]], global_options: list[str]
+    ) -> str:
         """Generate completion script for this shell."""
         pass
 
@@ -42,7 +45,9 @@ class BashCompletionGenerator(CompletionGenerator):
     def file_extension(self) -> str:
         return ""
 
-    def generate(self, commands: dict[str, dict], global_options: list[str]) -> str:
+    def generate(
+        self, commands: dict[str, dict[str, Any]], global_options: list[str]
+    ) -> str:
         """Generate Bash completion script."""
         template = self._get_template()
 
@@ -108,13 +113,13 @@ _{command_name}_complete() {{
 complete -F _{command_name}_complete {command_name}
 """
 
-    def _generate_command_completions(self, commands: dict[str, dict]) -> str:
+    def _generate_command_completions(self, commands: dict[str, dict[str, Any]]) -> str:
         """Generate command-specific completion logic."""
         completions = []
 
         for cmd_name, cmd_info in commands.items():
             options = cmd_info.get("options", [])
-            arguments = cmd_info.get("arguments", [])
+            cmd_info.get("arguments", [])
 
             completion_logic = f"""    # {cmd_name} command
     if [[ "${{command}}" == "{cmd_name}" ]]; then
@@ -152,7 +157,9 @@ class ZshCompletionGenerator(CompletionGenerator):
     def file_extension(self) -> str:
         return ""
 
-    def generate(self, commands: dict[str, dict], global_options: list[str]) -> str:
+    def generate(
+        self, commands: dict[str, dict[str, Any]], global_options: list[str]
+    ) -> str:
         """Generate native Zsh completion script."""
         template = self._get_template()
 
@@ -202,7 +209,7 @@ _{command_name} "$@"
 """
 
     def _generate_command_definitions(
-        self, commands: dict[str, dict], global_options: list[str]
+        self, commands: dict[str, dict[str, Any]], global_options: list[str]
     ) -> str:
         """Generate Zsh command definitions."""
         definitions = []
@@ -258,7 +265,9 @@ class FishCompletionGenerator(CompletionGenerator):
     def file_extension(self) -> str:
         return ".fish"
 
-    def generate(self, commands: dict[str, dict], global_options: list[str]) -> str:
+    def generate(
+        self, commands: dict[str, dict[str, Any]], global_options: list[str]
+    ) -> str:
         """Generate Fish completion script."""
         template = self._get_template()
 
@@ -282,7 +291,7 @@ class FishCompletionGenerator(CompletionGenerator):
 """
 
     def _generate_command_completions(
-        self, commands: dict[str, dict], global_options: list[str]
+        self, commands: dict[str, dict[str, Any]], global_options: list[str]
     ) -> str:
         """Generate Fish command completions."""
         completions = []
@@ -339,7 +348,9 @@ class PowerShellCompletionGenerator(CompletionGenerator):
     def file_extension(self) -> str:
         return ".ps1"
 
-    def generate(self, commands: dict[str, dict], global_options: list[str]) -> str:
+    def generate(
+        self, commands: dict[str, dict[str, Any]], global_options: list[str]
+    ) -> str:
         """Generate PowerShell completion script."""
         template = self._get_template()
 
@@ -391,7 +402,7 @@ Register-ArgumentCompleter -Native -CommandName {command_name} -ScriptBlock {{
 }}
 """
 
-    def _generate_command_cases(self, commands: dict[str, dict]) -> str:
+    def _generate_command_cases(self, commands: dict[str, dict[str, Any]]) -> str:
         """Generate PowerShell command case statements."""
         cases = []
 
@@ -411,7 +422,7 @@ Register-ArgumentCompleter -Native -CommandName {command_name} -ScriptBlock {{
 class CompletionManager:
     """Manages completion script generation for all supported shells."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.generators = {
             "bash": BashCompletionGenerator(),
             "zsh": ZshCompletionGenerator(),
@@ -424,7 +435,7 @@ class CompletionManager:
         return list(self.generators.keys())
 
     def generate_completion(
-        self, shell: str, commands: dict[str, dict], global_options: list[str]
+        self, shell: str, commands: dict[str, dict[str, Any]], global_options: list[str]
     ) -> str:
         """Generate completion script for specified shell."""
         if shell not in self.generators:
@@ -442,7 +453,7 @@ class CompletionManager:
         return f"{command_name}{generator.file_extension}"
 
 
-def get_xraylabtool_commands() -> dict[str, dict]:
+def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
     """Get the XRayLabTool command definitions for completion."""
     return {
         "calc": {
