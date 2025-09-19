@@ -38,7 +38,7 @@ class TestNumericalStabilityChecks:
         dispersion = np.array([1e-6, 1e-6])
         absorption = np.array([1e-8, np.nan])  # One NaN value
 
-        with pytest.raises(ValueError, match="NaN values detected.*absorption"):
+        with pytest.raises(ValueError, match=r"NaN values detected.*absorption"):
             calculate_derived_quantities(
                 wavelength,
                 dispersion,
@@ -70,7 +70,7 @@ class TestNumericalStabilityChecks:
         dispersion = np.array([1e-6, 1e-6])
         absorption = np.array([1e-8, np.inf])  # One infinite value
 
-        with pytest.raises(ValueError, match="Infinite values detected.*absorption"):
+        with pytest.raises(ValueError, match=r"Infinite values detected.*absorption"):
             calculate_derived_quantities(
                 wavelength,
                 dispersion,
@@ -260,11 +260,11 @@ class TestBoundaryConditions:
     def test_energy_boundary_validation(self):
         """Test energy boundary validation."""
         # Test below lower bound
-        with pytest.raises(ValueError, match="Energy.*range"):
+        with pytest.raises(ValueError, match=r"Energy.*range"):
             xlt.calculate_single_material_properties("SiO2", 0.02, 2.2)  # Too low
 
         # Test above upper bound
-        with pytest.raises(ValueError, match="Energy.*range"):
+        with pytest.raises(ValueError, match=r"Energy.*range"):
             xlt.calculate_single_material_properties("SiO2", 31.0, 2.2)  # Too high
 
         # Test exactly at bounds (should work)
@@ -316,9 +316,9 @@ class TestPhysicalRealism:
         # Critical angle should generally decrease with increasing energy
         angles = result.critical_angle_degrees
         for i in range(len(angles) - 1):
-            assert angles[i] >= angles[i + 1], (
-                "Critical angle should decrease with energy"
-            )
+            assert (
+                angles[i] >= angles[i + 1]
+            ), "Critical angle should decrease with energy"
 
     def test_attenuation_length_positive(self):
         """Test that attenuation length is always positive."""
@@ -329,9 +329,9 @@ class TestPhysicalRealism:
             result = xlt.calculate_single_material_properties(
                 formula, energies, density
             )
-            assert np.all(result.attenuation_length_cm > 0), (
-                f"Attenuation length should be positive for {formula}"
-            )
+            assert np.all(
+                result.attenuation_length_cm > 0
+            ), f"Attenuation length should be positive for {formula}"
 
     def test_electron_density_consistency(self):
         """Test that electron density is consistent with formula and density."""
