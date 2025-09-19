@@ -6,8 +6,8 @@ the CLI commands, including error message formatting, debug output,
 and user-friendly suggestions in command-line context.
 """
 
-import sys
 from io import StringIO
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest

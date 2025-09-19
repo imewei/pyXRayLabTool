@@ -8,8 +8,8 @@ materials science applications.
 
 from __future__ import annotations
 
-import re
 from collections import defaultdict
+import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

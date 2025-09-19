@@ -5,9 +5,9 @@ This module validates that the enhanced type safety infrastructure is
 correctly configured and functioning as expected.
 """
 
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -44,9 +44,9 @@ class TestTypeSafetyConfig(BaseXRayLabToolTest):
         assert pyproject_file.exists(), "pyproject.toml not found"
 
         content = pyproject_file.read_text()
-        assert (
-            "[tool.mypy]" in content
-        ), "MyPy configuration section not found in pyproject.toml"
+        assert "[tool.mypy]" in content, (
+            "MyPy configuration section not found in pyproject.toml"
+        )
 
     def test_mypy_strict_mode_configuration(self):
         """Test that MyPy strict mode settings are properly configured."""

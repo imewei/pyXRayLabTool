@@ -6,16 +6,16 @@ performance bottlenecks in calculation pipelines, memory allocation patterns,
 and vectorization opportunities.
 """
 
-import cProfile
-import io
-import json
-import pstats
-import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
+import cProfile
 from dataclasses import asdict, dataclass
 from functools import wraps
+import io
+import json
 from pathlib import Path
+import pstats
+import time
 from typing import Any
 
 # Try to import line_profiler if available

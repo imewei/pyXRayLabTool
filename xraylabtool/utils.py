@@ -7,9 +7,9 @@ mathematical operations, and other common tasks in X-ray analysis.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterator
 from functools import lru_cache
+import re
 from typing import TYPE_CHECKING, Any, NoReturn
 
 from xraylabtool.exceptions import AtomicDataError, UnknownElementError

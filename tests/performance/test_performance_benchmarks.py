@@ -5,9 +5,9 @@ This test module provides comprehensive performance benchmarks to validate
 optimization improvements and detect performance regressions.
 """
 
+from contextlib import contextmanager
 import statistics
 import time
-from contextlib import contextmanager
 
 import numpy as np
 import pytest
@@ -46,9 +46,9 @@ class TestPerformanceBenchmarks:
 
         # Performance targets based on optimizations
         assert avg_time < 0.001, f"Single calculation too slow: {avg_time:.6f}s (avg)"
-        assert (
-            median_time < 0.001
-        ), f"Single calculation too slow: {median_time:.6f}s (median)"
+        assert median_time < 0.001, (
+            f"Single calculation too slow: {median_time:.6f}s (median)"
+        )
 
         print(f"Single calculation performance: {avg_time:.6f}s ± {std_time:.6f}s")
 
@@ -70,9 +70,9 @@ class TestPerformanceBenchmarks:
 
         # Performance targets
         assert avg_time < 0.01, f"Array calculation too slow: {avg_time:.6f}s (avg)"
-        assert (
-            median_time < 0.01
-        ), f"Array calculation too slow: {median_time:.6f}s (median)"
+        assert median_time < 0.01, (
+            f"Array calculation too slow: {median_time:.6f}s (median)"
+        )
 
         print(
             f"Array calculation (100 points): {avg_time:.6f}s ±"
@@ -94,14 +94,10 @@ class TestPerformanceBenchmarks:
         median_time = statistics.median(times)
 
         # Should be very fast due to caching optimization (realistic threshold for Python)
-        assert (
-            avg_time < 0.005
-        ), (  # Relaxed from 0.001 to 0.005
+        assert avg_time < 0.005, (  # Relaxed from 0.001 to 0.005
             f"Cache access too slow: {avg_time:.8f}s (avg)"
         )
-        assert (
-            median_time < 0.005
-        ), (  # Relaxed from 0.001 to 0.005
+        assert median_time < 0.005, (  # Relaxed from 0.001 to 0.005
             f"Cache access too slow: {median_time:.8f}s (median)"
         )
 
@@ -129,9 +125,9 @@ class TestPerformanceBenchmarks:
 
         # Performance targets
         assert avg_time < 0.05, f"Batch calculation too slow: {avg_time:.6f}s (avg)"
-        assert (
-            avg_per_material < 0.01
-        ), f"Per-material too slow: {avg_per_material:.6f}s"
+        assert avg_per_material < 0.01, (
+            f"Per-material too slow: {avg_per_material:.6f}s"
+        )
 
         print(
             f"Batch calculation (5 materials): {avg_time:.6f}s total,"
@@ -192,9 +188,9 @@ class TestPerformanceBenchmarks:
 
         # Performance targets for large arrays
         assert avg_time < 0.1, f"Large array calculation too slow: {avg_time:.6f}s"
-        assert (
-            time_per_point < 0.0001
-        ), f"Per-point calculation too slow: {time_per_point:.8f}s"
+        assert time_per_point < 0.0001, (
+            f"Per-point calculation too slow: {time_per_point:.8f}s"
+        )
 
         print(
             f"Large array (1000 points): {avg_time:.6f}s total, {time_per_point:.8f}s"
@@ -219,9 +215,9 @@ class TestPerformanceBenchmarks:
         throughput = count / actual_duration
 
         # Throughput target based on optimizations
-        assert (
-            throughput > 1000
-        ), f"Throughput too low: {throughput:.0f} calculations/second"
+        assert throughput > 1000, (
+            f"Throughput too low: {throughput:.0f} calculations/second"
+        )
 
         print(f"Throughput: {throughput:.0f} calculations/second")
 
@@ -254,9 +250,9 @@ class TestPerformanceRegression:
 
         # Deprecation warnings will have overhead, but shouldn't be excessive (less than 100x)
         # Note: This is expected since warnings.warn() is called on each access
-        assert (
-            overhead_ratio < 100.0
-        ), f"Deprecation warning overhead too high: {overhead_ratio:.2f}x"
+        assert overhead_ratio < 100.0, (
+            f"Deprecation warning overhead too high: {overhead_ratio:.2f}x"
+        )
 
         print(f"Deprecation warning overhead: {overhead_ratio:.2f}x baseline")
 
@@ -313,9 +309,9 @@ class TestPerformanceRegression:
         consistency_ratio = max(avg_batch1, avg_batch2) / min(avg_batch1, avg_batch2)
 
         # Cache performance should be consistent (within 3x to account for system variations)
-        assert (
-            consistency_ratio < 3.0
-        ), f"Cache performance inconsistent: {consistency_ratio:.2f}x variation"
+        assert consistency_ratio < 3.0, (
+            f"Cache performance inconsistent: {consistency_ratio:.2f}x variation"
+        )
 
         print(f"Cache consistency: {consistency_ratio:.2f}x variation between batches")
 
@@ -354,9 +350,9 @@ class TestScalabilityBenchmarks:
             efficiency = size_ratio / ratio
 
             # Efficiency should be reasonable (> 0.5 means less than 2x overhead)
-            assert (
-                efficiency > 0.5
-            ), f"Poor scaling efficiency: {efficiency:.2f} for size {sizes[i]}"
+            assert efficiency > 0.5, (
+                f"Poor scaling efficiency: {efficiency:.2f} for size {sizes[i]}"
+            )
 
     def test_batch_size_scaling(self):
         """Test performance scaling with batch size."""
@@ -430,12 +426,12 @@ class TestScalabilityBenchmarks:
             )
 
             # Memory usage should be reasonable
-            assert (
-                peak_mb < 100
-            ), f"Memory usage too high: {peak_mb:.2f}MB for size {size}"
-            assert (
-                memory_per_point < 0.1
-            ), f"Memory per point too high: {memory_per_point:.6f}MB"
+            assert peak_mb < 100, (
+                f"Memory usage too high: {peak_mb:.2f}MB for size {size}"
+            )
+            assert memory_per_point < 0.1, (
+                f"Memory per point too high: {memory_per_point:.6f}MB"
+            )
 
 
 @pytest.mark.benchmark
@@ -461,15 +457,15 @@ class TestBenchmarkComparison:
 
         # Overall performance should meet targets (adjusted for CI environment variations)
         # More relaxed targets for CI environments with variable performance
-        assert (
-            single_element_time < 0.015
-        ), "Single element performance target not met"  # Relaxed from 0.005s
-        assert (
-            multi_element_time < 0.020
-        ), "Multi-element performance target not met"  # Relaxed from 0.01s
-        assert (
-            batch_time < 0.100
-        ), "Batch performance target not met"  # Relaxed from 0.05s
+        assert single_element_time < 0.015, (
+            "Single element performance target not met"
+        )  # Relaxed from 0.005s
+        assert multi_element_time < 0.020, (
+            "Multi-element performance target not met"
+        )  # Relaxed from 0.01s
+        assert batch_time < 0.100, (
+            "Batch performance target not met"
+        )  # Relaxed from 0.05s
         assert (
             cache_time < 0.005
         ), (  # Relaxed from 0.0001s for realistic Python performance

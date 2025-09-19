@@ -5,10 +5,10 @@ This module establishes comprehensive performance baselines across different
 material types, complexities, and energy ranges to support optimization efforts.
 """
 
-import json
-import time
 from datetime import datetime
+import json
 from pathlib import Path
+import time
 
 import numpy as np
 import pytest

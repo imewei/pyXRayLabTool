@@ -6,8 +6,8 @@ to make completion faster and more responsive.
 
 import hashlib
 import json
-import time
 from pathlib import Path
+import time
 from typing import Any
 
 

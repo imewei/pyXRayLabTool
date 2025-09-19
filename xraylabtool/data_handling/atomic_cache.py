@@ -7,8 +7,8 @@ to eliminate expensive database queries to the Mendeleev library during runtime.
 
 from __future__ import annotations
 
-import types
 from functools import lru_cache
+import types
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -483,9 +483,9 @@ class FastAtomicDataProvider:
 
     def __init__(self) -> None:
         """Initialize the atomic data provider."""
-        self._scattering_cache: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]] = (
-            {}
-        )
+        self._scattering_cache: dict[
+            str, tuple[np.ndarray, np.ndarray, np.ndarray]
+        ] = {}
 
     def get_scattering_factors(
         self, element: str, energies: EnergyArray

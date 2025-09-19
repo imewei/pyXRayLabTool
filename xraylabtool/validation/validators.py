@@ -5,8 +5,8 @@ This module contains functions for validating input parameters,
 chemical formulas, energy ranges, and other data used in calculations.
 """
 
-import re
 from functools import lru_cache
+import re
 
 from xraylabtool.exceptions import EnergyError, FormulaError, ValidationError
 

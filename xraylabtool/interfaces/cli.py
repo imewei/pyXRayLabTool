@@ -24,8 +24,8 @@ precision control, and comprehensive shell completion for enhanced usability.
 
 import argparse
 import json
-import sys
 from pathlib import Path
+import sys
 from textwrap import dedent
 from typing import Any
 

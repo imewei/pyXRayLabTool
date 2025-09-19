@@ -9,9 +9,9 @@ This module contains tests for:
 """
 
 import json
+from pathlib import Path
 import tempfile
 import unittest
-from pathlib import Path
 
 from xraylabtool.calculators.core import calculate_single_material_properties
 from xraylabtool.export import export_to_csv, export_to_json

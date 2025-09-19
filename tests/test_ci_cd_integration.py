@@ -7,10 +7,10 @@ with continuous integration and continuous deployment pipelines.
 
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -228,16 +228,16 @@ class TestCICDIntegration(BaseUnitTest):
             )
 
             # Coverage should run (may pass or fail, but should execute)
-            assert (
-                result.returncode is not None
-            ), "Coverage should execute in CI environment"
+            assert result.returncode is not None, (
+                "Coverage should execute in CI environment"
+            )
 
             # Check if coverage.xml is generated
             coverage_file = self.project_root / "coverage.xml"
             if coverage_file.exists():
-                assert (
-                    coverage_file.stat().st_size > 0
-                ), "Coverage file should not be empty"
+                assert coverage_file.stat().st_size > 0, (
+                    "Coverage file should not be empty"
+                )
 
         except FileNotFoundError:
             pytest.skip("Coverage tools not available in CI environment")
@@ -279,9 +279,9 @@ class TestCICDIntegration(BaseUnitTest):
 
                 # Validate report structure
                 assert "timestamp" in report_data, "Report should have timestamp"
-                assert (
-                    "compliance_score" in report_data
-                ), "Report should have compliance score"
+                assert "compliance_score" in report_data, (
+                    "Report should have compliance score"
+                )
                 assert "violations" in report_data, "Report should have violations list"
 
         finally:
@@ -312,9 +312,9 @@ class TestCICDIntegration(BaseUnitTest):
             )
 
             # Parallel tests should run (may not have -n option available)
-            assert (
-                result.returncode is not None
-            ), "Parallel tests should attempt to execute"
+            assert result.returncode is not None, (
+                "Parallel tests should attempt to execute"
+            )
 
         except FileNotFoundError:
             pytest.skip("Pytest-xdist not available for parallel execution")
@@ -337,9 +337,9 @@ class TestCICDIntegration(BaseUnitTest):
             timeout=30,
         )
 
-        assert (
-            result.returncode == 0
-        ), "Package should import successfully in CI environment"
+        assert result.returncode == 0, (
+            "Package should import successfully in CI environment"
+        )
         assert "Import successful" in result.stdout, "Import test should succeed"
 
     @pytest.mark.integration
@@ -378,9 +378,9 @@ print("Docker compatibility test passed")
         )
 
         # Should run without major errors
-        assert (
-            "Docker compatibility test passed" in result.stdout
-        ), "Docker compatibility test should pass"
+        assert "Docker compatibility test passed" in result.stdout, (
+            "Docker compatibility test should pass"
+        )
 
     @pytest.mark.integration
     def test_cache_invalidation_in_ci(self):
@@ -438,9 +438,9 @@ print("Docker compatibility test passed")
                 )
 
                 # Command should execute (may pass or fail)
-                assert (
-                    result.returncode is not None
-                ), f"Command for {artifact_name} should execute"
+                assert result.returncode is not None, (
+                    f"Command for {artifact_name} should execute"
+                )
 
             except FileNotFoundError:
                 pytest.skip(f"Tools for {artifact_name} not available")
@@ -485,15 +485,15 @@ class TestCIWorkflowSimulation(BaseUnitTest):
                 failed_steps.append(f"{step_name} ({e})")
 
         # Allow some steps to fail in CI environment
-        assert (
-            len(failed_steps) <= 3
-        ), f"Too many CI workflow steps failed: {failed_steps}"
+        assert len(failed_steps) <= 3, (
+            f"Too many CI workflow steps failed: {failed_steps}"
+        )
 
     def _test_dependencies(self) -> bool:
         """Test that dependencies can be imported."""
         try:
-            import xraylabtool
             from tests.fixtures.test_base import BaseUnitTest
+            import xraylabtool
 
             return True
         except ImportError:

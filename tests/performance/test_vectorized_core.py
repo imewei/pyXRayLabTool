@@ -200,9 +200,9 @@ class TestVectorizedCore(BasePerformanceTest):
                 )
 
                 # Check accuracy is preserved
-                assert benchmark_result[
-                    "accuracy_preserved"
-                ], f"Accuracy not preserved for {test_key}"
+                assert benchmark_result["accuracy_preserved"], (
+                    f"Accuracy not preserved for {test_key}"
+                )
 
                 # Check for reasonable performance (vectorization may have overhead on small datasets)
                 # Focus on correctness rather than strict performance requirements since benefits vary by hardware
@@ -380,9 +380,9 @@ class TestVectorizedCore(BasePerformanceTest):
                 zip(individual_result, batch_result, strict=False)
             ):
                 rel_error = np.max(np.abs((individual - batch) / (individual + 1e-15)))
-                assert (
-                    rel_error < 1e-12
-                ), f"Material {i}, result {j}: relative error {rel_error:.2e}"
+                assert rel_error < 1e-12, (
+                    f"Material {i}, result {j}: relative error {rel_error:.2e}"
+                )
 
         print(
             "Multi-material batch processing validated for"

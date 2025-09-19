@@ -217,9 +217,9 @@ class TestVectorizedCalculations(BasePerformanceTest):
             energies = np.linspace(5.0, 25.0, size)
 
             # Ensure energies array is C-contiguous
-            assert (
-                energies.flags.c_contiguous
-            ), f"Energy array not C-contiguous for size {size}"
+            assert energies.flags.c_contiguous, (
+                f"Energy array not C-contiguous for size {size}"
+            )
 
             # Test calculation and check result array properties
             result = calculate_single_material_properties(test_formula, energies, 2.2)
@@ -401,27 +401,27 @@ class TestVectorizedCalculations(BasePerformanceTest):
                     beta = result.absorption_beta
 
                     # Test for common numerical issues
-                    assert np.all(
-                        np.isfinite(delta)
-                    ), f"Non-finite dispersion values for {formula}"
-                    assert np.all(
-                        np.isfinite(beta)
-                    ), f"Non-finite absorption values for {formula}"
-                    assert np.all(
-                        delta >= 0
-                    ), f"Negative dispersion values for {formula}"
-                    assert np.all(
-                        beta >= 0
-                    ), f"Negative absorption values for {formula}"
+                    assert np.all(np.isfinite(delta)), (
+                        f"Non-finite dispersion values for {formula}"
+                    )
+                    assert np.all(np.isfinite(beta)), (
+                        f"Non-finite absorption values for {formula}"
+                    )
+                    assert np.all(delta >= 0), (
+                        f"Negative dispersion values for {formula}"
+                    )
+                    assert np.all(beta >= 0), (
+                        f"Negative absorption values for {formula}"
+                    )
 
                     # Test precision preservation
                     # Values should not be exactly zero unless physically meaningful
-                    assert np.any(
-                        delta > 1e-15
-                    ), f"Suspiciously small dispersion for {formula}"
-                    assert np.any(
-                        beta > 1e-15
-                    ), f"Suspiciously small absorption for {formula}"
+                    assert np.any(delta > 1e-15), (
+                        f"Suspiciously small dispersion for {formula}"
+                    )
+                    assert np.any(beta > 1e-15), (
+                        f"Suspiciously small absorption for {formula}"
+                    )
 
                     # Record numerical health metrics
                     record_performance_metric(

@@ -5,8 +5,8 @@ that activates/deactivates with virtual environment changes.
 """
 
 import os
-import shutil
 from pathlib import Path
+import shutil
 
 from .environment import EnvironmentDetector, EnvironmentInfo, EnvironmentType
 from .shells import CompletionManager, get_global_options, get_xraylabtool_commands

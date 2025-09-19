@@ -86,14 +86,14 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         for key, data in benchmark_results.items():
             if data["energy_points"] == 1:
                 # Single energy calculations should be reasonably fast
-                assert (
-                    data["calculations_per_second"] > 5000
-                ), f"Single energy calc too slow: {data['calculations_per_second']}"
+                assert data["calculations_per_second"] > 5000, (
+                    f"Single energy calc too slow: {data['calculations_per_second']}"
+                )
             elif data["energy_points"] <= 100:
                 # Small arrays should still be reasonably fast
-                assert (
-                    data["calculations_per_second"] > 500
-                ), f"Small array calc too slow: {data['calculations_per_second']}"
+                assert data["calculations_per_second"] > 500, (
+                    f"Small array calc too slow: {data['calculations_per_second']}"
+                )
 
         return benchmark_results
 
@@ -164,9 +164,9 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
 
         # Batch processing should be more efficient than individual calculations
         # Expect at least 1.3x improvement for batch size 10 vs 1 (conservative)
-        assert (
-            batch_10_rate > batch_1_rate * 1.3
-        ), f"Batch processing not scaling well: {batch_10_rate} vs {batch_1_rate}"
+        assert batch_10_rate > batch_1_rate * 1.3, (
+            f"Batch processing not scaling well: {batch_10_rate} vs {batch_1_rate}"
+        )
 
         return benchmark_results
 
@@ -252,16 +252,16 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         # Assert reasonable memory behavior
         for scenario, data in memory_results.items():
             # Memory growth should be reasonable
-            assert (
-                data["memory_growth_mb"] < 500
-            ), f"Excessive memory growth in {scenario}: {data['memory_growth_mb']}MB"
+            assert data["memory_growth_mb"] < 500, (
+                f"Excessive memory growth in {scenario}: {data['memory_growth_mb']}MB"
+            )
 
             # Garbage collection should recover most temporary memory
             if data["memory_growth_mb"] > 10:  # Only check if significant growth
                 gc_efficiency = data["gc_recovered_mb"] / data["memory_growth_mb"]
-                assert (
-                    gc_efficiency > 0.5
-                ), f"Poor GC efficiency in {scenario}: {gc_efficiency:.2f}"
+                assert gc_efficiency > 0.5, (
+                    f"Poor GC efficiency in {scenario}: {gc_efficiency:.2f}"
+                )
 
         return memory_results
 
@@ -348,14 +348,14 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
             )
 
             # Cached access should be very fast
-            assert (
-                data["cached_access_time"] < 0.001
-            ), f"Slow cached access for {element}: {data['cached_access_time']}s"
+            assert data["cached_access_time"] < 0.001, (
+                f"Slow cached access for {element}: {data['cached_access_time']}s"
+            )
 
             # Cache should provide significant speedup
-            assert (
-                data["cache_speedup"] > 10
-            ), f"Poor cache speedup for {element}: {data['cache_speedup']}x"
+            assert data["cache_speedup"] > 10, (
+                f"Poor cache speedup for {element}: {data['cache_speedup']}x"
+            )
 
         return interpolator_results
 
