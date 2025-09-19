@@ -9,9 +9,9 @@ significantly reducing CI execution time while maintaining comprehensive coverag
 import ast
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 class TestSelector:

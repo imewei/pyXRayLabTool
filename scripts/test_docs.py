@@ -18,12 +18,12 @@ import argparse
 import doctest
 import glob
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 import tempfile
 import time
-from pathlib import Path
 
 
 # Colors for output

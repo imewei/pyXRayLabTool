@@ -66,7 +66,7 @@ class MaterialComparator:
 
         # Calculate X-ray properties for all materials
         material_data = {}
-        for i, (formula, density) in enumerate(zip(formulas, densities, strict=False)):
+        for _i, (formula, density) in enumerate(zip(formulas, densities, strict=False)):
             try:
                 result_dict = calculate_xray_properties(
                     formulas=[formula], energies=energies, densities=[density]

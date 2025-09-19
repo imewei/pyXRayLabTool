@@ -45,7 +45,7 @@ def export_to_csv(
         header_parts = []
         for field in fields[1:]:
             header_parts.extend([f"{field}_energy_{i}" for i in range(n_energies)])
-        header = ["formula"] + header_parts
+        header = ["formula", *header_parts]
         writer.writerow(header)
 
         # Write data
