@@ -8,13 +8,13 @@ memory leaks in scientific computing workloads.
 
 from __future__ import annotations
 
-from collections import defaultdict, deque
-from contextlib import contextmanager
-from dataclasses import dataclass, field
 import gc
 import threading
 import time
 import tracemalloc
+from collections import defaultdict, deque
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -23,11 +23,22 @@ import psutil
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-# Global profiling state
-_profiling_active = False
-_profiling_lock = threading.RLock()
-_memory_snapshots: deque[dict[str, Any]] = deque(maxlen=1000)
-_allocation_tracking: dict[str, list[dict[str, Any]]] = defaultdict(list)
+# Global profiling state - disabled by default for performance
+import os
+
+_profiling_active = os.getenv("XRAYLABTOOL_MEMORY_PROFILING", "false").lower() == "true"
+_profiling_lock = None
+_memory_snapshots = None
+_allocation_tracking = None
+
+
+def _ensure_profiling_structures():
+    """Lazy initialization of profiling data structures."""
+    global _profiling_lock, _memory_snapshots, _allocation_tracking
+    if _profiling_lock is None:
+        _profiling_lock = threading.RLock()
+        _memory_snapshots = deque(maxlen=1000)
+        _allocation_tracking = defaultdict(list)
 
 
 @dataclass

@@ -7,29 +7,37 @@ including atomic scattering factors and crystallographic calculations.
 
 from __future__ import annotations
 
+import types
+import warnings
 from collections.abc import Callable
 
 # concurrent.futures import moved to function level for parallel processing
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
-import types
 from typing import TYPE_CHECKING, Any
-import warnings
 
 import numpy as np
 
 # Lazy imports for heavy dependencies to reduce startup time
 # pandas and scipy imports moved to function level when needed
 
-# Import cache metrics with lazy loading to avoid circular imports
-# Import optimization decorators
-try:
-    from xraylabtool.optimization.vectorized_core import ensure_c_contiguous
-except ImportError:
-    # Fallback decorator if optimization module not available
-    def ensure_c_contiguous(func: Callable[..., Any]) -> Callable[..., Any]:
-        return func
+# Lazy loading for optimization modules to reduce memory overhead
+# These will be imported only when actually needed
+
+
+def _get_optimization_decorator() -> Callable[..., Any]:
+    """Lazy load optimization decorator to reduce memory overhead."""
+    try:
+        from xraylabtool.optimization.vectorized_core import ensure_c_contiguous
+
+        return ensure_c_contiguous
+    except ImportError:
+        # Fallback decorator if optimization module not available
+        def ensure_c_contiguous(func: Callable[..., Any]) -> Callable[..., Any]:
+            return func
+
+        return ensure_c_contiguous
 
 
 if TYPE_CHECKING:
@@ -761,21 +769,61 @@ def _warm_priority_cache() -> None:
     Warm the cache with priority elements for improved cold start performance.
 
     This is called automatically on first calculation to pre-load common elements.
+    Uses background thread for async warming to reduce cold start penalty.
     """
     global _CACHE_WARMED
     if _CACHE_WARMED:
         return
 
-    # Pre-load atomic data for priority elements
-    from xraylabtool.data_handling.atomic_cache import get_bulk_atomic_data_fast
+    # Use background thread for async warming to avoid blocking main thread
+    import threading
 
+    def _background_cache_warming():
+        """Background thread function for cache warming."""
+        global _CACHE_WARMED
+        try:
+            from xraylabtool.data_handling.atomic_cache import get_bulk_atomic_data_fast
+
+            priority_tuple = tuple(_PRIORITY_ELEMENTS)
+            get_bulk_atomic_data_fast(priority_tuple)
+            _CACHE_WARMED = True
+        except Exception:
+            # If warming fails, just continue - it's not critical
+            pass
+
+    # Start background warming but don't wait for it
+    warming_thread = threading.Thread(target=_background_cache_warming, daemon=True)
+    warming_thread.start()
+
+    # Mark as "warming in progress" to avoid multiple attempts
+    _CACHE_WARMED = True
+
+
+def _smart_cache_warming(formula: str) -> None:
+    """
+    Smart cache warming that only loads elements needed for the specific calculation.
+
+    This provides much faster warming by only loading required elements instead
+    of all priority elements, reducing cold start penalty significantly.
+
+    Args:
+        formula: Chemical formula to analyze for required elements
+    """
     try:
-        priority_tuple = tuple(_PRIORITY_ELEMENTS)
-        get_bulk_atomic_data_fast(priority_tuple)
-        _CACHE_WARMED = True
+        from xraylabtool.validation.validators import parse_formula
+
+        # Parse formula to get required elements
+        parsed = parse_formula(formula)
+        required_elements = list(parsed.keys())
+
+        # Load only required elements (much faster than bulk loading)
+        from xraylabtool.data_handling.atomic_cache import get_bulk_atomic_data_fast
+
+        get_bulk_atomic_data_fast(tuple(required_elements))
+
     except Exception:
-        # If warming fails, just continue - it's not critical
-        pass
+        # If smart warming fails, fall back to traditional warming
+        _warm_priority_cache()
 
 
 def clear_scattering_factor_cache() -> None:
@@ -1195,7 +1243,7 @@ def _prepare_element_data(
     return element_data
 
 
-@ensure_c_contiguous
+# @ensure_c_contiguous  # Optimization decorator removed for compatibility
 def _calculate_single_material_xray_properties(
     formula_str: str,
     energy_kev: FloatLike | ArrayLike,
@@ -1294,7 +1342,7 @@ def _calculate_single_material_xray_properties(
     }
 
 
-@ensure_c_contiguous
+# @ensure_c_contiguous  # Optimization decorator removed for compatibility
 def calculate_multiple_xray_properties(
     formula_list: list[str],
     energy_kev: FloatLike | ArrayLike,
@@ -1405,7 +1453,7 @@ def load_data_file(filename: str) -> Any:
 # =====================================================================================
 
 
-@ensure_c_contiguous
+# @ensure_c_contiguous  # Optimization decorator removed for compatibility
 def calculate_single_material_properties(
     formula: str, energy_keV: FloatLike | ArrayLike, density: FloatLike
 ) -> XRayResult:
@@ -1503,8 +1551,8 @@ def calculate_single_material_properties(
         XRayResult : Complete documentation of returned dataclass
         parse_formula : Parse chemical formulas into elements and counts
     """
-    # Warm cache with priority elements for better performance
-    _warm_priority_cache()
+    # Use smart cache warming for faster cold start (only loads required elements)
+    _smart_cache_warming(formula)
 
     # Calculate properties using the existing function
     properties = _calculate_single_material_xray_properties(
@@ -1654,12 +1702,29 @@ def _process_formulas_parallel(
     densities: list[float],
     process_func: Callable[[tuple[str, float]], tuple[str, XRayResult]],
 ) -> dict[str, XRayResult]:
-    """Process formulas in parallel using ThreadPoolExecutor."""
-    import concurrent.futures
-    import multiprocessing
+    """
+    Process formulas with adaptive parallelization.
 
+    Uses sequential processing for small batches (<20 items) to avoid
+    ThreadPoolExecutor overhead, and parallel processing for larger batches.
+    """
     formula_density_pairs = list(zip(formulas, densities, strict=False))
     results = {}
+
+    # Use sequential processing for small batches to avoid thread overhead
+    if len(formulas) < 20:
+        for pair in formula_density_pairs:
+            try:
+                formula_result, xray_result = process_func(pair)
+                results[formula_result] = xray_result
+            except Exception as e:
+                print(f"Warning: Failed to process formula '{pair[0]}': {e}")
+                continue
+        return results
+
+    # Use parallel processing for larger batches
+    import concurrent.futures
+    import multiprocessing
 
     optimal_workers = min(len(formulas), max(1, multiprocessing.cpu_count() // 2), 8)
 
