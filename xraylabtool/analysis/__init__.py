@@ -103,4 +103,6 @@ def compare_materials(
     }
 
 
-__all__ = ["compare_materials", "find_absorption_edges"]
+from .comparator import MaterialComparator
+
+__all__ = ["MaterialComparator", "compare_materials", "find_absorption_edges"]

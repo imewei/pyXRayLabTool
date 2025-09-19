@@ -824,27 +824,28 @@ class TestInstallCompletionCommand:
                 in BASH_COMPLETION_SCRIPT
             )
 
-            # Check for all commands including install-completion
+            # Check for all commands including new structure
             expected_commands = [
                 "calc",
                 "batch",
+                "compare",
+                "analyze",
+                "export",
                 "convert",
                 "formula",
                 "atomic",
                 "bragg",
                 "list",
-                "install-completion",
+                "completion",
             ]
 
             for command in expected_commands:
                 assert command in BASH_COMPLETION_SCRIPT
 
             # Check for completion functions for main commands
+            # Note: New completion system uses a single function
             expected_functions = [
-                "_xraylabtool_calc_complete",
-                "_xraylabtool_batch_complete",
-                "_xraylabtool_convert_complete",
-                "_xraylabtool_install_completion_complete",
+                "_xraylabtool_complete",
             ]
 
             for func in expected_functions:

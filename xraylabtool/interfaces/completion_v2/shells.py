@@ -121,7 +121,46 @@ complete -F _{command_name}_complete {command_name}
             options = cmd_info.get("options", [])
             cmd_info.get("arguments", [])
 
-            completion_logic = f"""    # {cmd_name} command
+            if "subcommands" in cmd_info:
+                # Handle commands with subcommands (like completion)
+                subcommands = cmd_info.get("subcommands", {})
+                subcmd_list = " ".join(subcommands.keys())
+
+                completion_logic = f"""    # {cmd_name} command with subcommands
+    if [[ "${{command}}" == "{cmd_name}" ]]; then
+        local {cmd_name}_opts="{" ".join(options)}"
+        local {cmd_name}_subcommands="{subcmd_list}"
+
+        # If we have 3+ words, check for subcommand completion
+        if [[ ${{#COMP_WORDS[@]}} -gt 2 ]]; then
+            local subcommand="${{COMP_WORDS[2]}}"
+            case "${{subcommand}}" in"""
+
+                for subcmd_name, subcmd_info in subcommands.items():
+                    subcmd_options = subcmd_info.get("options", [])
+                    completion_logic += f"""
+                {subcmd_name})
+                    local {subcmd_name}_opts="{" ".join(subcmd_options)}"
+                    COMPREPLY=( $(compgen -W "${{{subcmd_name}_opts}}" -- "${{cur}}") )
+                    return 0
+                    ;;"""
+
+                completion_logic += """
+            esac
+        fi
+
+        # Complete subcommands if at the right position
+        if [[ ${COMP_CWORD} -eq 2 ]]; then
+            COMPREPLY=( $(compgen -W "${{cmd_name}_subcommands} ${{cmd_name}_opts}" -- "${cur}") )
+        else
+            COMPREPLY=( $(compgen -W "${{cmd_name}_opts}" -- "${cur}") )
+        fi
+        return 0
+    fi
+"""
+            else:
+                # Handle regular commands
+                completion_logic = f"""    # {cmd_name} command
     if [[ "${{command}}" == "{cmd_name}" ]]; then
         local {cmd_name}_opts="{" ".join(options)}"
 
@@ -132,7 +171,7 @@ complete -F _{command_name}_complete {command_name}
                 return 0
                 ;;
             --format)
-                COMPREPLY=( $(compgen -W "json yaml csv" -- "${{cur}}") )
+                COMPREPLY=( $(compgen -W "json yaml csv excel html pdf" -- "${{cur}}") )
                 return 0
                 ;;
         esac
@@ -183,8 +222,8 @@ _{command_name}() {{
     local context state line
 
     _arguments -C \\
-        '(-h --help)'{{{-h,--help}}}'[Show help message]' \\
-        '(-v --verbose)'{{{-v,--verbose}}}'[Enable verbose output]' \\
+        '(-h --help){{-h,--help}}'[Show help message]' \\
+        '(-v --verbose){{-v,--verbose}}'[Enable verbose output]' \\
         '(--version)'--version'[Show version information]' \\
         '1: :->command' \\
         '*:: :->args'
@@ -219,30 +258,100 @@ _{command_name} "$@"
             description = cmd_info.get("description", f"Run {cmd_name} command")
             definitions.append(f'                "{cmd_name}:{description}"')
 
-            # Generate arguments for this command
-            options = cmd_info.get("options", [])
-            cmd_args = f"""                {cmd_name})
+            # Check if this command has subcommands
+            if "subcommands" in cmd_info:
+                # Handle nested subcommands (like completion)
+                cmd_args = f"""                {cmd_name})
                     _arguments \\"""
 
-            for option in options:
-                if option.startswith("--"):
-                    opt_name = option.replace("--", "").replace("-", " ")
-                    cmd_args += f"""
+                # Add main command options
+                main_options = cmd_info.get("options", [])
+                for option in main_options:
+                    if option.startswith("--"):
+                        opt_name = option.replace("--", "").replace("-", " ")
+                        cmd_args += f"""
                         '{option}[{opt_name.title()}]' \\"""
-                elif option.startswith("-"):
-                    opt_name = option.replace("-", "")
-                    cmd_args += f"""
+                    elif option.startswith("-"):
+                        opt_name = option.replace("-", "")
+                        cmd_args += f"""
                         '{option}[{opt_name.upper()}]' \\"""
 
-            # Add global options
-            for option in global_options:
-                if option.startswith("--"):
-                    opt_name = option.replace("--", "").replace("-", " ")
+                cmd_args += """
+                        '1: :->subcommand' \\
+                        '*:: :->subargs'
+
+                    case $state in
+                        subcommand)
+                            local subcommands
+                            subcommands=("""
+
+                # Add subcommand definitions
+                subcommands = cmd_info.get("subcommands", {})
+                for subcmd_name, subcmd_info in subcommands.items():
+                    subcmd_desc = subcmd_info.get(
+                        "description", f"{subcmd_name} subcommand"
+                    )
                     cmd_args += f"""
+                                "{subcmd_name}:{subcmd_desc}\""""
+
+                cmd_args += """
+                            )
+                            _describe 'subcommands' subcommands
+                            ;;
+                        subargs)
+                            case $words[1] in"""
+
+                # Add subcommand argument handling
+                for subcmd_name, subcmd_info in subcommands.items():
+                    subcmd_options = subcmd_info.get("options", [])
+                    cmd_args += f"""
+                                {subcmd_name})
+                                    _arguments \\"""
+
+                    for option in subcmd_options:
+                        if option.startswith("--"):
+                            opt_name = option.replace("--", "").replace("-", " ")
+                            cmd_args += f"""
+                                        '{option}[{opt_name.title()}]' \\"""
+                        elif option.startswith("-"):
+                            opt_name = option.replace("-", "")
+                            cmd_args += f"""
+                                        '{option}[{opt_name.upper()}]' \\"""
+
+                    cmd_args = cmd_args.rstrip(" \\")
+                    cmd_args += """
+                                    ;;"""
+
+                cmd_args += """
+                            esac
+                            ;;
+                    esac
+                    ;;"""
+            else:
+                # Handle regular commands
+                options = cmd_info.get("options", [])
+                cmd_args = f"""                {cmd_name})
+                    _arguments \\"""
+
+                for option in options:
+                    if option.startswith("--"):
+                        opt_name = option.replace("--", "").replace("-", " ")
+                        cmd_args += f"""
+                        '{option}[{opt_name.title()}]' \\"""
+                    elif option.startswith("-"):
+                        opt_name = option.replace("-", "")
+                        cmd_args += f"""
+                        '{option}[{opt_name.upper()}]' \\"""
+
+                # Add global options
+                for option in global_options:
+                    if option.startswith("--"):
+                        opt_name = option.replace("--", "").replace("-", " ")
+                        cmd_args += f"""
                         '{option}[{opt_name.title()}]' \\"""
 
-            cmd_args = cmd_args.rstrip(" \\")
-            cmd_args += """
+                cmd_args = cmd_args.rstrip(" \\")
+                cmd_args += """
                     ;;"""
 
             command_args.append(cmd_args)
@@ -317,22 +426,73 @@ class FishCompletionGenerator(CompletionGenerator):
                 f" '{cmd_name}' -d '{description}'"
             )
 
-            # Command options
-            options = cmd_info.get("options", [])
-            for option in options:
-                if option.startswith("--"):
-                    opt_name = option.replace("--", "").replace("-", " ")
+            if "subcommands" in cmd_info:
+                # Handle commands with subcommands (like completion)
+                subcommands = cmd_info.get("subcommands", {})
+
+                # Add main command options
+                main_options = cmd_info.get("options", [])
+                for option in main_options:
+                    if option.startswith("--"):
+                        opt_name = option.replace("--", "").replace("-", " ")
+                        completions.append(
+                            f"complete -c {self.command_name} -f -n"
+                            f" '__fish_seen_subcommand_from {cmd_name}' -l {option[2:]} -d"
+                            f" '{opt_name.title()}'"
+                        )
+                    elif option.startswith("-") and len(option) == 2:
+                        completions.append(
+                            f"complete -c {self.command_name} -f -n"
+                            f" '__fish_seen_subcommand_from {cmd_name}' -s {option[1]} -d"
+                            " 'Short option'"
+                        )
+
+                # Add subcommand completions
+                for subcmd_name, subcmd_info in subcommands.items():
+                    subcmd_desc = subcmd_info.get(
+                        "description", f"{subcmd_name} subcommand"
+                    )
                     completions.append(
                         f"complete -c {self.command_name} -f -n"
-                        f" '__fish_seen_subcommand_from {cmd_name}' -l {option[2:]} -d"
-                        f" '{opt_name.title()}'"
+                        f" '__fish_seen_subcommand_from {cmd_name}' -a"
+                        f" '{subcmd_name}' -d '{subcmd_desc}'"
                     )
-                elif option.startswith("-") and len(option) == 2:
-                    completions.append(
-                        f"complete -c {self.command_name} -f -n"
-                        f" '__fish_seen_subcommand_from {cmd_name}' -s {option[1]} -d"
-                        " 'Short option'"
-                    )
+
+                    # Add subcommand options
+                    subcmd_options = subcmd_info.get("options", [])
+                    for option in subcmd_options:
+                        if option.startswith("--"):
+                            opt_name = option.replace("--", "").replace("-", " ")
+                            completions.append(
+                                f"complete -c {self.command_name} -f -n"
+                                f" '__fish_seen_subcommand_from {cmd_name}' -n"
+                                f" 'test (count (commandline -opc)) -ge 3; and contains -- {subcmd_name} (commandline -opc)' -l {option[2:]} -d"
+                                f" '{opt_name.title()}'"
+                            )
+                        elif option.startswith("-") and len(option) == 2:
+                            completions.append(
+                                f"complete -c {self.command_name} -f -n"
+                                f" '__fish_seen_subcommand_from {cmd_name}' -n"
+                                f" 'test (count (commandline -opc)) -ge 3; and contains -- {subcmd_name} (commandline -opc)' -s {option[1]} -d"
+                                " 'Short option'"
+                            )
+            else:
+                # Handle regular commands
+                options = cmd_info.get("options", [])
+                for option in options:
+                    if option.startswith("--"):
+                        opt_name = option.replace("--", "").replace("-", " ")
+                        completions.append(
+                            f"complete -c {self.command_name} -f -n"
+                            f" '__fish_seen_subcommand_from {cmd_name}' -l {option[2:]} -d"
+                            f" '{opt_name.title()}'"
+                        )
+                    elif option.startswith("-") and len(option) == 2:
+                        completions.append(
+                            f"complete -c {self.command_name} -f -n"
+                            f" '__fish_seen_subcommand_from {cmd_name}' -s {option[1]} -d"
+                            " 'Short option'"
+                        )
 
         return "\n".join(completions)
 
@@ -385,7 +545,7 @@ Register-ArgumentCompleter -Native -CommandName {command_name} -ScriptBlock {{
 
     if ($words.Count -le 1) {{
         # Complete main commands and global options
-        $commands = @('calc', 'batch', 'convert', 'formula', 'atomic', 'bragg', 'list', 'install-completion')
+        $commands = @('calc', 'batch', 'compare', 'analyze', 'export', 'convert', 'formula', 'atomic', 'bragg', 'list', 'completion')
         $completions = $commands + $globalOptions
         $completions | Where-Object {{ $_ -like "$wordToComplete*" }}
         return
@@ -408,12 +568,49 @@ Register-ArgumentCompleter -Native -CommandName {command_name} -ScriptBlock {{
 
         for cmd_name, cmd_info in commands.items():
             options = cmd_info.get("options", [])
-            option_list = ", ".join(f'"{opt}"' for opt in options)
 
-            case = f"""        '{cmd_name}' {{
+            if "subcommands" in cmd_info:
+                # Handle commands with subcommands (like completion)
+                subcommands = cmd_info.get("subcommands", {})
+                subcmd_list = ", ".join(f'"{subcmd}"' for subcmd in subcommands.keys())
+                option_list = ", ".join(f'"{opt}"' for opt in options)
+
+                case = f"""        '{cmd_name}' {{
+            if ($words.Count -eq 2) {{
+                # Complete subcommands and main options
+                $subcommands = @({subcmd_list})
+                $options = @({option_list})
+                $completions = $subcommands + $options
+                $completions | Where-Object {{ $_ -like "$wordToComplete*" }}
+            }} elseif ($words.Count -gt 2) {{
+                # Handle subcommand options
+                $subcommand = $words[2]
+                switch ($subcommand) {{"""
+
+                for subcmd_name, subcmd_info in subcommands.items():
+                    subcmd_options = subcmd_info.get("options", [])
+                    subcmd_option_list = ", ".join(f'"{opt}"' for opt in subcmd_options)
+                    case += f"""
+                    '{subcmd_name}' {{
+                        $subOptions = @({subcmd_option_list})
+                        $subOptions | Where-Object {{ $_ -like "$wordToComplete*" }}
+                    }}"""
+
+                case += """
+                    default {
+                        $globalOptions | Where-Object { $_ -like "$wordToComplete*" }
+                    }
+                }
+            }
+        }"""
+            else:
+                # Handle regular commands
+                option_list = ", ".join(f'"{opt}"' for opt in options)
+                case = f"""        '{cmd_name}' {{
             $options = @({option_list})
             $options | Where-Object {{ $_ -like "$wordToComplete*" }}
         }}"""
+
             cases.append(case)
 
         return "\n".join(cases)
@@ -457,10 +654,8 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
     """Get the XRayLabTool command definitions for completion."""
     return {
         "calc": {
-            "description": "Calculate X-ray optical properties",
+            "description": "Calculate X-ray properties for a single material",
             "options": [
-                "--material",
-                "-m",
                 "--energy",
                 "-e",
                 "--density",
@@ -468,7 +663,8 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
                 "--output",
                 "-o",
                 "--format",
-                "-f",
+                "--wavelength",
+                "-w",
                 "--verbose",
                 "-v",
                 "--help",
@@ -477,14 +673,13 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
             "arguments": ["material"],
         },
         "batch": {
-            "description": "Process multiple calculations from file",
+            "description": "Process multiple materials from CSV file",
             "options": [
                 "--input",
                 "-i",
                 "--output",
                 "-o",
                 "--format",
-                "-f",
                 "--parallel",
                 "-p",
                 "--verbose",
@@ -494,30 +689,91 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
             ],
             "arguments": ["input_file"],
         },
-        "convert": {
-            "description": "Convert between file formats",
+        "compare": {
+            "description": "Compare X-ray properties between multiple materials",
             "options": [
-                "--input",
-                "-i",
+                "--energy",
+                "-e",
+                "--properties",
                 "--output",
                 "-o",
-                "--from-format",
-                "--to-format",
+                "--format",
+                "--report",
+                "--precision",
                 "--verbose",
                 "-v",
                 "--help",
                 "-h",
             ],
-            "arguments": ["input_file", "output_file"],
+            "arguments": ["materials"],
+        },
+        "analyze": {
+            "description": "Advanced analysis of single material properties",
+            "options": [
+                "--density",
+                "-d",
+                "--energy",
+                "-e",
+                "--edges",
+                "--optimize",
+                "--transmission",
+                "--thickness",
+                "--stats",
+                "--output",
+                "-o",
+                "--format",
+                "--precision",
+                "--verbose",
+                "-v",
+                "--help",
+                "-h",
+            ],
+            "arguments": ["material"],
+        },
+        "export": {
+            "description": "Export data with advanced formatting and visualization",
+            "options": [
+                "--output",
+                "-o",
+                "--format",
+                "--formats",
+                "--template",
+                "--plots",
+                "--plots-only",
+                "--plot-types",
+                "--excel-template",
+                "--html-template",
+                "--include-metadata",
+                "--interactive",
+                "--dpi",
+                "--style",
+                "--title",
+                "--author",
+                "--institution",
+                "--verbose",
+                "-v",
+                "--help",
+                "-h",
+            ],
+            "arguments": ["input_file"],
+        },
+        "convert": {
+            "description": "Convert between energy and wavelength units",
+            "options": [
+                "--to",
+                "--from",
+                "--unit",
+                "--precision",
+                "--verbose",
+                "-v",
+                "--help",
+                "-h",
+            ],
+            "arguments": ["value", "unit"],
         },
         "formula": {
             "description": "Parse and analyze chemical formulas",
             "options": [
-                "--formula",
-                "-f",
-                "--output",
-                "-o",
-                "--format",
                 "--verbose",
                 "-v",
                 "--help",
@@ -526,15 +782,10 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
             "arguments": ["formula"],
         },
         "atomic": {
-            "description": "Get atomic properties and data",
+            "description": "Look up atomic data for elements",
             "options": [
-                "--element",
-                "-e",
                 "--property",
                 "-p",
-                "--output",
-                "-o",
-                "--format",
                 "--verbose",
                 "-v",
                 "--help",
@@ -543,32 +794,27 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
             "arguments": ["element"],
         },
         "bragg": {
-            "description": "Calculate Bragg diffraction conditions",
+            "description": "Calculate Bragg angles for diffraction",
             "options": [
-                "--crystal",
                 "--energy",
                 "-e",
                 "--wavelength",
                 "-w",
-                "--output",
-                "-o",
-                "--format",
+                "--crystal",
+                "--hkl",
                 "--verbose",
                 "-v",
                 "--help",
                 "-h",
             ],
-            "arguments": ["crystal_system"],
+            "arguments": ["crystal_structure"],
         },
         "list": {
-            "description": "List available materials, elements, or data",
+            "description": "List available data and information",
             "options": [
                 "--type",
                 "-t",
                 "--filter",
-                "--output",
-                "-o",
-                "--format",
                 "--verbose",
                 "-v",
                 "--help",
@@ -576,21 +822,59 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
             ],
             "arguments": ["list_type"],
         },
-        "install-completion": {
-            "description": "Install shell completion",
+        "completion": {
+            "description": "Manage virtual environment-centric shell completion",
             "options": [
-                "--shell",
-                "-s",
-                "--user",
-                "--system",
-                "--uninstall",
-                "--list-environments",
-                "--verbose",
-                "-v",
                 "--help",
                 "-h",
             ],
-            "arguments": [],
+            "subcommands": {
+                "install": {
+                    "description": "Install completion in virtual environment",
+                    "options": [
+                        "--shell",
+                        "-s",
+                        "--env",
+                        "-e",
+                        "--force",
+                        "-f",
+                        "--help",
+                        "-h",
+                    ],
+                },
+                "uninstall": {
+                    "description": "Remove completion from environment(s)",
+                    "options": [
+                        "--env",
+                        "-e",
+                        "--all",
+                        "--help",
+                        "-h",
+                    ],
+                },
+                "list": {
+                    "description": "List environments with completion status",
+                    "options": [
+                        "--help",
+                        "-h",
+                    ],
+                },
+                "status": {
+                    "description": "Show completion status for current environment",
+                    "options": [
+                        "--help",
+                        "-h",
+                    ],
+                },
+                "info": {
+                    "description": "Show information about the completion system",
+                    "options": [
+                        "--help",
+                        "-h",
+                    ],
+                },
+            },
+            "arguments": ["action"],
         },
     }
 
