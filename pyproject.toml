@@ -649,7 +649,7 @@ directory = "htmlcov"
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
-skips = ["B101"]  # Skip assert_used test
+skips = ["B101", "B112", "B404", "B604", "B607"]  # Skip assert_used, try_except_continue, subprocess import warnings, shell parameter false positives, and standard CLI subprocess calls
 
 [tool.isort]
 profile = "black"

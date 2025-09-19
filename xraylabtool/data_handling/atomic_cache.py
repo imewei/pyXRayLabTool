@@ -299,7 +299,8 @@ def warm_cache_for_compounds(
                     try:
                         similar_elements = get_elements_for_compound(similar_formula)
                         elements_to_warm.update(similar_elements)
-                    except Exception:
+                    except (KeyError, ValueError, ImportError):
+                        # Skip invalid compounds during cache warming
                         continue
 
             # Find compound family members if requested
@@ -314,7 +315,8 @@ def warm_cache_for_compounds(
                         try:
                             family_elements = get_elements_for_compound(family_formula)
                             elements_to_warm.update(family_elements)
-                        except Exception:
+                        except (KeyError, ValueError, ImportError):
+                            # Skip invalid family compounds during cache warming
                             continue
 
         except Exception as e:
@@ -333,7 +335,8 @@ def warm_cache_for_compounds(
         try:
             get_atomic_data_fast(element)
             atomic_success += 1
-        except Exception:
+        except (KeyError, ValueError, ImportError):
+            # Skip elements that cannot be loaded during atomic cache warming
             continue
 
     # Warm scattering factor interpolators
@@ -348,7 +351,8 @@ def warm_cache_for_compounds(
 
             create_scattering_factor_interpolators(element)
             interpolator_success += 1
-        except Exception:
+        except (KeyError, ValueError, ImportError):
+            # Skip elements that cannot create interpolators during cache warming
             continue
 
     # Warm bulk data cache for common combinations
@@ -368,7 +372,8 @@ def warm_cache_for_compounds(
                     try:
                         get_bulk_atomic_data_fast(combo)
                         bulk_success += 1
-                    except Exception:
+                    except (KeyError, ValueError, ImportError):
+                        # Skip invalid element combinations during bulk cache warming
                         continue
 
         except Exception:
@@ -557,8 +562,8 @@ class FastAtomicDataProvider:
             try:
                 # This will cache the interpolators
                 create_scattering_factor_interpolators(element)
-            except Exception:
-                # Skip elements that can't be loaded
+            except (KeyError, ValueError, ImportError):
+                # Skip elements that can't be loaded during prewarming
                 continue
 
     def get_atomic_properties(self, element: str) -> types.MappingProxyType[str, float]:
