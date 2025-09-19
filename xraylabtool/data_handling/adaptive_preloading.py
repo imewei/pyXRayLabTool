@@ -407,7 +407,11 @@ def measure_preload_effectiveness(actual_elements_used: list[str]) -> dict[str, 
             "effectiveness": (
                 "excellent"
                 if hit_rate > 0.8
-                else "good" if hit_rate > 0.6 else "fair" if hit_rate > 0.4 else "poor"
+                else "good"
+                if hit_rate > 0.6
+                else "fair"
+                if hit_rate > 0.4
+                else "poor"
             ),
         }
 
