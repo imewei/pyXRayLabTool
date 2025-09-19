@@ -607,7 +607,7 @@ exclude = [
 "xraylabtool/interfaces/completion*.py" = ["PLC0415", "PLW0603", "S607", "UP035", "ARG001", "ARG002"]  # Completion system patterns
 "xraylabtool/core/*.py" = ["RUF001", "RUF002", "RUF003"]  # Unicode scientific symbols
 "xraylabtool/analysis/*.py" = ["S110", "SIM102", "B904"]  # Analysis module patterns
-"__init__.py" = ["F401"]     # Allow unused imports in __init__.py
+"__init__.py" = ["F401", "PLR0911", "PLR0912", "PLC0415"]     # Allow unused imports, complexity, and lazy imports in __init__.py
 # Relax rules for completion system files (complex generated/template code)
 "**/interfaces/completion.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM102"]
 "**/interfaces/completion_v2/*.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112", "B006", "S604", "ARG002", "SIM118", "PLW0603", "ARG001", "S607", "S112", "PLW2901", "RUF001", "PLC0415"]
