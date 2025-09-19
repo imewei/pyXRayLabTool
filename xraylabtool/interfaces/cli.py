@@ -796,8 +796,6 @@ def add_compare_command(subparsers: Any) -> None:
     )
 
 
-
-
 def parse_energy_string(energy_str: str):
     """Parse energy string and return numpy array."""
     import numpy as np
@@ -2136,10 +2134,6 @@ def cmd_compare(args: Any) -> int:
 
             traceback.print_exc()
         return 1
-
-
-
-
 
 
 def main() -> int:

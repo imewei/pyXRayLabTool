@@ -81,5 +81,3 @@ __all__ = [
     "install_completion_main",
     "uninstall_completion_main",
 ]
-
-import os
