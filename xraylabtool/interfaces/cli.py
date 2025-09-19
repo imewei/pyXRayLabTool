@@ -611,8 +611,67 @@ def add_completion_command(subparsers: Any) -> None:
         ),
     )
 
-    # Forward all arguments to the completion subcommand handler
-    parser.set_defaults(completion_subcommand=True)
+    # Create subparsers for completion actions
+    completion_subparsers = parser.add_subparsers(
+        dest="completion_action", help="Available completion actions", metavar="ACTION"
+    )
+
+    # Install subcommand
+    install_parser = completion_subparsers.add_parser(
+        "install",
+        help="Install completion in virtual environment",
+    )
+    install_parser.add_argument(
+        "--shell",
+        "-s",
+        choices=["bash", "zsh", "fish", "powershell"],
+        help="Shell type (auto-detected if not specified)",
+    )
+    install_parser.add_argument(
+        "--env",
+        "-e",
+        help="Target environment name (current environment if not specified)",
+    )
+    install_parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Force reinstallation if already installed",
+    )
+
+    # Uninstall subcommand
+    uninstall_parser = completion_subparsers.add_parser(
+        "uninstall",
+        help="Remove completion from environment(s)",
+    )
+    uninstall_parser.add_argument(
+        "--env",
+        "-e",
+        help="Target environment name (current environment if not specified)",
+    )
+    uninstall_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Remove from all environments",
+    )
+
+    # List subcommand
+    completion_subparsers.add_parser(
+        "list",
+        help="List environments with completion status",
+    )
+
+    # Status subcommand
+    completion_subparsers.add_parser(
+        "status",
+        help="Show completion status for current environment",
+    )
+
+    # Info subcommand
+    completion_subparsers.add_parser(
+        "info",
+        help="Show information about the completion system",
+    )
 
 
 def add_uninstall_completion_command(subparsers: Any) -> None:
@@ -2124,14 +2183,57 @@ def cmd_uninstall_completion(args: Any) -> int:
 
 def cmd_completion(args: Any) -> int:
     """Handle the 'completion' command for the new completion system."""
-    # Extract the remaining arguments after 'completion'
-    import sys
+    from xraylabtool.interfaces.completion_v2.installer import CompletionInstaller
 
-    from xraylabtool.interfaces.completion_v2.cli import completion_main
+    try:
+        installer = CompletionInstaller()
 
-    remaining_args = sys.argv[2:]  # Skip 'xraylabtool' and 'completion'
+        # Check if no action was specified
+        if not hasattr(args, "completion_action") or args.completion_action is None:
+            print(
+                "❌ No action specified. Use 'xraylabtool completion --help' for usage information."
+            )
+            return 1
 
-    return completion_main(remaining_args)
+        if args.completion_action == "install":
+            success = installer.install(
+                shell=getattr(args, "shell", None),
+                target_env=getattr(args, "env", None),
+                force=getattr(args, "force", False),
+            )
+            return 0 if success else 1
+
+        elif args.completion_action == "uninstall":
+            success = installer.uninstall(
+                target_env=getattr(args, "env", None),
+                all_envs=getattr(args, "all", False),
+            )
+            return 0 if success else 1
+
+        elif args.completion_action == "list":
+            installer.list_environments()
+            return 0
+
+        elif args.completion_action == "status":
+            installer.status()
+            return 0
+
+        elif args.completion_action == "info":
+            from xraylabtool.interfaces.completion_v2.cli import show_completion_info
+
+            show_completion_info()
+            return 0
+
+        else:
+            print(f"❌ Unknown action: {args.completion_action}")
+            return 1
+
+    except KeyboardInterrupt:
+        print("\n⚠️  Operation cancelled by user")
+        return 1
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return 1
 
 
 def cmd_compare(args: Any) -> int:
