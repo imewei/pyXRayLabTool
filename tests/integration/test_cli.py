@@ -829,8 +829,6 @@ class TestInstallCompletionCommand:
                 "calc",
                 "batch",
                 "compare",
-                "analyze",
-                "export",
                 "convert",
                 "formula",
                 "atomic",

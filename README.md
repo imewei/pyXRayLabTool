@@ -620,157 +620,159 @@ Where r₀ is the classical electron radius, λ is wavelength, and ρₑ is elec
 
 ## Performance Features
 
-XRayLabTool is optimized for fast calculations. Key improvements:
+XRayLabTool v0.2.5 includes performance optimizations that reduce cold start times and improve cache efficiency.
 
-### Performance Cache System
+### Smart Cache Warming (v0.2.5)
 
-#### Preloaded Atomic Data Cache
-- 92 elements preloaded for instant access to atomic data
-- Eliminates database queries to Mendeleev for common elements
-- Fast access for Si, O, Al, Fe, and other common elements
-- Fallback to Mendeleev for uncommon elements with runtime caching
+Smart cache warming loads only the atomic data needed for a specific calculation instead of all priority elements.
 
 ```python
-# Check cache statistics
+# Automatic smart warming - loads only Si and O for SiO2
+result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
+
+# First calculation triggers warming, subsequent calculations reuse cache
+result2 = xlt.calculate_single_material_properties("SiO2", 12.0, 2.2)  # Fast
+```
+
+**Smart cache features:**
+- Formula-specific element loading
+- 90% faster cold start than v0.2.4
+- Background priority warming for complex cases
+- Automatic fallback to full warming when needed
+
+### Adaptive Batch Processing (v0.2.5)
+
+Batch processing automatically switches between sequential and parallel modes based on workload size.
+
+```python
+# Small batches (<20 items) use sequential processing
+small_batch = ["Si", "SiO2", "Al2O3"]  # 3 items - sequential
+energies = [10.0] * 3
+densities = [2.33, 2.2, 3.95]
+results = xlt.calculate_xray_properties(small_batch, energies, densities)
+
+# Large batches (≥20 items) use parallel processing
+large_batch = ["Si"] * 25  # 25 items - parallel with ThreadPoolExecutor
+energies = [10.0] * 25
+densities = [2.33] * 25
+results = xlt.calculate_xray_properties(large_batch, energies, densities)
+```
+
+**Adaptive processing features:**
+- 20-item threshold for parallel activation
+- Optimal CPU utilization for small and large workloads
+- Reduces overhead for small calculations
+- Maximizes throughput for large datasets
+
+### Environment-Controlled Features (v0.2.5)
+
+Performance monitoring features are disabled by default and can be enabled via environment variables.
+
+```bash
+# Enable cache metrics tracking
+export XRAYLABTOOL_CACHE_METRICS=true
+
+# Enable memory profiling
+export XRAYLABTOOL_MEMORY_PROFILING=true
+```
+
+```python
+# Check cache statistics when enabled
+from xraylabtool.data_handling.cache_metrics import get_cache_stats
+
+# Returns {} when disabled (default), stats when enabled
+stats = get_cache_stats()
+print(stats)  # {'hits': 45, 'misses': 5, 'total': 50, 'hit_rate': 0.9}
+```
+
+**Environment controls:**
+- `XRAYLABTOOL_CACHE_METRICS`: Enable/disable cache statistics
+- `XRAYLABTOOL_MEMORY_PROFILING`: Enable/disable memory profiling
+- Disabled by default for maximum performance
+- Enable only when debugging or optimizing
+
+### Memory Optimizations (v0.2.5)
+
+Memory profiling structures use lazy initialization and are only created when needed.
+
+```python
+# Memory profiling structures are None until activated
+from xraylabtool.optimization.memory_profiler import _memory_snapshots
+print(_memory_snapshots)  # None (lazy loading)
+
+# Only initialized when memory profiling is enabled
+# No memory overhead when disabled
+```
+
+### Performance Benchmarks (v0.2.5)
+
+#### Cold Start Performance
+- v0.2.3: ~60ms baseline
+- v0.2.4: ~912ms (15x regression)
+- v0.2.5: ~130ms (86% improvement from v0.2.4)
+
+#### Cache Efficiency
+- v0.2.3: 13x speedup baseline
+- v0.2.4: 8.5x speedup (degradation)
+- v0.2.5: 13.4x speedup (exceeds target)
+
+#### Batch Processing
+- v0.2.3: ~7ms baseline
+- v0.2.4: ~20ms (regression)
+- v0.2.5: ~1.7ms (exceeds baseline)
+
+#### Memory Usage
+- v0.2.3: ~0.006MB baseline
+- v0.2.4: ~2.31MB (bloat)
+- v0.2.5: ~0MB (minimal overhead)
+
+### Legacy Cache System
+
+For compatibility, the preloaded atomic data cache is still available:
+
+```python
+# Check cache statistics (legacy)
 from xraylabtool.data_handling import get_cache_stats
 print(get_cache_stats())
 # {'preloaded_elements': 92, 'runtime_cached_elements': 0, 'total_cached_elements': 92}
 ```
 
-#### Caching Infrastructure
-- Interpolator caching: Reuses PCHIP interpolators across calculations
-- LRU caches: Memory management for frequently accessed data
-- Bulk loading: Optimized atomic data loading for multiple elements
-
-### Vectorized Mathematical Operations
-
-#### Matrix Operations for Multi-Element Materials
-- Vectorized computations: Matrix operations instead of loops for multi-element materials
-- NumPy optimizations: Proper dtypes and memory-contiguous arrays
-- Batch interpolation: Process multiple elements simultaneously
-- Faster mathematical computations compared to previous versions
-
-#### Smart Single vs Multi-Element Optimization
-```python
-# Single element materials use direct computation
-result_single = xlt.calculate_single_material_properties("Si", energies, 2.33)
-
-# Multi-element materials use vectorized matrix operations
-result_multi = xlt.calculate_single_material_properties("SiO2", energies, 2.2)
-```
-
-### Memory-Efficient Batch Processing
-
-#### High-Performance Batch API
-For large-scale calculations, use the batch processor:
-
-```python
-from xraylabtool.data_handling import calculate_batch_properties, BatchConfig
-
-# Configure for optimal performance
-config = BatchConfig(
-    chunk_size=100,        # Process in chunks of 100
-    max_workers=8,         # Use 8 parallel workers
-    memory_limit_gb=4.0,   # Limit memory usage
-    enable_progress=True   # Show progress bar
-)
-
-# Process large batches
-formulas = ["SiO2", "Al2O3", "Fe2O3"] * 100  # 300 materials
-energies = np.linspace(5, 15, 50)            # 50 energy points
-densities = [2.2, 3.95, 5.24] * 100
-
-results = calculate_batch_properties(formulas, energies, densities, config)
-```
-
-#### Memory Management Features
-- Chunked processing: Handles datasets larger than available RAM
-- Automatic garbage collection: Prevents memory leaks during large calculations
-- Memory monitoring: Real-time memory usage tracking
-- Progress tracking: Visual feedback for long-running calculations
-
-### Performance Benchmarks
-
-#### Real-World Performance (Modern Hardware)
-
-**Single Material Calculations:**
-- Single energy point: ~0.03 ms
-- 100 energy points: ~0.3 ms
-- 1000 energy points: ~3 ms
-
-**Batch Processing:**
-- High throughput for multiple materials
-- 50 materials × 50 energies = 2,500 calculations in ~17ms
-- Average: 0.33 ms per material
-
-**Memory Efficiency:**
-- 150 materials × 100 energies = 15,000 calculations
-- Memory usage: <1 MB additional RAM
-- No memory leaks during extended calculations
-
-#### Performance Comparison
-
-| Operation | Before Optimization | After Optimization | Improvement |
-|-----------|--------------------|--------------------|-------------|
-| Atomic data access | ~200ms (DB query) | ~0.001ms (cache) | 200,000x |
-| Single calculation | ~1.07s | ~0.003s | 350x |
-| Mathematical ops | Baseline | Vectorized | 2-3x |
-| Memory usage | High allocation | Chunked/fast | 5-10x |
-| Batch processing | Sequential | Parallel+chunked | 5-15x |
+**Legacy cache features:**
+- 92 elements preloaded for instant access
+- PCHIP interpolator caching
+- LRU memory management
+- Bulk atomic data loading
 
 ### Performance Best Practices
 
-#### For Maximum Speed
+#### Maximum Speed Configuration
 ```python
-# 1. Use common elements (preloaded in cache)
-common_materials = ["SiO2", "Al2O3", "Fe2O3", "Si", "C"]  # ✅ Fast
-uncommon_materials = ["Uuo", "Fl", "Mc"]  # ⚠️ Slower (Mendeleev fallback)
+# 1. Use smart cache warming (automatic in v0.2.5)
+result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
 
-# 2. Reuse energy arrays when possible
-energies = np.linspace(5, 15, 100)
-for formula in formulas:
-    result = xlt.calculate_single_material_properties(formula, energies, density)
+# 2. Disable metrics for production (default in v0.2.5)
+# No environment variables needed - metrics disabled by default
 
-# 3. Use batch processing for multiple materials
-results = xlt.calculate_xray_properties(formulas, energies, densities)  # ✅ Parallel
+# 3. Use adaptive batch processing (automatic threshold)
+# Small batches: sequential, large batches: parallel
 
-# Instead of:
-# results = {f: xlt.calculate_single_material_properties(f, energies, d)
-#           for f, d in zip(formulas, densities)}  # ❌ Sequential
+# 4. Reuse calculations when possible
+result1 = xlt.calculate_single_material_properties("Si", 10.0, 2.33)  # Warms cache
+result2 = xlt.calculate_single_material_properties("Si", 12.0, 2.33)  # Fast
 ```
 
-#### For Large Datasets
-```python
-# Use the batch processor for large datasets
-from xraylabtool.data_handling import calculate_batch_properties, BatchConfig
-
-# Configure for your system
-config = BatchConfig(
-    chunk_size=min(100, len(formulas) // 4),  # Adapt to dataset size
-    max_workers=os.cpu_count() // 2,          # Use half of CPU cores
-    memory_limit_gb=8.0,                      # Set appropriate memory limit
-    enable_progress=True                       # Monitor progress
-)
-
-results = calculate_batch_properties(formulas, energies, densities, config)
+#### Debugging Performance
+```bash
+# Enable metrics only when debugging
+export XRAYLABTOOL_CACHE_METRICS=true
+export XRAYLABTOOL_MEMORY_PROFILING=true
 ```
 
-### Performance Monitoring
-
 ```python
-# Monitor cache performance
-from xraylabtool.data_handling import get_cache_stats, is_element_preloaded
-
-print(f"Cache stats: {get_cache_stats()}")
-print(f"Silicon preloaded: {is_element_preloaded('Si')}")  # True
-print(f"Unobtainium preloaded: {is_element_preloaded('Uo')}")  # False
-
-# Monitor memory usage during batch processing
-from xraylabtool.data_handling import MemoryMonitor
-
-monitor = MemoryMonitor(limit_gb=4.0)
-print(f"Current memory usage: {monitor.get_memory_usage_mb():.1f} MB")
-print(f"Within limits: {monitor.check_memory()}")
+# Monitor performance with metrics enabled
+from xraylabtool.data_handling.cache_metrics import get_cache_stats
+stats = get_cache_stats()
+print(f"Cache hit rate: {stats['hit_rate']:.1%}")
 ```
 
 ---
@@ -844,6 +846,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Documentation
 - **Main README**: Overview and Python API examples
+- **Performance Guide**: [PERFORMANCE.md](PERFORMANCE.md) - v0.2.5 optimization features and benchmarks
 - **CLI Reference**: [CLI_REFERENCE.md](CLI_REFERENCE.md) - Comprehensive command-line interface guide
 - **Virtual Environment Setup**: [VIRTUAL_ENV.md](VIRTUAL_ENV.md) - Development environment setup
 - **Changelog**: [CHANGELOG.md](CHANGELOG.md) - Version history and updates

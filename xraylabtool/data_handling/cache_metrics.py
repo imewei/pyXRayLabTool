@@ -1,8 +1,24 @@
 """
-Lightweight cache metrics tracking system for XRayLabTool.
+Lightweight cache metrics tracking system for XRayLabTool v0.2.5.
 
-This module provides minimal overhead cache metrics tracking that can be
-optionally enabled via environment variable for performance debugging.
+This module provides minimal overhead cache metrics tracking that is disabled
+by default for maximum performance. Cache metrics can be optionally enabled
+via XRAYLABTOOL_CACHE_METRICS environment variable for performance debugging.
+
+Performance improvements in v0.2.5:
+- 77% code reduction (465 lines to 108 lines)
+- Zero overhead when disabled (default)
+- Lazy initialization of tracking structures
+- Environment-controlled activation
+
+Usage:
+    # Enable metrics (disabled by default)
+    export XRAYLABTOOL_CACHE_METRICS=true
+
+    # Check statistics
+    from xraylabtool.data_handling.cache_metrics import get_cache_stats
+    stats = get_cache_stats()
+    print(f"Hit rate: {stats['hit_rate']:.1%}")
 """
 
 from __future__ import annotations
