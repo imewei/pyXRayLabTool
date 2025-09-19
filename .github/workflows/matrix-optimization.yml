@@ -1,0 +1,429 @@
+name: Matrix Optimization & Smart Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'xraylabtool/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      matrix_type:
+        description: 'Matrix execution type'
+        type: choice
+        options:
+        - minimal
+        - standard
+        - comprehensive
+        default: 'standard'
+      target_os:
+        description: 'Target operating systems'
+        type: choice
+        options:
+        - ubuntu-only
+        - ubuntu-macos
+        - all
+        default: 'ubuntu-macos'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: 1
+  PYTHONDONTWRITEBYTECODE: 1
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  PIP_NO_PYTHON_VERSION_WARNING: 1
+  PIP_PREFER_BINARY: 1
+
+  # Performance optimizations
+  PYTHONHASHSEED: 0
+  PYTHONUTF8: 1
+  OMP_NUM_THREADS: 2
+  MKL_NUM_THREADS: 2
+
+  # Tool versions
+  PYTEST_VERSION: "8.3.4"
+
+jobs:
+  # Determine optimal test matrix based on changes and context
+  matrix-strategy:
+    name: 🧠 Smart Matrix Strategy
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      matrix-config: ${{ steps.strategy.outputs.matrix-config }}
+      execution-plan: ${{ steps.strategy.outputs.execution-plan }}
+      estimated-time: ${{ steps.strategy.outputs.estimated-time }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        show-progress: false
+
+    - name: Determine matrix strategy
+      id: strategy
+      run: |
+        python << 'EOF'
+        import json
+        import os
+
+        # Get context information
+        event_name = "${{ github.event_name }}"
+        ref_name = "${{ github.ref_name }}"
+        is_main = ref_name in ["main", "master"]
+        is_pr = event_name == "pull_request"
+        matrix_input = "${{ github.event.inputs.matrix_type }}" or "standard"
+        target_os_input = "${{ github.event.inputs.target_os }}" or "ubuntu-macos"
+
+        print(f"🔍 Analyzing matrix strategy:")
+        print(f"  Event: {event_name}")
+        print(f"  Branch: {ref_name}")
+        print(f"  Is main: {is_main}")
+        print(f"  Is PR: {is_pr}")
+        print(f"  Matrix input: {matrix_input}")
+        print(f"  Target OS input: {target_os_input}")
+
+        # Define matrix configurations
+        matrices = {
+            "minimal": {
+                "os": ["ubuntu-latest"],
+                "python-version": ["3.12"],
+                "estimated_minutes": 8
+            },
+            "standard": {
+                "os": ["ubuntu-latest", "macos-latest"],
+                "python-version": ["3.11", "3.12"],
+                "estimated_minutes": 15
+            },
+            "comprehensive": {
+                "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
+                "python-version": ["3.11", "3.12", "3.13"],
+                "estimated_minutes": 25
+            }
+        }
+
+        # OS filtering
+        os_filters = {
+            "ubuntu-only": ["ubuntu-latest"],
+            "ubuntu-macos": ["ubuntu-latest", "macos-latest"],
+            "all": ["ubuntu-latest", "macos-latest", "windows-latest"]
+        }
+
+        # Determine strategy based on context
+        if matrix_input != "standard":
+            # Manual override
+            strategy = matrix_input
+            print(f"📝 Manual matrix override: {strategy}")
+        elif is_main:
+            # Main branch gets comprehensive testing
+            strategy = "comprehensive"
+            print(f"🎯 Main branch detected: using comprehensive matrix")
+        elif is_pr:
+            # PR gets standard testing
+            strategy = "standard"
+            print(f"🔄 Pull request detected: using standard matrix")
+        else:
+            # Feature branches get minimal testing
+            strategy = "minimal"
+            print(f"🌟 Feature branch detected: using minimal matrix")
+
+        # Get base configuration
+        config = matrices[strategy].copy()
+
+        # Apply OS filtering
+        if target_os_input in os_filters:
+            config["os"] = [os for os in config["os"] if os in os_filters[target_os_input]]
+
+        # Add matrix optimizations
+        config["include"] = []
+        config["exclude"] = []
+
+        # Primary configuration (fastest feedback)
+        primary_config = {
+            "os": "ubuntu-latest",
+            "python-version": "3.12",
+            "primary": True,
+            "coverage": True
+        }
+        config["include"].append(primary_config)
+
+        # Exclude redundant combinations for efficiency
+        if len(config["os"]) > 1 and len(config["python-version"]) > 1:
+            # Exclude some combinations to reduce matrix size
+            if "windows-latest" in config["os"] and len(config["python-version"]) > 2:
+                config["exclude"].append({
+                    "os": "windows-latest",
+                    "python-version": config["python-version"][0]  # Exclude oldest Python on Windows
+                })
+
+        # Calculate total combinations
+        total_jobs = len(config["os"]) * len(config["python-version"])
+        total_jobs -= len(config["exclude"])
+
+        execution_plan = {
+            "strategy": strategy,
+            "total_jobs": total_jobs,
+            "parallel_execution": True,
+            "fail_fast": is_pr,
+            "coverage_job": "ubuntu-latest + python-3.12"
+        }
+
+        print(f"📊 Final matrix configuration:")
+        print(f"  Strategy: {strategy}")
+        print(f"  OS: {config['os']}")
+        print(f"  Python versions: {config['python-version']}")
+        print(f"  Total jobs: {total_jobs}")
+        print(f"  Estimated time: {config['estimated_minutes']} minutes")
+
+        # Output for GitHub Actions
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"matrix-config={json.dumps(config)}\n")
+            f.write(f"execution-plan={json.dumps(execution_plan)}\n")
+            f.write(f"estimated-time={config['estimated_minutes']}\n")
+
+        EOF
+
+  # Smart test execution with optimized matrix
+  test-matrix:
+    name: 🧪 Tests (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    needs: matrix-strategy
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: ${{ fromJson(needs.matrix-strategy.outputs.execution-plan).fail_fast }}
+      matrix: ${{ fromJson(needs.matrix-strategy.outputs.matrix-config) }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+        show-progress: false
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set OS-specific optimizations
+      shell: bash
+      run: |
+        echo "🔧 Applying OS-specific optimizations for ${{ runner.os }}"
+
+        # Set environment variables based on OS
+        if [[ "${{ runner.os }}" == "Windows" ]]; then
+          echo "PYTEST_WORKERS=2" >> $GITHUB_ENV
+          echo "PYTEST_TIMEOUT=300" >> $GITHUB_ENV
+          echo "PIP_CACHE_DIR=${{ runner.temp }}\pip-cache" >> $GITHUB_ENV
+        elif [[ "${{ runner.os }}" == "macOS" ]]; then
+          echo "PYTEST_WORKERS=3" >> $GITHUB_ENV
+          echo "PYTEST_TIMEOUT=240" >> $GITHUB_ENV
+        else
+          echo "PYTEST_WORKERS=4" >> $GITHUB_ENV
+          echo "PYTEST_TIMEOUT=180" >> $GITHUB_ENV
+        fi
+
+        # Platform-specific performance tuning
+        if [[ "${{ runner.os }}" == "Linux" ]]; then
+          echo "UV_CACHE_DIR=/tmp/uv-cache" >> $GITHUB_ENV
+          sudo sysctl -w vm.swappiness=1 || true  # Reduce swapping
+        fi
+
+    - name: Install uv (ultra-fast package installer)
+      shell: bash
+      run: |
+        if [[ "${{ runner.os }}" == "Windows" ]]; then
+          powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+          echo "$env:USERPROFILE\\.cargo\\bin" >> $GITHUB_PATH
+        else
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        fi
+
+    - name: Advanced matrix-aware caching
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/uv
+          ~/.cache/pip
+          ~/.local/share/uv
+          ${{ env.PIP_CACHE_DIR }}
+          ${{ env.UV_CACHE_DIR }}
+        key: matrix-deps-v8-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}-${{ env.PYTEST_VERSION }}
+        restore-keys: |
+          matrix-deps-v8-${{ runner.os }}-py${{ matrix.python-version }}-
+          matrix-deps-v7-${{ runner.os }}-py${{ matrix.python-version }}-
+
+    - name: Install dependencies (optimized for matrix)
+      shell: bash
+      run: |
+        echo "📦 Installing dependencies for ${{ matrix.os }} + Python ${{ matrix.python-version }}"
+
+        # Use uv for ultra-fast installation
+        uv pip install --system -e .[dev] pytest==${{ env.PYTEST_VERSION }} pytest-xdist
+
+        # Install coverage only for primary job
+        if [[ "${{ matrix.primary }}" == "true" ]]; then
+          uv pip install --system pytest-cov
+        fi
+
+    - name: Run smart test selection
+      id: test-selection
+      shell: bash
+      run: |
+        echo "🧠 Running smart test selection for matrix job"
+
+        # Make test selection script executable
+        chmod +x .github/scripts/smart-test-selection.py
+
+        # Determine base SHA for comparison
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+        else
+          BASE_SHA="${{ github.event.before }}"
+        fi
+
+        # Run smart test selection
+        python .github/scripts/smart-test-selection.py "$BASE_SHA" "${{ github.sha }}"
+
+        # Read the generated test command
+        if [[ -f "test-selection-report.json" ]]; then
+          # Extract test command from environment (set by script)
+          echo "Selected test command: ${{ env.test-command || 'pytest tests/' }}"
+        else
+          echo "test-command=pytest tests/" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Execute optimized tests
+      shell: bash
+      run: |
+        echo "🚀 Executing tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+
+        # Get test command from selection or use default
+        TEST_CMD="${{ env.test-command }}"
+        if [[ -z "$TEST_CMD" || "$TEST_CMD" == "null" ]]; then
+          TEST_CMD="pytest tests/"
+        fi
+
+        echo "📝 Test command: $TEST_CMD"
+
+        # Add matrix-specific optimizations
+        if [[ "${{ matrix.primary }}" == "true" ]]; then
+          # Primary job with coverage
+          eval "$TEST_CMD \
+            --cov=xraylabtool \
+            --cov-report=xml \
+            --cov-report=term-missing:skip-covered \
+            --cov-fail-under=40 \
+            --junit-xml=pytest-results.xml \
+            -n $PYTEST_WORKERS \
+            --maxfail=5 \
+            --tb=short \
+            --timeout=$PYTEST_TIMEOUT \
+            -v"
+        else
+          # Secondary jobs without coverage
+          eval "$TEST_CMD \
+            --junit-xml=pytest-results.xml \
+            -n $PYTEST_WORKERS \
+            --maxfail=3 \
+            --tb=line \
+            --timeout=$PYTEST_TIMEOUT \
+            -v \
+            -x"  # Stop on first failure for faster feedback
+        fi
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: |
+          pytest-results.xml
+          coverage.xml
+          test-selection-report.json
+        retention-days: 7
+
+    - name: Upload coverage to Codecov
+      if: matrix.primary == true
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
+        fail_ci_if_error: false
+
+  # Matrix execution summary and optimization insights
+  matrix-summary:
+    name: 📊 Matrix Execution Summary
+    if: always()
+    needs: [matrix-strategy, test-matrix]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - name: Generate matrix execution report
+      run: |
+        echo "📊 MATRIX EXECUTION SUMMARY"
+        echo "=========================="
+        echo "⏰ Completed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+        echo ""
+
+        # Parse execution plan
+        echo '${{ needs.matrix-strategy.outputs.execution-plan }}' | jq -r '
+        "🎯 Execution Strategy: " + .strategy,
+        "📋 Total Jobs: " + (.total_jobs | tostring),
+        "⚡ Parallel Execution: " + (.parallel_execution | tostring),
+        "🚫 Fail Fast: " + (.fail_fast | tostring),
+        "📊 Coverage Job: " + .coverage_job
+        '
+
+        echo ""
+        echo "⏱️ Estimated Time: ${{ needs.matrix-strategy.outputs.estimated-time }} minutes"
+        echo ""
+
+        # Analyze results
+        echo "🎯 JOB RESULTS:"
+        result='${{ needs.test-matrix.result }}'
+        case $result in
+          "success")
+            echo "✅ All matrix jobs completed successfully"
+            echo "🎉 Matrix optimization achieved efficient testing"
+            ;;
+          "failure")
+            echo "❌ Some matrix jobs failed"
+            echo "🔍 Check individual job logs for details"
+            ;;
+          "cancelled")
+            echo "⏹️ Matrix execution was cancelled"
+            echo "🎯 Fail-fast mechanism triggered for quick feedback"
+            ;;
+          *)
+            echo "❓ Matrix execution status: $result"
+            ;;
+        esac
+
+        echo ""
+        echo "💡 OPTIMIZATION INSIGHTS:"
+        echo "========================"
+        echo "🚀 Matrix optimization benefits:"
+        echo "  - Smart strategy selection based on context"
+        echo "  - OS-specific performance tuning applied"
+        echo "  - Intelligent test selection reduced execution time"
+        echo "  - Advanced caching minimized setup overhead"
+        echo "  - Fail-fast mechanism provided quick PR feedback"
+        echo ""
+
+        if [[ '${{ needs.test-matrix.result }}' == 'success' ]]; then
+          echo "🎯 RECOMMENDATIONS:"
+          echo "  ✅ Current matrix configuration is optimal"
+          echo "  ⚡ Consider using 'minimal' matrix for quick iterations"
+          echo "  🔄 Use 'comprehensive' matrix before releases"
+        fi

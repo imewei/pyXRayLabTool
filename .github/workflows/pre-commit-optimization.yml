@@ -1,0 +1,475 @@
+name: Pre-commit Optimization & Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/pre-commit-optimization.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/pre-commit-optimization.yml'
+  schedule:
+    # Run weekly to update and optimize pre-commit hooks
+    - cron: '0 6 * * 1'  # Monday 6 AM UTC
+  workflow_dispatch:
+    inputs:
+      update_hooks:
+        description: 'Update pre-commit hooks to latest versions'
+        type: boolean
+        default: false
+      validate_only:
+        description: 'Only validate configuration without updates'
+        type: boolean
+        default: true
+
+env:
+  FORCE_COLOR: 1
+  PRE_COMMIT_HOME: ~/.cache/pre-commit
+
+jobs:
+  optimize-pre-commit:
+    name: 🔧 Pre-commit Optimization
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Cache pre-commit environments
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pre-commit
+          ~/.cache/pip
+        key: pre-commit-opt-v3-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+        restore-keys: |
+          pre-commit-opt-v3-${{ runner.os }}-
+          pre-commit-opt-v2-${{ runner.os }}-
+
+    - name: Install pre-commit
+      run: |
+        python -m pip install --upgrade pip
+        pip install pre-commit==4.0.1
+
+    - name: Validate pre-commit configuration
+      run: |
+        echo "🔍 Validating pre-commit configuration..."
+
+        # Check if config exists
+        if [[ ! -f .pre-commit-config.yaml ]]; then
+          echo "❌ .pre-commit-config.yaml not found"
+          exit 1
+        fi
+
+        # Validate YAML syntax
+        python -c "
+        import yaml
+        try:
+            with open('.pre-commit-config.yaml', 'r') as f:
+                config = yaml.safe_load(f)
+            print('✅ Valid YAML syntax')
+        except yaml.YAMLError as e:
+            print(f'❌ YAML syntax error: {e}')
+            exit(1)
+        "
+
+        # Validate pre-commit config
+        pre-commit validate-config
+
+    - name: Analyze hook performance
+      run: |
+        echo "📊 Analyzing pre-commit hook performance..."
+
+        python << 'EOF'
+        import yaml
+        import requests
+        from datetime import datetime
+
+        # Load current config
+        with open('.pre-commit-config.yaml', 'r') as f:
+            config = yaml.safe_load(f)
+
+        print("🔍 Current Pre-commit Configuration Analysis:")
+        print("=" * 50)
+
+        total_repos = len(config.get('repos', []))
+        total_hooks = sum(len(repo.get('hooks', [])) for repo in config.get('repos', []))
+
+        print(f"📊 Statistics:")
+        print(f"  Total repositories: {total_repos}")
+        print(f"  Total hooks: {total_hooks}")
+        print()
+
+        # Analyze each repository
+        for i, repo in enumerate(config.get('repos', []), 1):
+            repo_url = repo.get('repo', 'unknown')
+            rev = repo.get('rev', 'unknown')
+            hooks = repo.get('hooks', [])
+
+            print(f"📦 Repository {i}: {repo_url}")
+            print(f"  📌 Version: {rev}")
+            print(f"  🔧 Hooks: {len(hooks)}")
+
+            # Check for potential optimization opportunities
+            warnings = []
+
+            if rev in ['master', 'main']:
+                warnings.append("Consider pinning to specific version for stability")
+
+            if len(hooks) > 5:
+                warnings.append("Many hooks - consider consolidating similar tools")
+
+            # Check for common performance issues
+            for hook in hooks:
+                hook_id = hook.get('id', '')
+                if hook_id in ['mypy', 'pylint'] and 'args' not in hook:
+                    warnings.append(f"{hook_id} without args - may be slow")
+
+            if warnings:
+                print(f"  ⚠️  Optimization opportunities:")
+                for warning in warnings:
+                    print(f"    - {warning}")
+
+            print()
+
+        # Performance recommendations
+        print("💡 PERFORMANCE RECOMMENDATIONS:")
+        print("=" * 50)
+
+        recommendations = [
+            "Use specific tool versions for faster cache hits",
+            "Combine similar tools (e.g., use ruff instead of flake8+isort)",
+            "Add targeted 'files' patterns to reduce scope",
+            "Use 'stages' to run expensive hooks only on commit",
+            "Consider local hooks for project-specific checks"
+        ]
+
+        for rec in recommendations:
+            print(f"  ✨ {rec}")
+
+        EOF
+
+    - name: Update hook versions (if requested)
+      if: github.event.inputs.update_hooks == 'true' || github.event_name == 'schedule'
+      run: |
+        echo "🔄 Updating pre-commit hooks to latest versions..."
+
+        # Update to latest versions
+        pre-commit autoupdate
+
+        # Check if any updates were made
+        if git diff --quiet .pre-commit-config.yaml; then
+          echo "✅ All hooks are already up to date"
+        else
+          echo "📦 Hook updates available:"
+          git diff .pre-commit-config.yaml
+
+          # Commit updates if this is a scheduled run
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add .pre-commit-config.yaml
+            git commit -m "⬆️ chore: update pre-commit hooks to latest versions
+
+            🔄 Automated update via scheduled workflow
+            - Updates hook versions for security and performance
+            - Maintains compatibility with current codebase
+
+            🤖 Generated by pre-commit optimization workflow"
+
+            # Push changes
+            git push
+            echo "✅ Hook updates committed and pushed"
+          else
+            echo "💡 Hook updates available - run 'pre-commit autoupdate' locally"
+          fi
+        fi
+
+    - name: Test hook execution performance
+      run: |
+        echo "⚡ Testing hook execution performance..."
+
+        # Install hooks
+        pre-commit install
+
+        # Create test files for performance testing
+        mkdir -p .test-perf
+
+        # Python test file
+        cat > .test-perf/test_file.py << 'EOF'
+        #!/usr/bin/env python3
+        """Test file for pre-commit performance testing."""
+
+        import os
+        import sys
+        from typing import List, Dict, Any
+
+
+        def example_function(data: List[Dict[str, Any]]) -> bool:
+            """Example function with type hints."""
+            for item in data:
+                if not isinstance(item, dict):
+                    return False
+            return True
+
+
+        if __name__ == "__main__":
+            test_data = [{"key": "value"}, {"another": "item"}]
+            result = example_function(test_data)
+            print(f"Test result: {result}")
+        EOF
+
+        # YAML test file
+        cat > .test-perf/test_config.yaml << 'EOF'
+        test:
+          enabled: true
+          settings:
+            - name: example
+              value: 123
+            - name: another
+              value: "string"
+        EOF
+
+        # Run hooks on test files and measure time
+        echo "🏃 Running pre-commit on test files..."
+
+        start_time=$(date +%s)
+        if pre-commit run --files .test-perf/*; then
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+          echo "✅ Pre-commit execution successful"
+          echo "⏱️ Execution time: ${duration} seconds"
+
+          if [ $duration -lt 10 ]; then
+            echo "🚀 Excellent performance: < 10 seconds"
+          elif [ $duration -lt 30 ]; then
+            echo "✅ Good performance: < 30 seconds"
+          else
+            echo "⚠️ Slow performance: > 30 seconds - consider optimization"
+          fi
+        else
+          echo "❌ Pre-commit execution failed"
+        fi
+
+        # Cleanup
+        rm -rf .test-perf
+
+    - name: Generate optimization report
+      run: |
+        echo "📋 Generating pre-commit optimization report..."
+
+        python << 'EOF'
+        import yaml
+        import json
+        from datetime import datetime
+
+        # Load configuration
+        with open('.pre-commit-config.yaml', 'r') as f:
+            config = yaml.safe_load(f)
+
+        # Generate comprehensive report
+        report = {
+            "timestamp": datetime.now().isoformat(),
+            "total_repositories": len(config.get('repos', [])),
+            "total_hooks": sum(len(repo.get('hooks', [])) for repo in config.get('repos', [])),
+            "repositories": [],
+            "optimization_score": 0,
+            "recommendations": []
+        }
+
+        optimization_score = 100  # Start with perfect score
+        recommendations = []
+
+        for repo in config.get('repos', []):
+            repo_info = {
+                "url": repo.get('repo', 'unknown'),
+                "rev": repo.get('rev', 'unknown'),
+                "hooks": [h.get('id', 'unknown') for h in repo.get('hooks', [])],
+                "hook_count": len(repo.get('hooks', []))
+            }
+
+            # Check for optimization issues
+            if repo.get('rev') in ['master', 'main', 'HEAD']:
+                optimization_score -= 10
+                recommendations.append(f"Pin {repo_info['url']} to specific version")
+
+            if repo_info['hook_count'] > 8:
+                optimization_score -= 5
+                recommendations.append(f"Consider consolidating hooks in {repo_info['url']}")
+
+            report["repositories"].append(repo_info)
+
+        # Check for modern tool usage
+        all_hooks = [hook for repo in config.get('repos', []) for hook in repo.get('hooks', [])]
+        hook_ids = [h.get('id', '') for h in all_hooks]
+
+        if 'flake8' in hook_ids and 'ruff' not in hook_ids:
+            optimization_score -= 15
+            recommendations.append("Consider replacing flake8 with ruff for better performance")
+
+        if 'black' in hook_ids and 'ruff-format' not in hook_ids:
+            recommendations.append("Consider using ruff-format alongside or instead of black")
+
+        if 'isort' in hook_ids and 'ruff' not in hook_ids:
+            optimization_score -= 10
+            recommendations.append("Consider using ruff for import sorting instead of isort")
+
+        report["optimization_score"] = max(0, optimization_score)
+        report["recommendations"] = recommendations
+
+        # Save report
+        with open('pre-commit-optimization-report.json', 'w') as f:
+            json.dump(report, f, indent=2)
+
+        # Display summary
+        print(f"📊 OPTIMIZATION SCORE: {report['optimization_score']}/100")
+        print()
+
+        if recommendations:
+            print("💡 RECOMMENDATIONS:")
+            for i, rec in enumerate(recommendations, 1):
+                print(f"  {i}. {rec}")
+        else:
+            print("🎉 Pre-commit configuration is fully optimized!")
+
+        print()
+        print(f"📄 Detailed report saved to pre-commit-optimization-report.json")
+
+        EOF
+
+    - name: Upload optimization report
+      uses: actions/upload-artifact@v4
+      with:
+        name: pre-commit-optimization-report
+        path: pre-commit-optimization-report.json
+        retention-days: 30
+
+    - name: Validate hooks work with codebase
+      run: |
+        echo "🔍 Validating hooks work with actual codebase..."
+
+        # Run on a subset of files to validate
+        if [[ -d "xraylabtool" ]]; then
+          # Find a few Python files to test
+          test_files=$(find xraylabtool -name "*.py" | head -3)
+
+          if [[ -n "$test_files" ]]; then
+            echo "🧪 Testing hooks on sample files:"
+            echo "$test_files"
+
+            if pre-commit run --files $test_files; then
+              echo "✅ Hooks validated successfully on sample files"
+            else
+              echo "⚠️ Some hooks failed on sample files - check configuration"
+            fi
+          else
+            echo "📁 No Python files found for testing"
+          fi
+        else
+          echo "📁 xraylabtool directory not found - skipping file validation"
+        fi
+
+  create-optimized-config:
+    name: 🚀 Create Optimized Config
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event.inputs.update_hooks == 'true' || github.event_name == 'schedule'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Generate optimized pre-commit configuration
+      run: |
+        echo "🔧 Generating optimized pre-commit configuration..."
+
+        cat > .pre-commit-config-optimized.yaml << 'EOF'
+        # Optimized Pre-commit Configuration for Fast CI/CD
+        # Generated by GitHub Actions workflow
+
+        default_language_version:
+          python: python3.12
+
+        default_stages: [commit, push]
+
+        repos:
+          # Ultra-fast Python linting and formatting with ruff
+          - repo: https://github.com/astral-sh/ruff-pre-commit
+            rev: v0.13.1
+            hooks:
+              - id: ruff
+                name: "ruff (fast linting)"
+                args: [--fix, --exit-non-zero-on-fix]
+                types: [python]
+              - id: ruff-format
+                name: "ruff format (fast formatting)"
+                types: [python]
+
+          # Essential file formatting
+          - repo: https://github.com/pre-commit/pre-commit-hooks
+            rev: v5.0.0
+            hooks:
+              - id: trailing-whitespace
+                stages: [commit]
+              - id: end-of-file-fixer
+                stages: [commit]
+              - id: check-yaml
+                stages: [commit]
+              - id: check-toml
+                stages: [commit]
+              - id: check-json
+                stages: [commit]
+              - id: check-merge-conflict
+                stages: [commit]
+              - id: check-added-large-files
+                args: ['--maxkb=1000']
+                stages: [commit]
+              - id: debug-statements
+                stages: [commit]
+
+          # Type checking (only on push for performance)
+          - repo: https://github.com/pre-commit/mirrors-mypy
+            rev: v1.18.1
+            hooks:
+              - id: mypy
+                stages: [push]
+                additional_dependencies: [types-requests]
+                args: [--ignore-missing-imports, --show-error-codes]
+
+          # Security scanning (only on push for performance)
+          - repo: https://github.com/PyCQA/bandit
+            rev: 1.8.6
+            hooks:
+              - id: bandit
+                stages: [push]
+                args: [-r, --skip, "B101,B603,B110,B324"]
+                files: ^xraylabtool/.*\.py$
+        EOF
+
+        echo "✅ Optimized configuration generated"
+        echo ""
+        echo "📊 Optimization features:"
+        echo "  ⚡ Uses ruff instead of multiple tools (flake8, isort, etc.)"
+        echo "  🎯 Staged execution: fast checks on commit, thorough on push"
+        echo "  🔧 Targeted file patterns to reduce scope"
+        echo "  📌 Pinned versions for consistent performance"
+        echo "  🚀 Modern tool versions for best performance"
+
+    - name: Upload optimized configuration
+      uses: actions/upload-artifact@v4
+      with:
+        name: optimized-pre-commit-config
+        path: .pre-commit-config-optimized.yaml
+        retention-days: 30

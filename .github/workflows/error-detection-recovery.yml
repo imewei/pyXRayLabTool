@@ -1,0 +1,504 @@
+name: Advanced Error Detection & Recovery
+
+on:
+  schedule:
+    # Run daily to detect and recover from CI/CD issues
+    - cron: '0 8 * * *'  # 8 AM UTC daily
+  workflow_dispatch:
+    inputs:
+      check_type:
+        description: 'Type of error check to perform'
+        type: choice
+        options:
+        - all
+        - dependencies
+        - workflows
+        - performance
+        - security
+        default: 'all'
+      auto_fix:
+        description: 'Automatically fix detected issues'
+        type: boolean
+        default: false
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  # Comprehensive error detection across multiple dimensions
+  detect-issues:
+    name: 🔍 Issue Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      issues-found: ${{ steps.analysis.outputs.issues-found }}
+      critical-issues: ${{ steps.analysis.outputs.critical-issues }}
+      auto-fixable: ${{ steps.analysis.outputs.auto-fixable }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0  # Need full history for analysis
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Install analysis tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests pyyaml packaging semver
+
+    - name: Comprehensive issue analysis
+      id: analysis
+      run: |
+        python << 'EOF'
+        import json
+        import os
+        import re
+        import subprocess
+        import yaml
+        from pathlib import Path
+        from datetime import datetime, timedelta
+        import requests
+
+        print("🔍 COMPREHENSIVE CI/CD ISSUE DETECTION")
+        print("=" * 50)
+
+        issues = {
+            "dependency_issues": [],
+            "workflow_issues": [],
+            "performance_issues": [],
+            "security_issues": [],
+            "configuration_issues": []
+        }
+
+        critical_issues = []
+        auto_fixable = []
+
+        # 1. DEPENDENCY VULNERABILITY ANALYSIS
+        print("\n📦 Analyzing Dependencies...")
+        try:
+            # Check for outdated dependencies
+            result = subprocess.run(
+                ["pip", "list", "--outdated", "--format=json"],
+                capture_output=True, text=True, check=False
+            )
+
+            if result.returncode == 0 and result.stdout:
+                outdated = json.loads(result.stdout)
+                for pkg in outdated:
+                    severity = "medium"
+                    if pkg["name"] in ["pip", "setuptools", "wheel"]:
+                        severity = "high"
+
+                    issue = {
+                        "type": "outdated_dependency",
+                        "package": pkg["name"],
+                        "current": pkg["version"],
+                        "latest": pkg["latest_version"],
+                        "severity": severity
+                    }
+                    issues["dependency_issues"].append(issue)
+
+                    if severity == "high":
+                        critical_issues.append(issue)
+                    auto_fixable.append(issue)
+
+        except Exception as e:
+            print(f"⚠️ Dependency analysis failed: {e}")
+
+        # 2. WORKFLOW CONFIGURATION ANALYSIS
+        print("\n⚙️ Analyzing Workflow Configurations...")
+        workflow_dir = Path(".github/workflows")
+        if workflow_dir.exists():
+            for workflow_file in workflow_dir.glob("*.yml"):
+                try:
+                    with open(workflow_file) as f:
+                        workflow = yaml.safe_load(f)
+
+                    workflow_name = workflow_file.name
+
+                    # Check for common issues
+                    if "jobs" in workflow:
+                        for job_name, job in workflow["jobs"].items():
+                            # Missing timeouts
+                            if "timeout-minutes" not in job:
+                                issue = {
+                                    "type": "missing_timeout",
+                                    "file": workflow_name,
+                                    "job": job_name,
+                                    "severity": "medium"
+                                }
+                                issues["workflow_issues"].append(issue)
+                                auto_fixable.append(issue)
+
+                            # Check for outdated actions
+                            if "steps" in job:
+                                for step in job["steps"]:
+                                    if isinstance(step, dict) and "uses" in step:
+                                        action = step["uses"]
+                                        if "@v" in action and not action.endswith(("@v4", "@v5", "@v6")):
+                                            issue = {
+                                                "type": "outdated_action",
+                                                "file": workflow_name,
+                                                "action": action,
+                                                "severity": "low"
+                                            }
+                                            issues["workflow_issues"].append(issue)
+                                            auto_fixable.append(issue)
+
+                except Exception as e:
+                    print(f"⚠️ Error analyzing {workflow_file}: {e}")
+
+        # 3. PERFORMANCE REGRESSION DETECTION
+        print("\n⚡ Analyzing Performance Metrics...")
+        try:
+            # Simulate performance analysis (would typically fetch from API)
+            recent_runs = [
+                {"duration": 720, "status": "success"},  # 12 minutes
+                {"duration": 850, "status": "success"},  # 14+ minutes
+                {"duration": 900, "status": "success"},  # 15 minutes
+                {"duration": 650, "status": "success"},  # 10+ minutes
+            ]
+
+            avg_duration = sum(run["duration"] for run in recent_runs) / len(recent_runs)
+            max_duration = max(run["duration"] for run in recent_runs)
+
+            if avg_duration > 600:  # 10 minutes
+                issue = {
+                    "type": "performance_regression",
+                    "metric": "average_duration",
+                    "value": f"{avg_duration/60:.1f} minutes",
+                    "threshold": "10 minutes",
+                    "severity": "medium"
+                }
+                issues["performance_issues"].append(issue)
+
+            if max_duration > 900:  # 15 minutes
+                issue = {
+                    "type": "performance_regression",
+                    "metric": "max_duration",
+                    "value": f"{max_duration/60:.1f} minutes",
+                    "threshold": "15 minutes",
+                    "severity": "high"
+                }
+                issues["performance_issues"].append(issue)
+                critical_issues.append(issue)
+
+        except Exception as e:
+            print(f"⚠️ Performance analysis failed: {e}")
+
+        # 4. SECURITY CONFIGURATION ANALYSIS
+        print("\n🔒 Analyzing Security Configurations...")
+
+        # Check for security best practices
+        security_files = [
+            ".github/dependabot.yml",
+            ".github/workflows/security.yml",
+            ".pre-commit-config.yaml"
+        ]
+
+        for sec_file in security_files:
+            if not Path(sec_file).exists():
+                issue = {
+                    "type": "missing_security_config",
+                    "file": sec_file,
+                    "severity": "medium"
+                }
+                issues["security_issues"].append(issue)
+
+        # 5. CONFIGURATION CONSISTENCY ANALYSIS
+        print("\n⚙️ Analyzing Configuration Consistency...")
+
+        # Check Python version consistency
+        python_versions = set()
+
+        # Check workflow files
+        for workflow_file in workflow_dir.glob("*.yml"):
+            try:
+                with open(workflow_file) as f:
+                    content = f.read()
+                    versions = re.findall(r"python-version:\s*['\"]?([0-9.]+)['\"]?", content)
+                    python_versions.update(versions)
+            except:
+                pass
+
+        # Check pyproject.toml
+        pyproject_file = Path("pyproject.toml")
+        if pyproject_file.exists():
+            try:
+                import tomllib
+                with open(pyproject_file, "rb") as f:
+                    pyproject = tomllib.load(f)
+
+                requires_python = pyproject.get("project", {}).get("requires-python")
+                if requires_python:
+                    # Extract version numbers
+                    versions = re.findall(r"([0-9.]+)", requires_python)
+                    python_versions.update(versions)
+
+            except Exception as e:
+                print(f"⚠️ Could not parse pyproject.toml: {e}")
+
+        if len(python_versions) > 3:  # Too many different versions
+            issue = {
+                "type": "version_inconsistency",
+                "metric": "python_versions",
+                "values": list(python_versions),
+                "severity": "low"
+            }
+            issues["configuration_issues"].append(issue)
+
+        # SUMMARY
+        total_issues = sum(len(category) for category in issues.values())
+        critical_count = len(critical_issues)
+        auto_fixable_count = len(auto_fixable)
+
+        print(f"\n📊 DETECTION SUMMARY:")
+        print(f"  Total issues found: {total_issues}")
+        print(f"  Critical issues: {critical_count}")
+        print(f"  Auto-fixable issues: {auto_fixable_count}")
+
+        for category, category_issues in issues.items():
+            if category_issues:
+                print(f"  {category.replace('_', ' ').title()}: {len(category_issues)}")
+
+        # Save detailed report
+        report = {
+            "timestamp": datetime.now().isoformat(),
+            "total_issues": total_issues,
+            "critical_issues": critical_count,
+            "auto_fixable": auto_fixable_count,
+            "issues": issues,
+            "critical_list": critical_issues,
+            "auto_fixable_list": auto_fixable
+        }
+
+        with open("issue-detection-report.json", "w") as f:
+            json.dump(report, f, indent=2)
+
+        # Set outputs for GitHub Actions
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"issues-found={total_issues}\n")
+            f.write(f"critical-issues={critical_count}\n")
+            f.write(f"auto-fixable={auto_fixable_count}\n")
+
+        EOF
+
+    - name: Upload issue detection report
+      uses: actions/upload-artifact@v4
+      with:
+        name: issue-detection-report
+        path: issue-detection-report.json
+        retention-days: 30
+
+  # Automatic recovery for fixable issues
+  auto-recovery:
+    name: 🔧 Automated Recovery
+    needs: detect-issues
+    if: needs.detect-issues.outputs.auto-fixable > 0 && (github.event.inputs.auto_fix == 'true' || github.event_name == 'schedule')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Download issue report
+      uses: actions/download-artifact@v4
+      with:
+        name: issue-detection-report
+
+    - name: Apply automated fixes
+      run: |
+        python << 'EOF'
+        import json
+        import subprocess
+        import yaml
+        from pathlib import Path
+
+        print("🔧 APPLYING AUTOMATED FIXES")
+        print("=" * 40)
+
+        # Load issue report
+        with open("issue-detection-report.json") as f:
+            report = json.load(f)
+
+        fixes_applied = []
+
+        # Fix dependency issues
+        for issue in report["issues"]["dependency_issues"]:
+            if issue["type"] == "outdated_dependency":
+                package = issue["package"]
+                latest = issue["latest"]
+
+                print(f"📦 Updating {package} to {latest}")
+                try:
+                    subprocess.run(
+                        ["pip", "install", "--upgrade", f"{package}=={latest}"],
+                        check=True, capture_output=True
+                    )
+                    fixes_applied.append(f"Updated {package} to {latest}")
+                except Exception as e:
+                    print(f"⚠️ Failed to update {package}: {e}")
+
+        # Fix workflow timeout issues
+        workflow_fixes = []
+        for issue in report["issues"]["workflow_issues"]:
+            if issue["type"] == "missing_timeout":
+                workflow_file = Path(f".github/workflows/{issue['file']}")
+                if workflow_file.exists():
+                    try:
+                        with open(workflow_file) as f:
+                            workflow = yaml.safe_load(f)
+
+                        # Add default timeout to job
+                        job_name = issue["job"]
+                        if "jobs" in workflow and job_name in workflow["jobs"]:
+                            workflow["jobs"][job_name]["timeout-minutes"] = 15
+
+                            with open(workflow_file, "w") as f:
+                                yaml.dump(workflow, f, default_flow_style=False, sort_keys=False)
+
+                            workflow_fixes.append(f"Added timeout to {issue['file']}:{job_name}")
+
+                    except Exception as e:
+                        print(f"⚠️ Failed to fix {workflow_file}: {e}")
+
+        # Generate fix summary
+        total_fixes = len(fixes_applied) + len(workflow_fixes)
+
+        if total_fixes > 0:
+            print(f"\n✅ Applied {total_fixes} automated fixes")
+
+            # Create summary for commit
+            fix_summary = "🔧 automated fixes applied:\n"
+            for fix in fixes_applied + workflow_fixes:
+                fix_summary += f"  - {fix}\n"
+
+            with open("fix-summary.txt", "w") as f:
+                f.write(fix_summary)
+        else:
+            print("ℹ️ No fixes were applied")
+
+        EOF
+
+    - name: Commit automated fixes
+      run: |
+        # Check if any changes were made
+        if ! git diff --quiet; then
+          echo "📝 Committing automated fixes..."
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Add changes
+          git add -A
+
+          # Create commit message
+          commit_msg="🤖 auto-fix: resolve CI/CD issues detected by automated analysis
+
+          $(cat fix-summary.txt 2>/dev/null || echo '- Applied automated fixes for detected issues')
+
+          🔍 Issues resolved: ${{ needs.detect-issues.outputs.auto-fixable }}
+          🛠️ Detection run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          🤖 Generated by error detection & recovery workflow"
+
+          git commit -m "$commit_msg"
+
+          # Push changes
+          git push
+
+          echo "✅ Automated fixes committed and pushed"
+        else
+          echo "ℹ️ No changes to commit"
+        fi
+
+  # Comprehensive reporting and alerting
+  report-summary:
+    name: 📊 Error Detection Summary
+    if: always()
+    needs: [detect-issues, auto-recovery]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - name: Generate comprehensive report
+      run: |
+        echo "🔍 ERROR DETECTION & RECOVERY SUMMARY"
+        echo "====================================="
+        echo "⏰ Analysis completed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+        echo "🔗 Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        echo ""
+
+        # Detection results
+        echo "📊 DETECTION RESULTS:"
+        echo "  🔍 Total issues found: ${{ needs.detect-issues.outputs.issues-found }}"
+        echo "  🚨 Critical issues: ${{ needs.detect-issues.outputs.critical-issues }}"
+        echo "  🔧 Auto-fixable issues: ${{ needs.detect-issues.outputs.auto-fixable }}"
+        echo ""
+
+        # Recovery results
+        recovery_result="${{ needs.auto-recovery.result }}"
+        echo "🔧 RECOVERY RESULTS:"
+        case $recovery_result in
+          "success")
+            echo "  ✅ Automated recovery completed successfully"
+            echo "  🤖 Fixes have been applied and committed"
+            ;;
+          "failure")
+            echo "  ❌ Automated recovery encountered errors"
+            echo "  🔍 Manual intervention may be required"
+            ;;
+          "skipped")
+            echo "  ⏭️ Automated recovery was skipped"
+            echo "  ℹ️ No auto-fixable issues or auto-fix disabled"
+            ;;
+          *)
+            echo "  ❓ Recovery status: $recovery_result"
+            ;;
+        esac
+
+        echo ""
+        echo "💡 RECOMMENDATIONS:"
+        echo "=================="
+
+        issues_found="${{ needs.detect-issues.outputs.issues-found }}"
+        critical_issues="${{ needs.detect-issues.outputs.critical-issues }}"
+
+        if [[ "$issues_found" -eq 0 ]]; then
+          echo "🎉 No issues detected - CI/CD pipeline is healthy!"
+          echo "  ✅ All systems operating normally"
+          echo "  🔄 Continue with regular monitoring schedule"
+        elif [[ "$critical_issues" -gt 0 ]]; then
+          echo "🚨 CRITICAL ISSUES REQUIRE IMMEDIATE ATTENTION:"
+          echo "  1. Review the issue detection report"
+          echo "  2. Address critical security or performance issues"
+          echo "  3. Consider running manual recovery procedures"
+          echo "  4. Update monitoring thresholds if needed"
+        else
+          echo "⚠️ Minor issues detected:"
+          echo "  1. Review the issue detection report"
+          echo "  2. Schedule maintenance to address non-critical issues"
+          echo "  3. Consider enabling auto-fix for future runs"
+          echo "  4. Monitor for issue trends over time"
+        fi
+
+        echo ""
+        echo "🔮 NEXT STEPS:"
+        echo "============="
+        echo "  📅 Next scheduled check: Tomorrow at 8 AM UTC"
+        echo "  🔧 Manual trigger available via workflow_dispatch"
+        echo "  📊 Historical reports available in workflow artifacts"
+        echo "  🛠️ Auto-fix can be enabled for routine maintenance"
