@@ -20,6 +20,14 @@ env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   PIP_NO_PYTHON_VERSION_WARNING: 1
 
+  # Performance optimizations
+  PYTHONHASHSEED: 0
+  PYTHONIOENCODING: utf-8
+  OMP_NUM_THREADS: 2
+  MKL_NUM_THREADS: 2
+  OPENBLAS_NUM_THREADS: 2
+  FORCE_COLOR: 1
+
   # Latest tool versions for 2025
   RUFF_VERSION: "0.13.1"
   BLACK_VERSION: "25.1.0"
@@ -47,22 +55,23 @@ jobs:
         cache-dependency-path: |
           pyproject.toml
           .pre-commit-config.yaml
+        show-progress: false
 
     - name: Cache pre-commit hooks
       uses: actions/cache@v4
       with:
         path: ~/.cache/pre-commit
-        key: pre-commit-v5-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+        key: pre-commit-v6-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}-${{ env.RUFF_VERSION }}
         restore-keys: |
-          pre-commit-v5-${{ runner.os }}-
+          pre-commit-v6-${{ runner.os }}-
 
     - name: Cache lint dependencies
       uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: lint-deps-v5-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}-${{ env.RUFF_VERSION }}-${{ env.BLACK_VERSION }}
+        key: lint-deps-v6-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}-${{ env.RUFF_VERSION }}-${{ env.BLACK_VERSION }}-${{ env.MYPY_VERSION }}
         restore-keys: |
-          lint-deps-v5-${{ runner.os }}-
+          lint-deps-v6-${{ runner.os }}-
 
     - name: Install dependencies with retry
       uses: nick-fields/retry@v3
