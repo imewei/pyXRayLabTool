@@ -86,14 +86,14 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         for key, data in benchmark_results.items():
             if data["energy_points"] == 1:
                 # Single energy calculations should be reasonably fast
-                assert data["calculations_per_second"] > 5000, (
-                    f"Single energy calc too slow: {data['calculations_per_second']}"
-                )
+                assert (
+                    data["calculations_per_second"] > 5000
+                ), f"Single energy calc too slow: {data['calculations_per_second']}"
             elif data["energy_points"] <= 100:
                 # Small arrays should still be reasonably fast
-                assert data["calculations_per_second"] > 500, (
-                    f"Small array calc too slow: {data['calculations_per_second']}"
-                )
+                assert (
+                    data["calculations_per_second"] > 500
+                ), f"Small array calc too slow: {data['calculations_per_second']}"
 
         return benchmark_results
 
@@ -170,22 +170,22 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
 
         # Small batch performance should be reasonably consistent (within 50% variation)
         small_batch_ratio = batch_10_rate / batch_1_rate
-        assert 0.5 <= small_batch_ratio <= 2.0, (
-            f"Small batch processing inconsistent: {batch_10_rate} vs {batch_1_rate} (ratio: {small_batch_ratio:.2f})"
-        )
+        assert (
+            0.5 <= small_batch_ratio <= 2.0
+        ), f"Small batch processing inconsistent: {batch_10_rate} vs {batch_1_rate} (ratio: {small_batch_ratio:.2f})"
 
         # Large batches should maintain reasonable performance compared to small batches
         # batch_100 should be at least 60% of batch_1 performance (accounts for threading overhead)
         large_batch_ratio = batch_100_rate / batch_1_rate
-        assert large_batch_ratio >= 0.6, (
-            f"Large batch processing too slow: {batch_100_rate} vs {batch_1_rate} (ratio: {large_batch_ratio:.2f})"
-        )
+        assert (
+            large_batch_ratio >= 0.6
+        ), f"Large batch processing too slow: {batch_100_rate} vs {batch_1_rate} (ratio: {large_batch_ratio:.2f})"
 
         # Very large batches should be faster than medium batches (parallelization benefit)
         medium_vs_large = batch_100_rate / batch_25_rate
-        assert medium_vs_large >= 1.0, (
-            f"Large batches not scaling properly: {batch_100_rate} vs {batch_25_rate} (ratio: {medium_vs_large:.2f})"
-        )
+        assert (
+            medium_vs_large >= 1.0
+        ), f"Large batches not scaling properly: {batch_100_rate} vs {batch_25_rate} (ratio: {medium_vs_large:.2f})"
 
         return benchmark_results
 
@@ -271,16 +271,16 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         # Assert reasonable memory behavior
         for scenario, data in memory_results.items():
             # Memory growth should be reasonable
-            assert data["memory_growth_mb"] < 500, (
-                f"Excessive memory growth in {scenario}: {data['memory_growth_mb']}MB"
-            )
+            assert (
+                data["memory_growth_mb"] < 500
+            ), f"Excessive memory growth in {scenario}: {data['memory_growth_mb']}MB"
 
             # Garbage collection should recover most temporary memory
             if data["memory_growth_mb"] > 10:  # Only check if significant growth
                 gc_efficiency = data["gc_recovered_mb"] / data["memory_growth_mb"]
-                assert gc_efficiency > 0.5, (
-                    f"Poor GC efficiency in {scenario}: {gc_efficiency:.2f}"
-                )
+                assert (
+                    gc_efficiency > 0.5
+                ), f"Poor GC efficiency in {scenario}: {gc_efficiency:.2f}"
 
         return memory_results
 
@@ -367,14 +367,14 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
             )
 
             # Cached access should be very fast
-            assert data["cached_access_time"] < 0.001, (
-                f"Slow cached access for {element}: {data['cached_access_time']}s"
-            )
+            assert (
+                data["cached_access_time"] < 0.001
+            ), f"Slow cached access for {element}: {data['cached_access_time']}s"
 
             # Cache should provide significant speedup
-            assert data["cache_speedup"] > 10, (
-                f"Poor cache speedup for {element}: {data['cache_speedup']}x"
-            )
+            assert (
+                data["cache_speedup"] > 10
+            ), f"Poor cache speedup for {element}: {data['cache_speedup']}x"
 
         return interpolator_results
 
@@ -451,7 +451,9 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         # Assert reasonable concurrent performance (very relaxed due to GIL limitations)
         # For CPU-bound calculations in Python, GIL often limits scaling
         # We mainly want to verify no severe degradation
-        min_expected_rate = single_thread_rate * 0.6  # Allow up to 40% degradation due to GIL
+        min_expected_rate = (
+            single_thread_rate * 0.6
+        )  # Allow up to 40% degradation due to GIL
         assert concurrency_results[4]["calculations_per_second"] > min_expected_rate, (
             "Severe performance degradation with 4 threads: expected >"
             f" {min_expected_rate:.0f}, got"

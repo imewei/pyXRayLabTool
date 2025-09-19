@@ -10,8 +10,8 @@ This module tests the new performance features introduced in v0.2.5:
 
 import gc
 import os
-import time
 import threading
+import time
 from unittest.mock import patch
 
 import numpy as np
@@ -37,11 +37,13 @@ class TestSmartCacheWarming:
         # Test with a simple formula
         formula = "SiO2"
 
-        with patch('xraylabtool.utils.parse_formula') as mock_parse:
+        with patch("xraylabtool.utils.parse_formula") as mock_parse:
             # Mock successful parsing - returns (element_symbols, element_counts)
             mock_parse.return_value = (["Si", "O"], [1, 2])
 
-            with patch('xraylabtool.data_handling.atomic_cache.get_bulk_atomic_data_fast') as mock_load:
+            with patch(
+                "xraylabtool.data_handling.atomic_cache.get_bulk_atomic_data_fast"
+            ) as mock_load:
                 _smart_cache_warming(formula)
 
                 # Should be called with only Si and O elements
@@ -65,7 +67,9 @@ class TestSmartCacheWarming:
         _warm_priority_cache()
         # Wait for background thread to complete
         time.sleep(0.1)
-        _ = time.perf_counter() - start  # We don't need to compare times due to background threading
+        _ = (
+            time.perf_counter() - start
+        )  # We don't need to compare times due to background threading
 
         # Smart warming should be faster for simple cases
         # (though the difference might be small due to background threading)
@@ -73,8 +77,12 @@ class TestSmartCacheWarming:
 
     def test_smart_cache_warming_fallback(self):
         """Test that smart warming falls back to priority warming on errors."""
-        with patch('xraylabtool.utils.parse_formula', side_effect=Exception("Parse error")):
-            with patch('xraylabtool.calculators.core._warm_priority_cache') as mock_priority:
+        with patch(
+            "xraylabtool.utils.parse_formula", side_effect=Exception("Parse error")
+        ):
+            with patch(
+                "xraylabtool.calculators.core._warm_priority_cache"
+            ) as mock_priority:
                 _smart_cache_warming("SiO2")
                 mock_priority.assert_called_once()
 
@@ -94,7 +102,7 @@ class TestAdaptiveBatchProcessing:
             from xraylabtool.calculators.core import calculate_xray_properties
 
             # Should complete without creating ThreadPoolExecutor
-            with patch('concurrent.futures.ThreadPoolExecutor') as mock_executor:
+            with patch("concurrent.futures.ThreadPoolExecutor") as mock_executor:
                 results = calculate_xray_properties(formulas, energies, densities)
 
                 # ThreadPoolExecutor should not be created for small batches
@@ -118,7 +126,9 @@ class TestAdaptiveBatchProcessing:
             assert callable(_process_formulas_parallel)
 
             # Test the threshold logic - function should be designed for >=20 items
-            assert len(formulas) >= 20, "Test formulas should exceed the 20-item threshold"
+            assert (
+                len(formulas) >= 20
+            ), "Test formulas should exceed the 20-item threshold"
 
         except ImportError:
             pytest.skip("Batch processing function not available")
@@ -136,10 +146,12 @@ class TestCacheMetricsOptimization:
 
     def test_cache_metrics_can_be_enabled(self):
         """Test that cache metrics can be enabled via environment variable."""
-        with patch.dict(os.environ, {'XRAYLABTOOL_CACHE_METRICS': 'true'}):
+        with patch.dict(os.environ, {"XRAYLABTOOL_CACHE_METRICS": "true"}):
             # Reload the module to pick up the environment variable
             import importlib
+
             from xraylabtool.data_handling import cache_metrics
+
             importlib.reload(cache_metrics)
 
             assert cache_metrics._CACHE_METRICS_ENABLED
@@ -150,7 +162,9 @@ class TestCacheMetricsOptimization:
         with patch.dict(os.environ, {}, clear=True):
             # Reload the module to ensure fresh state
             import importlib
+
             from xraylabtool.data_handling import cache_metrics
+
             importlib.reload(cache_metrics)
 
             stats = cache_metrics.get_cache_stats()
@@ -160,10 +174,12 @@ class TestCacheMetricsOptimization:
 
     def test_cache_stats_functional_when_enabled(self):
         """Test that cache stats work when enabled."""
-        with patch.dict(os.environ, {'XRAYLABTOOL_CACHE_METRICS': 'true'}):
+        with patch.dict(os.environ, {"XRAYLABTOOL_CACHE_METRICS": "true"}):
             # Reload the module to pick up the environment variable
             import importlib
+
             from xraylabtool.data_handling import cache_metrics
+
             importlib.reload(cache_metrics)
 
             # Reset stats
@@ -192,8 +208,8 @@ class TestMemoryOptimizations:
     def test_memory_profiling_lazy_initialization(self):
         """Test that memory profiling structures are lazily initialized."""
         from xraylabtool.optimization.memory_profiler import (
-            _memory_snapshots,
             _allocation_tracking,
+            _memory_snapshots,
             _profiling_lock,
         )
 
@@ -204,10 +220,12 @@ class TestMemoryOptimizations:
 
     def test_memory_profiling_can_be_enabled(self):
         """Test that memory profiling can be enabled via environment variable."""
-        with patch.dict(os.environ, {'XRAYLABTOOL_MEMORY_PROFILING': 'true'}):
+        with patch.dict(os.environ, {"XRAYLABTOOL_MEMORY_PROFILING": "true"}):
             # Reload the module to pick up the environment variable
             import importlib
+
             from xraylabtool.optimization import memory_profiler
+
             importlib.reload(memory_profiler)
 
             assert memory_profiler._profiling_active
@@ -221,7 +239,7 @@ class TestColdStartOptimization:
         clear_scattering_factor_cache()
 
         # Monitor that cache warming occurs during first calculation
-        with patch('xraylabtool.calculators.core._smart_cache_warming') as mock_warming:
+        with patch("xraylabtool.calculators.core._smart_cache_warming") as mock_warming:
             result = calculate_single_material_properties("Si", 10.0, 2.33)
 
             # Should call smart cache warming
@@ -236,7 +254,7 @@ class TestColdStartOptimization:
         calculate_single_material_properties("Si", 10.0, 2.33)
 
         # Second calculation with monitoring
-        with patch('xraylabtool.calculators.core._smart_cache_warming') as mock_warming:
+        with patch("xraylabtool.calculators.core._smart_cache_warming") as mock_warming:
             result = calculate_single_material_properties("Si", 10.0, 2.33)
 
             # Should not call cache warming again
@@ -254,7 +272,9 @@ class TestColdStartOptimization:
 
         # Should be significantly faster than v0.2.4's 912ms
         # Target is <100ms, but we'll be lenient for test stability
-        assert cold_start_time < 0.5, f"Cold start too slow: {cold_start_time*1000:.1f}ms"
+        assert (
+            cold_start_time < 0.5
+        ), f"Cold start too slow: {cold_start_time * 1000:.1f}ms"
         assert result is not None
 
     def test_warm_cache_performance(self):
@@ -275,7 +295,9 @@ class TestColdStartOptimization:
         avg_warm_time = np.mean(times)
 
         # Warm cache should be very fast
-        assert avg_warm_time < 0.01, f"Warm cache too slow: {avg_warm_time*1000:.1f}ms"
+        assert (
+            avg_warm_time < 0.01
+        ), f"Warm cache too slow: {avg_warm_time * 1000:.1f}ms"
 
 
 class TestEnvironmentBasedControls:
@@ -284,28 +306,36 @@ class TestEnvironmentBasedControls:
     def test_cache_metrics_environment_control(self):
         """Test cache metrics environment variable control."""
         # Test disabled
-        with patch.dict(os.environ, {'XRAYLABTOOL_CACHE_METRICS': 'false'}, clear=True):
+        with patch.dict(os.environ, {"XRAYLABTOOL_CACHE_METRICS": "false"}, clear=True):
             import importlib
+
             from xraylabtool.data_handling import cache_metrics
+
             importlib.reload(cache_metrics)
             assert not cache_metrics._CACHE_METRICS_ENABLED
 
         # Test enabled
-        with patch.dict(os.environ, {'XRAYLABTOOL_CACHE_METRICS': 'true'}, clear=True):
+        with patch.dict(os.environ, {"XRAYLABTOOL_CACHE_METRICS": "true"}, clear=True):
             importlib.reload(cache_metrics)
             assert cache_metrics._CACHE_METRICS_ENABLED
 
     def test_memory_profiling_environment_control(self):
         """Test memory profiling environment variable control."""
         # Test disabled
-        with patch.dict(os.environ, {'XRAYLABTOOL_MEMORY_PROFILING': 'false'}, clear=True):
+        with patch.dict(
+            os.environ, {"XRAYLABTOOL_MEMORY_PROFILING": "false"}, clear=True
+        ):
             import importlib
+
             from xraylabtool.optimization import memory_profiler
+
             importlib.reload(memory_profiler)
             assert not memory_profiler._profiling_active
 
         # Test enabled
-        with patch.dict(os.environ, {'XRAYLABTOOL_MEMORY_PROFILING': 'true'}, clear=True):
+        with patch.dict(
+            os.environ, {"XRAYLABTOOL_MEMORY_PROFILING": "true"}, clear=True
+        ):
             importlib.reload(memory_profiler)
             assert memory_profiler._profiling_active
 
@@ -359,14 +389,14 @@ class TestV025PerformanceTargets:
 
         # Measure cold cache time
         start = time.perf_counter()
-        result1 = calculate_single_material_properties(formula, energy, density)
+        result = calculate_single_material_properties(formula, energy, density)
         cold_time = time.perf_counter() - start
 
         # Measure warm cache times
         warm_times = []
         for _ in range(10):
             start = time.perf_counter()
-            result = calculate_single_material_properties(formula, energy, density)
+            calculate_single_material_properties(formula, energy, density)
             warm_times.append(time.perf_counter() - start)
 
         avg_warm_time = np.mean(warm_times)
@@ -377,22 +407,21 @@ class TestV025PerformanceTargets:
 
     def test_memory_usage_target(self):
         """Test that memory usage meets the low overhead target."""
-        import psutil
         import tracemalloc
+
+        import psutil
 
         clear_scattering_factor_cache()
         gc.collect()
 
         # Start memory tracking
         tracemalloc.start()
-        process = psutil.Process()
-        initial_rss = process.memory_info().rss / 1024 / 1024  # MB
 
         # Perform calculation
         result = calculate_single_material_properties("Si", 10.0, 2.33)
 
         # Measure memory usage
-        current, peak = tracemalloc.get_traced_memory()
+        _, peak = tracemalloc.get_traced_memory()
         peak_mb = peak / 1024 / 1024  # MB
 
         tracemalloc.stop()
