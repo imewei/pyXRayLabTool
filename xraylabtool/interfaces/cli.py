@@ -24,8 +24,8 @@ precision control, and comprehensive shell completion for enhanced usability.
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
@@ -981,7 +981,7 @@ def _format_scalar_field(field: str, value: Any, precision: int) -> str:
     """Format a single scalar field."""
     from collections.abc import Callable
 
-    def default_formatter(v: Any, p: int) -> str:  # noqa: ARG001
+    def default_formatter(v: Any, p: int) -> str:
         return ""
 
     formatters: dict[str, Callable[[Any, int], str]] = {
@@ -1546,18 +1546,17 @@ def cmd_batch(args: Any) -> int:
         batch_suggestions = recovery_manager.suggest_batch_improvements(
             validation_results
         )
-        if batch_suggestions["status"] == "errors_found":
-            if args.verbose or debug_mode:
-                print("\n📊 Batch Processing Summary:")
-                print(f"   Total items: {batch_suggestions['summary']['total_items']}")
-                print(
-                    f"   Success rate: {batch_suggestions['summary']['success_rate']}"
-                )
-                if batch_suggestions["recommendations"]:
-                    print("   Recommendations:")
-                    for rec in batch_suggestions["recommendations"]:
-                        print(f"   • {rec}")
-                print()
+        if batch_suggestions["status"] == "errors_found" and (
+            args.verbose or debug_mode
+        ):
+            print("\n📊 Batch Processing Summary:")
+            print(f"   Total items: {batch_suggestions['summary']['total_items']}")
+            print(f"   Success rate: {batch_suggestions['summary']['success_rate']}")
+            if batch_suggestions["recommendations"]:
+                print("   Recommendations:")
+                for rec in batch_suggestions["recommendations"]:
+                    print(f"   • {rec}")
+            print()
 
         parsed_data = _parse_batch_data(df_input)
         if parsed_data[0] is None:

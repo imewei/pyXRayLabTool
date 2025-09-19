@@ -600,7 +600,13 @@ exclude = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ARG", "S101", "PLC0415", "S311", "RUF003", "RUF012", "S110", "N806", "B007", "S607", "F401", "PLW2901", "SIM102", "S102", "SIM117"]  # Allow unused args, asserts, lazy imports, and test-specific patterns in tests
+"tests/*" = ["ARG", "S101", "PLC0415", "S311", "RUF003", "RUF012", "S110", "N806", "B007", "S607", "F401", "PLW2901", "SIM102", "S102", "SIM117"]
+"docs/*" = ["RUF001", "RUF002", "RUF003", "PLC2401", "N999"]  # Scientific notation and Unicode characters
+".github/*" = ["S607", "PLW2901"]  # Allow partial paths in GitHub scripts
+"xraylabtool/interfaces/cli.py" = ["PLC0415", "PLR0911", "PLR0912", "PLR0915", "ARG001", "ARG002"]  # CLI lazy imports and complexity
+"xraylabtool/interfaces/completion*.py" = ["PLC0415", "PLW0603", "S607", "UP035", "ARG001", "ARG002"]  # Completion system patterns
+"xraylabtool/core/*.py" = ["RUF001", "RUF002", "RUF003"]  # Unicode scientific symbols
+"xraylabtool/analysis/*.py" = ["S110", "SIM102", "B904"]  # Analysis module patterns
 "__init__.py" = ["F401"]     # Allow unused imports in __init__.py
 # Relax rules for completion system files (complex generated/template code)
 "**/interfaces/completion.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM102"]
