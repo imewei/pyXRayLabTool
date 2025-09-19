@@ -11,7 +11,12 @@ on:
         default: '20'
         required: false
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
+  PYTHONUNBUFFERED: 1
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
