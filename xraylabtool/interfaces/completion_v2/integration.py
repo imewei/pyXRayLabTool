@@ -190,22 +190,6 @@ def test_completion_installation() -> int:
         return 1
 
 
-def show_migration_notice() -> None:
-    """Show notice about the new completion system."""
-    print("📢 XRayLabTool Completion System v2")
-    print("=" * 40)
-    print("The completion system has been upgraded with new features:")
-    print("  • Virtual environment-centric installation")
-    print("  • Automatic activation/deactivation")
-    print("  • Better performance and caching")
-    print("  • Native Zsh completion support")
-    print("")
-    print("New commands:")
-    print("  xraylabtool completion install      # Install in current env")
-    print("  xraylabtool completion list         # List all environments")
-    print("  xraylabtool completion status       # Show status")
-    print("  xraylabtool completion uninstall    # Remove from env")
-    print("")
 
 
 def handle_new_completion_command(args: list) -> int:

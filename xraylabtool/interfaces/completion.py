@@ -11,7 +11,6 @@ from .completion_v2.installer import CompletionInstaller
 # Import from the new completion system for backward compatibility
 from .completion_v2.integration import (
     install_completion_main,
-    show_migration_notice,
     uninstall_completion_main,
 )
 from .completion_v2.shells import (
@@ -80,18 +79,7 @@ __all__ = [
     "BASH_COMPLETION_SCRIPT",
     "CompletionInstaller",
     "install_completion_main",
-    "show_migration_notice",
     "uninstall_completion_main",
 ]
 
-# Show migration notice when module is imported (once per session)
 import os
-
-if not os.environ.get("XRAYLABTOOL_COMPLETION_MIGRATION_SHOWN"):
-    os.environ["XRAYLABTOOL_COMPLETION_MIGRATION_SHOWN"] = "1"
-    # Only show if we're in an interactive session
-    if hasattr(os, "isatty") and os.isatty(0):
-        try:
-            show_migration_notice()
-        except Exception:
-            pass  # Fail silently if we can't show the notice

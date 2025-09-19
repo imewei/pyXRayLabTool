@@ -545,7 +545,7 @@ Register-ArgumentCompleter -Native -CommandName {command_name} -ScriptBlock {{
 
     if ($words.Count -le 1) {{
         # Complete main commands and global options
-        $commands = @('calc', 'batch', 'compare', 'analyze', 'export', 'convert', 'formula', 'atomic', 'bragg', 'list', 'completion')
+        $commands = @('calc', 'batch', 'compare', 'convert', 'formula', 'atomic', 'bragg', 'list', 'completion')
         $completions = $commands + $globalOptions
         $completions | Where-Object {{ $_ -like "$wordToComplete*" }}
         return
@@ -706,56 +706,6 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
                 "-h",
             ],
             "arguments": ["materials"],
-        },
-        "analyze": {
-            "description": "Advanced analysis of single material properties",
-            "options": [
-                "--density",
-                "-d",
-                "--energy",
-                "-e",
-                "--edges",
-                "--optimize",
-                "--transmission",
-                "--thickness",
-                "--stats",
-                "--output",
-                "-o",
-                "--format",
-                "--precision",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["material"],
-        },
-        "export": {
-            "description": "Export data with advanced formatting and visualization",
-            "options": [
-                "--output",
-                "-o",
-                "--format",
-                "--formats",
-                "--template",
-                "--plots",
-                "--plots-only",
-                "--plot-types",
-                "--excel-template",
-                "--html-template",
-                "--include-metadata",
-                "--interactive",
-                "--dpi",
-                "--style",
-                "--title",
-                "--author",
-                "--institution",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["input_file"],
         },
         "convert": {
             "description": "Convert between energy and wavelength units",
