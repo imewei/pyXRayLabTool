@@ -4,19 +4,20 @@ Core functionality for XRayLabTool.
 This module contains the main classes and functions for X-ray analysis,
 including atomic scattering factors and crystallographic calculations.
 """
+
 # ruff: noqa: RUF002, RUF003, PLC0415, PLW0603, PLW0602
 
 from __future__ import annotations
 
+import types
+import warnings
 from collections.abc import Callable
 
 # concurrent.futures import moved to function level for parallel processing
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
-import types
 from typing import TYPE_CHECKING, Any
-import warnings
 
 import numpy as np
 
@@ -646,7 +647,7 @@ class AtomicScatteringFactor:
     Class for handling atomic scattering factors.
 
     This class loads and manages atomic scattering factor data
-    from .nff files using the module-level cache.
+    from NFF files using the module-level cache.
     """
 
     def __init__(self) -> None:

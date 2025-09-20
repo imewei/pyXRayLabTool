@@ -121,7 +121,7 @@ def save_calculation_results(
             import json
 
             # Convert numpy arrays to lists for JSON serialization
-            def convert_numpy(obj):
+            def convert_numpy(obj: Any) -> Any:
                 if isinstance(obj, np.ndarray):
                     return obj.tolist()
                 elif isinstance(obj, np.integer):

@@ -29,6 +29,8 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
+import numpy as np
+
 # Essential imports only - heavy modules imported lazily in functions
 # pandas import moved to function level to reduce startup time
 from xraylabtool import __version__
@@ -67,7 +69,7 @@ except ImportError:
         def __init__(self):
             pass
 
-    def create_batch_progress_tracker(**kwargs):
+    def create_batch_progress_tracker(**kwargs: Any) -> Any:
         from contextlib import nullcontext
 
         return nullcontext()
@@ -796,7 +798,7 @@ def add_compare_command(subparsers: Any) -> None:
     )
 
 
-def parse_energy_string(energy_str: str):
+def parse_energy_string(energy_str: str) -> np.ndarray:
     """Parse energy string and return numpy array."""
     import numpy as np
 

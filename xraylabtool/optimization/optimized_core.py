@@ -217,7 +217,7 @@ def create_scattering_factor_interpolators_optimized(
     return interpolator_pair
 
 
-def enable_optimizations():
+def enable_optimizations() -> None:
     """
     Enable optimizations by patching the original module functions.
 
@@ -248,7 +248,7 @@ def enable_optimizations():
     print("- Numerical accuracy: preserved")
 
 
-def disable_optimizations():
+def disable_optimizations() -> None:
     """
     Restore original implementations.
 
@@ -299,7 +299,7 @@ def get_optimization_info() -> dict[str, Any]:
     }
 
 
-def clear_optimized_caches():
+def clear_optimized_caches() -> None:
     """Clear the optimized function caches."""
     _optimized_data_cache.clear()
     _optimized_interpolator_cache.clear()

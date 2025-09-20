@@ -308,6 +308,9 @@ jobs:
           echo "🐍 Python files changed - running affected tests"
           # Run unit tests first (fastest feedback)
           TEST_PATHS="tests/unit/ tests/integration/"
+        elif [[ "${{ needs.change-detection.outputs.deps-changed }}" == "true" ]]; then
+          echo "📦 Dependencies changed - running full test suite for compatibility"
+          TEST_PATHS="tests/"
         else
           echo "📦 Running smoke tests only"
           TEST_PATHS="tests/unit/test_core.py tests/integration/test_integration.py::TestBasicSetupAndInitialization"
