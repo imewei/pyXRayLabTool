@@ -7,15 +7,15 @@ including atomic scattering factors and crystallographic calculations.
 
 from __future__ import annotations
 
-import types
-import warnings
 from collections.abc import Callable
 
 # concurrent.futures import moved to function level for parallel processing
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
+import types
 from typing import TYPE_CHECKING, Any
+import warnings
 
 import numpy as np
 
@@ -29,7 +29,7 @@ import numpy as np
 def _get_optimization_decorator() -> Callable[..., Any]:
     """Lazy load optimization decorator to reduce memory overhead."""
     try:
-        from xraylabtool.optimization.vectorized_core import ensure_c_contiguous
+        from xraylabtool.optimization.vectorized_core import ensure_c_contiguous  # noqa: PLC0415
 
         return ensure_c_contiguous
     except ImportError:
@@ -557,7 +557,7 @@ def load_scattering_factor_data(element: str) -> Any:
     try:
         # Load .nff file using numpy - faster and no pandas dependency
         # .nff files are CSV format with header: E,f1,f2
-        import csv
+        import csv  # noqa: PLC0415
 
         with open(file_path) as file:
             # Read header
@@ -771,23 +771,23 @@ def _warm_priority_cache() -> None:
     This is called automatically on first calculation to pre-load common elements.
     Uses background thread for async warming to reduce cold start penalty.
     """
-    global _CACHE_WARMED
+    global _CACHE_WARMED  # noqa: PLW0603
     if _CACHE_WARMED:
         return
 
     # Use background thread for async warming to avoid blocking main thread
-    import threading
+    import threading  # noqa: PLC0415
 
     def _background_cache_warming():
         """Background thread function for cache warming."""
-        global _CACHE_WARMED
+        global _CACHE_WARMED  # noqa: PLW0603  # noqa: PLW0603
         try:
-            from xraylabtool.data_handling.atomic_cache import get_bulk_atomic_data_fast
+            from xraylabtool.data_handling.atomic_cache import get_bulk_atomic_data_fast  # noqa: PLC0415
 
             priority_tuple = tuple(_PRIORITY_ELEMENTS)
             get_bulk_atomic_data_fast(priority_tuple)
             _CACHE_WARMED = True
-        except Exception:
+        except Exception:  # noqa: S110
             # If warming fails, just continue - it's not critical
             pass
 
@@ -822,10 +822,10 @@ def _smart_cache_warming(formula: str) -> None:
         - Graceful error handling with fallback warming
     """
     try:
-        from xraylabtool.utils import parse_formula
+        from xraylabtool.utils import parse_formula  # noqa: PLC0415
 
         # Parse formula to get required elements
-        element_symbols, element_counts = parse_formula(formula)
+        element_symbols, _ = parse_formula(formula)
         required_elements = element_symbols
 
         # Load only required elements (much faster than bulk loading)
@@ -834,7 +834,7 @@ def _smart_cache_warming(formula: str) -> None:
         get_bulk_atomic_data_fast(tuple(required_elements))
 
         # Mark cache as warmed
-        global _CACHE_WARMED
+        global _CACHE_WARMED  # noqa: PLW0603  # noqa: PLW0603
         _CACHE_WARMED = True
 
     except Exception:
@@ -849,7 +849,7 @@ def clear_scattering_factor_cache() -> None:
     This function removes all cached scattering factor data from memory.
     Useful for testing or memory management.
     """
-    global _CACHE_WARMED
+    global _CACHE_WARMED  # noqa: PLW0603
     _scattering_factor_cache.clear()
     _interpolator_cache.clear()
     _atomic_data_cache.clear()
@@ -916,7 +916,7 @@ def calculate_scattering_factors(
     - f1ᵢ, f2ᵢ: Atomic scattering factors for element i
     - M: Molecular weight
     """
-    from xraylabtool.constants import SCATTERING_FACTOR
+    from xraylabtool.constants import SCATTERING_FACTOR  # noqa: PLC0415
 
     n_energies = len(energy_ev)
     n_elements = len(element_data)
@@ -1571,7 +1571,7 @@ def calculate_single_material_properties(
     """
     # Use smart cache warming for faster cold start (only loads required elements)
     # Only warm cache if it hasn't been warmed yet
-    global _CACHE_WARMED
+    global _CACHE_WARMED  # noqa: PLW0603
     if not _CACHE_WARMED:
         _smart_cache_warming(formula)
 
@@ -1744,8 +1744,8 @@ def _process_formulas_parallel(
         return results
 
     # Use parallel processing for larger batches
-    import concurrent.futures
-    import multiprocessing
+    import concurrent.futures  # noqa: PLC0415
+    import multiprocessing  # noqa: PLC0415
 
     optimal_workers = min(len(formulas), max(1, multiprocessing.cpu_count() // 2), 8)
 
@@ -1970,7 +1970,7 @@ class FastXRayCalculationEngine:
         dict[str, np.ndarray]
             Dictionary with derived quantities (critical_angles, attenuation_lengths, etc.)
         """
-        from xraylabtool.constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM
+        from xraylabtool.constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM  # noqa: PLC0415
 
         # Convert energies to wavelengths
         wavelength = ENERGY_TO_WAVELENGTH_FACTOR / energies
@@ -2041,7 +2041,7 @@ class FastXRayCalculationEngine:
             ]
 
         # Preload atomic data
-        from xraylabtool.data_handling.atomic_cache import get_atomic_data_provider
+        from xraylabtool.data_handling.atomic_cache import get_atomic_data_provider  # noqa: PLC0415
 
         provider = get_atomic_data_provider()
         provider.preload_elements(common_elements)
@@ -2057,7 +2057,7 @@ class FastXRayCalculationEngine:
         dict[str, Any]
             Performance metrics and status
         """
-        from xraylabtool.data_handling.atomic_cache import get_cache_stats
+        from xraylabtool.data_handling.atomic_cache import get_cache_stats  # noqa: PLC0415
 
         cache_stats = get_cache_stats()
 
@@ -2082,7 +2082,7 @@ def get_calculation_engine() -> FastXRayCalculationEngine:
     FastXRayCalculationEngine
         Shared calculation engine instance
     """
-    global _GLOBAL_ENGINE
+    global _GLOBAL_ENGINE  # noqa: PLW0603
     if _GLOBAL_ENGINE is None:
         _GLOBAL_ENGINE = FastXRayCalculationEngine()
         # Warm up cache for common elements
