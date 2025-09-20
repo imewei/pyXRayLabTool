@@ -14,7 +14,7 @@ maintainers = [
 description = "Ultra-fast Python package for X-ray optical properties calculation with CXRO/NIST data, CLI tools, and synchrotron applications"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
     # Development Status
     "Development Status :: 5 - Production/Stable",
@@ -34,7 +34,6 @@ classifiers = [
 
     # Programming Language
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -108,7 +107,7 @@ dev = [
     "pytest-timeout>=2.1.0",  # Test timeout support
 
     # Code quality and linting
-    "black>=24.3.0,<25.0.0",
+    "black>=24.3.0,<26.0.0",
     "flake8>=6.0.0",
     "mypy>=1.6.0,<2.0.0",
     "ruff>=0.1.7,<1.0.0",  # Fast linter and formatter
@@ -225,7 +224,7 @@ all = [
     "pytest-timeout>=2.1.0",
 
     # Code quality and linting
-    "black>=24.3.0,<25.0.0",
+    "black>=24.3.0,<26.0.0",
     "flake8>=6.0.0",
     "mypy>=1.6.0,<2.0.0",
     "ruff>=0.1.7,<1.0.0",
@@ -442,7 +441,7 @@ norecursedirs = [
 
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -465,7 +464,7 @@ extend-exclude = '''
 preview = true  # Enable latest formatting features
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 files = ["xraylabtool", "tests"]
 show_error_codes = true
 pretty = true
@@ -554,7 +553,7 @@ ignore_missing_imports = false
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = [

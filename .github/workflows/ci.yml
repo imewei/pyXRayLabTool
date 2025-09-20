@@ -236,9 +236,6 @@ jobs:
         python-version: ['3.12']
         include:
           # Conditional matrix expansion
-          - os: ubuntu-latest
-            python-version: '3.11'
-            if: ${{ needs.change-detection.outputs.should-run-full-matrix == 'true' }}
           - os: macos-latest
             python-version: '3.12'
             if: ${{ needs.change-detection.outputs.should-run-full-matrix == 'true' }}

@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
-    from typing import Any, Protocol, TypeVar, Union
+    from typing import Any, Protocol, TypeVar
 
     import numpy as np
     from numpy.typing import NDArray
@@ -48,8 +48,8 @@ if TYPE_CHECKING:
     BoolArray = NDArray[np.bool_]  # Boolean arrays for masks
 
     # Flexible array types for input validation
-    FloatLike = Union[float, np.floating[Any], EnergyArray]
-    ArrayLike = Union[Sequence[float], NDArray[Any]]
+    FloatLike = float | np.floating[Any] | EnergyArray
+    ArrayLike = Sequence[float] | NDArray[Any]
 
     # =============================================================================
     # Protocol Definitions for Performance-Critical Interfaces
