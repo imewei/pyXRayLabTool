@@ -4,7 +4,7 @@ Core functionality for XRayLabTool.
 This module contains the main classes and functions for X-ray analysis,
 including atomic scattering factors and crystallographic calculations.
 """
-# ruff: noqa: RUF002, RUF003
+# ruff: noqa: RUF002, RUF003, PLC0415
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _get_optimization_decorator() -> Callable[..., Any]:
     """Lazy load optimization decorator to reduce memory overhead."""
     try:
         from xraylabtool.optimization.vectorized_core import (
-            ensure_c_contiguous,  # noqa: PLC0415
+            ensure_c_contiguous,
         )
 
         return ensure_c_contiguous
@@ -786,7 +786,7 @@ def _warm_priority_cache() -> None:
         global _CACHE_WARMED  # noqa: PLW0603  # noqa: PLW0603
         try:
             from xraylabtool.data_handling.atomic_cache import (
-                get_bulk_atomic_data_fast,  # noqa: PLC0415
+                get_bulk_atomic_data_fast,
             )
 
             priority_tuple = tuple(_PRIORITY_ELEMENTS)
@@ -878,7 +878,7 @@ def is_element_cached(element: str) -> bool:
     return element.capitalize() in _scattering_factor_cache
 
 
-def calculate_scattering_factors(  # noqa: RUF002
+def calculate_scattering_factors(
     energy_ev: EnergyArray,
     wavelength: WavelengthArray,
     mass_density: FloatLike,
