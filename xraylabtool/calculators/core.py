@@ -4,6 +4,7 @@ Core functionality for XRayLabTool.
 This module contains the main classes and functions for X-ray analysis,
 including atomic scattering factors and crystallographic calculations.
 """
+# ruff: noqa: RUF002, RUF003
 
 from __future__ import annotations
 
@@ -29,7 +30,9 @@ import numpy as np
 def _get_optimization_decorator() -> Callable[..., Any]:
     """Lazy load optimization decorator to reduce memory overhead."""
     try:
-        from xraylabtool.optimization.vectorized_core import ensure_c_contiguous  # noqa: PLC0415
+        from xraylabtool.optimization.vectorized_core import (
+            ensure_c_contiguous,  # noqa: PLC0415
+        )
 
         return ensure_c_contiguous
     except ImportError:
@@ -782,7 +785,9 @@ def _warm_priority_cache() -> None:
         """Background thread function for cache warming."""
         global _CACHE_WARMED  # noqa: PLW0603  # noqa: PLW0603
         try:
-            from xraylabtool.data_handling.atomic_cache import get_bulk_atomic_data_fast  # noqa: PLC0415
+            from xraylabtool.data_handling.atomic_cache import (
+                get_bulk_atomic_data_fast,  # noqa: PLC0415
+            )
 
             priority_tuple = tuple(_PRIORITY_ELEMENTS)
             get_bulk_atomic_data_fast(priority_tuple)
@@ -873,7 +878,7 @@ def is_element_cached(element: str) -> bool:
     return element.capitalize() in _scattering_factor_cache
 
 
-def calculate_scattering_factors(
+def calculate_scattering_factors(  # noqa: RUF002
     energy_ev: EnergyArray,
     wavelength: WavelengthArray,
     mass_density: FloatLike,
@@ -904,8 +909,8 @@ def calculate_scattering_factors(
 
     Mathematical Background:
     The dispersion and absorption coefficients are calculated using:
-    - δ = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f1ᵢ) / M
-    - β = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f2ᵢ) / M
+    - δ = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f1ᵢ) / M  # noqa: RUF002
+    - β = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f2ᵢ) / M  # noqa: RUF002
 
     Where:
     - λ: X-ray wavelength
@@ -1970,7 +1975,10 @@ class FastXRayCalculationEngine:
         dict[str, np.ndarray]
             Dictionary with derived quantities (critical_angles, attenuation_lengths, etc.)
         """
-        from xraylabtool.constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM  # noqa: PLC0415
+        from xraylabtool.constants import (  # noqa: PLC0415
+            ENERGY_TO_WAVELENGTH_FACTOR,
+            METER_TO_ANGSTROM,
+        )
 
         # Convert energies to wavelengths
         wavelength = ENERGY_TO_WAVELENGTH_FACTOR / energies
@@ -2041,7 +2049,9 @@ class FastXRayCalculationEngine:
             ]
 
         # Preload atomic data
-        from xraylabtool.data_handling.atomic_cache import get_atomic_data_provider  # noqa: PLC0415
+        from xraylabtool.data_handling.atomic_cache import (
+            get_atomic_data_provider,  # noqa: PLC0415
+        )
 
         provider = get_atomic_data_provider()
         provider.preload_elements(common_elements)
@@ -2057,7 +2067,9 @@ class FastXRayCalculationEngine:
         dict[str, Any]
             Performance metrics and status
         """
-        from xraylabtool.data_handling.atomic_cache import get_cache_stats  # noqa: PLC0415
+        from xraylabtool.data_handling.atomic_cache import (
+            get_cache_stats,  # noqa: PLC0415
+        )
 
         cache_stats = get_cache_stats()
 

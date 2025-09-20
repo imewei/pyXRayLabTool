@@ -32,7 +32,7 @@ class MaterialComparator:
             "absorption_beta",
         ]
 
-    def compare_materials(
+    def compare_materials(  # noqa: PLR0912
         self,
         formulas: list[str],
         densities: list[float],

@@ -10,6 +10,7 @@ and units.
 The constants are defined with high precision to ensure accurate calculations
 in X-ray optical property computations.
 """
+# ruff: noqa: RUF001, RUF002
 
 from __future__ import annotations
 
