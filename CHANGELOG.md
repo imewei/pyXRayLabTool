@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2025-09-19
+
+### 🔧 Bug Fixes
+- **Shell Completion System**: Fixed critical shell completion system errors preventing proper activation
+  - Fixed malformed zsh completion patterns with incorrect quote syntax (`'(-h --help){-h,--help}[Show help message]'`)
+  - Added zsh completion system initialization (`autoload -U compinit && compinit`) to ensure `_arguments` is available
+  - Replaced incorrect function call with proper `compdef` registration in completion scripts
+  - Fixed string formatting conflicts by properly escaping curly braces in completion templates
+  - Enhanced uninstall process to completely remove empty parent directories during cleanup
+
+### ✅ Improvements
+- **Complete Cleanup**: Uninstall now removes all traces including empty directories and activation hooks
+- **Error Handling**: Improved error handling for edge cases in completion installation/uninstallation
+- **Cross-Shell Support**: Verified proper functionality across bash, zsh, fish, and PowerShell
+- **Robustness**: Enhanced completion system with comprehensive testing and validation
+
 ## [0.2.5] - 2025-09-19
 
 ### 💥 Breaking Changes

@@ -218,13 +218,18 @@ class ZshCompletionGenerator(CompletionGenerator):
 # {command_name} shell completion for Zsh
 # Generated automatically by XRayLabTool completion system
 
+# Load zsh completion system if not already loaded
+if ! command -v _arguments >/dev/null 2>&1; then
+    autoload -U compinit && compinit
+fi
+
 _{command_name}() {{
     local context state line
 
     _arguments -C \\
-        '(-h --help){{-h,--help}}'[Show help message]' \\
-        '(-v --verbose){{-v,--verbose}}'[Enable verbose output]' \\
-        '(--version)'--version'[Show version information]' \\
+        '(-h --help){{-h,--help}}[Show help message]' \\
+        '(-v --verbose){{-v,--verbose}}[Enable verbose output]' \\
+        '(--version)--version[Show version information]' \\
         '1: :->command' \\
         '*:: :->args'
 
@@ -244,7 +249,8 @@ _{command_name}() {{
     esac
 }}
 
-_{command_name} "$@"
+# Register the completion function
+compdef _{command_name} {command_name}
 """
 
     def _generate_command_definitions(

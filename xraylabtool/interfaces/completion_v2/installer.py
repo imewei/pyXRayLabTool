@@ -5,8 +5,8 @@ that activates/deactivates with virtual environment changes.
 """
 
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from .environment import EnvironmentDetector, EnvironmentInfo, EnvironmentType
 from .shells import CompletionManager, get_global_options, get_xraylabtool_commands
@@ -402,6 +402,20 @@ fi
         completion_dir = env_info.path / "share" / "xraylabtool" / "completion"
         if completion_dir.exists():
             shutil.rmtree(completion_dir)
+
+        # Clean up empty parent directories
+        xraylabtool_dir = env_info.path / "share" / "xraylabtool"
+        if xraylabtool_dir.exists():
+            try:
+                # Only remove if empty
+                if not any(xraylabtool_dir.iterdir()):
+                    xraylabtool_dir.rmdir()
+            except OSError:
+                # Directory not empty or permission issue, ignore
+                pass
+
+        # Don't remove share directory as it may contain other important files
+        # (e.g., Jupyter configurations, man pages, etc.)
 
         # Remove marker file
         marker_path = env_info.path / self.marker_file
