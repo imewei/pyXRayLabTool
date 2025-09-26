@@ -18,12 +18,12 @@ import argparse
 import doctest
 import glob
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
 import tempfile
 import time
+from pathlib import Path
 
 
 # Colors for output
@@ -58,7 +58,7 @@ def print_status(message: str, status: str, details: str | None = None) -> None:
         icon = "⚠️"
     else:
         color = Colors.CYAN
-        icon = "ℹ️"
+        icon = "i"
 
     print(f"{color}{icon} {message}{Colors.END}")
     if details:
@@ -78,7 +78,7 @@ def test_doctests(verbose: bool = False) -> tuple[int, int]:
     try:
         result = subprocess.run(
             [
-                "python3",
+                sys.executable,
                 "-m",
                 "sphinx",
                 "-b",
@@ -124,7 +124,6 @@ def test_rst_code_examples(verbose: bool = False) -> tuple[int, int]:
         try:
             # Use doctest to test the RST file
             # Make sure we're in the project root directory for relative paths
-            import os
 
             original_cwd = os.getcwd()
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -207,7 +206,7 @@ def test_readme_examples(verbose: bool = False) -> tuple[int, int]:
         try:
             # Run the code
             result = subprocess.run(
-                ["python3", temp_file],
+                [sys.executable, temp_file],
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -249,7 +248,7 @@ def test_links(verbose: bool = False) -> tuple[int, int]:
     try:
         subprocess.run(
             [
-                "python3",
+                sys.executable,
                 "-m",
                 "sphinx",
                 "-b",
@@ -296,7 +295,7 @@ def check_documentation_coverage(verbose: bool = False) -> dict[str, int]:
     try:
         subprocess.run(
             [
-                "python3",
+                sys.executable,
                 "-m",
                 "sphinx",
                 "-b",
@@ -392,7 +391,7 @@ def check_accessibility(verbose: bool = False) -> tuple[int, int]:
     try:
         subprocess.run(
             [
-                "python3",
+                sys.executable,
                 "-m",
                 "sphinx",
                 "-b",

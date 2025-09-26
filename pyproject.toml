@@ -609,14 +609,17 @@ exclude = [
 "__init__.py" = ["F401", "PLR0911", "PLR0912", "PLC0415"]     # Allow unused imports, complexity, and lazy imports in __init__.py
 # Relax rules for completion system files (complex generated/template code)
 "**/interfaces/completion.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM102"]
-"**/interfaces/completion_v2/*.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112", "B006", "S604", "ARG002", "SIM118", "PLW0603", "ARG001", "S607", "S112", "PLW2901", "RUF001", "PLC0415"]
+"**/interfaces/completion_v2/*.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112", "B006", "S604", "ARG002", "SIM118", "PLW0603", "ARG001", "S607", "S112", "PLW2901", "RUF001", "PLC0415", "S110"]
 # Scientific computing files with performance-critical lazy imports
 "**/utils.py" = ["PLC0415", "ARG001"]  # Allow lazy imports and unused args in utility functions
 "**/typing_extensions.py" = ["PLC0415", "UP007"]  # Allow lazy imports and legacy union syntax for compatibility
 "**/validation/validators.py" = ["PLC0415"]  # Allow lazy imports in validators
-"**/data_handling/*.py" = ["PLR0912", "PLR0915", "PLC0415"]  # Allow complex functions and lazy imports in data handling
+"**/data_handling/*.py" = ["PLR0912", "PLR0915", "PLC0415", "S110", "PLW0603", "A002", "PLR0911"]  # Allow complex functions, global vars, and error handling patterns in data handling
 "**/optimization/*.py" = ["PLR0912", "PLR0915", "PLC0415", "SIM105", "S112", "E741", "E722", "PLW0603", "E402", "B007", "ARG001"]  # Allow complex functions and lazy imports in optimization
 "**/io/*.py" = ["PLC0415", "PLR0912"]  # Allow lazy imports and complex functions in I/O
+"scripts/run_type_check.py" = ["PLR0912", "PLR0915"]  # Allow complex functions in type checking script
+"scripts/test_docs.py" = ["PLR0912", "PLR0915", "S112", "S607"]  # Allow complex functions and subprocess calls in documentation testing script
+"scripts/validate_style_guide.py" = ["PLW2901", "SIM102", "S607", "PLR0912", "PLR0915", "PLC0415"]  # Allow style validation patterns
 
 [tool.ruff.lint.isort]
 known-first-party = ["xraylabtool"]

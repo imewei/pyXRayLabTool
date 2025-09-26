@@ -6,9 +6,9 @@ and manages completion activation/deactivation based on environment state.
 
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 
 class EnvironmentType:
@@ -139,8 +139,8 @@ class EnvironmentDetector:
         """Detect the type of the currently active environment."""
         # Check for conda/mamba (highest priority)
         if os.environ.get("CONDA_PREFIX"):
-            # Check if mamba is being used
-            if shutil.which("mamba") and "mamba" in os.environ.get("CONDA_EXE", ""):
+            # Check if mamba is being used - improved detection logic
+            if self._is_mamba_environment():
                 return EnvironmentType.MAMBA
             return EnvironmentType.CONDA
 
@@ -162,6 +162,83 @@ class EnvironmentDetector:
                 return EnvironmentType.VIRTUALENV
 
         return EnvironmentType.SYSTEM
+
+    def _is_mamba_environment(self) -> bool:
+        """Check if the current environment is using mamba."""
+        # Method 1: Check if mamba executable is available
+        if not shutil.which("mamba"):
+            return False
+
+        # Method 2: Check if CONDA_EXE points to mamba or miniforge/mambaforge
+        conda_exe = os.environ.get("CONDA_EXE", "")
+        if any(
+            keyword in conda_exe.lower()
+            for keyword in ["mamba", "miniforge", "mambaforge"]
+        ):
+            return True
+
+        # Method 3: Check if conda prefix is under mamba/miniforge directory structure
+        conda_prefix = os.environ.get("CONDA_PREFIX", "")
+        if conda_prefix and any(
+            keyword in conda_prefix.lower()
+            for keyword in ["mamba", "miniforge", "mambaforge"]
+        ):
+            return True
+
+        # Method 4: Check if mamba is the default package manager (in some setups)
+        try:
+            # Try to get conda info and check the channels/setup
+            result = subprocess.run(
+                ["conda", "info", "--json"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=5,
+            )
+            import json
+
+            info = json.loads(result.stdout)
+
+            # Check if conda-forge is the default channel (common in mamba setups)
+            default_channels = info.get("default_channels", [])
+            if "conda-forge" in str(default_channels) and len(default_channels) == 1:
+                # This is a strong indicator of a mamba/miniforge setup
+                return True
+
+            # Check if the conda executable path contains mamba-related paths
+            conda_exe_path = info.get("conda_build_version") or info.get(
+                "conda_version"
+            )
+            if conda_exe_path and "mamba" in str(conda_exe_path).lower():
+                return True
+
+        except (
+            subprocess.CalledProcessError,
+            json.JSONDecodeError,
+            subprocess.TimeoutExpired,
+        ):
+            pass
+
+        return False
+
+    def _detect_conda_env_type(self, env_path: Path) -> str:
+        """Detect whether a conda environment is actually mamba-managed."""
+        # Check if the environment path contains mamba-related keywords
+        path_str = str(env_path).lower()
+        if any(keyword in path_str for keyword in ["mamba", "miniforge", "mambaforge"]):
+            return EnvironmentType.MAMBA
+
+        # Check if mamba is available and if this environment was created by mamba
+        if shutil.which("mamba"):
+            # If the global conda installation is mamba-based, treat all envs as mamba
+            conda_exe = os.environ.get("CONDA_EXE", "")
+            if any(
+                keyword in conda_exe.lower()
+                for keyword in ["mamba", "miniforge", "mambaforge"]
+            ):
+                return EnvironmentType.MAMBA
+
+        return EnvironmentType.CONDA
 
     def _get_current_environment_path(self, env_type: str) -> Path | None:
         """Get the path of the current environment."""
@@ -329,11 +406,8 @@ class EnvironmentDetector:
             for env_path in data.get("envs", []):
                 env_path = Path(env_path)
                 if env_path.exists():
-                    env_type = (
-                        EnvironmentType.MAMBA
-                        if "mamba" in str(env_path)
-                        else EnvironmentType.CONDA
-                    )
+                    # Improved mamba detection for environments
+                    env_type = self._detect_conda_env_type(env_path)
                     env_info = EnvironmentInfo(
                         env_type=env_type,
                         path=env_path,

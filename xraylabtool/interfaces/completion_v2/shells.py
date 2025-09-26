@@ -398,8 +398,7 @@ class FishCompletionGenerator(CompletionGenerator):
 
     def _get_template(self) -> str:
         """Get the Fish completion template."""
-        return """#!/usr/bin/env fish
-# {command_name} shell completion for Fish
+        return """# {command_name} shell completion for Fish
 # Generated automatically by XRayLabTool completion system
 
 {command_completions}

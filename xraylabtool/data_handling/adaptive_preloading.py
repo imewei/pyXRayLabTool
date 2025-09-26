@@ -407,11 +407,7 @@ def measure_preload_effectiveness(actual_elements_used: list[str]) -> dict[str, 
             "effectiveness": (
                 "excellent"
                 if hit_rate > 0.8
-                else "good"
-                if hit_rate > 0.6
-                else "fair"
-                if hit_rate > 0.4
-                else "poor"
+                else "good" if hit_rate > 0.6 else "fair" if hit_rate > 0.4 else "poor"
             ),
         }
 
@@ -471,7 +467,7 @@ def get_adaptive_statistics() -> dict[str, Any]:
 def reset_adaptive_learning() -> None:
     """Reset all adaptive learning data for testing or new sessions."""
     with _adaptive_lock:
-        global _usage_history, _active_preloads  # noqa: PLW0603
+        global _usage_history, _active_preloads
 
         _usage_history = {
             "element_access_times": defaultdict(list),

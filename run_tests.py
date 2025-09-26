@@ -9,10 +9,10 @@ test environment setup.
 
 import argparse
 import os
-from pathlib import Path
 import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 
@@ -134,7 +134,7 @@ class TestRunner:
         # Check if pytest-benchmark is available
         try:
             subprocess.run(  # nosec B603
-                ["python", "-c", "import pytest_benchmark"],
+                [sys.executable, "-c", "import pytest_benchmark"],
                 check=True,
                 capture_output=True,
             )

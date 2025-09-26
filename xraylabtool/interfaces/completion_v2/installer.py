@@ -192,17 +192,97 @@ class CompletionInstaller:
         """Auto-detect the current shell."""
         shell_env = os.environ.get("SHELL", "")
 
+        # Check SHELL environment variable first (Unix-like systems)
         if "fish" in shell_env:
             return "fish"
         elif "zsh" in shell_env:
             return "zsh"
         elif "bash" in shell_env:
             return "bash"
-        else:
-            # Check for PowerShell on Windows
-            if os.name == "nt" or "PSModulePath" in os.environ:
-                return "powershell"
-            return "bash"  # Default fallback
+
+        # Check for PowerShell indicators
+        if self._is_powershell_environment():
+            return "powershell"
+
+        # Check for Windows-style shell paths even on non-Windows systems
+        # (useful for WSL, Git Bash, etc.)
+        if self._has_windows_shell_indicators(shell_env):
+            return "powershell"
+
+        # Check for Windows-style environment variables
+        comspec = os.environ.get("ComSpec", "").lower()
+        if "powershell" in comspec or "pwsh" in comspec:
+            return "powershell"
+
+        # Check Windows-specific shell detection
+        if os.name == "nt":
+            return self._detect_windows_shell()
+
+        return "bash"  # Default fallback
+
+    def _has_windows_shell_indicators(self, shell_env: str) -> bool:
+        """Check if shell path indicates Windows PowerShell."""
+        windows_indicators = [
+            "powershell.exe",
+            "pwsh.exe",
+            "WindowsPowerShell",
+            "PowerShell",
+        ]
+
+        shell_lower = shell_env.lower()
+        return any(indicator.lower() in shell_lower for indicator in windows_indicators)
+
+    def _is_powershell_environment(self) -> bool:
+        """Detect if running in PowerShell environment."""
+        # Check common PowerShell environment variables
+        powershell_indicators = [
+            "PSModulePath",
+            "PSVersionTable",
+            "POWERSHELL_DISTRIBUTION_CHANNEL",
+        ]
+
+        for indicator in powershell_indicators:
+            if indicator in os.environ:
+                return True
+
+        # Check if parent process is PowerShell
+        try:
+            import psutil
+
+            current_process = psutil.Process()
+            parent = current_process.parent()
+            if parent and "powershell" in parent.name().lower():
+                return True
+        except (ImportError, Exception):
+            pass
+
+        return False
+
+    def _detect_windows_shell(self) -> str:
+        """Detect shell on Windows systems."""
+        # Check ComSpec for cmd.exe vs PowerShell
+        comspec = os.environ.get("ComSpec", "").lower()
+
+        if "powershell" in comspec or "pwsh" in comspec:
+            return "powershell"
+
+        # Check for Windows Terminal or modern shells
+        wt_session = os.environ.get("WT_SESSION")
+        if wt_session:
+            # Windows Terminal - could be any shell, default to PowerShell
+            return "powershell"
+
+        # Check SHELL even on Windows (WSL, Git Bash, etc.)
+        shell = os.environ.get("SHELL", "").lower()
+        if "bash" in shell:
+            return "bash"
+        elif "zsh" in shell:
+            return "zsh"
+        elif "fish" in shell:
+            return "fish"
+
+        # Default to PowerShell on Windows
+        return "powershell"
 
     def _find_environment_by_name(self, name: str) -> EnvironmentInfo | None:
         """Find environment by name."""
@@ -299,8 +379,7 @@ complete -r xraylabtool 2>/dev/null || true
             # Fish activation script
             activate_script = activate_dir / "xraylabtool-completion.fish"
             activate_script.write_text(
-                f"""#!/usr/bin/env fish
-# XRayLabTool completion activation
+                f"""# XRayLabTool completion activation
 if test -f "{script_path}"
     source "{script_path}"
 end
@@ -529,7 +608,11 @@ fi
                 "💡 Completion will activate automatically when you activate the"
                 " environment:"
             )
-            print(f"   conda activate {env_info.name}")
+            if env_info.env_type == EnvironmentType.MAMBA:
+                print(f"   mamba activate {env_info.name}")
+                print(f"   # or: conda activate {env_info.name}")
+            else:
+                print(f"   conda activate {env_info.name}")
         else:
             print(
                 "💡 Completion will activate automatically when you activate the"

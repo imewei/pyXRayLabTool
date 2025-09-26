@@ -41,7 +41,7 @@ repos:
 
 # Configuration
 default_language_version:
-  python: python3.13
+  python: python3.12
 
 default_stages: [pre-commit]
 fail_fast: false

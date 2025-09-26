@@ -66,7 +66,7 @@ def cache_metrics(
                 return func(*args, **kwargs)
 
             # Lightweight tracking when enabled
-            global _cache_hits, _cache_misses  # noqa: PLW0603
+            global _cache_hits, _cache_misses
             try:
                 result = func(*args, **kwargs)
                 _cache_hits += 1
@@ -104,7 +104,7 @@ def get_cache_stats() -> dict[str, int]:
 
 def reset_cache_stats() -> None:
     """Reset cache statistics counters."""
-    global _cache_hits, _cache_misses  # noqa: PLW0603
+    global _cache_hits, _cache_misses
     _cache_hits = 0
     _cache_misses = 0
 
