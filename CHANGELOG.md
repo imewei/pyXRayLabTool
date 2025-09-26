@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2025-09-26
+
+### ✨ New Features
+- **Enhanced Mamba Environment Support**: Comprehensive detection and support for mamba/miniforge environments
+  - Added 4 robust detection methods for accurate mamba environment identification
+  - Improved differentiation between conda and mamba environment types
+  - Special handling for miniforge and mambaforge installations
+  - Proper activation instructions for mamba environments
+
+### 🐛 Bug Fixes
+- **Cross-Platform Shell Detection**: Fixed shell detection issues across different platforms
+  - Enhanced Windows PowerShell detection for WSL, Git Bash, and Windows Terminal
+  - Added Windows-specific shell detection methods
+  - Fixed ComSpec environment variable handling
+  - Improved detection of PowerShell in various Windows environments
+
+### 🔧 Improvements
+- **Shell Completion Scripts**: Removed hardcoded paths for better portability
+  - Removed hardcoded Unix shebang from Fish completion scripts
+  - Improved cross-platform path handling
+  - Enhanced script generation for all supported shells
+
+- **Code Quality**: Comprehensive linting and formatting improvements
+  - Fixed Python 3.12 compatibility in pre-commit configuration
+  - Resolved all security vulnerabilities (S607, S110, etc.)
+  - Added comprehensive per-file ignores for complex modules
+  - All pre-commit hooks now passing
+
+### 📚 Documentation
+- Updated shell completion guide with improved mamba activation instructions
+- Added detailed mamba environment setup examples
+- Enhanced cross-platform installation documentation
+
+### 🧪 Testing
+- Added comprehensive cross-platform shell completion tests
+- Verified activation hooks for all environment types
+- Tested shell detection across Linux, macOS, and Windows
+- All 16/16 shell compatibility tests passing
+
 ## [0.2.6] - 2025-09-19
 
 ### 🔧 Bug Fixes
