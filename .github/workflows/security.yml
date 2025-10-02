@@ -10,6 +10,10 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  security-events: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -38,7 +42,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade "pip>=25.2.1"
         pip install -e .[dev]
 
     - name: Run safety check
@@ -80,7 +84,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade "pip>=25.2.1"
         pip install bandit[toml] semgrep
 
     - name: Run bandit security linter
