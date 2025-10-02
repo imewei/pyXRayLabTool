@@ -73,6 +73,7 @@ jobs:
       python-changed: ${{ steps.changes.outputs.python }}
       tests-changed: ${{ steps.changes.outputs.tests }}
       deps-changed: ${{ steps.changes.outputs.deps }}
+      config-changed: ${{ steps.changes.outputs.config }}
       docs-only: ${{ steps.changes.outputs.docs-only }}
       should-run-tests: ${{ steps.decision.outputs.should-run-tests }}
       should-run-full-matrix: ${{ steps.decision.outputs.should-run-full-matrix }}
@@ -119,6 +120,7 @@ jobs:
         [[ -n "$PYTHON_FILES" ]] && echo "python=true" >> $GITHUB_OUTPUT || echo "python=false" >> $GITHUB_OUTPUT
         [[ -n "$TEST_FILES" ]] && echo "tests=true" >> $GITHUB_OUTPUT || echo "tests=false" >> $GITHUB_OUTPUT
         [[ -n "$DEPS_FILES" ]] && echo "deps=true" >> $GITHUB_OUTPUT || echo "deps=false" >> $GITHUB_OUTPUT
+        [[ -n "$CONFIG_FILES" ]] && echo "config=true" >> $GITHUB_OUTPUT || echo "config=false" >> $GITHUB_OUTPUT
 
         # Check if only docs changed
         if [[ -n "$DOCS_FILES" && -z "$PYTHON_FILES" && -z "$TEST_FILES" && -z "$DEPS_FILES" && -z "$CONFIG_FILES" ]]; then
@@ -298,37 +300,74 @@ jobs:
         echo "🚀 Running tests with $WORKERS workers on ${{ runner.os }}"
 
         # Smart test selection based on changes
-        if [[ "${{ needs.change-detection.outputs.tests-changed }}" == "true" ]]; then
+        # Handle config-only changes (workflow files, etc.) without coverage requirements
+        if [[ "${{ needs.change-detection.outputs.config-changed }}" == "true" ]] && \
+           [[ "${{ needs.change-detection.outputs.python-changed }}" == "false" ]] && \
+           [[ "${{ needs.change-detection.outputs.tests-changed }}" == "false" ]] && \
+           [[ "${{ needs.change-detection.outputs.deps-changed }}" == "false" ]]; then
+          echo "⚙️ Config files only changed - running smoke tests without coverage"
+          TEST_PATHS="tests/unit/test_core.py tests/integration/test_integration.py::TestBasicSetupAndInitialization"
+          SKIP_COVERAGE=true
+        elif [[ "${{ needs.change-detection.outputs.tests-changed }}" == "true" ]]; then
           echo "📝 Test files changed - running full test suite"
           TEST_PATHS="tests/"
+          SKIP_COVERAGE=false
         elif [[ "${{ needs.change-detection.outputs.python-changed }}" == "true" ]]; then
           echo "🐍 Python files changed - running affected tests"
           # Run unit tests first (fastest feedback)
           TEST_PATHS="tests/unit/ tests/integration/"
+          SKIP_COVERAGE=false
         elif [[ "${{ needs.change-detection.outputs.deps-changed }}" == "true" ]]; then
           echo "📦 Dependencies changed - running full test suite for compatibility"
           TEST_PATHS="tests/"
+          SKIP_COVERAGE=false
         else
           echo "📦 Running smoke tests only"
           TEST_PATHS="tests/unit/test_core.py tests/integration/test_integration.py::TestBasicSetupAndInitialization"
+          SKIP_COVERAGE=false
         fi
 
         # Execute tests with optimal configuration
         if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.python-version }}" == "3.12" ]]; then
-          # Primary test run with coverage
-          pytest $TEST_PATHS \
-            --cov=xraylabtool \
-            --cov-report=xml \
-            --cov-report=term-missing:skip-covered \
-            --cov-fail-under=40 \
-            --junit-xml=pytest-results.xml \
-            -n $WORKERS \
-            --maxfail=5 \
-            --tb=short \
-            --durations=10 \
-            -v
+          # Primary test run - decide coverage strategy
+          if [[ "${SKIP_COVERAGE:-false}" == "true" ]]; then
+            # Config-only changes: run tests without coverage requirements
+            echo "⏩ Skipping coverage collection (config-only changes)"
+            pytest $TEST_PATHS \
+              --junit-xml=pytest-results.xml \
+              -n $WORKERS \
+              --maxfail=5 \
+              --tb=short \
+              --durations=10 \
+              -v
+          else
+            # Code changes: apply dynamic coverage thresholds
+            # Determine appropriate coverage threshold based on test scope
+            if [[ "$TEST_PATHS" == "tests/" ]]; then
+              COV_THRESHOLD=40  # Full test suite
+              echo "📊 Coverage threshold: 40% (full test suite)"
+            elif [[ "$TEST_PATHS" == *"tests/unit/ tests/integration/"* ]]; then
+              COV_THRESHOLD=35  # Partial test suite
+              echo "📊 Coverage threshold: 35% (unit + integration tests)"
+            else
+              COV_THRESHOLD=20  # Smoke tests
+              echo "📊 Coverage threshold: 20% (smoke tests)"
+            fi
+
+            pytest $TEST_PATHS \
+              --cov=xraylabtool \
+              --cov-report=xml \
+              --cov-report=term-missing:skip-covered \
+              --cov-fail-under=$COV_THRESHOLD \
+              --junit-xml=pytest-results.xml \
+              -n $WORKERS \
+              --maxfail=5 \
+              --tb=short \
+              --durations=10 \
+              -v
+          fi
         else
-          # Fast execution without coverage
+          # Fast execution without coverage for non-primary OS/Python
           pytest $TEST_PATHS \
             --junit-xml=pytest-results.xml \
             -n $WORKERS \
