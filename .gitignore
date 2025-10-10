@@ -58,8 +58,9 @@ performance_baseline_summary.json
 performance_history.json
 .benchmarks/
 .claude
-.agent-os/
+agent-os/
 .ruff_cache/
+.specify/
 
 # Translations
 *.mo
