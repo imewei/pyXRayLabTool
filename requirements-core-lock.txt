@@ -2,7 +2,7 @@
 # Generated from local environment to ensure GitHub CI matches
 # To update: run pip freeze and filter for core dependencies
 
-matplotlib==3.10.6
+matplotlib==3.10.7
 mendeleev==1.1.0
 numpy==2.3.3
 pandas==2.3.2
