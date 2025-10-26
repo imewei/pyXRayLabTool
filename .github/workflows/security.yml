@@ -58,7 +58,7 @@ jobs:
         pip-audit --desc --ignore-vuln GHSA-4xh5-x5gv-qwph
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: security-reports
@@ -99,7 +99,7 @@ jobs:
         semgrep --config=auto xraylabtool/
 
     - name: Upload static analysis reports
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always()
       with:
         name: static-security-reports

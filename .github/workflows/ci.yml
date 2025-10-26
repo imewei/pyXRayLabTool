@@ -379,7 +379,7 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
         path: |
@@ -450,7 +450,7 @@ jobs:
         python -c "import xraylabtool; print(f'✅ Package version: {xraylabtool.__version__}')"
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: dist-ultra-optimized
         path: dist/

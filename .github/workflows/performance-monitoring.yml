@@ -207,7 +207,7 @@ jobs:
         EOF
 
     - name: Upload performance metrics
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: performance-metrics-${{ github.run_number }}
         path: performance_metrics.json
@@ -315,4 +315,4 @@ jobs:
         echo "  - actions/checkout@v5 (latest)"
         echo "  - actions/setup-python@v6 (latest)"
         echo "  - actions/cache@v4 (latest stable)"
-        echo "  - actions/upload-artifact@v4 (latest stable)"
+        echo "  - actions/upload-artifact@v5 (latest stable)"
