@@ -63,6 +63,32 @@ Example Categories
    * - Education
      - Physics demonstrations, computational exercises
 
+Notebook Links
+--------------
+
+These notebooks are provided as downloadable files (not embedded in the docs). Open them directly in Colab or nbviewer:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 25 25 25
+
+   * - Notebook
+     - Run in Colab
+     - View (nbviewer)
+     - Download
+   * - Getting Started
+     - `Open in Colab <https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/docs/examples/getting_started.ipynb>`__
+     - `nbviewer <https://nbviewer.org/github/imewei/pyXRayLabTool/blob/main/docs/examples/getting_started.ipynb>`__
+     - `Download (.ipynb) <https://raw.githubusercontent.com/imewei/pyXRayLabTool/main/docs/examples/getting_started.ipynb>`__
+   * - Basic Examples
+     - `Open in Colab <https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/docs/examples/basic_examples.ipynb>`__
+     - `nbviewer <https://nbviewer.org/github/imewei/pyXRayLabTool/blob/main/docs/examples/basic_examples.ipynb>`__
+     - `Download (.ipynb) <https://raw.githubusercontent.com/imewei/pyXRayLabTool/main/docs/examples/basic_examples.ipynb>`__
+   * - Basic X-ray Analysis
+     - `Open in Colab <https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/docs/source/notebooks/basic_xray_analysis.ipynb>`__
+     - `nbviewer <https://nbviewer.org/github/imewei/pyXRayLabTool/blob/main/docs/source/notebooks/basic_xray_analysis.ipynb>`__
+     - `Download (.ipynb) <https://raw.githubusercontent.com/imewei/pyXRayLabTool/main/docs/source/notebooks/basic_xray_analysis.ipynb>`__
+
 Running the Examples
 --------------------
 

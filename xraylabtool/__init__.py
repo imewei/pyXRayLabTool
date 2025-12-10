@@ -49,6 +49,13 @@ Access via ``xraylabtool`` command with specialized subcommands:
 For complete documentation, visit: https://pyxraylabtool.readthedocs.io
 """
 
+import sys
+
+if sys.version_info < (3, 12):
+    raise ImportError(
+        "XRayLabTool requires Python 3.12+; please upgrade your interpreter."
+    )
+
 __version__ = "0.2.7"
 __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"

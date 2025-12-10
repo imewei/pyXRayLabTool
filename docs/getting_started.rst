@@ -3,6 +3,15 @@ Getting Started
 
 This guide shows XRayLabTool installation and basic usage.
 
+Interactive Notebook
+--------------------
+
+Open the Getting Started notebook directly (no embedded render in the docs):
+
+- `Open in Colab <https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/docs/examples/getting_started.ipynb>`__
+- `View on nbviewer <https://nbviewer.org/github/imewei/pyXRayLabTool/blob/main/docs/examples/getting_started.ipynb>`__
+- `Download (.ipynb) <https://raw.githubusercontent.com/imewei/pyXRayLabTool/main/docs/examples/getting_started.ipynb>`__
+
 Installation
 ------------
 

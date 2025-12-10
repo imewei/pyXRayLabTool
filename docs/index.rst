@@ -56,6 +56,11 @@ Key Features
 Quick Start
 -----------
 
+Interactive Notebooks
+~~~~~~~~~~~~~~~~~~~~~
+
+Open the notebook gallery (Colab / nbviewer links) on the :doc:`Examples page <examples/index>`.
+
 Installation
 ~~~~~~~~~~~~
 
