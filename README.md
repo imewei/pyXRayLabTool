@@ -7,6 +7,15 @@
 
 XRayLabTool is a Python package and command-line tool for calculating X-ray optical properties of materials based on their chemical formulas and densities.
 
+## GUI
+
+The PySide6 desktop GUI ships with a refreshed light theme (shared palette/QSS), clearer action hierarchy, striped/right-aligned tables, visible progress, and lightweight toasts for status. Current headless snapshots are saved to `build/gui_single.png` and `build/gui_multi.png` (captured with `QT_QPA_PLATFORM=offscreen`).
+
+## GUI UX Checklist
+- Spacing/labels (live display/HiDPI): verify label widths don’t truncate; adjust grid spacing if dense; ensure table headers stay readable at scale factors >1.0.
+- Matplotlib rcParams: tweak tick/legend/font sizes if text feels large/small on your monitor; current theme is applied via `apply_matplotlib_theme()`.
+- Offscreen quiet mode (optional): default uses `offscreen`; for quieter runs you may try `QT_QPA_PLATFORM=minimal` (if available) or keep stderr filtering via `suppress_qt_noise` / `enable_offscreen_quiet_env`.
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -17,6 +26,8 @@ XRayLabTool is a Python package and command-line tool for calculating X-ray opti
 - [Usage Examples](#usage-examples)
 - [Migration Guide](#migration-guide)
 - [Supported Calculations](#supported-calculations)
+- [GUI](#gui)
+- [GUI UX Checklist](#gui-ux-checklist)
 - [Performance Features](#performance-features)
 - [Testing and Validation](#testing-and-validation)
 - [API Reference](#api-reference)
@@ -162,6 +173,19 @@ python -c "import xraylabtool as xlt; result = xlt.calculate_single_material_pro
 # Or use the command-line interface
 xraylabtool calc Si -e 10.0 -d 2.33
 ```
+
+## Graphical User Interface (GUI)
+
+- Requirements: PySide6 and matplotlib (install via `pip install xraylabtool[all]` or ensure those are present in your venv).
+- Launch: `python -m xraylabtool.gui`
+- Tabs: **Single Material Analysis** (one material with presets, linear/log energy grids, plots, CSV/PNG export) and **Multiple Materials Comparison** (add/remove materials, presets, log/linear grids, overlay plots, bar charts, CSV/PNG export).
+- Headless smoke/CI: `python -m xraylabtool.gui --test-launch --platform offscreen` (offscreen Qt backend).
+
+### Quick Walkthrough
+- **Single tab:** enter formula + density, choose linear or log energy grid, optional presets; compute to see summary table, energy sweep plots, f1/f2 curves, and export plot/CSV.
+- **Multiple tab:** add materials (manual or presets), set energy grid, pick property to compare; compute to see overlay plot, bar charts, summary/comparator tables; export plot/CSV (per-property and comparator table).
+
+![GUI overview](docs/_static/gui_main_offscreen.png)
 
 ## Usage Examples
 

@@ -30,6 +30,10 @@ Features planned for future releases:
 - Zsh/Fish shell completion
 - Docker containerization
 
+**Changed**
+- Refreshed Qt GUI styling: shared palette/QSS, clearer header/action hierarchy, table striping/alignment, visible progress, and non-blocking toasts for status.
+- Standardized offscreen capture for GUI snapshots at ``build/gui_single.png`` and ``build/gui_multi.png``.
+
 v0.2.0 (Planned)
 ----------------
 

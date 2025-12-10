@@ -212,6 +212,14 @@ perf = [
     "memory-profiler>=0.60.0",
     "line-profiler>=4.0.0",
     "py-spy>=0.3.0",
+
+    # GUI support
+    "PySide6>=6.6.0",
+]
+
+# Desktop GUI extras
+gui = [
+    "PySide6>=6.6.0",
 ]
 
 # Complete development environment (all dependencies)
@@ -306,6 +314,7 @@ Repository = "https://github.com/imewei/pyXRayLabTool"
 
 [project.scripts]
 xraylabtool = "xraylabtool.interfaces.cli:main"
+xraylabtool-gui = "xraylabtool.gui.__main__:main"
 
 [tool.setuptools]
 zip-safe = false
@@ -606,6 +615,7 @@ exclude = [
 "xraylabtool/interfaces/completion*.py" = ["PLC0415", "PLW0603", "S607", "UP035", "ARG001", "ARG002"]  # Completion system patterns
 "xraylabtool/core/*.py" = ["RUF001", "RUF002", "RUF003"]  # Unicode scientific symbols
 "xraylabtool/analysis/*.py" = ["S110", "SIM102", "B904"]  # Analysis module patterns
+"xraylabtool/analysis/comparator.py" = ["PLR0912"]
 "__init__.py" = ["F401", "PLR0911", "PLR0912", "PLC0415"]     # Allow unused imports, complexity, and lazy imports in __init__.py
 # Relax rules for completion system files (complex generated/template code)
 "**/interfaces/completion.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM102"]
@@ -619,6 +629,8 @@ exclude = [
 "**/io/*.py" = ["PLC0415", "PLR0912"]  # Allow lazy imports and complex functions in I/O
 "scripts/run_type_check.py" = ["PLR0912", "PLR0915"]  # Allow complex functions in type checking script
 "scripts/test_docs.py" = ["PLR0912", "PLR0915", "S112", "S607"]  # Allow complex functions and subprocess calls in documentation testing script
+"scripts/gui_headless_smoke.py" = ["PLR0915"]
+"xraylabtool/gui/*.py" = ["PLR0915", "PLR0912", "PLR1714", "PLC0415", "E402", "SIM108"]
 "scripts/validate_style_guide.py" = ["PLW2901", "SIM102", "S607", "PLR0912", "PLR0915", "PLC0415"]  # Allow style validation patterns
 
 [tool.ruff.lint.isort]

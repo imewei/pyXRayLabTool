@@ -377,6 +377,13 @@ jobs:
             -x  # Stop on first failure for non-primary runs
         fi
 
+    - name: GUI smoke (offscreen)
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      env:
+        QT_QPA_PLATFORM: offscreen
+        MPLBACKEND: Agg
+      run: python -m scripts.gui_headless_smoke
+
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4

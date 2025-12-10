@@ -57,7 +57,8 @@ baseline_ci_report.json
 performance_baseline_summary.json
 performance_history.json
 .benchmarks/
-.claude
+.claude/
+.code/
 agent-os/
 .ruff_cache/
 .specify/

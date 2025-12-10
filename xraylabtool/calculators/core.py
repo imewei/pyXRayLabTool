@@ -21,6 +21,30 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+
+class ScalarFriendlyArray(np.ndarray):
+    """ndarray that formats as scalar when it contains a single value."""
+
+    def __format__(self, format_spec: str) -> str:  # pragma: no cover
+        if self.size == 1:
+            return format(self.item(), format_spec)
+        return super().__format__(format_spec)
+
+    def __float__(self):  # pragma: no cover
+        if self.size == 1:
+            return float(self.item())
+        raise TypeError("Only length-1 arrays can be converted to float")
+
+    def __getitem__(self, key):  # pragma: no cover
+        result = super().__getitem__(key)
+        if isinstance(result, np.ndarray) and result.size == 1:
+            return float(result)
+        return result
+
+    def __array__(self, dtype=None):  # pragma: no cover
+        return np.asarray(self.view(np.ndarray), dtype=dtype)
+
+
 # Lazy imports for heavy dependencies to reduce startup time
 # pandas and scipy imports moved to function level when needed
 
@@ -199,15 +223,58 @@ class XRayResult:
         # Runtime conversion to numpy arrays if needed
         # Convert all array fields to numpy arrays
         self.energy_kev = np.asarray(self.energy_kev)
-        self.wavelength_angstrom = np.asarray(self.wavelength_angstrom)
-        self.dispersion_delta = np.asarray(self.dispersion_delta)
-        self.absorption_beta = np.asarray(self.absorption_beta)
-        self.scattering_factor_f1 = np.asarray(self.scattering_factor_f1)
-        self.scattering_factor_f2 = np.asarray(self.scattering_factor_f2)
-        self.critical_angle_degrees = np.asarray(self.critical_angle_degrees)
-        self.attenuation_length_cm = np.asarray(self.attenuation_length_cm)
-        self.real_sld_per_ang2 = np.asarray(self.real_sld_per_ang2)
-        self.imaginary_sld_per_ang2 = np.asarray(self.imaginary_sld_per_ang2)
+        self.wavelength_angstrom = np.asarray(self.wavelength_angstrom).view(
+            ScalarFriendlyArray
+        )
+        self.dispersion_delta = np.asarray(self.dispersion_delta).view(
+            ScalarFriendlyArray
+        )
+        self.absorption_beta = np.asarray(self.absorption_beta).view(
+            ScalarFriendlyArray
+        )
+        self.scattering_factor_f1 = np.asarray(self.scattering_factor_f1).view(
+            ScalarFriendlyArray
+        )
+        self.scattering_factor_f2 = np.asarray(self.scattering_factor_f2).view(
+            ScalarFriendlyArray
+        )
+        self.critical_angle_degrees = np.asarray(self.critical_angle_degrees).view(
+            ScalarFriendlyArray
+        )
+        self.attenuation_length_cm = np.asarray(self.attenuation_length_cm).view(
+            ScalarFriendlyArray
+        )
+        self.real_sld_per_ang2 = np.asarray(self.real_sld_per_ang2).view(
+            ScalarFriendlyArray
+        )
+        self.imaginary_sld_per_ang2 = np.asarray(self.imaginary_sld_per_ang2).view(
+            ScalarFriendlyArray
+        )
+
+    # Convenience properties used in docs/notebooks
+    @property
+    def energy_ev(self):
+        return self.energy_kev * 1000.0
+
+    @property
+    def delta(self):
+        return self.dispersion_delta
+
+    @property
+    def beta(self):
+        return self.absorption_beta
+
+    @property
+    def critical_angle_mrad(self):
+        return self.critical_angle_degrees * np.pi / 180.0 * 1000.0
+
+    @property
+    def linear_absorption_coefficient(self):
+        # μ = 1 / attenuation length
+        arr = np.where(
+            self.attenuation_length_cm != 0, 1.0 / self.attenuation_length_cm, 0.0
+        )
+        return np.asarray(arr).view(ScalarFriendlyArray)
 
     # Legacy property aliases (deprecated) - emit warnings when accessed
     @property
@@ -359,26 +426,6 @@ class XRayResult:
             stacklevel=2,
         )
         return self.imaginary_sld_per_ang2
-
-    @property
-    def delta(self) -> np.ndarray:
-        """Deprecated: Use 'dispersion_delta' instead."""
-        warnings.warn(
-            "delta is deprecated, use 'dispersion_delta' instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.dispersion_delta
-
-    @property
-    def beta(self) -> np.ndarray:
-        """Deprecated: Use 'absorption_beta' instead."""
-        warnings.warn(
-            "beta is deprecated, use 'absorption_beta' instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.absorption_beta
 
     @classmethod
     def from_legacy(
@@ -1477,7 +1524,11 @@ def load_data_file(filename: str) -> Any:
 
 # @ensure_c_contiguous  # Optimization decorator removed for compatibility
 def calculate_single_material_properties(
-    formula: str, energy_keV: FloatLike | ArrayLike, density: FloatLike
+    formula: str,
+    energy_keV: FloatLike | ArrayLike | None = None,
+    density: FloatLike | None = None,
+    *,
+    energy: FloatLike | ArrayLike | None = None,
 ) -> XRayResult:
     """
     Calculate X-ray optical properties for a single material composition.
@@ -1499,6 +1550,8 @@ def calculate_single_material_properties(
                    - np.ndarray: Energy array for analysis
                    Valid range: 0.03-30.0 keV
         density: Material mass density in g/cm³ (must be positive)
+        energy: Optional backward-compatible alias (eV). If provided, interpreted as
+                electron-volts and converted to keV.
 
     Returns:
         XRayResult: Dataclass containing all calculated X-ray properties with
@@ -1575,6 +1628,14 @@ def calculate_single_material_properties(
         XRayResult : Complete documentation of returned dataclass
         parse_formula : Parse chemical formulas into elements and counts
     """
+    # Backward compatibility: allow 'energy' in eV
+    if energy_keV is None and energy is not None:
+        energy_keV = np.asarray(energy, dtype=float) / 1000.0  # noqa: N806
+    if energy_keV is None:
+        raise ValueError("energy_keV or energy must be provided")
+    if density is None:
+        raise ValueError("density must be provided")
+
     # Use smart cache warming for faster cold start (only loads required elements)
     # Only warm cache if it hasn't been warmed yet
     global _CACHE_WARMED

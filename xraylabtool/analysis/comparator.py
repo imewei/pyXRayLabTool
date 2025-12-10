@@ -32,7 +32,7 @@ class MaterialComparator:
             "absorption_beta",
         ]
 
-    def compare_materials(  # noqa: PLR0912
+    def compare_materials(
         self,
         formulas: list[str],
         densities: list[float],
@@ -143,10 +143,25 @@ class MaterialComparator:
                 for prop in result.properties:
                     if prop in result.data and material in result.data[prop]:
                         values = result.data[prop][material]
-                        if i < len(values):
-                            row[prop] = values[i]
-                        else:
-                            row[prop] = values[0] if values else None
+                        val = None
+                        if len(values):
+                            val = values[i] if i < len(values) else values[0]
+                        # Coerce length-1 arrays/ScalarFriendlyArray to plain float
+                        try:
+                            if hasattr(val, "__len__") and not isinstance(
+                                val, (str, bytes)
+                            ):
+                                if len(val) == 1:
+                                    val = val[0]
+                            if val is not None:
+                                try:
+                                    val = float(val)
+                                except Exception:
+                                    # numpy scalar fallback
+                                    val = float(np.asarray(val).squeeze())
+                        except Exception:
+                            val = None
+                        row[prop] = val
                     else:
                         row[prop] = None
 
