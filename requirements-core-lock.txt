@@ -1,4 +1,5 @@
 # Core dependencies with exact versions for CI reproducibility
+# Python >=3.12 required. Prefer `uv pip install -r requirements-core-lock.txt`; pip acceptable for CI.
 # Generated from local environment to ensure GitHub CI matches
 # To update: run pip freeze and filter for core dependencies
 

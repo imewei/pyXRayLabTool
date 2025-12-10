@@ -1,5 +1,6 @@
 # ReadTheDocs configuration file for XRayLabTool
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# Python 3.12 runtime on RTD; local builds should prefer `uv sync --dev` for reproducibility.
 
 # Required
 version: 2

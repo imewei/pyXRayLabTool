@@ -1,6 +1,6 @@
 # Binder requirements for XRayLabTool notebooks
 # ==============================================
-#
+# Python >=3.12 required. Prefer `uv pip install -r requirements-binder.txt`; Binder falls back to pip.
 # Minimal requirements for running interactive notebooks in Binder
 # This file ensures all necessary dependencies are available for online demos
 

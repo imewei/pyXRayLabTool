@@ -17,7 +17,7 @@ help:
 	@echo "$(BLUE)================================$(NC)"
 	@echo ""
 	@echo "$(YELLOW)📦 Installation & Setup:$(NC)"
-	@echo "  install          Install package with development dependencies"
+	@echo "  install          Install package with development dependencies (Python >=3.12, prefers uv)"
 	@echo "  dev-setup        Complete development environment setup"
 	@echo "  install-docs     Install documentation dependencies"
 	@echo ""
@@ -91,8 +91,14 @@ help:
 
 # Installation & Setup
 install:
-	@echo "$(YELLOW)Installing XRayLabTool with development dependencies...$(NC)"
-	pip install -e .[dev]
+	@echo "$(YELLOW)Installing XRayLabTool with development dependencies (Python >=3.12)...$(NC)"
+	@if command -v uv >/dev/null 2>&1; then \
+		echo "$(BLUE)Using uv (preferred)...$(NC)"; \
+		uv sync --dev; \
+	else \
+		echo "$(BLUE)uv not found; falling back to pip...$(NC)"; \
+		pip install -e .[dev]; \
+	fi
 	@echo "$(GREEN)✅ Installation complete$(NC)"
 
 install-docs:

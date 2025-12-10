@@ -1,10 +1,10 @@
 # XRayLabTool Core Requirements
 # =============================
-#
+# Python >=3.12 required. Prefer `uv` for installs: `uv pip install -r requirements.txt`.
 # For complete dependency management, see pyproject.toml
 # This file provides core runtime dependencies only.
 #
-# Install options:
+# Install options (pip fallback):
 # - Core only: pip install -r requirements.txt
 # - Development: pip install -e .[dev]
 # - Documentation: pip install -e .[docs]

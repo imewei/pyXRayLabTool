@@ -1,4 +1,5 @@
 # MANIFEST.in - Specifies additional files to include in source distribution
+# Requires Python >=3.12; prefer uv for builds/install when creating dists.
 #
 # This file ensures that important non-Python files are included when
 # building the package for distribution on PyPI and GitHub.

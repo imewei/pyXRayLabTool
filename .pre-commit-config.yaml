@@ -1,5 +1,5 @@
 # Pre-commit configuration for XRayLabTool (2025)
-# Optimized for fast execution with latest tool versions
+# Optimized for fast execution with latest tool versions; Python >=3.12, uv preferred for environment setup.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

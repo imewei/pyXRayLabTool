@@ -265,6 +265,10 @@ Repository = "https://github.com/imewei/pyXRayLabTool"
 "Discussions" = "https://github.com/imewei/pyXRayLabTool/discussions"
 "Release Notes" = "https://github.com/imewei/pyXRayLabTool/releases"
 
+[tool.uv]
+python = ">=3.12"
+package = true
+
 [project.scripts]
 xraylabtool = "xraylabtool.interfaces.cli:main"
 xraylabtool-gui = "xraylabtool.gui.__main__:main"
