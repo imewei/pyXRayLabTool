@@ -266,7 +266,6 @@ Repository = "https://github.com/imewei/pyXRayLabTool"
 "Release Notes" = "https://github.com/imewei/pyXRayLabTool/releases"
 
 [tool.uv]
-python = ">=3.12"
 package = true
 
 [project.scripts]
