@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import csv
+import os
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QStandardPaths, Qt, QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -18,9 +19,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
-    QSizePolicy,
     QSpinBox,
-    QSplitter,
     QStatusBar,
     QTableWidget,
     QTableWidgetItem,
@@ -156,7 +155,6 @@ class MainWindow(QMainWindow):
         }
 
         tabs = QTabWidget()
-        tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         tabs.addTab(self._build_single_tab(), "Single Material")
         tabs.addTab(self._build_multi_tab(), "Multiple Materials")
         self.setCentralWidget(tabs)
@@ -260,10 +258,14 @@ class MainWindow(QMainWindow):
         )
         self.single_table.verticalHeader().setVisible(False)
 
-        # Plot
+        # Plot tabs
         self.single_plot = PlotCanvas()
         self.single_sweep = SweepPlots()
         self.single_f1f2 = F1F2Plot()
+        self.single_plot_tabs = QTabWidget()
+        self.single_plot_tabs.addTab(self.single_plot, "Property plot")
+        self.single_plot_tabs.addTab(self.single_sweep, "Sweep")
+        self.single_plot_tabs.addTab(self.single_f1f2, "f1 / f2")
 
         # Converter
         converter = QGroupBox("Energy ↔ Wavelength")
@@ -307,55 +309,22 @@ class MainWindow(QMainWindow):
         input_layout.addWidget(self.single_form)
         input_box.setLayout(input_layout)
 
-        # Left column: presets + inputs + converter
-        left_panel = QWidget()
-        left_layout = QVBoxLayout(left_panel)
-        left_layout.setSpacing(10)
-        left_layout.addWidget(presets_box)
-        left_layout.addWidget(input_box)
-        left_layout.addWidget(converter)
-        left_layout.addStretch(1)
+        layout = QGridLayout()
+        layout.setHorizontalSpacing(12)
+        layout.setVerticalSpacing(10)
 
-        # Right column: property controls + summary + plots (resizable vertically)
-        right_panel = QWidget()
-        right_layout = QVBoxLayout(right_panel)
-        right_layout.setSpacing(10)
-        right_layout.addLayout(plot_header)
-        right_layout.addWidget(self.single_summary)
+        layout.addWidget(presets_box, 0, 0, 1, 1)
+        layout.addWidget(input_box, 1, 0, 1, 1)
+        layout.addLayout(plot_header, 0, 1, 1, 2)
+        layout.addWidget(self.single_summary, 1, 1, 1, 2)
+        layout.addWidget(self.single_plot_tabs, 2, 0, 1, 3)
+        layout.addWidget(converter, 3, 0, 1, 3)
+        layout.addWidget(self.single_table, 4, 0, 1, 3)
 
-        plots_splitter = QSplitter(Qt.Vertical)
-        plots_splitter.addWidget(self.single_plot)
-        plots_splitter.addWidget(self.single_sweep)
-        plots_splitter.addWidget(self.single_f1f2)
-        plots_splitter.setSizes([320, 260, 220])
-        plots_splitter.setCollapsible(0, False)
-        plots_splitter.setCollapsible(1, True)
-        plots_splitter.setCollapsible(2, True)
-        right_layout.addWidget(plots_splitter)
-
-        top_splitter = QSplitter(Qt.Horizontal)
-        top_splitter.addWidget(left_panel)
-        top_splitter.addWidget(right_panel)
-        top_splitter.setStretchFactor(0, 0)
-        top_splitter.setStretchFactor(1, 1)
-        top_splitter.setCollapsible(0, False)
-        top_splitter.setSizes([360, 780])
-
-        # Bottom table with its own stretch
-        table_panel = QWidget()
-        table_layout = QVBoxLayout(table_panel)
-        table_layout.setContentsMargins(4, 0, 4, 4)
-        table_layout.addWidget(self.single_table)
-
-        main_splitter = QSplitter(Qt.Vertical)
-        main_splitter.addWidget(top_splitter)
-        main_splitter.addWidget(table_panel)
-        main_splitter.setStretchFactor(0, 3)
-        main_splitter.setStretchFactor(1, 2)
-        main_splitter.setCollapsible(0, False)
-        main_splitter.setSizes([520, 240])
-
-        outer.addWidget(main_splitter)
+        layout.setRowStretch(2, 1)
+        layout.setColumnStretch(1, 1)
+        layout.setColumnStretch(2, 1)
+        outer.addLayout(layout)
         return container
 
     def _tune_table_headers(self) -> None:
@@ -644,53 +613,28 @@ class MainWindow(QMainWindow):
         header_row.addWidget(self.multi_export_csv)
         header_row.addWidget(self.multi_compute_btn)
 
-        # Left column for material list + energy config
-        left_panel = QWidget()
-        left_layout = QVBoxLayout(left_panel)
-        left_layout.setSpacing(10)
-        left_layout.addWidget(material_box)
-        left_layout.addWidget(energy_box)
-        left_layout.addWidget(self.multi_table)
-        left_layout.addStretch(1)
+        self.multi_plot_tabs = QTabWidget()
+        self.multi_plot_tabs.addTab(self.multi_plot, "Curves")
+        self.multi_plot_tabs.addTab(self.multi_bar_theta, "Critical angle bars")
+        self.multi_plot_tabs.addTab(self.multi_bar_atten, "Attenuation bars")
 
-        # Right column for plots and quick summaries
-        right_panel = QWidget()
-        right_layout = QVBoxLayout(right_panel)
-        right_layout.setSpacing(10)
-        right_layout.addLayout(header_row)
+        layout = QGridLayout()
+        layout.setHorizontalSpacing(12)
+        layout.setVerticalSpacing(10)
 
-        multi_plots = QSplitter(Qt.Vertical)
-        multi_plots.addWidget(self.multi_plot)
-        multi_plots.addWidget(self.multi_bar_theta)
-        multi_plots.addWidget(self.multi_bar_atten)
-        multi_plots.setSizes([320, 200, 200])
-        multi_plots.setCollapsible(0, False)
-        right_layout.addWidget(multi_plots)
-        right_layout.addWidget(self.multi_summary)
+        layout.addWidget(material_box, 0, 0, 1, 3)
+        layout.addWidget(energy_box, 1, 0, 1, 3)
+        layout.addWidget(self.multi_table, 2, 0, 1, 3)
+        layout.addLayout(header_row, 3, 0, 1, 3)
+        layout.addWidget(self.multi_plot_tabs, 4, 0, 1, 3)
+        layout.addWidget(self.multi_summary, 5, 0, 1, 3)
+        layout.addWidget(self.multi_comp_table, 6, 0, 1, 3)
 
-        top_splitter = QSplitter(Qt.Horizontal)
-        top_splitter.addWidget(left_panel)
-        top_splitter.addWidget(right_panel)
-        top_splitter.setStretchFactor(0, 0)
-        top_splitter.setStretchFactor(1, 1)
-        top_splitter.setCollapsible(0, False)
-        top_splitter.setSizes([420, 720])
-
-        bottom_panel = QWidget()
-        bottom_layout = QVBoxLayout(bottom_panel)
-        bottom_layout.setContentsMargins(4, 0, 4, 4)
-        bottom_layout.setSpacing(6)
-        bottom_layout.addWidget(self.multi_comp_table)
-
-        main_splitter = QSplitter(Qt.Vertical)
-        main_splitter.addWidget(top_splitter)
-        main_splitter.addWidget(bottom_panel)
-        main_splitter.setStretchFactor(0, 3)
-        main_splitter.setStretchFactor(1, 2)
-        main_splitter.setCollapsible(0, False)
-        main_splitter.setSizes([520, 240])
-
-        outer.addWidget(main_splitter)
+        layout.setRowStretch(4, 1)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 1)
+        layout.setColumnStretch(2, 1)
+        outer.addLayout(layout)
         return container
 
     def _set_tab_order(self) -> None:
@@ -958,7 +902,8 @@ class MainWindow(QMainWindow):
         prop = self.single_property.currentText()
         logger.info("single_save_png_clicked", extra={"property": prop})
         suggested = f"single_{self.single_result.formula}_{prop}.png"
-        self._save_plot(self.single_plot, suggested)
+        current_plot = self.single_plot_tabs.currentWidget()
+        self._save_plot(current_plot, suggested)
 
     def _save_multi_png(self) -> None:
         if not self.multi_results:
@@ -966,16 +911,30 @@ class MainWindow(QMainWindow):
             return
         prop = self.multi_property.currentText()
         logger.info("multi_save_png_clicked", extra={"property": prop})
-        self._save_plot(self.multi_plot, f"multi_{prop}.png")
+        current_plot = self.multi_plot_tabs.currentWidget()
+        self._save_plot(current_plot, f"multi_{prop}.png")
 
-    def _save_plot(self, plot_widget: PlotCanvas, suggested: str) -> None:
+    def _save_plot(self, plot_widget: QWidget, suggested: str) -> None:
+        default_dir = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
+        if not default_dir:
+            default_dir = os.path.expanduser("~")
         path, _ = QFileDialog.getSaveFileName(
-            self, "Save plot", suggested, "PNG Files (*.png)"
+            self,
+            "Save plot",
+            os.path.join(default_dir, suggested),
+            "PNG Files (*.png)",
         )
         if not path:
             logger.info("save_plot_cancelled", extra={"suggested": suggested})
             return
-        plot_widget.figure.savefig(path, dpi=300)
+        fig = getattr(plot_widget, "figure", None)
+        if fig is None:
+            self._error("Plot figure not available to save")
+            logger.error(
+                "plot_save_failed", extra={"path": path, "reason": "no figure"}
+            )
+            return
+        fig.savefig(path, dpi=300)
         logger.info("plot_saved", extra={"path": path, "suggested": suggested})
         self._info(f"Saved plot to {path}")
 
@@ -986,12 +945,16 @@ class MainWindow(QMainWindow):
         prop = self.single_property.currentText()
         logger.info("single_export_csv_clicked", extra={"property": prop})
         fname = f"single_{self.single_result.formula}_{prop}.csv"
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Export CSV", fname, "CSV Files (*.csv)"
+        default_dir = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
+        if not default_dir:
+            default_dir = os.path.expanduser("~")
+        folder = QFileDialog.getExistingDirectory(
+            self, "Select folder to save CSV", default_dir
         )
-        if not path:
+        if not folder:
             logger.info("export_single_cancelled", extra={"suggested": fname})
             return None
+        path = os.path.join(folder, fname)
         energies = self.single_result.energy_kev
         with open(path, "w", newline="", encoding="utf-8") as fh:
             writer = csv.writer(fh)
@@ -1051,12 +1014,16 @@ class MainWindow(QMainWindow):
         prop = self.multi_property.currentText()
         logger.info("multi_export_csv_clicked", extra={"property": prop})
         fname = f"multi_{prop}.csv"
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Export CSV", fname, "CSV Files (*.csv)"
+        default_dir = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
+        if not default_dir:
+            default_dir = os.path.expanduser("~")
+        folder = QFileDialog.getExistingDirectory(
+            self, "Select folder to save CSV", default_dir
         )
-        if not path:
+        if not folder:
             logger.info("export_multi_cancelled", extra={"suggested": fname})
             return None
+        path = os.path.join(folder, fname)
 
         # Build combined table: energy + one column per material for selected property
         first = next(iter(self.multi_results.values()))
