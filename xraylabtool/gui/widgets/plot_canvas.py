@@ -46,8 +46,10 @@ class PlotCanvas(QWidget):
     ) -> None:
         self.figure.clear()
         ax = self.figure.add_subplot(111)
-        x = result.energy_kev
-        y = getattr(result, property_name)
+        import numpy as np
+
+        x = np.atleast_1d(result.energy_kev)
+        y = np.atleast_1d(getattr(result, property_name))
         ax.plot(x, y, label=f"{result.formula} ({result.density_g_cm3:.3g} g/cm³)")
         ax.set_xlabel("Energy (keV)")
         ax.set_ylabel(ylabel or property_name.replace("_", " "))
@@ -64,8 +66,10 @@ class PlotCanvas(QWidget):
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         for formula, res in results.items():
-            x = res.energy_kev
-            y = getattr(res, property_name)
+            import numpy as np
+
+            x = np.atleast_1d(res.energy_kev)
+            y = np.atleast_1d(getattr(res, property_name))
             label = f"{formula} ({getattr(res, 'density_g_cm3', 0):.3g} g/cm³)"
             ax.plot(x, y, label=label)
         ax.set_xlabel("Energy (keV)")
