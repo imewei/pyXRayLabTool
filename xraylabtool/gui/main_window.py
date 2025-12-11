@@ -121,6 +121,10 @@ class MainWindow(QMainWindow):
         self.progress.setFormat("%p%")
         self.status_bar.addPermanentWidget(self.progress)
 
+        self.log_path_label = QLabel()
+        self.log_path_label.setVisible(False)
+        self.status_bar.addPermanentWidget(self.log_path_label)
+
         self.log_path_toggle = QPushButton("Log path")
         self.log_path_toggle.setProperty("class", "secondary")
         self.log_path_toggle.setToolTip("Show or hide the current log file path")
@@ -237,6 +241,9 @@ class MainWindow(QMainWindow):
         )
         self.single_summary.verticalHeader().setVisible(False)
         self.single_summary.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.single_summary.setMaximumHeight(64)
+        self.single_summary.setMinimumHeight(48)
+        self.single_summary.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Table
         # 12 columns: energy, wavelength, delta, beta, critical angles, attenuation, mu, f1/f2, SLDs
@@ -317,7 +324,7 @@ class MainWindow(QMainWindow):
         left_layout.addStretch(1)
 
         self.single_plot_tabs = QTabWidget()
-        self.single_plot_tabs.setMinimumHeight(320)
+        self.single_plot_tabs.setMinimumHeight(260)
         self.single_plot_tabs.addTab(self.single_plot, "Property plot")
         self.single_plot_tabs.addTab(self.single_sweep, "Sweep")
         self.single_plot_tabs.addTab(self.single_f1f2, "f1 / f2")
@@ -330,6 +337,7 @@ class MainWindow(QMainWindow):
 
         single_plot_scroll = QScrollArea()
         single_plot_scroll.setWidgetResizable(True)
+        single_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         single_plot_scroll.setWidget(single_plot_container)
 
         right_layout = QGridLayout()
@@ -645,7 +653,7 @@ class MainWindow(QMainWindow):
         self.multi_plot_tabs.addTab(self.multi_plot, "Curves")
         self.multi_plot_tabs.addTab(self.multi_bar_theta, "Critical angle bars")
         self.multi_plot_tabs.addTab(self.multi_bar_atten, "Attenuation bars")
-        self.multi_plot_tabs.setMinimumHeight(320)
+        self.multi_plot_tabs.setMinimumHeight(260)
 
         multi_plot_container = QWidget()
         multi_plot_layout = QVBoxLayout(multi_plot_container)
@@ -655,6 +663,7 @@ class MainWindow(QMainWindow):
 
         multi_plot_scroll = QScrollArea()
         multi_plot_scroll.setWidgetResizable(True)
+        multi_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         multi_plot_scroll.setWidget(multi_plot_container)
 
         left_panel = QWidget()
@@ -937,10 +946,12 @@ class MainWindow(QMainWindow):
         path = get_log_file_path()
         if path:
             if self.log_path_toggle.isChecked():
-                self.status_bar.showMessage(f"Log file: {path}", 8000)
+                self.log_path_label.setText(f"Log: {path}")
+                self.log_path_label.setVisible(True)
                 logger.info("log_path_shown", extra={"path": path})
             else:
-                self.status_bar.clearMessage()
+                self.log_path_label.clear()
+                self.log_path_label.setVisible(False)
         else:
             self.status_bar.showMessage("File logging is disabled", 5000)
             logger.info("log_path_missing")
