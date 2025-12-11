@@ -7,15 +7,6 @@
 
 XRayLabTool is a Python package and command-line tool for calculating X-ray optical properties of materials based on their chemical formulas and densities.
 
-## GUI
-
-The PySide6 desktop GUI ships with a refreshed light theme (shared palette/QSS), clearer action hierarchy, striped/right-aligned tables, visible progress, and lightweight toasts for status. Current headless snapshots are saved to `build/gui_single.png` and `build/gui_multi.png` (captured with `QT_QPA_PLATFORM=offscreen`).
-
-## GUI UX Checklist
-- Spacing/labels (live display/HiDPI): verify label widths don’t truncate; adjust grid spacing if dense; ensure table headers stay readable at scale factors >1.0.
-- Matplotlib rcParams: tweak tick/legend/font sizes if text feels large/small on your monitor; current theme is applied via `apply_matplotlib_theme()`.
-- Offscreen quiet mode (optional): default uses `offscreen`; for quieter runs you may try `QT_QPA_PLATFORM=minimal` (if available) or keep stderr filtering via `suppress_qt_noise` / `enable_offscreen_quiet_env`.
-
 ## Table of Contents
 
 - [Installation](#installation)
