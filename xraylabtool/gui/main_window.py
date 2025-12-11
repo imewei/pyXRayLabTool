@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QSizePolicy,
     QSpinBox,
     QStatusBar,
     QTableWidget,
@@ -262,10 +263,6 @@ class MainWindow(QMainWindow):
         self.single_plot = PlotCanvas()
         self.single_sweep = SweepPlots()
         self.single_f1f2 = F1F2Plot()
-        self.single_plot_tabs = QTabWidget()
-        self.single_plot_tabs.addTab(self.single_plot, "Property plot")
-        self.single_plot_tabs.addTab(self.single_sweep, "Sweep")
-        self.single_plot_tabs.addTab(self.single_f1f2, "f1 / f2")
 
         # Converter
         converter = QGroupBox("Energy ↔ Wavelength")
@@ -309,22 +306,39 @@ class MainWindow(QMainWindow):
         input_layout.addWidget(self.single_form)
         input_box.setLayout(input_layout)
 
+        left_panel = QWidget()
+        left_panel.setMinimumWidth(380)
+        left_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setSpacing(10)
+        left_layout.addWidget(presets_box)
+        left_layout.addWidget(input_box)
+        left_layout.addStretch(1)
+
+        self.single_plot_tabs = QTabWidget()
+        self.single_plot_tabs.setMinimumHeight(320)
+        self.single_plot_tabs.addTab(self.single_plot, "Property plot")
+        self.single_plot_tabs.addTab(self.single_sweep, "Sweep")
+        self.single_plot_tabs.addTab(self.single_f1f2, "f1 / f2")
+
+        right_layout = QGridLayout()
+        right_layout.setHorizontalSpacing(10)
+        right_layout.setVerticalSpacing(8)
+        right_layout.addLayout(plot_header, 0, 0)
+        right_layout.addWidget(self.single_summary, 1, 0)
+        right_layout.addWidget(self.single_plot_tabs, 2, 0)
+        right_layout.addWidget(converter, 3, 0)
+        right_layout.addWidget(self.single_table, 4, 0)
+        right_layout.setRowStretch(2, 2)
+        right_layout.setRowStretch(4, 1)
+
         layout = QGridLayout()
-        layout.setHorizontalSpacing(12)
+        layout.setHorizontalSpacing(14)
         layout.setVerticalSpacing(10)
-
-        layout.addWidget(presets_box, 0, 0, 1, 1)
-        layout.addWidget(input_box, 1, 0, 1, 1)
-        layout.addLayout(plot_header, 0, 1, 1, 2)
-        layout.addWidget(self.single_summary, 1, 1, 1, 2)
-        layout.addWidget(self.single_plot_tabs, 2, 0, 1, 3)
-        layout.addWidget(converter, 3, 0, 1, 3)
-        layout.addWidget(self.single_table, 4, 0, 1, 3)
-
-        layout.setRowStretch(2, 1)
-        layout.setColumnMinimumWidth(0, 320)
+        layout.addWidget(left_panel, 0, 0, 5, 1)
+        layout.addLayout(right_layout, 0, 1, 5, 1)
+        layout.setColumnStretch(0, 0)
         layout.setColumnStretch(1, 1)
-        layout.setColumnStretch(2, 1)
         outer.addLayout(layout)
         return container
 
@@ -618,25 +632,35 @@ class MainWindow(QMainWindow):
         self.multi_plot_tabs.addTab(self.multi_plot, "Curves")
         self.multi_plot_tabs.addTab(self.multi_bar_theta, "Critical angle bars")
         self.multi_plot_tabs.addTab(self.multi_bar_atten, "Attenuation bars")
-        self.multi_plot_tabs.setMinimumHeight(300)
+        self.multi_plot_tabs.setMinimumHeight(320)
+
+        left_panel = QWidget()
+        left_panel.setMinimumWidth(420)
+        left_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setSpacing(10)
+        left_layout.addWidget(material_box)
+        left_layout.addWidget(energy_box)
+        left_layout.addWidget(self.multi_table)
+        left_layout.addStretch(1)
+
+        right_layout = QGridLayout()
+        right_layout.setHorizontalSpacing(10)
+        right_layout.setVerticalSpacing(8)
+        right_layout.addLayout(header_row, 0, 0)
+        right_layout.addWidget(self.multi_plot_tabs, 1, 0)
+        right_layout.addWidget(self.multi_summary, 2, 0)
+        right_layout.addWidget(self.multi_comp_table, 3, 0)
+        right_layout.setRowStretch(1, 2)
+        right_layout.setRowStretch(3, 1)
 
         layout = QGridLayout()
-        layout.setHorizontalSpacing(12)
+        layout.setHorizontalSpacing(14)
         layout.setVerticalSpacing(10)
-
-        layout.addWidget(material_box, 0, 0, 1, 3)
-        layout.addWidget(energy_box, 1, 0, 1, 3)
-        layout.addWidget(self.multi_table, 2, 0, 1, 3)
-        layout.addLayout(header_row, 3, 0, 1, 3)
-        layout.addWidget(self.multi_plot_tabs, 4, 0, 1, 3)
-        layout.addWidget(self.multi_summary, 5, 0, 1, 3)
-        layout.addWidget(self.multi_comp_table, 6, 0, 1, 3)
-
-        layout.setRowStretch(4, 1)
-        layout.setColumnMinimumWidth(0, 360)
-        layout.setColumnStretch(0, 1)
+        layout.addWidget(left_panel, 0, 0, 4, 1)
+        layout.addLayout(right_layout, 0, 1, 4, 1)
+        layout.setColumnStretch(0, 0)
         layout.setColumnStretch(1, 1)
-        layout.setColumnStretch(2, 1)
         outer.addLayout(layout)
         return container
 
