@@ -162,11 +162,14 @@ class MaterialInputForm(QWidget):
         end = self.energy_end.value()
         points = self.energy_points.value()
         logspace = self.logspace.isChecked()
-        if end <= start:
+        single_point = points == 1
+        if (not single_point and end <= start) or (single_point and end < start):
             ok = False
-            self.energy_hint.setText("End energy must be greater than start energy")
+            self.energy_hint.setText(
+                "End energy must be greater than start energy (>= when 1 point)"
+            )
             self.energy_hint.setStyleSheet("color: #c62828;")
-        elif logspace and points < 3:
+        elif logspace and points < 3 and not single_point:
             ok = False
             self.energy_hint.setText("Log spacing needs at least 3 points")
             self.energy_hint.setStyleSheet("color: #c62828;")
