@@ -322,6 +322,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.single_table, 4, 0, 1, 3)
 
         layout.setRowStretch(2, 1)
+        layout.setColumnMinimumWidth(0, 320)
         layout.setColumnStretch(1, 1)
         layout.setColumnStretch(2, 1)
         outer.addLayout(layout)
@@ -617,6 +618,7 @@ class MainWindow(QMainWindow):
         self.multi_plot_tabs.addTab(self.multi_plot, "Curves")
         self.multi_plot_tabs.addTab(self.multi_bar_theta, "Critical angle bars")
         self.multi_plot_tabs.addTab(self.multi_bar_atten, "Attenuation bars")
+        self.multi_plot_tabs.setMinimumHeight(300)
 
         layout = QGridLayout()
         layout.setHorizontalSpacing(12)
@@ -631,6 +633,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.multi_comp_table, 6, 0, 1, 3)
 
         layout.setRowStretch(4, 1)
+        layout.setColumnMinimumWidth(0, 360)
         layout.setColumnStretch(0, 1)
         layout.setColumnStretch(1, 1)
         layout.setColumnStretch(2, 1)
