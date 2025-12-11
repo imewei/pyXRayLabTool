@@ -35,7 +35,6 @@ from xraylabtool.logging_utils import get_log_file_path, get_logger
 from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
 
 from .services import EnergyConfig, compute_multiple, compute_single
-from .widgets.bar_plots import ComparisonBars
 from .widgets.material_form import MaterialInputForm
 from .widgets.material_table import MaterialTable
 from .widgets.plot_canvas import PlotCanvas
@@ -617,8 +616,6 @@ class MainWindow(QMainWindow):
         self.multi_logy.stateChanged.connect(self._refresh_multi_views)
 
         self.multi_plot = PlotCanvas()
-        self.multi_bar_theta = ComparisonBars()
-        self.multi_bar_atten = ComparisonBars()
         self.multi_summary = QTableWidget(0, 6)
         self.multi_summary.setAlternatingRowColors(True)
         self.multi_summary.setHorizontalHeaderLabels(
@@ -649,17 +646,13 @@ class MainWindow(QMainWindow):
         header_row.addWidget(self.multi_export_csv)
         header_row.addWidget(self.multi_compute_btn)
 
-        self.multi_plot_tabs = QTabWidget()
-        self.multi_plot_tabs.addTab(self.multi_plot, "Curves")
-        self.multi_plot_tabs.addTab(self.multi_bar_theta, "Critical angle bars")
-        self.multi_plot_tabs.addTab(self.multi_bar_atten, "Attenuation bars")
-        self.multi_plot_tabs.setMinimumHeight(260)
+        self.multi_plot.setMinimumHeight(260)
 
         multi_plot_container = QWidget()
         multi_plot_layout = QVBoxLayout(multi_plot_container)
         multi_plot_layout.setContentsMargins(0, 0, 0, 0)
         multi_plot_layout.setSpacing(0)
-        multi_plot_layout.addWidget(self.multi_plot_tabs)
+        multi_plot_layout.addWidget(self.multi_plot)
 
         multi_plot_scroll = QScrollArea()
         multi_plot_scroll.setWidgetResizable(True)
@@ -891,22 +884,6 @@ class MainWindow(QMainWindow):
                 self.multi_summary.setItem(i, col, item)
         self.multi_summary.resizeColumnsToContents()
 
-        # Bar charts at first energy point
-        labels = []
-        thetas = []
-        attens = []
-        for formula, res in self.multi_results.items():
-            labels.append(formula)
-            thetas.append(res.critical_angle_degrees[0])
-            attens.append(res.attenuation_length_cm[0])
-        if labels:
-            self.multi_bar_theta.plot(
-                labels, thetas, "Critical angle (deg)", logy=False
-            )
-            self.multi_bar_atten.plot(
-                labels, attens, "Attenuation length (cm)", logy=True
-            )
-
         # Comparator table
         if self.multi_comparison:
             df = MaterialComparator().create_comparison_table(self.multi_comparison)
@@ -979,8 +956,7 @@ class MainWindow(QMainWindow):
             return
         prop = self.multi_property.currentText()
         logger.info("multi_save_png_clicked", extra={"property": prop})
-        current_plot = self.multi_plot_tabs.currentWidget()
-        self._save_plot(current_plot, f"multi_{prop}.png")
+        self._save_plot(self.multi_plot, f"multi_{prop}.png")
 
     def _save_plot(self, plot_widget: QWidget, suggested: str) -> None:
         default_dir = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)

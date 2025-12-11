@@ -169,12 +169,12 @@ xraylabtool calc Si -e 10.0 -d 2.33
 
 - Requirements: PySide6 and matplotlib (install via `pip install xraylabtool[all]` or ensure those are present in your venv).
 - Launch: `python -m xraylabtool.gui`
-- Tabs: **Single Material Analysis** (one material with presets, linear/log energy grids, plots, CSV/PNG export) and **Multiple Materials Comparison** (add/remove materials, presets, log/linear grids, overlay plots, bar charts, CSV/PNG export).
+- Tabs: **Single Material Analysis** (one material with presets, linear/log energy grids, plots, CSV/PNG export) and **Multiple Materials Comparison** (add/remove materials, presets, log/linear grids, overlay plots, CSV/PNG export).
 - Headless smoke/CI: `python -m xraylabtool.gui --test-launch --platform offscreen` (offscreen Qt backend).
 
 ### Quick Walkthrough
 - **Single tab:** enter formula + density, choose linear or log energy grid, optional presets; compute to see summary table, energy sweep plots, f1/f2 curves, and export plot/CSV.
-- **Multiple tab:** add materials (manual or presets), set energy grid, pick property to compare; compute to see overlay plot, bar charts, summary/comparator tables; export plot/CSV (per-property and comparator table).
+- **Multiple tab:** add materials (manual or presets), set energy grid, pick property to compare; compute to see overlay plot and summary/comparator tables; export plot/CSV (per-property and comparator table).
 
 ![GUI overview](docs/_static/gui_main_offscreen.png)
 
