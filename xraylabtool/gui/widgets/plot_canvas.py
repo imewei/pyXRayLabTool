@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+# isort: off
 from collections.abc import Mapping
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+import numpy as np
 from PySide6.QtWidgets import QVBoxLayout, QWidget
+
+# isort: on
 
 
 class PlotCanvas(QWidget):
@@ -46,10 +50,8 @@ class PlotCanvas(QWidget):
     ) -> None:
         self.figure.clear()
         ax = self.figure.add_subplot(111)
-        import numpy as np
-
-        x = np.atleast_1d(result.energy_kev)
-        y = np.atleast_1d(getattr(result, property_name))
+        x = np.array(result.energy_kev, ndmin=1, copy=False)
+        y = np.array(getattr(result, property_name), ndmin=1, copy=False)
         ax.plot(x, y, label=f"{result.formula} ({result.density_g_cm3:.3g} g/cm³)")
         ax.set_xlabel("Energy (keV)")
         ax.set_ylabel(ylabel or property_name.replace("_", " "))
@@ -66,10 +68,8 @@ class PlotCanvas(QWidget):
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         for formula, res in results.items():
-            import numpy as np
-
-            x = np.atleast_1d(res.energy_kev)
-            y = np.atleast_1d(getattr(res, property_name))
+            x = np.array(res.energy_kev, ndmin=1, copy=False)
+            y = np.array(getattr(res, property_name), ndmin=1, copy=False)
             label = f"{formula} ({getattr(res, 'density_g_cm3', 0):.3g} g/cm³)"
             ax.plot(x, y, label=label)
         ax.set_xlabel("Energy (keV)")

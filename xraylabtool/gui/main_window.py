@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QSpinBox,
     QStatusBar,
@@ -321,12 +322,22 @@ class MainWindow(QMainWindow):
         self.single_plot_tabs.addTab(self.single_sweep, "Sweep")
         self.single_plot_tabs.addTab(self.single_f1f2, "f1 / f2")
 
+        single_plot_container = QWidget()
+        single_plot_layout = QVBoxLayout(single_plot_container)
+        single_plot_layout.setContentsMargins(0, 0, 0, 0)
+        single_plot_layout.setSpacing(0)
+        single_plot_layout.addWidget(self.single_plot_tabs)
+
+        single_plot_scroll = QScrollArea()
+        single_plot_scroll.setWidgetResizable(True)
+        single_plot_scroll.setWidget(single_plot_container)
+
         right_layout = QGridLayout()
         right_layout.setHorizontalSpacing(10)
         right_layout.setVerticalSpacing(8)
         right_layout.addLayout(plot_header, 0, 0)
         right_layout.addWidget(self.single_summary, 1, 0)
-        right_layout.addWidget(self.single_plot_tabs, 2, 0)
+        right_layout.addWidget(single_plot_scroll, 2, 0)
         right_layout.setRowStretch(2, 2)
 
         layout = QGridLayout()
@@ -636,6 +647,16 @@ class MainWindow(QMainWindow):
         self.multi_plot_tabs.addTab(self.multi_bar_atten, "Attenuation bars")
         self.multi_plot_tabs.setMinimumHeight(320)
 
+        multi_plot_container = QWidget()
+        multi_plot_layout = QVBoxLayout(multi_plot_container)
+        multi_plot_layout.setContentsMargins(0, 0, 0, 0)
+        multi_plot_layout.setSpacing(0)
+        multi_plot_layout.addWidget(self.multi_plot_tabs)
+
+        multi_plot_scroll = QScrollArea()
+        multi_plot_scroll.setWidgetResizable(True)
+        multi_plot_scroll.setWidget(multi_plot_container)
+
         left_panel = QWidget()
         left_panel.setMinimumWidth(420)
         left_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
@@ -650,7 +671,7 @@ class MainWindow(QMainWindow):
         right_layout.setHorizontalSpacing(10)
         right_layout.setVerticalSpacing(8)
         right_layout.addLayout(header_row, 0, 0)
-        right_layout.addWidget(self.multi_plot_tabs, 1, 0)
+        right_layout.addWidget(multi_plot_scroll, 1, 0)
         right_layout.setRowStretch(1, 2)
 
         bottom_tables = QWidget()
