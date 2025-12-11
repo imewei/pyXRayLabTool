@@ -51,7 +51,7 @@ For complete documentation, visit: https://pyxraylabtool.readthedocs.io
 
 import sys
 
-if sys.version_info < (3, 12):
+if sys.version_info < (3, 12):  # noqa: UP036
     raise ImportError(
         "XRayLabTool requires Python 3.12+; please upgrade your interpreter."
     )
@@ -59,6 +59,9 @@ if sys.version_info < (3, 12):
 __version__ = "0.2.7"
 __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"
+
+# Logging helpers (lightweight, stdlib-only)
+from xraylabtool.logging_utils import configure_logging, get_logger, log_environment
 
 # All modules are now imported lazily via __getattr__ for ultra-fast startup
 

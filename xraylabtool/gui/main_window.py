@@ -18,7 +18,9 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QSizePolicy,
     QSpinBox,
+    QSplitter,
     QStatusBar,
     QTableWidget,
     QTableWidgetItem,
@@ -28,6 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from xraylabtool.analysis.comparator import MaterialComparator
+from xraylabtool.logging_utils import get_log_file_path, get_logger
 from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
 
 from .services import EnergyConfig, compute_multiple, compute_single
@@ -95,12 +98,15 @@ PROPERTIES = [
     "imaginary_sld_per_ang2",
 ]
 
+logger = get_logger(__name__)
+
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("XRayLabTool GUI")
         self.resize(1100, 720)
+        self.setMinimumSize(900, 620)
 
         self.threadpool = None  # Assigned on first use to avoid import cycles
 
@@ -113,6 +119,15 @@ class MainWindow(QMainWindow):
         self.progress.setTextVisible(True)
         self.progress.setFormat("%p%")
         self.status_bar.addPermanentWidget(self.progress)
+
+        self.log_path_toggle = QPushButton("Log path")
+        self.log_path_toggle.setProperty("class", "secondary")
+        self.log_path_toggle.setToolTip("Show or hide the current log file path")
+        self.log_path_toggle.setCheckable(True)
+        self.log_path_toggle.setChecked(False)
+        self.log_path_toggle.clicked.connect(self._toggle_log_path)
+        self.status_bar.addPermanentWidget(self.log_path_toggle)
+        self.status_bar.setSizeGripEnabled(True)
         self.setStatusBar(self.status_bar)
 
         self.toast = Toast(self)
@@ -141,6 +156,7 @@ class MainWindow(QMainWindow):
         }
 
         tabs = QTabWidget()
+        tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         tabs.addTab(self._build_single_tab(), "Single Material")
         tabs.addTab(self._build_multi_tab(), "Multiple Materials")
         self.setCentralWidget(tabs)
@@ -151,9 +167,9 @@ class MainWindow(QMainWindow):
     # Single tab
     def _build_single_tab(self) -> QWidget:
         container = QWidget()
-        layout = QGridLayout(container)
-        layout.setHorizontalSpacing(12)
-        layout.setVerticalSpacing(10)
+        outer = QVBoxLayout(container)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(8)
 
         # Inputs
         self.single_form = MaterialInputForm()
@@ -291,19 +307,55 @@ class MainWindow(QMainWindow):
         input_layout.addWidget(self.single_form)
         input_box.setLayout(input_layout)
 
-        layout.addWidget(presets_box, 0, 0, 1, 1)
-        layout.addWidget(input_box, 1, 0, 1, 1)
-        layout.addLayout(plot_header, 0, 1, 1, 2)
-        layout.addWidget(self.single_summary, 1, 1, 1, 2)
-        layout.addWidget(self.single_plot, 2, 0, 1, 3)
-        layout.addWidget(self.single_sweep, 3, 0, 1, 3)
-        layout.addWidget(self.single_f1f2, 4, 0, 1, 3)
-        layout.addWidget(converter, 5, 0, 1, 3)
-        layout.addWidget(self.single_table, 6, 0, 1, 3)
+        # Left column: presets + inputs + converter
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setSpacing(10)
+        left_layout.addWidget(presets_box)
+        left_layout.addWidget(input_box)
+        left_layout.addWidget(converter)
+        left_layout.addStretch(1)
 
-        layout.setRowStretch(2, 1)
-        layout.setColumnStretch(1, 1)
-        layout.setColumnStretch(2, 1)
+        # Right column: property controls + summary + plots (resizable vertically)
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setSpacing(10)
+        right_layout.addLayout(plot_header)
+        right_layout.addWidget(self.single_summary)
+
+        plots_splitter = QSplitter(Qt.Vertical)
+        plots_splitter.addWidget(self.single_plot)
+        plots_splitter.addWidget(self.single_sweep)
+        plots_splitter.addWidget(self.single_f1f2)
+        plots_splitter.setSizes([320, 260, 220])
+        plots_splitter.setCollapsible(0, False)
+        plots_splitter.setCollapsible(1, True)
+        plots_splitter.setCollapsible(2, True)
+        right_layout.addWidget(plots_splitter)
+
+        top_splitter = QSplitter(Qt.Horizontal)
+        top_splitter.addWidget(left_panel)
+        top_splitter.addWidget(right_panel)
+        top_splitter.setStretchFactor(0, 0)
+        top_splitter.setStretchFactor(1, 1)
+        top_splitter.setCollapsible(0, False)
+        top_splitter.setSizes([360, 780])
+
+        # Bottom table with its own stretch
+        table_panel = QWidget()
+        table_layout = QVBoxLayout(table_panel)
+        table_layout.setContentsMargins(4, 0, 4, 4)
+        table_layout.addWidget(self.single_table)
+
+        main_splitter = QSplitter(Qt.Vertical)
+        main_splitter.addWidget(top_splitter)
+        main_splitter.addWidget(table_panel)
+        main_splitter.setStretchFactor(0, 3)
+        main_splitter.setStretchFactor(1, 2)
+        main_splitter.setCollapsible(0, False)
+        main_splitter.setSizes([520, 240])
+
+        outer.addWidget(main_splitter)
         return container
 
     def _tune_table_headers(self) -> None:
@@ -331,6 +383,15 @@ class MainWindow(QMainWindow):
         if not formula:
             self._error("Please enter a chemical formula")
             return
+        logger.info(
+            "single_compute_clicked",
+            extra={
+                "formula": formula,
+                "density": density,
+                "points": energy_cfg.points,
+                "logspace": energy_cfg.logspace,
+            },
+        )
         self._info("Computing…")
         self.single_form.compute_button.setEnabled(False)
         self.single_save_png.setEnabled(False)
@@ -350,6 +411,10 @@ class MainWindow(QMainWindow):
         self.single_result = result
         self.single_save_png.setEnabled(True)
         self.single_export_csv.setEnabled(True)
+        logger.info(
+            "single_compute_complete",
+            extra={"formula": result.formula, "points": len(result.energy_kev)},
+        )
         self._info("Single calculation complete")
         self.toast.show_toast("Single calculation done", "success")
         self._refresh_single_views()
@@ -358,6 +423,7 @@ class MainWindow(QMainWindow):
         self.single_form.compute_button.setEnabled(True)
         self.single_save_png.setEnabled(True)
         self.single_export_csv.setEnabled(True)
+        logger.error("single_compute_failed", extra={"message": message})
         self._error(message)
 
     def _refresh_single_views(self) -> None:
@@ -434,9 +500,9 @@ class MainWindow(QMainWindow):
     # Multi tab
     def _build_multi_tab(self) -> QWidget:
         container = QWidget()
-        layout = QGridLayout(container)
-        layout.setHorizontalSpacing(12)
-        layout.setVerticalSpacing(10)
+        outer = QVBoxLayout(container)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(8)
 
         # Material entry row
         self.multi_formula = QLineEdit()
@@ -567,10 +633,6 @@ class MainWindow(QMainWindow):
         self.multi_comp_table.setAlternatingRowColors(True)
         self.multi_comp_table.verticalHeader().setVisible(False)
 
-        layout.addWidget(material_box, 0, 0, 1, 3)
-        layout.addWidget(energy_box, 1, 0, 1, 3)
-        layout.addWidget(self.multi_table, 2, 0, 1, 3)
-
         header_row = QHBoxLayout()
         header_row.setSpacing(12)
         header_row.addWidget(QLabel("Property"))
@@ -582,17 +644,53 @@ class MainWindow(QMainWindow):
         header_row.addWidget(self.multi_export_csv)
         header_row.addWidget(self.multi_compute_btn)
 
-        layout.addLayout(header_row, 3, 0, 1, 3)
-        layout.addWidget(self.multi_plot, 4, 0, 1, 3)
-        layout.addWidget(self.multi_bar_theta, 5, 0, 1, 3)
-        layout.addWidget(self.multi_bar_atten, 6, 0, 1, 3)
-        layout.addWidget(self.multi_summary, 7, 0, 1, 3)
-        layout.addWidget(self.multi_comp_table, 8, 0, 1, 3)
+        # Left column for material list + energy config
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setSpacing(10)
+        left_layout.addWidget(material_box)
+        left_layout.addWidget(energy_box)
+        left_layout.addWidget(self.multi_table)
+        left_layout.addStretch(1)
 
-        layout.setRowStretch(4, 1)
-        layout.setColumnStretch(0, 1)
-        layout.setColumnStretch(1, 1)
-        layout.setColumnStretch(2, 1)
+        # Right column for plots and quick summaries
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setSpacing(10)
+        right_layout.addLayout(header_row)
+
+        multi_plots = QSplitter(Qt.Vertical)
+        multi_plots.addWidget(self.multi_plot)
+        multi_plots.addWidget(self.multi_bar_theta)
+        multi_plots.addWidget(self.multi_bar_atten)
+        multi_plots.setSizes([320, 200, 200])
+        multi_plots.setCollapsible(0, False)
+        right_layout.addWidget(multi_plots)
+        right_layout.addWidget(self.multi_summary)
+
+        top_splitter = QSplitter(Qt.Horizontal)
+        top_splitter.addWidget(left_panel)
+        top_splitter.addWidget(right_panel)
+        top_splitter.setStretchFactor(0, 0)
+        top_splitter.setStretchFactor(1, 1)
+        top_splitter.setCollapsible(0, False)
+        top_splitter.setSizes([420, 720])
+
+        bottom_panel = QWidget()
+        bottom_layout = QVBoxLayout(bottom_panel)
+        bottom_layout.setContentsMargins(4, 0, 4, 4)
+        bottom_layout.setSpacing(6)
+        bottom_layout.addWidget(self.multi_comp_table)
+
+        main_splitter = QSplitter(Qt.Vertical)
+        main_splitter.addWidget(top_splitter)
+        main_splitter.addWidget(bottom_panel)
+        main_splitter.setStretchFactor(0, 3)
+        main_splitter.setStretchFactor(1, 2)
+        main_splitter.setCollapsible(0, False)
+        main_splitter.setSizes([520, 240])
+
+        outer.addWidget(main_splitter)
         return container
 
     def _set_tab_order(self) -> None:
@@ -631,6 +729,9 @@ class MainWindow(QMainWindow):
         self.multi_table.add_material(formula, density)
         self.multi_formula.clear()
         self.multi_formula.setFocus()
+        logger.info(
+            "multi_add_material", extra={"formula": formula, "density": density}
+        )
 
     def _add_multi_preset(self, name: str) -> None:
         if name in self.material_presets:
@@ -641,6 +742,10 @@ class MainWindow(QMainWindow):
 
     def _remove_material(self) -> None:
         self.multi_table.remove_selected()
+        logger.info(
+            "multi_remove_material",
+            extra={"remaining": len(self.multi_table.materials()[0])},
+        )
 
     def _multi_energy_cfg(self) -> EnergyConfig:
         return EnergyConfig(
@@ -656,6 +761,14 @@ class MainWindow(QMainWindow):
             self._error("Add at least one material")
             return
         energy_cfg = self._multi_energy_cfg()
+        logger.info(
+            "multi_compute_clicked",
+            extra={
+                "count": len(formulas),
+                "points": energy_cfg.points,
+                "logspace": energy_cfg.logspace,
+            },
+        )
         self._info("Computing…")
         self._show_progress(True, 0)
         self.multi_compute_btn.setEnabled(False)
@@ -683,6 +796,10 @@ class MainWindow(QMainWindow):
         self.multi_export_csv.setEnabled(True)
         self._show_progress(False, 0)
         self.multi_results = results
+        logger.info(
+            "multi_compute_complete",
+            extra={"count": len(results), "first": next(iter(results.keys()), "")},
+        )
         # Optional comparator summary for richer tables
         try:
             cmp = MaterialComparator()
@@ -702,6 +819,7 @@ class MainWindow(QMainWindow):
         self.multi_save_png.setEnabled(True)
         self.multi_export_csv.setEnabled(True)
         self._show_progress(False, 0)
+        logger.error("multi_compute_failed", extra={"message": message})
         self._error(message)
 
     def _progress_multi(self, value: int) -> None:
@@ -814,6 +932,18 @@ class MainWindow(QMainWindow):
             self.progress.setRange(0, 1)
             self.progress.setValue(0)
 
+    def _toggle_log_path(self) -> None:
+        path = get_log_file_path()
+        if path:
+            if self.log_path_toggle.isChecked():
+                self.status_bar.showMessage(f"Log file: {path}", 8000)
+                logger.info("log_path_shown", extra={"path": path})
+            else:
+                self.status_bar.clearMessage()
+        else:
+            self.status_bar.showMessage("File logging is disabled", 5000)
+            logger.info("log_path_missing")
+
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         if hasattr(self, "toast"):
@@ -826,6 +956,7 @@ class MainWindow(QMainWindow):
             self._error("No data to export yet")
             return
         prop = self.single_property.currentText()
+        logger.info("single_save_png_clicked", extra={"property": prop})
         suggested = f"single_{self.single_result.formula}_{prop}.png"
         self._save_plot(self.single_plot, suggested)
 
@@ -834,6 +965,7 @@ class MainWindow(QMainWindow):
             self._error("No data to export yet")
             return
         prop = self.multi_property.currentText()
+        logger.info("multi_save_png_clicked", extra={"property": prop})
         self._save_plot(self.multi_plot, f"multi_{prop}.png")
 
     def _save_plot(self, plot_widget: PlotCanvas, suggested: str) -> None:
@@ -841,8 +973,10 @@ class MainWindow(QMainWindow):
             self, "Save plot", suggested, "PNG Files (*.png)"
         )
         if not path:
+            logger.info("save_plot_cancelled", extra={"suggested": suggested})
             return
         plot_widget.figure.savefig(path, dpi=300)
+        logger.info("plot_saved", extra={"path": path, "suggested": suggested})
         self._info(f"Saved plot to {path}")
 
     def _export_single_csv(self) -> str | None:
@@ -850,11 +984,13 @@ class MainWindow(QMainWindow):
             self._error("No data to export yet")
             return None
         prop = self.single_property.currentText()
+        logger.info("single_export_csv_clicked", extra={"property": prop})
         fname = f"single_{self.single_result.formula}_{prop}.csv"
         path, _ = QFileDialog.getSaveFileName(
             self, "Export CSV", fname, "CSV Files (*.csv)"
         )
         if not path:
+            logger.info("export_single_cancelled", extra={"suggested": fname})
             return None
         energies = self.single_result.energy_kev
         with open(path, "w", newline="", encoding="utf-8") as fh:
@@ -897,6 +1033,15 @@ class MainWindow(QMainWindow):
                     ]
                 )
         self._info(f"Saved CSV to {path}")
+        logger.info(
+            "export_single_csv",
+            extra={
+                "path": path,
+                "formula": self.single_result.formula,
+                "property": prop,
+                "rows": len(energies),
+            },
+        )
         return path
 
     def _export_multi_csv(self) -> str | None:
@@ -904,11 +1049,13 @@ class MainWindow(QMainWindow):
             self._error("No data to export yet")
             return None
         prop = self.multi_property.currentText()
+        logger.info("multi_export_csv_clicked", extra={"property": prop})
         fname = f"multi_{prop}.csv"
         path, _ = QFileDialog.getSaveFileName(
             self, "Export CSV", fname, "CSV Files (*.csv)"
         )
         if not path:
+            logger.info("export_multi_cancelled", extra={"suggested": fname})
             return None
 
         # Build combined table: energy + one column per material for selected property
@@ -931,7 +1078,15 @@ class MainWindow(QMainWindow):
             comp_path = path.replace(".csv", "_comparator.csv")
             df = MaterialComparator().create_comparison_table(self.multi_comparison)
             df.to_csv(comp_path, index=False)
+            logger.info(
+                "export_multi_comparator_csv",
+                extra={"path": comp_path, "materials": len(materials)},
+            )
         self._info(f"Saved CSV to {path}")
+        logger.info(
+            "export_multi_csv",
+            extra={"path": path, "materials": len(materials), "property": prop},
+        )
         return path
 
     def _label_for_property(self, prop: str) -> str:
@@ -960,6 +1115,7 @@ class MainWindow(QMainWindow):
         if name in self.material_presets:
             self.single_form.formula.setText(name)
             self.single_form.density.setValue(self.material_presets[name])
+            logger.info("single_preset_applied", extra={"preset": name})
         else:
             return
 
@@ -971,6 +1127,16 @@ class MainWindow(QMainWindow):
         self.single_form.energy_end.setValue(end)
         self.single_form.energy_points.setValue(pts)
         self.single_form.logspace.setChecked(logspace)
+        logger.info(
+            "single_energy_preset_applied",
+            extra={
+                "preset": name,
+                "start": start,
+                "end": end,
+                "points": pts,
+                "logspace": logspace,
+            },
+        )
 
     def _convert_e2w(self) -> None:
         energy = self.conv_energy.value()
@@ -978,7 +1144,11 @@ class MainWindow(QMainWindow):
             wl = energy_to_wavelength(energy)
             self.conv_wavelength.setValue(wl)
             self._info("Converted energy to wavelength")
+            logger.info("convert_e2w", extra={"energy": energy, "wavelength": wl})
         except Exception as exc:
+            logger.error(
+                "convert_e2w_failed", extra={"energy": energy, "error": str(exc)}
+            )
             self._error(str(exc))
 
     def _convert_w2e(self) -> None:
@@ -987,5 +1157,9 @@ class MainWindow(QMainWindow):
             energy = wavelength_to_energy(wl)
             self.conv_energy.setValue(energy)
             self._info("Converted wavelength to energy")
+            logger.info("convert_w2e", extra={"wavelength": wl, "energy": energy})
         except Exception as exc:
+            logger.error(
+                "convert_w2e_failed", extra={"wavelength": wl, "error": str(exc)}
+            )
             self._error(str(exc))

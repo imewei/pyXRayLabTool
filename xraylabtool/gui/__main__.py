@@ -9,6 +9,8 @@ import sys
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
+from xraylabtool.logging_utils import configure_logging, get_logger, log_environment
+
 from .main_window import MainWindow
 from .style import apply_matplotlib_theme, apply_styles
 
@@ -29,6 +31,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
+
+    # Configure logging early so Qt output is captured
+    configure_logging()
+    logger = get_logger("gui")
+    log_environment(logger, component="gui")
 
     if args.platform:
         os.environ.setdefault("QT_QPA_PLATFORM", args.platform)

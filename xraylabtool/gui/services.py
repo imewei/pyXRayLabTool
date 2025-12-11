@@ -10,6 +10,9 @@ import numpy as np
 from xraylabtool.calculators.core import (
     calculate_single_material_properties,
 )
+from xraylabtool.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -32,6 +35,15 @@ class EnergyConfig:
 
 def compute_single(formula: str, density: float, energy_cfg: EnergyConfig):
     energies = energy_cfg.to_array()
+    logger.info(
+        "Compute single material",
+        extra={
+            "formula": formula,
+            "density": density,
+            "points": len(energies),
+            "logspace": energy_cfg.logspace,
+        },
+    )
     return calculate_single_material_properties(formula, energies, density)
 
 
@@ -45,6 +57,14 @@ def compute_multiple(
     formulas_list = list(formulas)
     densities_list = list(densities)
     total = max(len(formulas_list), 1)
+    logger.info(
+        "Compute multiple materials",
+        extra={
+            "count": len(formulas_list),
+            "points": len(energies),
+            "logspace": energy_cfg.logspace,
+        },
+    )
     results = {}
     for idx, (formula, density) in enumerate(
         zip(formulas_list, densities_list, strict=False)

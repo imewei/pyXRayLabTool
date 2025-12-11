@@ -22,6 +22,8 @@ The CLI supports various output formats (table, CSV, JSON), field filtering,
 precision control, and comprehensive shell completion for enhanced usability.
 """
 
+# ruff: noqa: I001
+
 import argparse
 import json
 import sys
@@ -34,6 +36,7 @@ import numpy as np
 # Essential imports only - heavy modules imported lazily in functions
 # pandas import moved to function level to reduce startup time
 from xraylabtool import __version__
+from xraylabtool.logging_utils import configure_logging, get_logger, log_environment
 
 # These basic utilities are lightweight and used frequently
 from xraylabtool.utils import (
@@ -2139,7 +2142,15 @@ def cmd_compare(args: Any) -> int:
 
 def main() -> int:
     """Execute the main CLI application."""
+    configure_logging()
+    logger = get_logger("cli")
+    log_environment(logger, component="cli")
+
     parser = create_parser()
+
+    import time
+
+    started = time.perf_counter()
 
     try:
         args = parser.parse_args()
@@ -2209,7 +2220,25 @@ def main() -> int:
 
     handler = command_handlers.get(args.command)
     if handler:
-        return handler(args)
+        logger.info("Starting command", extra={"command": args.command})
+        try:
+            rc = handler(args)
+        except Exception as exc:
+            logger.exception("Command failed", extra={"command": args.command})
+            if getattr(args, "debug", False):
+                raise
+            print(f"Error running {args.command}: {exc}", file=sys.stderr)
+            return 1
+        duration_s = time.perf_counter() - started
+        logger.info(
+            "Command finished",
+            extra={
+                "command": args.command,
+                "status": rc,
+                "duration_s": round(duration_s, 4),
+            },
+        )
+        return rc
     else:
         print(f"Unknown command: {args.command}", file=sys.stderr)
         return 1

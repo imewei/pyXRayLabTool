@@ -89,6 +89,41 @@ QPushButton[class="secondary"] {
     border-color: #2563eb;
 }
 
+/* Tabs */
+QTabWidget::pane {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 4px;
+    margin-top: 6px;
+}
+
+QTabBar::tab {
+    background: #e2e8f0;
+    color: #0b1224;
+    padding: 8px 14px;
+    border: 1px solid #cbd5e1;
+    border-bottom: 0;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    font-weight: 700;
+    min-width: 140px;
+}
+
+QTabBar::tab:hover {
+    background: #dbeafe;
+    color: #0f172a;
+}
+
+QTabBar::tab:selected {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+}
+
 /* Tables */
 QTableWidget {
     alternate-background-color: #f8fafc;
