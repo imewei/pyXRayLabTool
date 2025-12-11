@@ -52,7 +52,14 @@ class PlotCanvas(QWidget):
         ax = self.figure.add_subplot(111)
         x = np.array(result.energy_kev, ndmin=1, copy=False)
         y = np.array(getattr(result, property_name), ndmin=1, copy=False)
-        ax.plot(x, y, label=f"{result.formula} ({result.density_g_cm3:.3g} g/cm³)")
+        ax.plot(
+            x,
+            y,
+            label=f"{result.formula} ({result.density_g_cm3:.3g} g/cm³)",
+            marker="o",
+            markersize=6,
+            linewidth=1.5,
+        )
         ax.set_xlabel("Energy (keV)")
         ax.set_ylabel(ylabel or property_name.replace("_", " "))
         self._apply_axes(ax)
@@ -71,7 +78,7 @@ class PlotCanvas(QWidget):
             x = np.array(res.energy_kev, ndmin=1, copy=False)
             y = np.array(getattr(res, property_name), ndmin=1, copy=False)
             label = f"{formula} ({getattr(res, 'density_g_cm3', 0):.3g} g/cm³)"
-            ax.plot(x, y, label=label)
+            ax.plot(x, y, label=label, marker="o", markersize=5, linewidth=1.3)
         ax.set_xlabel("Energy (keV)")
         ax.set_ylabel(ylabel or property_name.replace("_", " "))
         self._apply_axes(ax)

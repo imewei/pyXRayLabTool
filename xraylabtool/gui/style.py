@@ -32,6 +32,12 @@ QLabel {
     color: #0f172a;
 }
 
+/* Form controls & toggles */
+QCheckBox {
+    color: #0b1224;
+    font-weight: 600;
+}
+
 QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
     padding: 6px;
     border: 1px solid #cbd5e1;
