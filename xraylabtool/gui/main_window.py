@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import os
 
-from PySide6.QtCore import QStandardPaths, Qt, QTimer
+from PySide6.QtCore import QPoint, QRect, QStandardPaths, Qt, QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -336,6 +336,7 @@ class MainWindow(QMainWindow):
         single_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         single_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         single_plot_scroll.setWidget(single_plot_container)
+        self._reserve_overlay_scrollbar_space(single_plot_scroll)
 
         right_layout = QGridLayout()
         right_layout.setHorizontalSpacing(10)
@@ -378,6 +379,25 @@ class MainWindow(QMainWindow):
         )
         tune(self.single_summary, default_size=120, min_size=90)
         tune(self.multi_full_table, default_size=120, min_size=90)
+
+    def _reserve_overlay_scrollbar_space(self, scroll_area: QScrollArea) -> None:
+        """Avoid overlay scrollbars clipping the scroll area viewport."""
+
+        scrollbar = scroll_area.verticalScrollBar()
+
+        def apply_margins() -> None:
+            if not scrollbar.isVisible():
+                scroll_area.setViewportMargins(0, 0, 0, 0)
+                return
+
+            viewport_pos = scroll_area.viewport().mapTo(scroll_area, QPoint(0, 0))
+            viewport_rect = QRect(viewport_pos, scroll_area.viewport().size())
+            overlaps = scrollbar.geometry().intersects(viewport_rect)
+            margin = scrollbar.sizeHint().width() if overlaps else 0
+            scroll_area.setViewportMargins(0, 0, margin, 0)
+
+        QTimer.singleShot(0, apply_margins)
+        scrollbar.rangeChanged.connect(lambda *_args: QTimer.singleShot(0, apply_margins))
 
     def _run_single(self) -> None:
         formula, density, energy_cfg = self.single_form.values()
@@ -540,10 +560,16 @@ class MainWindow(QMainWindow):
         entry_row.addWidget(self.multi_formula, 0, 1)
         entry_row.addWidget(QLabel("Density"), 0, 2)
         entry_row.addWidget(self.multi_density, 0, 3)
-        entry_row.addWidget(add_btn, 0, 4)
-        entry_row.addWidget(remove_btn, 0, 5)
-        entry_row.addWidget(QLabel("Preset"), 1, 0)
-        entry_row.addWidget(self.multi_preset, 1, 1, 1, 3)
+
+        buttons_row = QHBoxLayout()
+        buttons_row.setSpacing(10)
+        buttons_row.addStretch(1)
+        buttons_row.addWidget(add_btn)
+        buttons_row.addWidget(remove_btn)
+
+        entry_row.addLayout(buttons_row, 1, 0, 1, 6)
+        entry_row.addWidget(QLabel("Preset"), 2, 0)
+        entry_row.addWidget(self.multi_preset, 2, 1, 1, 5)
         material_box.setLayout(entry_row)
 
         # Energy controls
@@ -663,6 +689,7 @@ class MainWindow(QMainWindow):
         multi_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         multi_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         multi_plot_scroll.setWidget(multi_plot_container)
+        self._reserve_overlay_scrollbar_space(multi_plot_scroll)
 
         left_panel = QWidget()
         left_panel.setMinimumWidth(420)
