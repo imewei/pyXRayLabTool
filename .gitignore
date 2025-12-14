@@ -57,6 +57,7 @@ baseline_ci_report.json
 performance_baseline_summary.json
 performance_history.json
 .benchmarks/
+bottleneck_analysis_report.json
 .claude/
 .code/
 agent-os/
