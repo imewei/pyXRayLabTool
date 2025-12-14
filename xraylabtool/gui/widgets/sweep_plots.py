@@ -1,104 +1,16 @@
-"""Energy sweep multi-axes plotting."""
+"""Scattering factor plot widgets.
+
+This module contains small Matplotlib-based widgets used by the GUI.
+"""
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from PySide6.QtWidgets import QVBoxLayout, QWidget
-
-
-class SweepPlots(QWidget):
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.figure = Figure(figsize=(8, 6))
-        self.canvas = FigureCanvasQTAgg(self.figure)
-        self.setMinimumHeight(320)
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
-
-    def clear(self) -> None:
-        self.figure.clear()
-        self.canvas.draw_idle()
-
-    def render(self, result) -> None:
-        self.figure.clear()
-        ax1 = self.figure.add_subplot(221)
-        ax2 = self.figure.add_subplot(222)
-        ax3 = self.figure.add_subplot(223)
-        ax4 = self.figure.add_subplot(224)
-
-        import numpy as np
-
-        energy = np.array(result.energy_kev, ndmin=1, copy=False)
-        ax1.plot(energy, result.dispersion_delta, label="δ", marker="o", markersize=5)
-        if energy.size > 1:
-            ax1.set_xscale("log")
-            ax1.set_yscale("log")
-        ax1.set_ylabel("Dispersion δ")
-        ax1.set_xlabel("Energy (keV)")
-        ax1.grid(True, alpha=0.3)
-
-        ax2.plot(
-            energy,
-            result.absorption_beta,
-            label="β",
-            color="orange",
-            marker="o",
-            markersize=5,
-        )
-        if energy.size > 1:
-            ax2.set_xscale("log")
-            ax2.set_yscale("log")
-        ax2.set_ylabel("Absorption β")
-        ax2.set_xlabel("Energy (keV)")
-        ax2.grid(True, alpha=0.3)
-
-        ax3.plot(
-            energy, result.critical_angle_degrees, label="θc", marker="o", markersize=5
-        )
-        if energy.size > 1:
-            ax3.set_xscale("log")
-        ax3.set_ylabel("Critical angle (deg)")
-        ax3.set_xlabel("Energy (keV)")
-        ax3.grid(True, alpha=0.3)
-        # Highlight max critical angle
-        if len(result.critical_angle_degrees) > 0:
-            idx = result.critical_angle_degrees.argmax()
-            ax3.plot(
-                energy[idx],
-                result.critical_angle_degrees[idx],
-                "o",
-                color="red",
-                markersize=6,
-                label="max θc",
-            )
-
-        ax4.plot(
-            energy,
-            result.attenuation_length_cm,
-            label="Atten",
-            color="green",
-            marker="o",
-            markersize=5,
-        )
-        if energy.size > 1:
-            ax4.set_xscale("log")
-            ax4.set_yscale("log")
-        ax4.set_ylabel("Attenuation length (cm)")
-        ax4.set_xlabel("Energy (keV)")
-        ax4.grid(True, alpha=0.3)
-
-        for ax in (ax1, ax2, ax3, ax4):
-            if not ax.get_legend_handles_labels()[0]:
-                continue
-            ax.legend()
-
-        self.figure.subplots_adjust(
-            left=0.1, right=0.98, top=0.93, bottom=0.12, hspace=0.35, wspace=0.25
-        )
-        self.canvas.draw_idle()
 
 
 class F1F2Plot(QWidget):
@@ -114,11 +26,11 @@ class F1F2Plot(QWidget):
         self.figure.clear()
         self.canvas.draw_idle()
 
-    def render(self, result) -> None:
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
+    def render_result(self, result) -> None:
         import numpy as np
 
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
         energy = np.array(result.energy_kev, ndmin=1, copy=False)
         ax.plot(
             energy,
@@ -143,4 +55,77 @@ class F1F2Plot(QWidget):
         ax.grid(True, alpha=0.3)
         ax.legend()
         self.figure.subplots_adjust(left=0.12, right=0.98, top=0.92, bottom=0.14)
+        self.canvas.draw_idle()
+
+
+class MultiF1F2Plot(QWidget):
+    """Compare f1 and f2 across multiple materials."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.figure = Figure(figsize=(6, 4))
+        self.canvas = FigureCanvasQTAgg(self.figure)
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        self.setMinimumHeight(320)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+
+    def clear(self) -> None:
+        self.figure.clear()
+        self.canvas.draw_idle()
+
+    def render_multi(self, results: Mapping[str, object]) -> None:
+        """Render f1 and f2 vs energy for multiple materials.
+
+        Parameters
+        ----------
+        results
+            Mapping of formula -> XRayResult-like objects.
+        """
+
+        import numpy as np
+
+        self.figure.clear()
+        ax1 = self.figure.add_subplot(211)
+        ax2 = self.figure.add_subplot(212, sharex=ax1)
+
+        for formula, res in results.items():
+            energy = np.array(res.energy_kev, ndmin=1, copy=False)
+            ax1.plot(
+                energy,
+                res.scattering_factor_f1,
+                label=str(formula),
+                marker="o",
+                markersize=4,
+                linewidth=1.3,
+            )
+            ax2.plot(
+                energy,
+                res.scattering_factor_f2,
+                label=str(formula),
+                marker="o",
+                markersize=4,
+                linewidth=1.3,
+            )
+
+        # Use log x-axis when energy is swept
+        any_energy = next(iter(results.values()), None)
+        if any_energy is not None and len(getattr(any_energy, "energy_kev", [])) > 1:
+            ax1.set_xscale("log")
+            ax2.set_xscale("log")
+
+        ax1.set_ylabel("f1 (e)")
+        ax2.set_ylabel("f2 (e)")
+        ax2.set_xlabel("Energy (keV)")
+        for ax in (ax1, ax2):
+            ax.grid(True, alpha=0.3)
+            if ax.get_legend_handles_labels()[0]:
+                ax.legend()
+
+        self.figure.subplots_adjust(
+            left=0.12, right=0.98, top=0.92, bottom=0.12, hspace=0.28
+        )
         self.canvas.draw_idle()

@@ -52,7 +52,7 @@ def test_gui_smoke_offscreen() -> None:
     assert win.single_result is not None, "Single calculation did not finish"
     assert win.single_table.rowCount() > 0, "Single table not populated"
     assert win.multi_results, "Multi calculation did not finish"
-    assert win.multi_summary.rowCount() > 0, "Multi summary not populated"
+    assert win.multi_full_table.rowCount() > 0, "Multi full table not populated"
 
     # Cleanup window
     win.close()
@@ -85,13 +85,13 @@ def test_gui_smoke_threaded_offscreen() -> None:
             win.single_result is not None
             and win.single_table.rowCount() > 0
             and win.multi_results
-            and win.multi_summary.rowCount() > 0
+            and win.multi_full_table.rowCount() > 0
         ):
             break
 
     assert win.single_result is not None, "Single threaded calculation did not finish"
     assert win.single_table.rowCount() > 0, "Single table not populated (threaded)"
     assert win.multi_results, "Multi threaded calculation did not finish"
-    assert win.multi_summary.rowCount() > 0, "Multi summary not populated (threaded)"
+    assert win.multi_full_table.rowCount() > 0, "Multi full table not populated"
 
     win.close()

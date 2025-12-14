@@ -30,7 +30,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from xraylabtool.analysis.comparator import MaterialComparator
 from xraylabtool.logging_utils import get_log_file_path, get_logger
 from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
 
@@ -38,7 +37,7 @@ from .services import EnergyConfig, compute_multiple, compute_single
 from .widgets.material_form import MaterialInputForm
 from .widgets.material_table import MaterialTable
 from .widgets.plot_canvas import PlotCanvas
-from .widgets.sweep_plots import F1F2Plot, SweepPlots
+from .widgets.sweep_plots import F1F2Plot, MultiF1F2Plot
 from .workers import CalculationWorker
 
 
@@ -268,7 +267,6 @@ class MainWindow(QMainWindow):
 
         # Plot tabs
         self.single_plot = PlotCanvas()
-        self.single_sweep = SweepPlots()
         self.single_f1f2 = F1F2Plot()
 
         # Converter
@@ -325,7 +323,6 @@ class MainWindow(QMainWindow):
         self.single_plot_tabs = QTabWidget()
         self.single_plot_tabs.setMinimumHeight(260)
         self.single_plot_tabs.addTab(self.single_plot, "Property plot")
-        self.single_plot_tabs.addTab(self.single_sweep, "Sweep")
         self.single_plot_tabs.addTab(self.single_f1f2, "f1 / f2")
 
         single_plot_container = QWidget()
@@ -337,6 +334,7 @@ class MainWindow(QMainWindow):
         single_plot_scroll = QScrollArea()
         single_plot_scroll.setWidgetResizable(True)
         single_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        single_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         single_plot_scroll.setWidget(single_plot_container)
 
         right_layout = QGridLayout()
@@ -379,8 +377,7 @@ class MainWindow(QMainWindow):
             1, QHeaderView.ResizeToContents
         )
         tune(self.single_summary, default_size=120, min_size=90)
-        tune(self.multi_summary, default_size=120, min_size=90)
-        tune(self.multi_comp_table, default_size=110, min_size=80)
+        tune(self.multi_full_table, default_size=120, min_size=90)
 
     def _run_single(self) -> None:
         formula, density, energy_cfg = self.single_form.values()
@@ -492,12 +489,10 @@ class MainWindow(QMainWindow):
         )
         self.single_summary.resizeColumnsToContents()
 
-        # Energy sweep plots only if >1 point
+        # Plot f1/f2 only if >1 point
         if len(energies) > 1:
-            self.single_sweep.render(self.single_result)
-            self.single_f1f2.render(self.single_result)
+            self.single_f1f2.render_result(self.single_result)
         else:
-            self.single_sweep.clear()
             self.single_f1f2.clear()
 
     # ------------------------------------------------------------------
@@ -615,25 +610,36 @@ class MainWindow(QMainWindow):
         self.multi_logx.stateChanged.connect(self._refresh_multi_views)
         self.multi_logy.stateChanged.connect(self._refresh_multi_views)
 
+        # Plot tabs
         self.multi_plot = PlotCanvas()
-        self.multi_summary = QTableWidget(0, 6)
-        self.multi_summary.setAlternatingRowColors(True)
-        self.multi_summary.setHorizontalHeaderLabels(
+        self.multi_f1f2_plot = MultiF1F2Plot()
+        self.multi_plot_tabs = QTabWidget()
+        self.multi_plot_tabs.setMinimumHeight(260)
+        self.multi_plot_tabs.addTab(self.multi_plot, "Property plot")
+        self.multi_plot_tabs.addTab(self.multi_f1f2_plot, "f1 / f2")
+
+        # Full-parameter table (long-form): same parameters as Single, with Material/Density
+        self.multi_full_table = QTableWidget(0, 14)
+        self.multi_full_table.setAlternatingRowColors(True)
+        self.multi_full_table.setHorizontalHeaderLabels(
             [
-                "Formula",
+                "Material",
+                "Density (g/cm³)",
                 "Energy (keV)",
-                "θc (deg)",
-                "Atten. length (cm)",
+                "Wavelength (Å)",
                 "δ",
                 "β",
+                "θc (deg)",
+                "θc (mrad)",
+                "Atten. length (cm)",
+                "μ (1/cm)",
+                "f1 (e)",
+                "f2 (e)",
+                "Re SLD (Å⁻²)",
+                "Im SLD (Å⁻²)",
             ]
         )
-        self.multi_summary.verticalHeader().setVisible(False)
-        self.multi_comp_table = QTableWidget()
-        self.multi_comp_table.setColumnCount(0)
-        self.multi_comp_table.setRowCount(0)
-        self.multi_comp_table.setAlternatingRowColors(True)
-        self.multi_comp_table.verticalHeader().setVisible(False)
+        self.multi_full_table.verticalHeader().setVisible(False)
 
         header_row = QHBoxLayout()
         header_row.setSpacing(12)
@@ -646,17 +652,16 @@ class MainWindow(QMainWindow):
         header_row.addWidget(self.multi_export_csv)
         header_row.addWidget(self.multi_compute_btn)
 
-        self.multi_plot.setMinimumHeight(260)
-
         multi_plot_container = QWidget()
         multi_plot_layout = QVBoxLayout(multi_plot_container)
         multi_plot_layout.setContentsMargins(0, 0, 0, 0)
         multi_plot_layout.setSpacing(0)
-        multi_plot_layout.addWidget(self.multi_plot)
+        multi_plot_layout.addWidget(self.multi_plot_tabs)
 
         multi_plot_scroll = QScrollArea()
         multi_plot_scroll.setWidgetResizable(True)
         multi_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        multi_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         multi_plot_scroll.setWidget(multi_plot_container)
 
         left_panel = QWidget()
@@ -676,19 +681,12 @@ class MainWindow(QMainWindow):
         right_layout.addWidget(multi_plot_scroll, 1, 0)
         right_layout.setRowStretch(1, 2)
 
-        bottom_tables = QWidget()
-        bottom_layout = QVBoxLayout(bottom_tables)
-        bottom_layout.setContentsMargins(0, 0, 0, 0)
-        bottom_layout.setSpacing(8)
-        bottom_layout.addWidget(self.multi_summary)
-        bottom_layout.addWidget(self.multi_comp_table)
-
         layout = QGridLayout()
         layout.setHorizontalSpacing(14)
         layout.setVerticalSpacing(10)
         layout.addWidget(left_panel, 0, 0, 1, 1)
         layout.addLayout(right_layout, 0, 1, 1, 1)
-        layout.addWidget(bottom_tables, 1, 0, 1, 2)
+        layout.addWidget(self.multi_full_table, 1, 0, 1, 2)
         layout.setColumnStretch(0, 0)
         layout.setColumnStretch(1, 1)
         layout.setRowStretch(0, 1)
@@ -803,16 +801,7 @@ class MainWindow(QMainWindow):
             "multi_compute_complete",
             extra={"count": len(results), "first": next(iter(results.keys()), "")},
         )
-        # Optional comparator summary for richer tables
-        try:
-            cmp = MaterialComparator()
-            energies = list(next(iter(results.values())).energy_kev)
-            densities = [res.density_g_cm3 for res in results.values()]
-            self.multi_comparison = cmp.compare_materials(
-                list(results.keys()), densities, energies, properties=PROPERTIES[:4]
-            )
-        except Exception:
-            self.multi_comparison = None
+        self.multi_comparison = None
         self._info("Multi-material comparison complete")
         self.toast.show_toast("Comparison done", "success")
         self._refresh_multi_views()
@@ -838,65 +827,49 @@ class MainWindow(QMainWindow):
         ylabel = self._label_for_property(prop)
         self.multi_plot.plot_multi(self.multi_results, prop, ylabel)
 
-        # Build summary at the first energy point using comparator data if present
-        rows = []
-        if self.multi_comparison:
-            e0 = self.multi_comparison.energies[0]
-            for material in self.multi_comparison.materials:
-                rows.append(
-                    (
-                        material,
-                        e0,
-                        self.multi_comparison.data.get(
-                            "critical_angle_degrees", {}
-                        ).get(material, [None])[0],
-                        self.multi_comparison.data.get("attenuation_length_cm", {}).get(
-                            material, [None]
-                        )[0],
-                        self.multi_comparison.data.get("dispersion_delta", {}).get(
-                            material, [None]
-                        )[0],
-                        self.multi_comparison.data.get("absorption_beta", {}).get(
-                            material, [None]
-                        )[0],
-                    )
-                )
-        else:
-            for formula, res in self.multi_results.items():
-                rows.append(
-                    (
-                        formula,
-                        res.energy_kev[0],
-                        res.critical_angle_degrees[0],
-                        res.attenuation_length_cm[0],
-                        res.dispersion_delta[0],
-                        res.absorption_beta[0],
-                    )
-                )
+        # f1/f2 plot
+        self.multi_f1f2_plot.render_multi(self.multi_results)
 
-        self.multi_summary.setRowCount(len(rows))
-        for i, row in enumerate(rows):
-            for col, val in enumerate(row):
-                text = f"{val:.6g}" if isinstance(val, (float, int)) else str(val)
-                item = QTableWidgetItem(text)
-                if col > 0:
-                    item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                self.multi_summary.setItem(i, col, item)
-        self.multi_summary.resizeColumnsToContents()
-
-        # Comparator table
-        if self.multi_comparison:
-            df = MaterialComparator().create_comparison_table(self.multi_comparison)
-            headers = list(df.columns)
-            self.multi_comp_table.setColumnCount(len(headers))
-            self.multi_comp_table.setHorizontalHeaderLabels(headers)
-            self.multi_comp_table.setRowCount(len(df))
-            for r, row in df.iterrows():
-                for c, h in enumerate(headers):
-                    self.multi_comp_table.setItem(r, c, QTableWidgetItem(str(row[h])))
-            self.multi_comp_table.resizeColumnsToContents()
-        else:
-            self.multi_comp_table.setRowCount(0)
+        # Full-parameter table (long-form)
+        total_rows = sum(len(res.energy_kev) for res in self.multi_results.values())
+        self.multi_full_table.setRowCount(total_rows)
+        row_idx = 0
+        for formula, res in self.multi_results.items():
+            energies = res.energy_kev
+            wl = res.wavelength_angstrom
+            delta = res.dispersion_delta
+            beta = res.absorption_beta
+            crit = res.critical_angle_degrees
+            atten = res.attenuation_length_cm
+            resld = res.real_sld_per_ang2
+            imsld = res.imaginary_sld_per_ang2
+            density = getattr(res, "density_g_cm3", 0.0)
+            for i, e in enumerate(energies):
+                mu = 1.0 / atten[i] if atten[i] != 0 else 0.0
+                mrad = crit[i] * 3.141592653589793 / 180.0 * 1000.0
+                cells = [
+                    str(formula),
+                    f"{density:.4f}",
+                    f"{e:.4f}",
+                    f"{wl[i]:.5f}",
+                    f"{delta[i]:.3e}",
+                    f"{beta[i]:.3e}",
+                    f"{crit[i]:.4f}",
+                    f"{mrad:.3f}",
+                    f"{atten[i]:.4e}",
+                    f"{mu:.4e}",
+                    f"{res.scattering_factor_f1[i]:.3f}",
+                    f"{res.scattering_factor_f2[i]:.3f}",
+                    f"{resld[i]:.3e}",
+                    f"{imsld[i]:.3e}",
+                ]
+                for col, text in enumerate(cells):
+                    item = QTableWidgetItem(text)
+                    if col >= 1:
+                        item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                    self.multi_full_table.setItem(row_idx, col, item)
+                row_idx += 1
+        self.multi_full_table.resizeColumnsToContents()
 
     # ------------------------------------------------------------------
     # Status helpers
@@ -956,7 +929,8 @@ class MainWindow(QMainWindow):
             return
         prop = self.multi_property.currentText()
         logger.info("multi_save_png_clicked", extra={"property": prop})
-        self._save_plot(self.multi_plot, f"multi_{prop}.png")
+        current_plot = self.multi_plot_tabs.currentWidget()
+        self._save_plot(current_plot, f"multi_{prop}.png")
 
     def _save_plot(self, plot_widget: QWidget, suggested: str) -> None:
         default_dir = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
@@ -1055,9 +1029,8 @@ class MainWindow(QMainWindow):
         if not self.multi_results:
             self._error("No data to export yet")
             return None
-        prop = self.multi_property.currentText()
-        logger.info("multi_export_csv_clicked", extra={"property": prop})
-        fname = f"multi_{prop}.csv"
+        logger.info("multi_export_csv_clicked")
+        fname = "multi_full.csv"
         default_dir = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
         if not default_dir:
             default_dir = os.path.expanduser("~")
@@ -1069,34 +1042,54 @@ class MainWindow(QMainWindow):
             return None
         path = os.path.join(folder, fname)
 
-        # Build combined table: energy + one column per material for selected property
-        first = next(iter(self.multi_results.values()))
-        energies = first.energy_kev
-        materials = list(self.multi_results.keys())
+        headers = [
+            "material",
+            "density_g_cm3",
+            "energy_kev",
+            "wavelength_angstrom",
+            "delta",
+            "beta",
+            "critical_angle_deg",
+            "critical_angle_mrad",
+            "attenuation_length_cm",
+            "mu_1_per_cm",
+            "f1",
+            "f2",
+            "real_sld_per_ang2",
+            "imag_sld_per_ang2",
+        ]
         with open(path, "w", newline="", encoding="utf-8") as fh:
             writer = csv.writer(fh)
-            writer.writerow(["energy_kev", *materials])
-            for idx, energy in enumerate(energies):
-                row = [energy]
-                for formula in materials:
-                    arr = getattr(self.multi_results[formula], prop)
-                    value = arr[idx] if idx < len(arr) else ""
-                    row.append(value)
-                writer.writerow(row)
-
-        # Also export comparator table if available
-        if self.multi_comparison:
-            comp_path = path.replace(".csv", "_comparator.csv")
-            df = MaterialComparator().create_comparison_table(self.multi_comparison)
-            df.to_csv(comp_path, index=False)
-            logger.info(
-                "export_multi_comparator_csv",
-                extra={"path": comp_path, "materials": len(materials)},
-            )
+            writer.writerow(headers)
+            for formula, res in self.multi_results.items():
+                density = getattr(res, "density_g_cm3", 0.0)
+                for i, e in enumerate(res.energy_kev):
+                    crit_deg = res.critical_angle_degrees[i]
+                    crit_mrad = crit_deg * 3.141592653589793 / 180.0 * 1000.0
+                    atten = res.attenuation_length_cm[i]
+                    mu = 1.0 / atten if atten != 0 else 0.0
+                    writer.writerow(
+                        [
+                            formula,
+                            density,
+                            e,
+                            res.wavelength_angstrom[i],
+                            res.dispersion_delta[i],
+                            res.absorption_beta[i],
+                            crit_deg,
+                            crit_mrad,
+                            atten,
+                            mu,
+                            res.scattering_factor_f1[i],
+                            res.scattering_factor_f2[i],
+                            res.real_sld_per_ang2[i],
+                            res.imaginary_sld_per_ang2[i],
+                        ]
+                    )
         self._info(f"Saved CSV to {path}")
         logger.info(
             "export_multi_csv",
-            extra={"path": path, "materials": len(materials), "property": prop},
+            extra={"path": path, "materials": len(self.multi_results)},
         )
         return path
 
