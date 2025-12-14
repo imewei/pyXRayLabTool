@@ -740,7 +740,6 @@ class MainWindow(QMainWindow):
         header_row.addStretch(1)
         header_row.addWidget(self.multi_save_png)
         header_row.addWidget(self.multi_export_csv)
-        header_row.addWidget(self.multi_compute_btn)
 
         multi_plot_container = QWidget()
         # Give the scroll area real overflow so the scrollbar can actually scroll.
@@ -765,6 +764,7 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(material_box)
         left_layout.addWidget(energy_box)
         left_layout.addWidget(self.multi_table)
+        left_layout.addWidget(self.multi_compute_btn)
         left_layout.addStretch(1)
 
         right_layout = QGridLayout()
@@ -810,12 +810,12 @@ class MainWindow(QMainWindow):
         self.setTabOrder(self.multi_energy_start, self.multi_energy_end)
         self.setTabOrder(self.multi_energy_end, self.multi_energy_points)
         self.setTabOrder(self.multi_energy_points, self.multi_logspace)
-        self.setTabOrder(self.multi_logspace, self.multi_property)
+        self.setTabOrder(self.multi_logspace, self.multi_compute_btn)
+        self.setTabOrder(self.multi_compute_btn, self.multi_property)
         self.setTabOrder(self.multi_property, self.multi_logx)
         self.setTabOrder(self.multi_logx, self.multi_logy)
         self.setTabOrder(self.multi_logy, self.multi_save_png)
         self.setTabOrder(self.multi_save_png, self.multi_export_csv)
-        self.setTabOrder(self.multi_export_csv, self.multi_compute_btn)
 
     def _add_material(self) -> None:
         formula = self.multi_formula.text().strip()
