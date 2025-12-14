@@ -11,6 +11,21 @@ YELLOW=\033[0;33m
 BLUE=\033[0;34m
 NC=\033[0m # No Color
 
+# Pytest runner and optional xdist parallelization
+PYTHON ?= python
+PYTEST ?= pytest
+PYTEST_PARALLEL ?= -n auto
+PYTEST_PARALLEL_ENABLED ?= 1
+
+# When running in parallel, disable pytest-benchmark to avoid it erroring under xdist.
+PYTEST_BENCHMARK_DISABLE := $(shell $(PYTHON) -c "import pytest_benchmark" >/dev/null 2>&1 && printf '%s' "--benchmark-disable")
+
+# Only enable xdist args when the plugin is installed and parallel is enabled.
+PYTEST_XDIST_ARGS := $(shell \
+	if [ "$(PYTEST_PARALLEL_ENABLED)" = "1" ]; then \
+		$(PYTHON) -c "import xdist" >/dev/null 2>&1 && printf '%s %s' "$(PYTEST_PARALLEL)" "$(PYTEST_BENCHMARK_DISABLE)"; \
+	fi)
+
 # Default target
 help:
 	@echo "$(BLUE)XRayLabTool Development Commands$(NC)"
@@ -125,85 +140,87 @@ version-check:
 # Testing targets
 test:
 	@echo "$(YELLOW)Running tests with coverage...$(NC)"
-	pytest tests/ -v --cov=xraylabtool --cov-report=term-missing
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -v --cov=xraylabtool --cov-report=term-missing
 	@echo "$(GREEN)✅ Tests completed$(NC)"
 
 test-fast:
 	@echo "$(YELLOW)Running fast tests...$(NC)"
-	pytest tests/ -v
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -v
 	@echo "$(GREEN)✅ Fast tests completed$(NC)"
 
 # Core test categories
 test-unit:
 	@echo "$(YELLOW)Running unit tests...$(NC)"
-	pytest tests/ -m "unit" -v
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "unit" -v
 	@echo "$(GREEN)✅ Unit tests completed$(NC)"
 
 test-integration:
 	@echo "$(YELLOW)Running integration tests...$(NC)"
-	pytest tests/ -m "integration" -v
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "integration" -v
 	@echo "$(GREEN)✅ Integration tests completed$(NC)"
 
 # Performance and optimization tests
 test-performance:
 	@echo "$(YELLOW)Running performance tests...$(NC)"
-	pytest tests/ -m "performance" -v --tb=short
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "performance" -v --tb=short
 	@echo "$(GREEN)✅ Performance tests completed$(NC)"
 
 test-memory:
 	@echo "$(YELLOW)Running memory management tests...$(NC)"
-	pytest tests/ -m "memory" -v --tb=short
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "memory" -v --tb=short
 	@echo "$(GREEN)✅ Memory tests completed$(NC)"
 
 test-stability:
 	@echo "$(YELLOW)Running numerical stability tests...$(NC)"
-	pytest tests/ -m "stability" -v --tb=short
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "stability" -v --tb=short
 	@echo "$(GREEN)✅ Stability tests completed$(NC)"
 
 test-benchmarks:
 	@echo "$(YELLOW)Running performance benchmarks...$(NC)"
-	pytest tests/ -m "benchmark" --benchmark-only -v
+	# Keep benchmarks serial (xdist can skew benchmark results)
+	$(PYTEST) tests/ -m "benchmark" --benchmark-only -v
 	@echo "$(GREEN)✅ Benchmarks completed$(NC)"
 
 test-regression:
 	@echo "$(YELLOW)Running regression tests...$(NC)"
-	pytest tests/ -m "regression" -v --tb=short
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "regression" -v --tb=short
 	@echo "$(GREEN)✅ Regression tests completed$(NC)"
 
 test-optimization:
 	@echo "$(YELLOW)Running optimization validation tests...$(NC)"
-	pytest tests/ -m "optimization" -v --tb=short
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "optimization" -v --tb=short
 	@echo "$(GREEN)✅ Optimization tests completed$(NC)"
 
 # Test execution modes
 test-coverage:
 	@echo "$(YELLOW)Running tests with detailed coverage...$(NC)"
-	pytest tests/ --cov=xraylabtool --cov-report=html --cov-report=xml --cov-report=term-missing
+	# Keep coverage serial for stability (xdist coverage combining can vary by environment)
+	$(PYTEST) tests/ --cov=xraylabtool --cov-report=html --cov-report=xml --cov-report=term-missing
 	@echo "$(GREEN)✅ Coverage report generated in htmlcov/$(NC)"
 
 test-parallel:
 	@echo "$(YELLOW)Running tests in parallel...$(NC)"
-	@command -v pytest-xdist >/dev/null 2>&1 && pytest tests/ -n auto -v --tb=short || (echo "$(BLUE)pytest-xdist not available, running sequentially$(NC)" && pytest tests/ -v --tb=short)
+	@$(MAKE) PYTEST_PARALLEL_ENABLED=1 test-fast
 	@echo "$(GREEN)✅ Parallel tests completed$(NC)"
 
 test-smoke:
 	@echo "$(YELLOW)Running smoke tests...$(NC)"
-	pytest tests/ -m "smoke" -v --tb=line
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "smoke" -v --tb=line
 	@echo "$(GREEN)✅ Smoke tests completed$(NC)"
 
 test-edge:
 	@echo "$(YELLOW)Running edge case tests...$(NC)"
-	pytest tests/ -m "edge_case" -v --tb=short
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "edge_case" -v --tb=short
 	@echo "$(GREEN)✅ Edge case tests completed$(NC)"
 
 test-ci:
 	@echo "$(YELLOW)Running CI test suite...$(NC)"
-	pytest tests/ -m "ci or (unit and not slow)" -v --tb=short --maxfail=5
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "ci or (unit and not slow)" -v --tb=short --maxfail=5
 	@echo "$(GREEN)✅ CI tests completed$(NC)"
 
 test-nightly:
 	@echo "$(YELLOW)Running nightly test suite...$(NC)"
-	pytest tests/ -m "nightly or (performance and memory and stability)" -v --tb=short
+	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "nightly or (performance and memory and stability)" -v --tb=short
 	@echo "$(GREEN)✅ Nightly tests completed$(NC)"
 
 test-all:
