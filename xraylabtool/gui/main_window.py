@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import os
 
-from PySide6.QtCore import QPoint, QRect, QStandardPaths, Qt, QTimer
+from PySide6.QtCore import QEvent, QObject, QPoint, QRect, QStandardPaths, Qt, QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -158,10 +158,10 @@ class MainWindow(QMainWindow):
             "5-25 keV log (50)": (5.0, 25.0, 50, True),
         }
 
-        tabs = QTabWidget()
-        tabs.addTab(self._build_single_tab(), "Single Material")
-        tabs.addTab(self._build_multi_tab(), "Multiple Materials")
-        self.setCentralWidget(tabs)
+        self.main_tabs = QTabWidget()
+        self.main_tabs.addTab(self._build_single_tab(), "Single Material")
+        self.main_tabs.addTab(self._build_multi_tab(), "Multiple Materials")
+        self.setCentralWidget(self.main_tabs)
         self._set_tab_order()
         self._tune_table_headers()
 
@@ -326,24 +326,26 @@ class MainWindow(QMainWindow):
         self.single_plot_tabs.addTab(self.single_f1f2, "f1 / f2")
 
         single_plot_container = QWidget()
+        # Give the scroll area real overflow so the scrollbar can actually scroll.
+        single_plot_container.setMinimumHeight(720)
         single_plot_layout = QVBoxLayout(single_plot_container)
         single_plot_layout.setContentsMargins(0, 0, 0, 0)
         single_plot_layout.setSpacing(0)
         single_plot_layout.addWidget(self.single_plot_tabs)
 
-        single_plot_scroll = QScrollArea()
-        single_plot_scroll.setWidgetResizable(True)
-        single_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        single_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        single_plot_scroll.setWidget(single_plot_container)
-        self._reserve_overlay_scrollbar_space(single_plot_scroll)
+        self.single_plot_scroll = QScrollArea()
+        self.single_plot_scroll.setWidgetResizable(True)
+        self.single_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.single_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.single_plot_scroll.setWidget(single_plot_container)
+        self._reserve_overlay_scrollbar_space(self.single_plot_scroll)
 
         right_layout = QGridLayout()
         right_layout.setHorizontalSpacing(10)
         right_layout.setVerticalSpacing(8)
         right_layout.addLayout(plot_header, 0, 0)
         right_layout.addWidget(self.single_summary, 1, 0)
-        right_layout.addWidget(single_plot_scroll, 2, 0)
+        right_layout.addWidget(self.single_plot_scroll, 2, 0)
         right_layout.setRowStretch(2, 2)
 
         layout = QGridLayout()
@@ -381,23 +383,85 @@ class MainWindow(QMainWindow):
         tune(self.multi_full_table, default_size=120, min_size=90)
 
     def _reserve_overlay_scrollbar_space(self, scroll_area: QScrollArea) -> None:
-        """Avoid overlay scrollbars clipping the scroll area viewport."""
+        """Avoid overlay scrollbars clipping the scroll area viewport.
 
-        scrollbar = scroll_area.verticalScrollBar()
+        Some Qt styles render scrollbars as overlays (not consuming layout width).
+        If the vertical scrollbar overlaps the viewport, reserve space via viewport
+        margins so plot canvases and labels aren't clipped.
+        """
 
-        def apply_margins() -> None:
-            if not scrollbar.isVisible():
-                scroll_area.setViewportMargins(0, 0, 0, 0)
-                return
+        if not hasattr(self, "_scroll_overlay_helpers"):
+            self._scroll_overlay_helpers: list[QObject] = []
 
-            viewport_pos = scroll_area.viewport().mapTo(scroll_area, QPoint(0, 0))
-            viewport_rect = QRect(viewport_pos, scroll_area.viewport().size())
-            overlaps = scrollbar.geometry().intersects(viewport_rect)
-            margin = scrollbar.sizeHint().width() if overlaps else 0
-            scroll_area.setViewportMargins(0, 0, margin, 0)
+        class _OverlayScrollbarMarginHelper(QObject):
+            def __init__(self, parent: QObject, target: QScrollArea) -> None:
+                super().__init__(parent)
+                self._scroll_area = target
+                self._bar = target.verticalScrollBar()
+                self._active = True
+                self._scheduled = False
+                target.destroyed.connect(lambda *_args: self._deactivate())
+                self._bar.destroyed.connect(lambda *_args: self._deactivate())
+                target.installEventFilter(self)
+                target.viewport().installEventFilter(self)
+                self._bar.installEventFilter(self)
 
-        QTimer.singleShot(0, apply_margins)
-        scrollbar.rangeChanged.connect(lambda *_args: QTimer.singleShot(0, apply_margins))
+                self._bar.rangeChanged.connect(lambda *_args: self._schedule())
+                self._schedule()
+
+            def _deactivate(self) -> None:
+                self._active = False
+
+            def _schedule(self) -> None:
+                if not self._active or self._scheduled:
+                    return
+                self._scheduled = True
+                QTimer.singleShot(0, self.apply_margins)
+
+            def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+                if event.type() in (QEvent.Resize, QEvent.Show, QEvent.Hide):
+                    self._schedule()
+                return super().eventFilter(watched, event)
+
+            def apply_margins(self) -> None:
+                self._scheduled = False
+                if not self._active:
+                    return
+
+                try:
+                    import shiboken6
+                except ImportError:
+                    shiboken6 = None
+
+                if shiboken6 is not None and (
+                    not shiboken6.isValid(self._scroll_area)
+                    or not shiboken6.isValid(self._bar)
+                ):
+                    self._active = False
+                    return
+
+                try:
+                    if not self._bar.isVisible():
+                        self._scroll_area.setViewportMargins(0, 0, 0, 0)
+                        return
+
+                    viewport_pos = self._scroll_area.viewport().mapTo(
+                        self._scroll_area, QPoint(0, 0)
+                    )
+                    viewport_rect = QRect(
+                        viewport_pos, self._scroll_area.viewport().size()
+                    )
+                    overlaps = self._bar.geometry().intersects(viewport_rect)
+                    margin = self._bar.sizeHint().width() if overlaps else 0
+                    self._scroll_area.setViewportMargins(0, 0, margin, 0)
+                except RuntimeError:
+                    # Underlying Qt objects may have been deleted during teardown.
+                    self._active = False
+                    return
+
+        self._scroll_overlay_helpers.append(
+            _OverlayScrollbarMarginHelper(self, scroll_area)
+        )
 
     def _run_single(self) -> None:
         formula, density, energy_cfg = self.single_form.values()
@@ -679,17 +743,19 @@ class MainWindow(QMainWindow):
         header_row.addWidget(self.multi_compute_btn)
 
         multi_plot_container = QWidget()
+        # Give the scroll area real overflow so the scrollbar can actually scroll.
+        multi_plot_container.setMinimumHeight(720)
         multi_plot_layout = QVBoxLayout(multi_plot_container)
         multi_plot_layout.setContentsMargins(0, 0, 0, 0)
         multi_plot_layout.setSpacing(0)
         multi_plot_layout.addWidget(self.multi_plot_tabs)
 
-        multi_plot_scroll = QScrollArea()
-        multi_plot_scroll.setWidgetResizable(True)
-        multi_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        multi_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        multi_plot_scroll.setWidget(multi_plot_container)
-        self._reserve_overlay_scrollbar_space(multi_plot_scroll)
+        self.multi_plot_scroll = QScrollArea()
+        self.multi_plot_scroll.setWidgetResizable(True)
+        self.multi_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.multi_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.multi_plot_scroll.setWidget(multi_plot_container)
+        self._reserve_overlay_scrollbar_space(self.multi_plot_scroll)
 
         left_panel = QWidget()
         left_panel.setMinimumWidth(420)
@@ -705,7 +771,7 @@ class MainWindow(QMainWindow):
         right_layout.setHorizontalSpacing(10)
         right_layout.setVerticalSpacing(8)
         right_layout.addLayout(header_row, 0, 0)
-        right_layout.addWidget(multi_plot_scroll, 1, 0)
+        right_layout.addWidget(self.multi_plot_scroll, 1, 0)
         right_layout.setRowStretch(1, 2)
 
         layout = QGridLayout()

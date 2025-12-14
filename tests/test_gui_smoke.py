@@ -48,6 +48,16 @@ def test_gui_smoke_offscreen() -> None:
 
     app.processEvents()
 
+    # Scrollbars should have a real range at small window sizes (avoid clipped plots)
+    win.resize(900, 620)
+    app.processEvents()
+    win.main_tabs.setCurrentIndex(0)
+    app.processEvents()
+    assert win.single_plot_scroll.verticalScrollBar().maximum() > 0
+    win.main_tabs.setCurrentIndex(1)
+    app.processEvents()
+    assert win.multi_plot_scroll.verticalScrollBar().maximum() > 0
+
     # Basic sanity: results + tables populated
     assert win.single_result is not None, "Single calculation did not finish"
     assert win.single_table.rowCount() > 0, "Single table not populated"
@@ -93,5 +103,14 @@ def test_gui_smoke_threaded_offscreen() -> None:
     assert win.single_table.rowCount() > 0, "Single table not populated (threaded)"
     assert win.multi_results, "Multi threaded calculation did not finish"
     assert win.multi_full_table.rowCount() > 0, "Multi full table not populated"
+
+    win.resize(900, 620)
+    app.processEvents()
+    win.main_tabs.setCurrentIndex(0)
+    app.processEvents()
+    assert win.single_plot_scroll.verticalScrollBar().maximum() > 0
+    win.main_tabs.setCurrentIndex(1)
+    app.processEvents()
+    assert win.multi_plot_scroll.verticalScrollBar().maximum() > 0
 
     win.close()
