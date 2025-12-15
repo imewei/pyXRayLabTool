@@ -13,8 +13,8 @@ Exit code 0 means the basic flows completed.
 from __future__ import annotations
 
 import os
-import tempfile
 from pathlib import Path
+import tempfile
 
 from PySide6.QtWidgets import QApplication, QFileDialog
 

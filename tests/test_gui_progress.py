@@ -19,9 +19,9 @@ def test_compute_multiple_reports_progress_to_100():
 
     assert values, "progress callback was not invoked"
     assert values[-1] == 100, "progress did not reach 100%"
-    assert all(
-        values[i] <= values[i + 1] for i in range(len(values) - 1)
-    ), "progress not monotonic"
+    assert all(values[i] <= values[i + 1] for i in range(len(values) - 1)), (
+        "progress not monotonic"
+    )
 
 
 @pytest.mark.skipif(

@@ -154,10 +154,10 @@ xraylabtool <TAB>  # No completion (unless installed in base environment)
 - **Python** ≥ 3.12
 - **NumPy** ≥ 1.20.0
 - **SciPy** ≥ 1.7.0
-- **Pandas** ≥ 1.3.0
+- **Pandas** ≥ 2.3.3
 - **Mendeleev** ≥ 0.10.0
 - **tqdm** ≥ 4.60.0
-- **matplotlib** ≥ 3.4.0 (optional, for plotting)
+- **matplotlib** ≥ 3.10.8 (optional, for plotting)
 
 ---
 

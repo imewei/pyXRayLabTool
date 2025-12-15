@@ -6,7 +6,7 @@
 # For project installation: pip install -e .[docs]
 
 # Core Sphinx packages
-sphinx>=7.0.0
+sphinx>=8.2.3
 furo>=2024.8.6  # Modern Sphinx theme
 
 # Essential Sphinx extensions
@@ -31,9 +31,9 @@ Pygments>=2.16.0  # Syntax highlighting
 docutils>=0.19.0  # Core documentation utilities
 
 # Runtime dependencies for notebooks and code execution
-numpy>=1.21.0
-pandas>=1.5.0
-scipy>=1.9.0
-matplotlib>=3.5.0
+numpy>=2.3.5
+pandas>=2.3.3
+scipy>=1.16.3
+matplotlib>=3.10.8
 mendeleev>=0.15.0  # Required for atomic data access in docs
 tqdm>=4.64.0  # Required for progress bars in examples

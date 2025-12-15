@@ -16,7 +16,7 @@ repos:
 
   # Use Ruff for fast linting and formatting (replaces multiple tools)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.1
+    rev: v0.14.9
     hooks:
       - id: ruff
         name: ruff lint
@@ -24,20 +24,7 @@ repos:
       - id: ruff-format
         name: ruff format
 
-  # isort for import sorting
-  - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
-    hooks:
-      - id: isort
-        name: isort (python)
-        args: ["--profile", "black"]
 
-  # Black for formatting consistency
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
-    hooks:
-      - id: black
-        args: ["--line-length=88"]
 
 # Configuration
 default_language_version:

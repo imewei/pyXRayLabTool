@@ -607,7 +607,7 @@ test-install-pypi:
 # Package Building & Release
 build: clean
 	@echo "$(YELLOW)Building distribution packages...$(NC)"
-	python3 -m build
+	uv run python -m build
 	@echo "$(GREEN)✅ Packages built in dist/$(NC)"
 	@ls -la dist/
 

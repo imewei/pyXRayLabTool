@@ -88,8 +88,7 @@ def create_parser() -> argparse.ArgumentParser:
         prog="xraylabtool",
         description="X-ray optical properties calculator for materials science",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Calculate properties for SiO2 at 10 keV
           xraylabtool calc SiO2 -e 10.0 -d 2.2
@@ -111,8 +110,7 @@ def create_parser() -> argparse.ArgumentParser:
 
         For more detailed help on specific commands, use:
           xraylabtool <command> --help
-        """
-        ),
+        """),
     )
 
     parser.add_argument(
@@ -188,8 +186,7 @@ def add_calc_command(subparsers: Any) -> None:
             "Calculate X-ray optical properties for a single material composition"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Single energy calculation
           xraylabtool calc SiO2 -e 10.0 -d 2.2
@@ -208,8 +205,7 @@ def add_calc_command(subparsers: Any) -> None:
 
           # JSON output format
           xraylabtool calc Si -e 10.0 -d 2.33 -o results.json --format json
-        """
-        ),
+        """),
     )
 
     parser.add_argument("formula", help="Chemical formula (e.g., SiO2, Al2O3, Fe2O3)")
@@ -218,15 +214,13 @@ def add_calc_command(subparsers: Any) -> None:
         "-e",
         "--energy",
         required=True,
-        help=dedent(
-            """
+        help=dedent("""
         X-ray energy in keV. Formats:
         - Single value: 10.0
         - Comma-separated: 5.0,10.0,15.0
         - Range with count: 5-15:11 (11 points from 5 to 15 keV)
         - Log range: 1-30:100:log (100 log-spaced points)
-        """
-        ).strip(),
+        """).strip(),
     )
 
     parser.add_argument(
@@ -269,8 +263,7 @@ def add_batch_command(subparsers: Any) -> None:
         help="Process multiple materials from CSV file",
         description="Calculate X-ray properties for multiple materials from CSV input",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Input CSV format:
         The input CSV file should have columns: formula, density, energy
 
@@ -289,8 +282,7 @@ def add_batch_command(subparsers: Any) -> None:
 
           # Parallel processing with 4 workers
           xraylabtool batch materials.csv -o results.csv --workers 4
-        """
-        ),
+        """),
     )
 
     parser.add_argument("input_file", help="Input CSV file with materials data")
@@ -342,8 +334,7 @@ def add_convert_command(subparsers: Any) -> None:
         help="Convert between energy and wavelength units",
         description="Convert between X-ray energy and wavelength units",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Convert energy to wavelength
           xraylabtool convert energy 10.0 --to wavelength
@@ -356,8 +347,7 @@ def add_convert_command(subparsers: Any) -> None:
 
           # Save to file
           xraylabtool convert energy 5.0,10.0,15.0 --to wavelength -o conversions.csv
-        """
-        ),
+        """),
     )
 
     parser.add_argument(
@@ -386,8 +376,7 @@ def add_formula_command(subparsers: Any) -> None:
         help="Parse and analyze chemical formulas",
         description="Parse chemical formulas and show elemental composition",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Parse a simple formula
           xraylabtool formula SiO2
@@ -400,8 +389,7 @@ def add_formula_command(subparsers: Any) -> None:
 
           # Save results to file
           xraylabtool formula SiO2,Al2O3 -o formulas.json
-        """
-        ),
+        """),
     )
 
     parser.add_argument(
@@ -424,8 +412,7 @@ def add_atomic_command(subparsers: Any) -> None:
         help="Look up atomic data for elements",
         description="Look up atomic numbers, weights, and other properties",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Single element
           xraylabtool atomic Si
@@ -435,8 +422,7 @@ def add_atomic_command(subparsers: Any) -> None:
 
           # Save to file
           xraylabtool atomic Si,Al,Fe -o atomic_data.csv
-        """
-        ),
+        """),
     )
 
     parser.add_argument(
@@ -455,8 +441,7 @@ def add_bragg_command(subparsers: Any) -> None:
         help="Calculate Bragg angles for diffraction",
         description="Calculate Bragg diffraction angles",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Single calculation
           xraylabtool bragg -d 3.14 -w 1.54 --order 1
@@ -466,8 +451,7 @@ def add_bragg_command(subparsers: Any) -> None:
 
           # Energy instead of wavelength
           xraylabtool bragg -d 3.14 -e 8.0
-        """
-        ),
+        """),
     )
 
     parser.add_argument(
@@ -510,8 +494,7 @@ def add_install_completion_command(subparsers: Any) -> None:
         help="Install shell completion for xraylabtool",
         description="Install shell completion for xraylabtool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Install completion for current shell (auto-detected)
           xraylabtool install-completion
@@ -529,8 +512,7 @@ def add_install_completion_command(subparsers: Any) -> None:
 
           # Uninstall completion
           xraylabtool install-completion --uninstall
-        """
-        ),
+        """),
     )
 
     # Positional argument for shell type
@@ -578,8 +560,7 @@ def add_completion_command(subparsers: Any) -> None:
             " environments"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Install completion in current virtual environment
           xraylabtool completion install
@@ -607,8 +588,7 @@ def add_completion_command(subparsers: Any) -> None:
           • Automatically activates/deactivates with environment
           • Supports venv, conda, Poetry, Pipenv environments
           • Provides native completion for multiple shells
-        """
-        ),
+        """),
     )
 
     # Create subparsers for completion actions
@@ -681,8 +661,7 @@ def add_uninstall_completion_command(subparsers: Any) -> None:
         help="Uninstall shell completion for xraylabtool",
         description="Remove shell completion functionality",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Uninstall completion for current shell (auto-detected)
           xraylabtool uninstall-completion
@@ -697,8 +676,7 @@ def add_uninstall_completion_command(subparsers: Any) -> None:
 
           # Clean up active session
           xraylabtool uninstall-completion --cleanup
-        """
-        ),
+        """),
     )
 
     parser.add_argument(
@@ -738,8 +716,7 @@ def add_compare_command(subparsers: Any) -> None:
             " side-by-side analysis"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=dedent(
-            """
+        epilog=dedent("""
         Examples:
           # Compare two materials at single energy
           xraylabtool compare SiO2,2.2 Al2O3,3.95 -e 10.0
@@ -755,8 +732,7 @@ def add_compare_command(subparsers: Any) -> None:
 
           # Generate detailed report
           xraylabtool compare Si,2.33 GaAs,5.32 -e 10.0 --report --output comparison_report.txt
-        """
-        ),
+        """),
     )
 
     parser.add_argument(

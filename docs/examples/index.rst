@@ -84,10 +84,7 @@ These notebooks are provided as downloadable files (not embedded in the docs). O
      - `Open in Colab <https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/docs/examples/basic_examples.ipynb>`__
      - `nbviewer <https://nbviewer.org/github/imewei/pyXRayLabTool/blob/main/docs/examples/basic_examples.ipynb>`__
      - `Download (.ipynb) <https://raw.githubusercontent.com/imewei/pyXRayLabTool/main/docs/examples/basic_examples.ipynb>`__
-   * - Basic X-ray Analysis
-     - `Open in Colab <https://colab.research.google.com/github/imewei/pyXRayLabTool/blob/main/docs/source/notebooks/basic_xray_analysis.ipynb>`__
-     - `nbviewer <https://nbviewer.org/github/imewei/pyXRayLabTool/blob/main/docs/source/notebooks/basic_xray_analysis.ipynb>`__
-     - `Download (.ipynb) <https://raw.githubusercontent.com/imewei/pyXRayLabTool/main/docs/source/notebooks/basic_xray_analysis.ipynb>`__
+
 
 Running the Examples
 --------------------

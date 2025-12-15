@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import io
 import os
 import sys
-from contextlib import contextmanager
 
 
 @contextmanager

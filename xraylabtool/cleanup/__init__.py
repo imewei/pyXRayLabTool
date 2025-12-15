@@ -6,8 +6,8 @@ and cache files.
 """
 
 import os
-import shutil
 from pathlib import Path
+import shutil
 
 
 def clean_build_artifacts(project_root: Path) -> list[str]:

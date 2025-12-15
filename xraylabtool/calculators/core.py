@@ -9,15 +9,15 @@ including atomic scattering factors and crystallographic calculations.
 
 from __future__ import annotations
 
-import types
-import warnings
 from collections.abc import Callable
 
 # concurrent.futures import moved to function level for parallel processing
 from dataclasses import dataclass, field
 from functools import cache, lru_cache
 from pathlib import Path
+import types
 from typing import TYPE_CHECKING, Any
+import warnings
 
 import numpy as np
 

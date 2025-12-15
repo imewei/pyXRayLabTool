@@ -23,9 +23,9 @@ Usage:
 
 from __future__ import annotations
 
-import os
 from collections.abc import Callable
 from functools import wraps
+import os
 from typing import Any, TypeVar
 
 # Type variable for decorated functions

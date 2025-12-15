@@ -5,8 +5,8 @@ that activates/deactivates with virtual environment changes.
 """
 
 import os
-import shutil
 from pathlib import Path
+import shutil
 
 from .environment import EnvironmentDetector, EnvironmentInfo, EnvironmentType
 from .shells import CompletionManager, get_global_options, get_xraylabtool_commands
@@ -357,46 +357,38 @@ class CompletionInstaller:
         if shell == "bash":
             # Bash activation script
             activate_script = activate_dir / "xraylabtool-completion.sh"
-            activate_script.write_text(
-                f"""#!/bin/bash
+            activate_script.write_text(f"""#!/bin/bash
 # XRayLabTool completion activation
 if [ -f "{script_path}" ]; then
     source "{script_path}"
 fi
-"""
-            )
+""")
 
             # Bash deactivation script
             deactivate_script = deactivate_dir / "xraylabtool-completion.sh"
-            deactivate_script.write_text(
-                """#!/bin/bash
+            deactivate_script.write_text("""#!/bin/bash
 # XRayLabTool completion deactivation
 complete -r xraylabtool 2>/dev/null || true
-"""
-            )
+""")
 
         elif shell == "fish":
             # Fish activation script
             activate_script = activate_dir / "xraylabtool-completion.fish"
-            activate_script.write_text(
-                f"""# XRayLabTool completion activation
+            activate_script.write_text(f"""# XRayLabTool completion activation
 if test -f "{script_path}"
     source "{script_path}"
 end
-"""
-            )
+""")
 
         elif shell == "zsh":
             # Zsh activation script
             activate_script = activate_dir / "xraylabtool-completion.zsh"
-            activate_script.write_text(
-                f"""#!/bin/zsh
+            activate_script.write_text(f"""#!/bin/zsh
 # XRayLabTool completion activation
 if [ -f "{script_path}" ]; then
     source "{script_path}"
 fi
-"""
-            )
+""")
 
         # Make scripts executable
         if os.name != "nt":

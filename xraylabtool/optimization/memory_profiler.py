@@ -8,13 +8,13 @@ memory leaks in scientific computing workloads.
 
 from __future__ import annotations
 
+from collections import defaultdict, deque
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 import gc
 import threading
 import time
 import tracemalloc
-from collections import defaultdict, deque
-from contextlib import contextmanager
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
