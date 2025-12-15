@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-12-15
+
+### ✨ New Features
+- **GUI Modernization**: Complete redesign with modern theme support
+  - Added dark mode toggle with persistent preferences
+  - New theme engine supporting light and dark themes
+  - Improved layout and styling for better visual consistency
+  - Enhanced contrast and readability across all color schemes
+
+### 🔒 Security
+- **Dependency Security Fix**: Replaced python-jose with PyJWT to address Minerva attack vulnerability (CVE)
+  - Upgraded JWT handling to use modern cryptographic libraries
+  - Improved security posture for API authentication
+
+### 🐛 Bug Fixes
+- **GUI Improvements**:
+  - Fixed plot clipping issues with scrollbars
+  - Made single-point plots visible in energy sweeps
+  - Improved log path toggle contrast
+  - Relocated multi-compute button for better UX
+  - Fixed scrollbar behavior for plot containers
+  - Made summary height more compact
+- **CI/CD Fixes**:
+  - Made GUI smoke test non-blocking to improve CI reliability
+  - Fixed Qt system library installation for offscreen rendering
+  - Disabled pytest-benchmark when running tests in parallel to avoid conflicts
+
 ### 🧹 Maintenance
 - **CI/CD Cleanup**: Removed obsolete workflows and simplified configuration
   - Removed `security.yml`, `performance-monitoring.yml`, `dependabot.yml`
@@ -15,9 +42,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed `.github/scripts/` directory
   - Simplified lint job to use only ruff (removed isort/black dependencies)
   - Updated tool versions in ci.yml (ruff 0.14.9, mypy 1.19.0, pytest 9.0.2)
+  - Added explicit permissions to all GitHub Actions workflows
 - **Documentation Sync**: Updated docs to match Python environment
   - Synchronized pre-commit hook versions with local environment
   - Updated README and docs dependency versions
+  - Added uv package manager instructions to installation guide
+  - Updated workflows README to reflect current configuration
+
+### 📚 Documentation
+- Updated GUI screenshot to reflect new design
+- Updated documentation files to match current codebase
+- Cleaned up legacy notebooks and synced docs with dependencies
+- Added orphan notebooks to toctree to resolve Sphinx warnings
 
 ## [0.2.7] - 2025-09-26
 
