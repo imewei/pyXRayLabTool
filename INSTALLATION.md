@@ -1,16 +1,36 @@
 # XRayLabTool Installation Guide
 
-This guide covers all installation options for XRayLabTool, including the new comprehensive [all] option.
+This guide covers all installation options for XRayLabTool.
 
 ## Quick Installation
 
-### Basic Installation (Core Dependencies Only)
+### Using uv (Recommended)
+
+`uv` provides fast, reliable, and deterministic environment management.
+
 ```bash
-pip install xraylabtool
+# 1. Install uv (if not present)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Install from PyPI
+uv pip install xraylabtool[all]
+
+# OR: Development Setup
+git clone https://github.com/imewei/pyXRayLabTool.git
+cd pyXRayLabTool
+uv sync --all-extras
 ```
 
-### Development Installation (All Dependencies)
+### Using pip (Standard)
+
 ```bash
+# Basic installation
+pip install xraylabtool
+
+# With all extras
+pip install xraylabtool[all]
+
+# Development installation
 git clone https://github.com/imewei/pyXRayLabTool.git
 cd pyXRayLabTool
 pip install -e .[all]
