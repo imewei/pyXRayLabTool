@@ -55,12 +55,10 @@ env:
   MALLOC_TRIM_THRESHOLD_: 100000
   MALLOC_MMAP_THRESHOLD_: 100000
 
-  # Tool versions (latest stable as of Dec 2024)
-  RUFF_VERSION: "0.13.1"
-  BLACK_VERSION: "25.1.0"
-  ISORT_VERSION: "6.0.1"
-  MYPY_VERSION: "1.18.1"
-  PYTEST_VERSION: "8.3.4"
+  # Tool versions (synced with local environment Dec 2024)
+  RUFF_VERSION: "0.14.9"
+  MYPY_VERSION: "1.19.0"
+  PYTEST_VERSION: "9.0.2"
   UV_VERSION: "0.5.0"  # Ultra-fast Python package installer
 
 jobs:
@@ -199,8 +197,6 @@ jobs:
         # Use uv for lightning-fast installs
         uv pip install --system \
           ruff==${{ env.RUFF_VERSION }} \
-          black==${{ env.BLACK_VERSION }} \
-          isort==${{ env.ISORT_VERSION }} \
           mypy==${{ env.MYPY_VERSION }}
 
     - name: Run ruff (format + lint in one pass)
@@ -213,11 +209,6 @@ jobs:
         echo "::group::Ruff Lint"
         ruff check xraylabtool/ tests/ --output-format=github || echo "⚠️ Linting warnings detected (non-blocking)"
         echo "::endgroup::"
-
-    - name: Run import sorting check
-      continue-on-error: true
-      run: |
-        isort --check-only --diff xraylabtool/ tests/ || echo "⚠️ Import sorting issues detected (non-blocking)"
 
     - name: Run type checking
       continue-on-error: true
