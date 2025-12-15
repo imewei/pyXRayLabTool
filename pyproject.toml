@@ -174,7 +174,7 @@ api = [
     "fastapi>=0.124.0",
     "uvicorn[standard]>=0.38.0",
     "python-multipart>=0.0.20",
-    "python-jose[cryptography]>=3.5.0",
+    "PyJWT[crypto]>=2.10.0",
     "passlib[bcrypt]>=1.7.4",
     "python-dateutil>=2.9.0.post0",
 ]
@@ -241,7 +241,7 @@ all = [
     "fastapi>=0.124.0",
     "uvicorn[standard]>=0.38.0",
     "python-multipart>=0.0.20",
-    "python-jose[cryptography]>=3.5.0",
+    "PyJWT[crypto]>=2.10.0",
     "passlib[bcrypt]>=1.7.4",
     "python-dateutil>=2.9.0.post0",
     "scikit-learn>=1.7.2",

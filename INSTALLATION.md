@@ -140,7 +140,7 @@ pip install -e .[all]
 
 **Enhanced Features (12 packages):**
 - openpyxl, seaborn, plotly, jinja2 (export functionality)
-- fastapi, uvicorn, python-multipart, python-jose, passlib, python-dateutil (API)
+- fastapi, uvicorn, python-multipart, PyJWT, passlib, python-dateutil (API)
 - scikit-learn, statsmodels (analysis)
 
 **Performance & Profiling (3 packages):**
