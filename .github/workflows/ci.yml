@@ -324,12 +324,15 @@ jobs:
 
         # Execute tests with optimal configuration
         # Note: --benchmark-disable prevents pytest-benchmark warning when xdist is active
+        # Ignore GUI tests (require PySide6 which is only installed on Ubuntu for smoke test)
+        IGNORE_GUI="--ignore=tests/test_gui_progress.py --ignore=tests/test_gui_smoke.py"
+
         if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.python-version }}" == "3.12" ]]; then
           # Primary test run - decide coverage strategy
           if [[ "${SKIP_COVERAGE:-false}" == "true" ]]; then
             # Config-only changes: run tests without coverage requirements
             echo "⏩ Skipping coverage collection (config-only changes)"
-            pytest $TEST_PATHS \
+            pytest $TEST_PATHS $IGNORE_GUI \
               --junit-xml=pytest-results.xml \
               -n $WORKERS \
               --benchmark-disable \
@@ -351,7 +354,7 @@ jobs:
               echo "📊 Coverage threshold: 20% (smoke tests)"
             fi
 
-            pytest $TEST_PATHS \
+            pytest $TEST_PATHS $IGNORE_GUI \
               --cov=xraylabtool \
               --cov-report=xml \
               --cov-report=term-missing:skip-covered \
@@ -366,7 +369,7 @@ jobs:
           fi
         else
           # Fast execution without coverage for non-primary OS/Python
-          pytest $TEST_PATHS \
+          pytest $TEST_PATHS $IGNORE_GUI \
             --junit-xml=pytest-results.xml \
             -n $WORKERS \
             --benchmark-disable \
