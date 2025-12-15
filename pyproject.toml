@@ -613,6 +613,7 @@ omit = [
     "*/io/file_operations.py",             # File I/O operations - basic functionality
     "*/validation/exceptions.py",          # Exception definitions - simple classes
     "*/validation/validators.py",          # Validation utilities - limited usage
+    "*/gui/*",                             # GUI module - requires PySide6/Qt infrastructure
 ]
 
 [tool.coverage.report]
