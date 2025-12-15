@@ -48,7 +48,7 @@ pip install -e .[test]
 #### Linting and Formatting
 ```bash
 pip install -e .[lint]
-# Includes: black, ruff, mypy, flake8, bandit, safety
+# Includes: ruff, mypy
 ```
 
 #### Enhanced Export Features
@@ -106,10 +106,9 @@ pip install -e .[all]
 
 ### [all] Extra Includes (51 total dependencies):
 
-**Testing & Quality (13 packages):**
+**Testing & Quality (8 packages):**
 - pytest, pytest-cov, pytest-benchmark, pytest-xdist, pytest-timeout
-- black, flake8, mypy, ruff, isort
-- bandit, safety, pre-commit
+- ruff, mypy, pre-commit
 
 **Documentation (10 packages):**
 - sphinx, furo, sphinx-autodoc-typehints, sphinx-copybutton

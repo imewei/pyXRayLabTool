@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🧹 Maintenance
+- **CI/CD Cleanup**: Removed obsolete workflows and simplified configuration
+  - Removed `security.yml`, `performance-monitoring.yml`, `dependabot.yml`
+  - Removed `.githooks/` directory (post-commit hook)
+  - Removed CodeQL configuration and ISSUE_TEMPLATE directory
+  - Removed `.github/scripts/` directory
+  - Simplified lint job to use only ruff (removed isort/black dependencies)
+  - Updated tool versions in ci.yml (ruff 0.14.9, mypy 1.19.0, pytest 9.0.2)
+- **Documentation Sync**: Updated docs to match Python environment
+  - Synchronized pre-commit hook versions with local environment
+  - Updated README and docs dependency versions
+
 ## [0.2.7] - 2025-09-26
 
 ### ✨ New Features
