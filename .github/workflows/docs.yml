@@ -24,6 +24,9 @@ concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   PYTHONUNBUFFERED: 1
   PYTHONDONTWRITEBYTECODE: 1

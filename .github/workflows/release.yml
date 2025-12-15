@@ -33,6 +33,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false  # Don't cancel release workflows
 
+permissions:
+  contents: write
+  id-token: write
+  issues: write
+
 env:
   PYTHONUNBUFFERED: 1
   PYTHONDONTWRITEBYTECODE: 1
