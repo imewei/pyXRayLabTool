@@ -60,7 +60,9 @@ performance_history.json
 bottleneck_analysis_report.json
 .claude/
 .code/
+.gemini/
 agent-os/
+.codex/
 .ruff_cache/
 .specify/
 
@@ -191,8 +193,6 @@ Thumbs.db
 *.bak
 RELEASE_GUIDE.md
 WARP.md
-CLAUDE.md
-CLAUDE_COMMAND.md
 
 # Security reports
 bandit-report.json
@@ -207,6 +207,7 @@ scripts/claude_summary_display.py
 CLAUDE*.md
 CLAUDE.md
 AGENTS.md
+GEMINI.md
 CODE_QUALITY_REPORT.md
 benchmark-results.json
 # Trigger fresh CI run - Wed Sep 10 09:22:37 CDT 2025
