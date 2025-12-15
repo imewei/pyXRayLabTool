@@ -381,7 +381,10 @@ jobs:
       env:
         QT_QPA_PLATFORM: offscreen
         MPLBACKEND: Agg
-      run: python -m scripts.gui_headless_smoke
+      run: |
+        # Install PySide6 for GUI smoke test (not included in [dev] dependencies)
+        uv pip install --system PySide6>=6.10.1
+        python -m scripts.gui_headless_smoke
 
     - name: Upload test results
       if: always()
