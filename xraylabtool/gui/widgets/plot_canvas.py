@@ -84,3 +84,28 @@ class PlotCanvas(QWidget):
         self._apply_axes(ax)
         ax.legend()
         self.canvas.draw_idle()
+
+    def update_theme(self) -> None:
+        """Update figure appearance based on current RcParams."""
+        import matplotlib as mpl
+
+        rc = mpl.rcParams
+        self.figure.set_facecolor(rc["figure.facecolor"])
+
+        for ax in self.figure.axes:
+            ax.set_facecolor(rc["axes.facecolor"])
+            ax.grid(color=rc["grid.color"], alpha=rc["grid.alpha"])
+            ax.title.set_color(rc["text.color"])
+            ax.xaxis.label.set_color(rc["text.color"])
+            ax.yaxis.label.set_color(rc["text.color"])
+            ax.tick_params(colors=rc["xtick.color"], which="both")
+
+            for spine in ax.spines.values():
+                spine.set_edgecolor(rc["axes.edgecolor"])
+
+            legend = ax.get_legend()
+            if legend:
+                # Force legend update if needed, usually automatic on draw
+                pass
+
+        self.canvas.draw_idle()

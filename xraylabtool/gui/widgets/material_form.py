@@ -53,15 +53,16 @@ class MaterialInputForm(QWidget):
         self.logspace = QCheckBox("Log-spaced energies")
 
         self.compute_button = QPushButton("Compute")
+        self.compute_button.setProperty("class", "primary")
 
         self.formula_hint = QLabel("Format: H2O, SiO2, Ca5(PO4)3F")
-        self.formula_hint.setStyleSheet("color: #666;")
+        self.formula_hint.setProperty("role", "hint")
         self.composition_hint = QLabel("")
-        self.composition_hint.setStyleSheet("color: #666;")
+        self.composition_hint.setProperty("role", "hint")
         self.density_hint = QLabel("Density 0.001-30 g/cm³")
-        self.density_hint.setStyleSheet("color: #666;")
+        self.density_hint.setProperty("role", "hint")
         self.energy_hint = QLabel("")
-        self.energy_hint.setStyleSheet("color: #666;")
+        self.energy_hint.setProperty("role", "hint")
 
         self.formula.textChanged.connect(self._validate_inputs)
         self.density.valueChanged.connect(self._validate_inputs)
@@ -119,43 +120,47 @@ class MaterialInputForm(QWidget):
                 validate_chemical_formula(formula_text)
                 self.formula.setProperty("validation", "valid")
                 self.formula_hint.setText("✓ Formula valid")
-                self.formula_hint.setStyleSheet("color: #2e7d32;")
+                self.formula_hint.setProperty("role", "success")
                 try:
                     symbols, counts = parse_formula(formula_text)
                     comp = ", ".join(
                         f"{s}:{c:g}" for s, c in zip(symbols, counts, strict=False)
                     )
                     self.composition_hint.setText(f"Composition: {comp}")
-                    self.composition_hint.setStyleSheet("color: #2e7d32;")
+                    self.composition_hint.setProperty("role", "success")
                 except Exception:
                     self.composition_hint.setText("")
             else:
                 ok = False
                 self.formula.setProperty("validation", "invalid")
                 self.formula_hint.setText("Enter a chemical formula")
-                self.formula_hint.setStyleSheet("color: #c62828;")
+                self.formula_hint.setProperty("role", "error")
         except Exception as exc:
             ok = False
             self.formula.setProperty("validation", "invalid")
             self.formula_hint.setText(str(exc))
-            self.formula_hint.setStyleSheet("color: #c62828;")
+            self.formula_hint.setProperty("role", "error")
             self.composition_hint.setText("")
-        self.formula.style().unpolish(self.formula)
-        self.formula.style().polish(self.formula)
+
+        for w in (self.formula, self.formula_hint, self.composition_hint):
+            w.style().unpolish(w)
+            w.style().polish(w)
 
         # Density
         try:
             validate_density(self.density.value())
             self.density.setProperty("validation", "valid")
             self.density_hint.setText("✓ Density valid")
-            self.density_hint.setStyleSheet("color: #2e7d32;")
+            self.density_hint.setProperty("role", "success")
         except Exception as exc:
             ok = False
             self.density.setProperty("validation", "invalid")
             self.density_hint.setText(str(exc))
-            self.density_hint.setStyleSheet("color: #c62828;")
-        self.density.style().unpolish(self.density)
-        self.density.style().polish(self.density)
+            self.density_hint.setProperty("role", "error")
+
+        for w in (self.density, self.density_hint):
+            w.style().unpolish(w)
+            w.style().polish(w)
 
         # Energy grid
         start = self.energy_start.value()
@@ -168,17 +173,20 @@ class MaterialInputForm(QWidget):
             self.energy_hint.setText(
                 "End energy must be greater than start energy (>= when 1 point)"
             )
-            self.energy_hint.setStyleSheet("color: #c62828;")
+            self.energy_hint.setProperty("role", "error")
         elif logspace and points < 3 and not single_point:
             ok = False
             self.energy_hint.setText("Log spacing needs at least 3 points")
-            self.energy_hint.setStyleSheet("color: #c62828;")
+            self.energy_hint.setProperty("role", "error")
         else:
             step = (end - start) / max(points - 1, 1)
             spacing = "log" if logspace else "linear"
             self.energy_hint.setText(
                 f"{spacing} grid: {points} points from {start:.3f} to {end:.3f} keV (Δ≈{step:.3f})"
             )
-            self.energy_hint.setStyleSheet("color: #2e7d32;")
+            self.energy_hint.setProperty("role", "success")
+
+        self.energy_hint.style().unpolish(self.energy_hint)
+        self.energy_hint.style().polish(self.energy_hint)
 
         self.compute_button.setEnabled(ok)

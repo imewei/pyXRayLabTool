@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QApplication
 from xraylabtool.logging_utils import configure_logging, get_logger, log_environment
 
 from .main_window import MainWindow
-from .style import apply_matplotlib_theme, apply_styles
+from .theme_manager import ThemeManager
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -45,10 +45,11 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     app = QApplication(sys.argv if argv is None else [sys.argv[0], *argv])
-    apply_styles(app)
-    apply_matplotlib_theme()
 
-    window = MainWindow()
+    # Initialize theme manager (handles styling and persistence)
+    theme_manager = ThemeManager(app)
+
+    window = MainWindow(theme_manager=theme_manager)
     window.show()
 
     if args.test_launch:

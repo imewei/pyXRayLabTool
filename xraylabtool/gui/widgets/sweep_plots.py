@@ -57,6 +57,23 @@ class F1F2Plot(QWidget):
         self.figure.subplots_adjust(left=0.12, right=0.98, top=0.92, bottom=0.14)
         self.canvas.draw_idle()
 
+    def update_theme(self) -> None:
+        """Update figure appearance based on current RcParams."""
+        import matplotlib as mpl
+
+        rc = mpl.rcParams
+        self.figure.set_facecolor(rc["figure.facecolor"])
+        for ax in self.figure.axes:
+            ax.set_facecolor(rc["axes.facecolor"])
+            ax.grid(color=rc["grid.color"], alpha=rc["grid.alpha"])
+            ax.title.set_color(rc["text.color"])
+            ax.xaxis.label.set_color(rc["text.color"])
+            ax.yaxis.label.set_color(rc["text.color"])
+            ax.tick_params(colors=rc["xtick.color"], which="both")
+            for spine in ax.spines.values():
+                spine.set_edgecolor(rc["axes.edgecolor"])
+        self.canvas.draw_idle()
+
 
 class MultiF1F2Plot(QWidget):
     """Compare f1 and f2 across multiple materials."""
@@ -128,4 +145,21 @@ class MultiF1F2Plot(QWidget):
         self.figure.subplots_adjust(
             left=0.12, right=0.98, top=0.92, bottom=0.12, hspace=0.28
         )
+        self.canvas.draw_idle()
+
+    def update_theme(self) -> None:
+        """Update figure appearance based on current RcParams."""
+        import matplotlib as mpl
+
+        rc = mpl.rcParams
+        self.figure.set_facecolor(rc["figure.facecolor"])
+        for ax in self.figure.axes:
+            ax.set_facecolor(rc["axes.facecolor"])
+            ax.grid(color=rc["grid.color"], alpha=rc["grid.alpha"])
+            ax.title.set_color(rc["text.color"])
+            ax.xaxis.label.set_color(rc["text.color"])
+            ax.yaxis.label.set_color(rc["text.color"])
+            ax.tick_params(colors=rc["xtick.color"], which="both")
+            for spine in ax.spines.values():
+                spine.set_edgecolor(rc["axes.edgecolor"])
         self.canvas.draw_idle()

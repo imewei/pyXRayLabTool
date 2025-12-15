@@ -27,18 +27,27 @@ XRayLabTool is a Python package and command-line tool for calculating X-ray opti
 
 ## Installation
 
-### From PyPI (Recommended)
+### Using uv (Recommended)
+
+`uv` provides a fast, reliable, and deterministic environment for XRayLabTool.
+
+```bash
+# 1. Install uv (if not present)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Install from PyPI
+uv pip install xraylabtool[all]
+
+# OR: Development Setup
+git clone https://github.com/imewei/pyXRayLabTool.git
+cd pyXRayLabTool
+uv sync --all-extras
+```
+
+### Using pip (Standard)
 
 ```bash
 pip install xraylabtool[all]
-```
-
-### From Source (Development)
-
-```bash
-git clone https://github.com/imewei/pyXRayLabTool.git
-cd pyXRayLabTool
-pip install -e .[all]
 ```
 
 ### Shell Completion Setup (Virtual Environment-Centric)

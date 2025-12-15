@@ -100,9 +100,13 @@ PROPERTIES = [
 logger = get_logger(__name__)
 
 
+from typing import Any
+
+
 class MainWindow(QMainWindow):
-    def __init__(self) -> None:
+    def __init__(self, theme_manager: Any | None = None) -> None:
         super().__init__()
+        self.theme_manager = theme_manager
         self.setWindowTitle("XRayLabTool GUI")
         self.resize(1100, 720)
         self.setMinimumSize(900, 620)
@@ -130,6 +134,21 @@ class MainWindow(QMainWindow):
         self.log_path_toggle.setChecked(False)
         self.log_path_toggle.clicked.connect(self._toggle_log_path)
         self.status_bar.addPermanentWidget(self.log_path_toggle)
+
+        self.theme_toggle = QPushButton("Light Mode")
+        self.theme_toggle.setProperty("class", "secondary")
+        self.theme_toggle.setCheckable(True)
+        if self.theme_manager:
+            curr = self.theme_manager.get_theme()
+            is_dark = curr == "dark"
+            self.theme_toggle.setChecked(is_dark)
+            self.theme_toggle.setText("Dark Mode" if is_dark else "Light Mode")
+            self.theme_toggle.clicked.connect(self._handle_theme_toggle_click)
+            self.theme_manager.theme_changed.connect(self._on_theme_changed)
+        else:
+            self.theme_toggle.setEnabled(False)
+        self.status_bar.addPermanentWidget(self.theme_toggle)
+
         self.status_bar.setSizeGripEnabled(True)
         self.setStatusBar(self.status_bar)
 
@@ -164,6 +183,24 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.main_tabs)
         self._set_tab_order()
         self._tune_table_headers()
+
+    def _handle_theme_toggle_click(self) -> None:
+        if self.theme_manager:
+            self.theme_manager.toggle_theme()
+
+    def _on_theme_changed(self, mode: str) -> None:
+        is_dark = mode == "dark"
+        self.theme_toggle.setChecked(is_dark)
+        self.theme_toggle.setText("Dark Mode" if is_dark else "Light Mode")
+        self._refresh_plots()
+
+    def _refresh_plots(self) -> None:
+        """Force update of all plots to match new theme."""
+        # Find all widgets with update_theme capability (PlotCanvas, F1F2Plot, etc.)
+        # We search recursively
+        for widget in self.findChildren(QWidget):
+            if hasattr(widget, "update_theme"):
+                widget.update_theme()
 
     # ------------------------------------------------------------------
     # Single tab

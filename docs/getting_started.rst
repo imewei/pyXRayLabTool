@@ -220,10 +220,27 @@ Or in Python:
    results = xrt.calculate_xray_properties(materials, energy=8000)
 
    # Display results
-   for result in results:
-       print(f"{result.formula}: "
+      print(f"{result.formula}: "
              f"θc = {result.critical_angle_degrees:.3f}°, "
              f"μ⁻¹ = {result.attenuation_length_cm:.2f} cm")
+
+Graphical User Interface (GUI)
+------------------------------
+
+XRayLabTool includes a modern desktop application for interactive analysis.
+
+Launch via:
+
+.. code-block:: bash
+
+   python -m xraylabtool.gui
+
+**Key Features:**
+
+- **Interactive Analysis**: Single and multiple material comparisons.
+- **Modern Interface**: Clean design with Light and Dark data-optimized themes.
+- **Theme Toggle**: Switch between Light and Dark modes via the status bar toggle.
+- **Persisted Settings**: Your theme preference is saved automatically.
 
 Common Use Cases
 ----------------

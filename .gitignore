@@ -62,9 +62,11 @@ bottleneck_analysis_report.json
 .code/
 .gemini/
 agent-os/
+.agent/
 .codex/
 .ruff_cache/
 .specify/
+specs/
 
 # Translations
 *.mo
