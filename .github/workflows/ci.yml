@@ -323,6 +323,7 @@ jobs:
         fi
 
         # Execute tests with optimal configuration
+        # Note: --benchmark-disable prevents pytest-benchmark warning when xdist is active
         if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.python-version }}" == "3.12" ]]; then
           # Primary test run - decide coverage strategy
           if [[ "${SKIP_COVERAGE:-false}" == "true" ]]; then
@@ -331,6 +332,7 @@ jobs:
             pytest $TEST_PATHS \
               --junit-xml=pytest-results.xml \
               -n $WORKERS \
+              --benchmark-disable \
               --maxfail=5 \
               --tb=short \
               --durations=10 \
@@ -356,6 +358,7 @@ jobs:
               --cov-fail-under=$COV_THRESHOLD \
               --junit-xml=pytest-results.xml \
               -n $WORKERS \
+              --benchmark-disable \
               --maxfail=5 \
               --tb=short \
               --durations=10 \
@@ -366,6 +369,7 @@ jobs:
           pytest $TEST_PATHS \
             --junit-xml=pytest-results.xml \
             -n $WORKERS \
+            --benchmark-disable \
             --maxfail=3 \
             --tb=line \
             -v \
