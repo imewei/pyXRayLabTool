@@ -395,7 +395,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.single_table, 2, 0, 1, 2)
         layout.setColumnStretch(0, 0)
         layout.setColumnStretch(1, 1)
-        layout.setRowStretch(0, 1)
+        layout.setRowStretch(0, 3)
         layout.setRowStretch(2, 1)
         outer.addLayout(layout)
         return container
@@ -819,7 +819,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.multi_full_table, 1, 0, 1, 2)
         layout.setColumnStretch(0, 0)
         layout.setColumnStretch(1, 1)
-        layout.setRowStretch(0, 1)
+        layout.setRowStretch(0, 3)
         layout.setRowStretch(1, 1)
         outer.addLayout(layout)
         return container

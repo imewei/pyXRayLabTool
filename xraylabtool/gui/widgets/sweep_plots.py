@@ -49,7 +49,7 @@ class F1F2Plot(QWidget):
             linewidth=1.5,
         )
         if energy.size > 1:
-            ax.set_xscale("log")
+            ax.set_xscale("log", nonpositive="clip")
         ax.set_xlabel("Energy (keV)")
         ax.set_ylabel("Scattering factors (e)")
         ax.grid(True, alpha=0.3)
@@ -131,8 +131,8 @@ class MultiF1F2Plot(QWidget):
         # Use log x-axis when energy is swept
         any_energy = next(iter(results.values()), None)
         if any_energy is not None and len(getattr(any_energy, "energy_kev", [])) > 1:
-            ax1.set_xscale("log")
-            ax2.set_xscale("log")
+            ax1.set_xscale("log", nonpositive="clip")
+            ax2.set_xscale("log", nonpositive="clip")
 
         ax1.set_ylabel("f1 (e)")
         ax2.set_ylabel("f2 (e)")
