@@ -124,14 +124,6 @@ python scripts/validate_style_guide.py --verbose # Detailed output
 python scripts/validate_style_guide.py --fix     # Apply fixes
 ```
 
-### `format-code.sh` - Code Formatting
-
-Shell script for automated code formatting using modern tools.
-
-### `setup-githooks.sh` - Git Hooks Setup
-
-Sets up pre-commit and pre-push hooks for quality assurance.
-
 ## Maintenance Notes
 
 This directory has been cleaned up to contain only essential scripts actively used in the development workflow. All scripts maintain compatibility with the Makefile targets and CI/CD pipelines.
