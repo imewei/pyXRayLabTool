@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import time
 
 
 class EnvironmentType:
@@ -539,9 +540,8 @@ class EnvironmentDetector:
             return False
 
         try:
-            cache_age = self._cache_file.stat().st_mtime
-            current_time = os.path.getmtime(self._cache_file)
-            return (current_time - cache_age) < self._cache_timeout
+            cache_mtime = self._cache_file.stat().st_mtime
+            return (time.time() - cache_mtime) < self._cache_timeout
         except OSError:
             return False
 

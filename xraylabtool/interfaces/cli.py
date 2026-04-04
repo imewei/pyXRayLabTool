@@ -980,22 +980,22 @@ def _format_scalar_field(field: str, value: Any, precision: int) -> str:
 
 def _format_array_field_single(field: str, value: float, precision: int) -> str:
     """Format a single array field for single energy point."""
-    formatters = {
-        "energy_kev": (f"  Energy: {{: .{precision}f}} keV", "f"),
-        "wavelength_angstrom": (f"  Wavelength: {{: .{precision}f}} Å", "f"),
-        "dispersion_delta": (f"  Dispersion (δ): {{: .{precision}e}}", "e"),
-        "absorption_beta": (f"  Absorption (β): {{: .{precision}e}}", "e"),
-        "scattering_factor_f1": (f"  Scattering f1: {{: .{precision}f}}", "f"),
-        "scattering_factor_f2": (f"  Scattering f2: {{: .{precision}f}}", "f"),
-        "critical_angle_degrees": (f"  Critical Angle: {{: .{precision}f}}°", "f"),
-        "attenuation_length_cm": (f"  Attenuation Length: {{: .{precision}f}} cm", "f"),
-        "real_sld_per_ang2": (f"  Real SLD: {{: .{precision}e}} Å⁻²", "e"),
-        "imaginary_sld_per_ang2": (f"  Imaginary SLD: {{: .{precision}e}} Å⁻²", "e"),
+    formatters: dict[str, tuple[str, str, str]] = {
+        "energy_kev": ("  Energy:", "f", " keV"),
+        "wavelength_angstrom": ("  Wavelength:", "f", " Å"),
+        "dispersion_delta": ("  Dispersion (δ):", "e", ""),
+        "absorption_beta": ("  Absorption (β):", "e", ""),
+        "scattering_factor_f1": ("  Scattering f1:", "f", ""),
+        "scattering_factor_f2": ("  Scattering f2:", "f", ""),
+        "critical_angle_degrees": ("  Critical Angle:", "f", "°"),
+        "attenuation_length_cm": ("  Attenuation Length:", "f", " cm"),
+        "real_sld_per_ang2": ("  Real SLD:", "e", " Å⁻²"),
+        "imaginary_sld_per_ang2": ("  Imaginary SLD:", "e", " Å⁻²"),
     }
 
     if field in formatters:
-        template, _ = formatters[field]
-        return template.format(value)
+        label, fmt, suffix = formatters[field]
+        return f"{label} {value: .{precision}{fmt}}{suffix}"
     return ""
 
 

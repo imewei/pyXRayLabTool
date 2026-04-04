@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import csv
-import os
+from pathlib import Path
 
 from PySide6.QtCore import QEvent, QObject, QPoint, QRect, QStandardPaths, Qt, QTimer
 from PySide6.QtWidgets import (
@@ -1065,11 +1065,11 @@ class MainWindow(QMainWindow):
     def _save_plot(self, plot_widget: QWidget, suggested: str) -> None:
         default_dir = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
         if not default_dir:
-            default_dir = os.path.expanduser("~")
+            default_dir = str(Path.home())
         path, _ = QFileDialog.getSaveFileName(
             self,
             "Save plot",
-            os.path.join(default_dir, suggested),
+            str(Path(default_dir) / suggested),
             "PNG Files (*.png)",
         )
         if not path:
@@ -1095,14 +1095,14 @@ class MainWindow(QMainWindow):
         fname = f"single_{self.single_result.formula}_{prop}.csv"
         default_dir = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
         if not default_dir:
-            default_dir = os.path.expanduser("~")
+            default_dir = str(Path.home())
         folder = QFileDialog.getExistingDirectory(
             self, "Select folder to save CSV", default_dir
         )
         if not folder:
             logger.info("export_single_cancelled", extra={"suggested": fname})
             return None
-        path = os.path.join(folder, fname)
+        path = str(Path(folder) / fname)
         energies = self.single_result.energy_kev
         with open(path, "w", newline="", encoding="utf-8") as fh:
             writer = csv.writer(fh)
@@ -1163,14 +1163,14 @@ class MainWindow(QMainWindow):
         fname = "multi_full.csv"
         default_dir = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
         if not default_dir:
-            default_dir = os.path.expanduser("~")
+            default_dir = str(Path.home())
         folder = QFileDialog.getExistingDirectory(
             self, "Select folder to save CSV", default_dir
         )
         if not folder:
             logger.info("export_multi_cancelled", extra={"suggested": fname})
             return None
-        path = os.path.join(folder, fname)
+        path = str(Path(folder) / fname)
 
         headers = [
             "material",
