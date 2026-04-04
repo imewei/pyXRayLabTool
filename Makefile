@@ -2,7 +2,7 @@
 # Provides convenient commands for testing, development, and CI
 # Supports both Python API and CLI functionality
 
-.PHONY: help install install-docs dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all clean-detect clean-dry clean-obsolete clean-safe clean-build clean-legacy clean-interactive clean-status clean-report clean-backup clean-enhanced dev validate ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test
+.PHONY: help install dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all test-all-log cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-log docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all dev validate ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test
 
 # Colors for output
 RED=\033[0;31m
@@ -32,9 +32,8 @@ help:
 	@echo "$(BLUE)================================$(NC)"
 	@echo ""
 	@echo "$(YELLOW)📦 Installation & Setup:$(NC)"
-	@echo "  install          Install package with development dependencies (Python >=3.12, prefers uv)"
+	@echo "  install          Install package with all dependencies (Python >=3.12, prefers uv)"
 	@echo "  dev-setup        Complete development environment setup"
-	@echo "  install-docs     Install documentation dependencies"
 	@echo ""
 	@echo "$(YELLOW)🧪 Testing:$(NC)"
 	@echo "  test             Run all tests with coverage"
@@ -49,7 +48,7 @@ help:
 	@echo "  test-optimization Run optimization validation tests only"
 	@echo "  test-coverage    Run tests and generate HTML coverage report"
 	@echo "  test-parallel    Run tests in parallel for faster execution"
-	@echo "  test-all         Run comprehensive test suite using run_tests.py"
+	@echo "  test-all         Run comprehensive test suite (unit + integration + perf + CLI)"
 	@echo "  test-all-log     Run comprehensive test suite with output logged to test_results.log"
 	@echo "  test-smoke       Run basic smoke tests (quick validation)"
 	@echo "  test-edge        Run edge case tests"
@@ -58,8 +57,8 @@ help:
 	@echo "  cli-test         Test CLI functionality"
 	@echo ""
 	@echo "$(YELLOW)🔧 Code Quality:$(NC)"
-	@echo "  lint             Run linting with flake8"
-	@echo "  format           Format code with black"
+	@echo "  lint             Run linting with ruff"
+	@echo "  format           Format code with ruff"
 	@echo "  check-format     Check if code needs formatting"
 	@echo "  type-check       Run enhanced type checking on core modules"
 	@echo "  type-check-all   Run comprehensive type checking on all modules"
@@ -106,22 +105,17 @@ help:
 
 # Installation & Setup
 install:
-	@echo "$(YELLOW)Installing XRayLabTool with development dependencies (Python >=3.12)...$(NC)"
+	@echo "$(YELLOW)Installing XRayLabTool with all dependencies (Python >=3.12)...$(NC)"
 	@if command -v uv >/dev/null 2>&1; then \
 		echo "$(BLUE)Using uv (preferred)...$(NC)"; \
-		uv sync --dev; \
+		uv sync; \
 	else \
 		echo "$(BLUE)uv not found; falling back to pip...$(NC)"; \
-		pip install -e .[dev]; \
+		pip install -e .; \
 	fi
 	@echo "$(GREEN)✅ Installation complete$(NC)"
 
-install-docs:
-	@echo "$(YELLOW)Installing documentation dependencies...$(NC)"
-	pip install -r docs/requirements.txt
-	@echo "$(GREEN)✅ Documentation dependencies installed$(NC)"
-
-dev-setup: install install-docs
+dev-setup: install
 	@echo "$(GREEN)🚀 Development environment set up successfully!$(NC)"
 	@echo "$(BLUE)📋 Quick commands:$(NC)"
 	@echo "  make claude          # 🤖 Comprehensive code quality analysis"
@@ -223,26 +217,16 @@ test-nightly:
 	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "nightly or (performance and memory and stability)" -v --tb=short
 	@echo "$(GREEN)✅ Nightly tests completed$(NC)"
 
-test-all:
-	@echo "$(YELLOW)Running comprehensive test suite...$(NC)"
-	python run_tests.py
-	@echo "$(GREEN)✅ All tests completed$(NC)"
+test-all: test-unit test-integration test-performance test-stability cli-test test-coverage
+	@echo "$(GREEN)✅ Comprehensive test suite completed$(NC)"
 
 test-all-log:
-	@echo "$(YELLOW)Running comprehensive test suite with logging...$(NC)"
 	@echo "$(BLUE)📝 Output will be saved to test_results.log$(NC)"
-	@echo "$(BLUE)🕒 Test suite started at: $$(date)$(NC)" | tee test_results.log
-	@echo "$(BLUE)📁 Working directory: $$(pwd)$(NC)" | tee -a test_results.log
-	@echo "$(BLUE)🐍 Python version: $$(python --version 2>&1)$(NC)" | tee -a test_results.log
-	@echo "" >> test_results.log
-	@if python run_tests.py 2>&1 | tee -a test_results.log; then \
-		echo "" >> test_results.log; \
-		echo "$(BLUE)🕒 Test suite completed successfully at: $$(date)$(NC)" | tee -a test_results.log; \
-		echo "$(GREEN)✅ All tests completed successfully with full log in test_results.log$(NC)"; \
+	@echo "🕒 Started: $$(date)" | tee test_results.log
+	@if $(MAKE) test-all 2>&1 | tee -a test_results.log; then \
+		echo "🕒 Completed: $$(date)" | tee -a test_results.log; \
 	else \
-		echo "" >> test_results.log; \
-		echo "$(RED)❌ Test suite failed at: $$(date)$(NC)" | tee -a test_results.log; \
-		echo "$(RED)❌ Test suite failed - check test_results.log for details$(NC)"; \
+		echo "❌ Failed: $$(date)" | tee -a test_results.log; \
 		exit 1; \
 	fi
 
@@ -301,18 +285,18 @@ cli-demo:
 # Code Quality
 lint:
 	@echo "$(YELLOW)Running linting checks...$(NC)"
-	flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-	flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+	ruff check xraylabtool tests
 	@echo "$(GREEN)✅ Linting completed$(NC)"
 
 format:
-	@echo "$(YELLOW)Formatting code with black...$(NC)"
-	black xraylabtool tests *.py
+	@echo "$(YELLOW)Formatting code with ruff...$(NC)"
+	ruff format xraylabtool tests
+	ruff check --fix xraylabtool tests
 	@echo "$(GREEN)✅ Code formatting completed$(NC)"
 
 check-format:
 	@echo "$(YELLOW)Checking code formatting...$(NC)"
-	black --check xraylabtool tests *.py
+	ruff format --check xraylabtool tests
 	@echo "$(GREEN)✅ Format check passed$(NC)"
 
 type-check:
@@ -340,51 +324,31 @@ claude:
 	@echo "$(BLUE)=============================================$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Phase 1: Code Formatting & Style$(NC)"
-	@echo "$(BLUE)→ Running Black formatter...$(NC)"
-	@black --check xraylabtool/ tests/ *.py || (echo "$(YELLOW)Applying Black formatting...$(NC)" && black xraylabtool/ tests/ *.py)
 	@echo "$(BLUE)→ Running Ruff formatter...$(NC)"
 	@ruff format xraylabtool/ tests/
-	@echo "$(BLUE)→ Running isort import sorting...$(NC)"
-	@isort --check-only --diff xraylabtool/ tests/ || (echo "$(YELLOW)Applying import sorting...$(NC)" && isort xraylabtool/ tests/)
-	@echo "$(GREEN)✅ Phase 1 Complete: Code formatting$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Phase 2: Comprehensive Linting$(NC)"
-	@echo "$(BLUE)→ Running Ruff linting with auto-fixes...$(NC)"
+	@echo "$(BLUE)→ Running Ruff import sorting + linting with auto-fixes...$(NC)"
 	@ruff check xraylabtool/ tests/ --fix --show-fixes || true
-	@echo "$(BLUE)→ Running flake8 critical error check...$(NC)"
-	@flake8 xraylabtool/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-	@echo "$(GREEN)✅ Phase 2 Complete: Linting$(NC)"
+	@echo "$(GREEN)✅ Phase 1 Complete: Formatting & linting$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Phase 3: Type Safety Validation$(NC)"
+	@echo "$(YELLOW)Phase 2: Type Safety Validation$(NC)"
 	@echo "$(BLUE)→ Running MyPy strict type checking...$(NC)"
 	@command -v mypy >/dev/null 2>&1 && (mypy xraylabtool/ --strict --show-error-codes && echo "$(GREEN)✅ MyPy validation passed$(NC)") || echo "$(BLUE)MyPy not available, skipping type checks$(NC)"
-	@echo "$(GREEN)✅ Phase 3 Complete: Type safety$(NC)"
+	@echo "$(GREEN)✅ Phase 2 Complete: Type safety$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Phase 4: Security Analysis$(NC)"
-	@echo "$(BLUE)→ Running Bandit security scan...$(NC)"
-	@bandit -r xraylabtool/ --skip B101,B603,B110 -f json -o bandit-claude-report.json || true
-	@bandit -r xraylabtool/ --skip B101,B603,B110 --severity-level medium --confidence-level medium && echo "$(GREEN)✅ No medium/high security issues$(NC)" || echo "$(YELLOW)⚠️  Security scan completed with warnings$(NC)"
-	@echo "$(GREEN)✅ Phase 4 Complete: Security analysis$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Phase 5: Test Coverage Validation$(NC)"
+	@echo "$(YELLOW)Phase 3: Test Coverage Validation$(NC)"
 	@echo "$(BLUE)→ Running comprehensive test suite...$(NC)"
 	@pytest tests/ --cov=xraylabtool --cov-report=term-missing --cov-report=json:coverage-claude.json --cov-fail-under=42 -q
-	@echo "$(GREEN)✅ Phase 5 Complete: Test coverage (≥42%)$(NC)"
+	@echo "$(GREEN)✅ Phase 3 Complete: Test coverage (≥42%)$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Phase 6: Performance Regression Tests$(NC)"
+	@echo "$(YELLOW)Phase 4: Performance Regression Tests$(NC)"
 	@echo "$(BLUE)→ Running optimization validation...$(NC)"
 	@pytest tests/performance/test_optimization_validation.py -v --tb=short -x
 	@echo "$(BLUE)→ Running numerical stability checks...$(NC)"
 	@pytest tests/unit/test_numerical_stability.py::TestNumericalStabilityChecks -v --tb=short
-	@echo "$(GREEN)✅ Phase 6 Complete: Performance validation$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Phase 7: Quality Report Generation$(NC)"
-	@echo "$(BLUE)→ Quality analysis complete - check generated reports$(NC)"
-	@echo "$(GREEN)✅ Phase 7 Complete: Quality analysis finished$(NC)"
+	@echo "$(GREEN)✅ Phase 4 Complete: Performance validation$(NC)"
 	@echo ""
 	@echo "$(GREEN)🎉 Claude Code Quality Analysis Complete!$(NC)"
 	@echo "$(BLUE)📁 Artifacts Generated:$(NC)"
-	@echo "   • bandit-claude-report.json (security analysis)"
 	@echo "   • coverage-claude.json (test coverage data)"
 	@echo "   • Test output above for quality summary"
 	@echo ""
