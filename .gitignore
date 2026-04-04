@@ -220,3 +220,4 @@ benchmark-results.json
 # Cleanup system temporary files
 .cleanup_backup/
 .cleanup_reports/
+.remember/
