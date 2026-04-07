@@ -87,6 +87,6 @@ jobs:
         fetch-depth: 0  # Full history for secret scanning
 
     - name: Run gitleaks
-      uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eef42b7e7a284461384 # v2.3.9
+      uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

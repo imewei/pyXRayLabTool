@@ -478,7 +478,7 @@ exclude = [
 "tests/*" = ["ARG", "S101", "PLC0415", "S311", "RUF001", "RUF002", "RUF003", "RUF005", "RUF012", "RUF059", "S110", "N806", "B007", "B905", "S607", "F401", "PLW0603", "PLW2901", "SIM102", "S102", "SIM117", "E402", "E741"]
 "docs/*" = ["RUF001", "RUF002", "RUF003", "PLC2401", "N999"]  # Scientific notation and Unicode characters
 ".github/*" = ["S607", "PLW2901"]  # Allow partial paths in GitHub scripts
-"xraylabtool/interfaces/cli.py" = ["PLC0415", "PLR0911", "PLR0912", "PLR0915", "ARG001", "ARG002"]  # CLI lazy imports and complexity
+"xraylabtool/interfaces/cli.py" = ["PLC0415", "PLR0911", "PLR0912", "PLR0915", "ARG001", "ARG002", "S101"]  # CLI lazy imports, complexity, and assert for parsed data guard
 "xraylabtool/interfaces/completion*.py" = ["PLC0415", "PLW0603", "S607", "UP035", "ARG001", "ARG002"]  # Completion system patterns
 "xraylabtool/core/*.py" = ["RUF001", "RUF002", "RUF003"]  # Unicode scientific symbols
 "xraylabtool/analysis/*.py" = ["S110", "SIM102", "B904"]  # Analysis module patterns
@@ -486,7 +486,7 @@ exclude = [
 "__init__.py" = ["F401", "PLR0911", "PLR0912", "PLC0415"]     # Allow unused imports, complexity, and lazy imports in __init__.py
 # Relax rules for completion system files (complex generated/template code)
 "**/interfaces/completion.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM102"]
-"**/interfaces/completion_v2/*.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112", "B006", "S604", "ARG002", "SIM118", "PLW0603", "ARG001", "S112", "PLW2901", "RUF001", "PLC0415", "S110"]
+"**/interfaces/completion_v2/*.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112", "B006", "S604", "S603", "ARG002", "SIM118", "PLW0603", "ARG001", "S112", "PLW2901", "RUF001", "PLC0415", "S110"]
 # Scientific computing files with performance-critical lazy imports
 "**/utils.py" = ["PLC0415", "ARG001", "PLR0912"]  # Allow lazy imports, unused args, and complex parse_formula in utility functions
 "**/typing_extensions.py" = ["PLC0415", "UP007"]  # Allow lazy imports and legacy union syntax for compatibility
@@ -501,7 +501,7 @@ exclude = [
 "xraylabtool/calculators/cache.py" = ["PLC0415"]  # Deferred imports to break circular dependency
 "xraylabtool/calculators/kernels.py" = ["PLC0415"]  # Deferred imports for JIT and constants
 "xraylabtool/calculators/scattering_data.py" = ["PLC0415"]  # Deferred imports for cache and pandas
-"xraylabtool/device.py" = ["PLC0415", "SIM105"]  # Lazy imports for optional JAX; try/except for optional packages
+"xraylabtool/device.py" = ["PLC0415", "SIM105", "S603"]  # Lazy imports for optional JAX; try/except for optional packages; subprocess calls to nvcc/nvidia-smi
 "scripts/validate_style_guide.py" = ["PLW2901", "SIM102", "S607", "PLR0912", "PLR0915", "PLC0415"]  # Allow style validation patterns
 
 [tool.ruff.lint.isort]
