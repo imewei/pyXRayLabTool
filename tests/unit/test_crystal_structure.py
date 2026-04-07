@@ -110,11 +110,6 @@ class TestCrystalStructureAPI:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=False,
-    reason="calculate_structure_factor is a placeholder; physics tests will "
-    "pass once the real summation over phase factors is implemented",
-)
 class TestStructureFactorPhysics:
     """Physics-correct structure factor tests.
 

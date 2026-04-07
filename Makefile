@@ -2,7 +2,7 @@
 # Provides convenient commands for testing, development, and CI
 # Supports both Python API and CLI functionality
 
-.PHONY: help install dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all test-all-log cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-log docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all dev validate ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose
+.PHONY: help install dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all test-all-log cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-log docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all dev validate verify verify-fast ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose
 
 # Colors for output
 RED=\033[0;31m
@@ -105,8 +105,10 @@ help:
 	@echo ""
 	@echo "$(YELLOW)🚀 Development Workflows:$(NC)"
 	@echo "  dev              Quick development cycle (format, lint, test-fast)"
-	@echo "  claude           🤖 Comprehensive Claude Code quality analysis (recommended pre-commit)"
-	@echo "  validate         Full validation (use before pushing)"
+	@echo "  claude           Comprehensive Claude Code quality analysis (recommended pre-commit)"
+	@echo "  verify           Full local CI verification (lint + type + smoke tests) - use before push"
+	@echo "  verify-fast      Quick verification (lint + type only, no tests)"
+	@echo "  validate         Full validation (format, lint, type-strict, coverage, benchmarks)"
 	@echo "  ci-test          Simulate CI environment"
 	@echo "  release-check    Pre-release validation checklist"
 
@@ -485,7 +487,48 @@ clean-all: clean docs-clean
 
 # Development Workflows
 dev: check-format lint type-check test-fast
-	@echo "$(GREEN)✅ Quick development cycle completed$(NC)"
+	@echo "$(GREEN)Quick development cycle completed$(NC)"
+
+# ===================
+# Pre-push verification (run before pushing to ensure CI will pass)
+# ===================
+verify:
+	@echo "$(BLUE)======================================$(NC)"
+	@echo "$(BLUE)  FULL LOCAL CI VERIFICATION$(NC)"
+	@echo "$(BLUE)======================================$(NC)"
+	@echo ""
+	@echo "Step 1/4: Linting"
+	@$(PYTHON) -m ruff check xraylabtool/ tests/ || (echo "$(RED)Lint check failed!$(NC)" && exit 1)
+	@echo ""
+	@echo "Step 2/4: Type checking (advisory)"
+	@$(PYTHON) -m mypy xraylabtool/ --no-error-summary 2>&1 | tail -1 || true
+	@echo "$(YELLOW)Note: Type checking is advisory. See 'make type-check' for full report.$(NC)"
+	@echo ""
+	@echo "Step 3/4: Unit tests"
+	@$(PYTEST) tests/unit/ --ignore=tests/unit/test_gui_widgets.py $(PYTEST_XDIST_ARGS) -q --tb=line || (echo "$(RED)Unit tests failed!$(NC)" && exit 1)
+	@echo ""
+	@echo "Step 4/4: Characterization tests"
+	@$(PYTEST) tests/characterization/ $(PYTEST_XDIST_ARGS) -q --tb=line || (echo "$(RED)Characterization tests failed!$(NC)" && exit 1)
+	@echo ""
+	@echo "$(GREEN)======================================$(NC)"
+	@echo "$(GREEN)  ALL CHECKS PASSED - SAFE TO PUSH$(NC)"
+	@echo "$(GREEN)======================================$(NC)"
+
+verify-fast:
+	@echo "$(BLUE)======================================$(NC)"
+	@echo "$(BLUE)  QUICK LOCAL CI VERIFICATION$(NC)"
+	@echo "$(BLUE)======================================$(NC)"
+	@echo ""
+	@echo "Step 1/2: Linting"
+	@$(PYTHON) -m ruff check xraylabtool/ tests/ || (echo "$(RED)Lint check failed!$(NC)" && exit 1)
+	@echo ""
+	@echo "Step 2/2: Type checking (advisory)"
+	@$(PYTHON) -m mypy xraylabtool/ --no-error-summary 2>&1 | tail -1 || true
+	@echo "$(YELLOW)Note: Type checking is advisory. See 'make type-check' for full report.$(NC)"
+	@echo ""
+	@echo "$(GREEN)======================================$(NC)"
+	@echo "$(GREEN)  QUICK CHECKS PASSED$(NC)"
+	@echo "$(GREEN)======================================$(NC)"
 
 validate: format lint type-check-strict test-coverage test-benchmarks cli-test docs-test-all
 	@echo "$(GREEN)✅ Full validation completed - ready for commit!$(NC)"

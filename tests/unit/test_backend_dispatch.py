@@ -200,14 +200,13 @@ class TestBackendSwitching:
 
     def test_set_backend_jax_without_install(self) -> None:
         """If JAX is not installed, JaxBackend() should raise ImportError."""
-        import importlib.util
+        from unittest.mock import patch
 
-        jax_spec = importlib.util.find_spec("jax")
-        if jax_spec is not None:
-            pytest.skip("JAX is installed; cannot test missing-JAX path")
+        with patch.dict("sys.modules", {"jax": None, "jax.numpy": None}):
+            with pytest.raises((ImportError, ModuleNotFoundError)):
+                from xraylabtool.backend.array_ops import JaxBackend
 
-        with pytest.raises((ImportError, ModuleNotFoundError)):
-            set_backend("jax")
+                JaxBackend()
 
 
 # ---------------------------------------------------------------------------

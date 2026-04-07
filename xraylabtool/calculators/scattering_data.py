@@ -243,9 +243,15 @@ class CrystalStructure:
             {"element": element, "position": position, "occupancy": occupancy}
         )
 
-    def calculate_structure_factor(self, _hkl: tuple[int, int, int]) -> complex:
+    def calculate_structure_factor(self, hkl: tuple[int, int, int]) -> complex:
         """
         Calculate structure factor for given Miller indices.
+
+        F(hkl) = sum_j  f_j * occ_j * exp(2*pi*i*(h*x_j + k*y_j + l*z_j))
+
+        where the sum runs over all atoms in the unit cell. The atomic form
+        factor f_j is currently taken as 1.0 for all atoms (geometric structure
+        factor).
 
         Args:
             hkl: Miller indices (h, k, l)
@@ -253,8 +259,17 @@ class CrystalStructure:
         Returns:
             Complex structure factor
         """
-        # Placeholder implementation
-        return complex(1.0, 0.0)
+        import cmath
+        import math
+
+        h, k, miller_l = hkl
+        result = complex(0.0, 0.0)
+        for atom in self.atoms:
+            x, y, z = atom["position"]
+            occ = atom["occupancy"]
+            phase = 2.0 * math.pi * (h * x + k * y + miller_l * z)
+            result += occ * cmath.exp(1j * phase)
+        return result
 
 
 def load_data_file(filename: str) -> Any:
