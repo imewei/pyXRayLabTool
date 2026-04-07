@@ -5,11 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from PySide6.QtGui import QColor, QPalette
-
-try:
-    import matplotlib as _mpl
-except ImportError:
-    _mpl = None
+from PySide6.QtWidgets import QApplication
 
 
 @dataclass
@@ -31,21 +27,21 @@ class ColorPalette:
     error_bg: str
     success: str
     plot_bg: str
-    mpl_cycle: list[str]
+    plot_cycle: list[str]
 
     def to_qpalette(self) -> QPalette:
         """Convert to QPalette."""
         p = QPalette()
-        p.setColor(QPalette.Window, QColor(self.window_bg))
-        p.setColor(QPalette.Base, QColor(self.input_bg))
-        p.setColor(QPalette.AlternateBase, QColor(self.panel_bg))
-        p.setColor(QPalette.Text, QColor(self.text_primary))
-        p.setColor(QPalette.WindowText, QColor(self.text_primary))
-        p.setColor(QPalette.Button, QColor(self.panel_bg))
-        p.setColor(QPalette.ButtonText, QColor(self.text_primary))
-        p.setColor(QPalette.Highlight, QColor(self.accent))
-        p.setColor(QPalette.HighlightedText, QColor(self.accent_text))
-        p.setColor(QPalette.PlaceholderText, QColor(self.text_secondary))
+        p.setColor(QPalette.ColorRole.Window, QColor(self.window_bg))
+        p.setColor(QPalette.ColorRole.Base, QColor(self.input_bg))
+        p.setColor(QPalette.ColorRole.AlternateBase, QColor(self.panel_bg))
+        p.setColor(QPalette.ColorRole.Text, QColor(self.text_primary))
+        p.setColor(QPalette.ColorRole.WindowText, QColor(self.text_primary))
+        p.setColor(QPalette.ColorRole.Button, QColor(self.panel_bg))
+        p.setColor(QPalette.ColorRole.ButtonText, QColor(self.text_primary))
+        p.setColor(QPalette.ColorRole.Highlight, QColor(self.accent))
+        p.setColor(QPalette.ColorRole.HighlightedText, QColor(self.accent_text))
+        p.setColor(QPalette.ColorRole.PlaceholderText, QColor(self.text_secondary))
         return p
 
 
@@ -65,7 +61,7 @@ LIGHT_THEME = ColorPalette(
     error_bg="#fee2e2",
     success="#16a34a",
     plot_bg="#ffffff",
-    mpl_cycle=["#2563eb", "#f97316", "#16a34a", "#9333ea", "#0ea5e9", "#dc2626"],
+    plot_cycle=["#2563eb", "#f97316", "#16a34a", "#9333ea", "#0ea5e9", "#dc2626"],
 )
 
 DARK_THEME = ColorPalette(
@@ -84,7 +80,7 @@ DARK_THEME = ColorPalette(
     error_bg="#450a0a",
     success="#22c55e",
     plot_bg="#1e293b",  # Match panel
-    mpl_cycle=["#3b82f6", "#fb923c", "#4ade80", "#a855f7", "#38bdf8", "#f87171"],
+    plot_cycle=["#3b82f6", "#fb923c", "#4ade80", "#a855f7", "#38bdf8", "#f87171"],
 )
 
 
@@ -273,46 +269,26 @@ def get_qss(t: ColorPalette) -> str:
     """
 
 
-def apply_theme(app, theme: ColorPalette) -> None:
+def apply_theme(app: QApplication, theme: ColorPalette) -> None:
     """Apply palette and stylesheet to the QApplication."""
     app.setPalette(theme.to_qpalette())
     app.setStyleSheet(get_qss(theme))
 
 
-def apply_styles(app) -> None:
+def apply_styles(app: QApplication) -> None:
     """Legacy entry point: Defaults to Light Theme."""
     apply_theme(app, LIGHT_THEME)
 
 
-def apply_matplotlib_theme(theme: ColorPalette = LIGHT_THEME) -> None:
-    """Apply a Matplotlib theme aligned with the GUI palette."""
-    if _mpl is None:
+def apply_pyqtgraph_theme(theme: ColorPalette = LIGHT_THEME) -> None:
+    """Apply a PyQtGraph theme aligned with the GUI palette."""
+    try:
+        import pyqtgraph as pg  # type: ignore[import-untyped]
+    except ImportError:
         return
 
-    rc = _mpl.rcParams
-    rc.update(
-        {
-            "font.family": "sans-serif",
-            "font.sans-serif": ["Inter", "Source Sans Pro", "Arial", "sans-serif"],
-            "axes.facecolor": theme.plot_bg,
-            "axes.edgecolor": theme.border,
-            "axes.labelcolor": theme.text_primary,
-            "axes.titleweight": "semibold",
-            "axes.titlesize": 12,
-            "axes.labelsize": 11,
-            "axes.grid": True,
-            "grid.color": theme.border,
-            "grid.alpha": 0.45,
-            "xtick.color": theme.text_primary,
-            "ytick.color": theme.text_primary,
-            "xtick.labelsize": 10,
-            "ytick.labelsize": 10,
-            "legend.fontsize": 10,
-            "lines.linewidth": 1.6,
-            "lines.markersize": 4.0,
-            "figure.facecolor": theme.window_bg,
-            "savefig.facecolor": theme.window_bg,
-            "text.color": theme.text_primary,
-            "axes.prop_cycle": _mpl.cycler("color", theme.mpl_cycle),
-        }
+    pg.setConfigOptions(
+        background=theme.plot_bg,
+        foreground=theme.text_primary,
+        antialias=True,
     )

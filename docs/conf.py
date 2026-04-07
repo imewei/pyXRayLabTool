@@ -52,9 +52,18 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.todo",
     "sphinx_copybutton",
+    "sphinx_design",
+    "sphinx_tabs.tabs",
+    "sphinx_togglebutton",
     "myst_parser",
     "sphinx_autodoc_typehints",
 ]
+
+# Allow myst_parser to handle .md files in toctrees (e.g. architecture ADRs)
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
 # Try to import nbsphinx safely - skip if Jupyter config issues
 try:
@@ -66,7 +75,7 @@ except (ImportError, PermissionError, OSError):
     pass
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints", "archive/*"]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

@@ -307,7 +307,7 @@ jobs:
         elif [[ "${{ needs.change-detection.outputs.python-changed }}" == "true" ]]; then
           echo "🐍 Python files changed - running affected tests"
           # Run unit tests first (fastest feedback)
-          TEST_PATHS="tests/unit/ tests/integration/"
+          TEST_PATHS="tests/unit/ tests/integration/ tests/characterization/"
           SKIP_COVERAGE=false
         elif [[ "${{ needs.change-detection.outputs.deps-changed }}" == "true" ]]; then
           echo "📦 Dependencies changed - running full test suite for compatibility"
@@ -315,7 +315,7 @@ jobs:
           SKIP_COVERAGE=false
         else
           echo "📦 Running smoke tests only"
-          TEST_PATHS="tests/unit/test_core.py tests/integration/test_integration.py::TestBasicSetupAndInitialization"
+          TEST_PATHS="tests/unit/test_core.py tests/integration/test_integration.py::TestBasicSetupAndInitialization tests/characterization/"
           SKIP_COVERAGE=false
         fi
 
@@ -381,14 +381,27 @@ jobs:
       continue-on-error: true  # Non-blocking - GUI smoke test is optional for CI
       env:
         QT_QPA_PLATFORM: offscreen
-        MPLBACKEND: Agg
       run: |
         # Install system libraries required for Qt offscreen rendering
         sudo apt-get update -qq
         sudo apt-get install -y -qq libegl1 libxkbcommon0 libgl1-mesa-glx libxcb-cursor0 || true
         # Install PySide6 for GUI smoke test (not included in [dev] dependencies)
-        uv pip install --system PySide6>=6.10.1
+        uv pip install --system PySide6>=6.10.1 pyqtgraph>=0.13.7
         python -m scripts.gui_headless_smoke
+
+    - name: Backend compatibility test (JAX)
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      continue-on-error: true  # JAX is optional
+      run: |
+        uv pip install --system "jax[cpu]>=0.6.0" "interpax>=0.3.0"
+        python -c "
+        from xraylabtool.backend import set_backend
+        set_backend('jax')
+        import xraylabtool as xlt
+        result = xlt.calculate_single_material_properties('SiO2', 10.0, 2.2)
+        print(f'JAX backend: delta={result.dispersion_delta[0]:.6e}')
+        print('JAX backend smoke test passed')
+        "
 
     - name: Upload test results
       if: always()

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-06
+
+### Added
+- Backend abstraction layer (`xraylabtool.backend`) supporting numpy and JAX backends
+- `set_backend("jax")` / `set_backend("numpy")` for runtime backend switching
+- `InterpolationFactory` for backend-agnostic PCHIP interpolation (scipy ↔ interpax)
+- PyQtGraph-based interactive plotting widgets (replaces matplotlib in GUI)
+- JAX float64 auto-configuration at package import time
+- 202 characterization tests with golden-value assertions for migration safety
+- Optional `[jax]` dependency group: `pip install xraylabtool[jax]`
+- Optional `[plots]` dependency group for matplotlib (publication plots)
+- Architecture Decision Records in `docs/architecture/`
+
+### Changed
+- All core computation modules now use backend ops instead of direct numpy
+- GUI plotting migrated from matplotlib to PyQtGraph for interactive performance
+- `ColorPalette.mpl_cycle` renamed to `ColorPalette.plot_cycle`
+- `apply_matplotlib_theme()` replaced with `apply_pyqtgraph_theme()`
+- `scipy.constants` eliminated from utils.py (uses constants.py directly)
+- matplotlib moved from required to optional dependency
+
+### Deprecated
+- `optimization/vectorized_core.py` manual SIMD heuristics (use JAX backend instead)
+- `optimization/optimized_core.py` monkey-patching (use `set_backend('jax')`)
+
+### Removed
+- `ScalarFriendlyArray` numpy subclass (replaced with plain numpy arrays)
+- Direct matplotlib dependency (now optional via `[plots]` extra)
+- Direct scipy.constants usage in computation path
+
 ## [0.3.0] - 2025-12-15
 
 ### ✨ New Features

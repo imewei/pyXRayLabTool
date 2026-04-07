@@ -19,53 +19,12 @@ import types
 from typing import TYPE_CHECKING, Any
 import warnings
 
-import numpy as np
+import numpy as np  # Keep for XRayResult.__post_init__ (output boundary)
 
-
-class ScalarFriendlyArray(np.ndarray):
-    """ndarray that formats as scalar when it contains a single value."""
-
-    def __format__(self, format_spec: str) -> str:  # pragma: no cover
-        if self.size == 1:
-            return format(self.item(), format_spec)
-        return super().__format__(format_spec)
-
-    def __float__(self):  # pragma: no cover
-        if self.size == 1:
-            return float(self.item())
-        raise TypeError("Only length-1 arrays can be converted to float")
-
-    def __getitem__(self, key):  # pragma: no cover
-        result = super().__getitem__(key)
-        if isinstance(result, np.ndarray) and result.size == 1:
-            return float(result)
-        return result
-
-    def __array__(self, dtype=None):  # pragma: no cover
-        return np.asarray(self.view(np.ndarray), dtype=dtype)
-
+from xraylabtool.backend import InterpolationFactory, ops
 
 # Lazy imports for heavy dependencies to reduce startup time
 # pandas and scipy imports moved to function level when needed
-
-# Lazy loading for optimization modules to reduce memory overhead
-# These will be imported only when actually needed
-
-
-def _get_optimization_decorator() -> Callable[..., Any]:
-    """Lazy load optimization decorator to reduce memory overhead."""
-    try:
-        from xraylabtool.optimization.vectorized_core import (
-            ensure_c_contiguous,
-        )
-
-        return ensure_c_contiguous
-    except ImportError:
-        # Fallback decorator if optimization module not available
-        def ensure_c_contiguous(func: Callable[..., Any]) -> Callable[..., Any]:
-            return func
-
-        return ensure_c_contiguous
 
 
 if TYPE_CHECKING:
@@ -218,63 +177,54 @@ class XRayResult:
 
     def __post_init__(self) -> None:
         """Post-initialization to handle any setup after object creation."""
-        # Ensure all arrays are numpy arrays - only convert if necessary
-        # mypy: These checks are necessary at runtime even though types are declared
-        # Runtime conversion to numpy arrays if needed
-        # Convert all array fields to numpy arrays
-        self.energy_kev = np.asarray(self.energy_kev)
-        self.wavelength_angstrom = np.asarray(self.wavelength_angstrom).view(
-            ScalarFriendlyArray
-        )
-        self.dispersion_delta = np.asarray(self.dispersion_delta).view(
-            ScalarFriendlyArray
-        )
-        self.absorption_beta = np.asarray(self.absorption_beta).view(
-            ScalarFriendlyArray
-        )
-        self.scattering_factor_f1 = np.asarray(self.scattering_factor_f1).view(
-            ScalarFriendlyArray
-        )
-        self.scattering_factor_f2 = np.asarray(self.scattering_factor_f2).view(
-            ScalarFriendlyArray
-        )
-        self.critical_angle_degrees = np.asarray(self.critical_angle_degrees).view(
-            ScalarFriendlyArray
-        )
-        self.attenuation_length_cm = np.asarray(self.attenuation_length_cm).view(
-            ScalarFriendlyArray
-        )
-        self.real_sld_per_ang2 = np.asarray(self.real_sld_per_ang2).view(
-            ScalarFriendlyArray
-        )
-        self.imaginary_sld_per_ang2 = np.asarray(self.imaginary_sld_per_ang2).view(
-            ScalarFriendlyArray
-        )
+        # Only convert if not already a numpy array (e.g. when constructed from
+        # raw Python lists or scalars, not from the internal calculation path
+        # which already produces float64 contiguous arrays).
+        if not isinstance(self.energy_kev, np.ndarray):
+            self.energy_kev = np.asarray(self.energy_kev, dtype=np.float64)
+        if not isinstance(self.wavelength_angstrom, np.ndarray):
+            self.wavelength_angstrom = np.asarray(self.wavelength_angstrom, dtype=np.float64)
+        if not isinstance(self.dispersion_delta, np.ndarray):
+            self.dispersion_delta = np.asarray(self.dispersion_delta, dtype=np.float64)
+        if not isinstance(self.absorption_beta, np.ndarray):
+            self.absorption_beta = np.asarray(self.absorption_beta, dtype=np.float64)
+        if not isinstance(self.scattering_factor_f1, np.ndarray):
+            self.scattering_factor_f1 = np.asarray(self.scattering_factor_f1, dtype=np.float64)
+        if not isinstance(self.scattering_factor_f2, np.ndarray):
+            self.scattering_factor_f2 = np.asarray(self.scattering_factor_f2, dtype=np.float64)
+        if not isinstance(self.critical_angle_degrees, np.ndarray):
+            self.critical_angle_degrees = np.asarray(self.critical_angle_degrees, dtype=np.float64)
+        if not isinstance(self.attenuation_length_cm, np.ndarray):
+            self.attenuation_length_cm = np.asarray(self.attenuation_length_cm, dtype=np.float64)
+        if not isinstance(self.real_sld_per_ang2, np.ndarray):
+            self.real_sld_per_ang2 = np.asarray(self.real_sld_per_ang2, dtype=np.float64)
+        if not isinstance(self.imaginary_sld_per_ang2, np.ndarray):
+            self.imaginary_sld_per_ang2 = np.asarray(self.imaginary_sld_per_ang2, dtype=np.float64)
 
     # Convenience properties used in docs/notebooks
     @property
-    def energy_ev(self):
+    def energy_ev(self):  # type: ignore[no-untyped-def]
         return self.energy_kev * 1000.0
 
     @property
-    def delta(self):
+    def delta(self):  # type: ignore[no-untyped-def]
         return self.dispersion_delta
 
     @property
-    def beta(self):
+    def beta(self):  # type: ignore[no-untyped-def]
         return self.absorption_beta
 
     @property
-    def critical_angle_mrad(self):
+    def critical_angle_mrad(self):  # type: ignore[no-untyped-def]
         return self.critical_angle_degrees * np.pi / 180.0 * 1000.0
 
     @property
-    def linear_absorption_coefficient(self):
+    def linear_absorption_coefficient(self):  # type: ignore[no-untyped-def]
         # μ = 1 / attenuation length
         arr = np.where(
             self.attenuation_length_cm != 0, 1.0 / self.attenuation_length_cm, 0.0
         )
-        return np.asarray(arr).view(ScalarFriendlyArray)
+        return np.asarray(arr)
 
     # Legacy property aliases (deprecated) - emit warnings when accessed
     @property
@@ -606,48 +556,41 @@ def load_scattering_factor_data(element: str) -> Any:
     file_path = _AVAILABLE_ELEMENTS[element]
 
     try:
-        # Load .nff file using numpy - faster and no pandas dependency
-        # .nff files are CSV format with header: E,f1,f2
-        import csv
+        # Read and validate header line
+        with open(file_path) as _f:
+            header_line = _f.readline().strip()
 
-        with open(file_path) as file:
-            # Read header
-            reader = csv.reader(file)
-            header = next(reader)
+        header = [col.strip() for col in header_line.split(",")]
+        expected_columns = {"E", "f1", "f2"}
+        actual_columns = set(header)
 
-            # Verify expected columns exist
-            expected_columns = {"E", "f1", "f2"}
-            actual_columns = set(header)
+        if not expected_columns.issubset(actual_columns):
+            missing_cols = expected_columns - actual_columns
+            raise ValueError(
+                f"Invalid .nff file format for element '{element}'. "
+                f"Missing required columns: {missing_cols}. "
+                f"Found columns: {list(actual_columns)}"
+            )
 
-            if not expected_columns.issubset(actual_columns):
-                missing_cols = expected_columns - actual_columns
-                raise ValueError(
-                    f"Invalid .nff file format for element '{element}'. "
-                    f"Missing required columns: {missing_cols}. "
-                    f"Found columns: {list(actual_columns)}"
-                )
+        # Get column indices for correct ordering
+        e_idx = header.index("E")
+        f1_idx = header.index("f1")
+        f2_idx = header.index("f2")
 
-            # Get column indices
-            e_idx = header.index("E")
-            f1_idx = header.index("f1")
-            f2_idx = header.index("f2")
+        # Load entire file at C-level via np.loadtxt — 3-8x faster than csv.reader loop
+        raw = np.loadtxt(file_path, delimiter=",", skiprows=1, dtype=np.float64)
 
-            # Read data rows
-            data_rows = []
-            for row in reader:
-                if len(row) >= max(e_idx, f1_idx, f2_idx) + 1:
-                    data_rows.append(
-                        [float(row[e_idx]), float(row[f1_idx]), float(row[f2_idx])]
-                    )
+        if raw.ndim == 1:
+            raw = raw.reshape(1, -1)
 
-        if not data_rows:
+        if len(raw) == 0:
             raise ValueError(
                 "Empty scattering factor data file for element "
                 f"'{element}': {file_path}"
             )
 
-        # Convert to numpy array for efficiency
-        data_array = np.array(data_rows, dtype=np.float64)
+        # Re-order columns to canonical [E, f1, f2] if needed
+        data_array = raw[:, [e_idx, f1_idx, f2_idx]]
 
         # Create a pandas-like interface using a simple class
         class ScatteringData:
@@ -676,7 +619,7 @@ def load_scattering_factor_data(element: str) -> Any:
 
         return scattering_data
 
-    except (OSError, ValueError, csv.Error) as e:
+    except (OSError, ValueError) as e:
         raise ValueError(
             "Error parsing scattering factor data file for element "
             f"'{element}': {file_path}. "
@@ -829,7 +772,7 @@ def _warm_priority_cache() -> None:
     # Use background thread for async warming to avoid blocking main thread
     import threading
 
-    def _background_cache_warming():
+    def _background_cache_warming():  # type: ignore[no-untyped-def]
         """Background thread function for cache warming."""
         global _CACHE_WARMED
         try:
@@ -926,6 +869,89 @@ def is_element_cached(element: str) -> bool:
     return element.capitalize() in _scattering_factor_cache
 
 
+def _scattering_math_kernel(
+    f1_matrix: Any,
+    f2_matrix: Any,
+    counts: Any,
+    wave_sq: Any,
+    common_factor: float,
+) -> tuple[Any, Any, Any, Any]:
+    """JIT-compiled pure math kernel for scattering factor computation.
+
+    This function contains no Python side effects, interpolation calls, or
+    data-dependent branching — safe for @jax.jit compilation.
+    """
+    f1_weighted = f1_matrix * counts.reshape(-1, 1)
+    f2_weighted = f2_matrix * counts.reshape(-1, 1)
+
+    f1_total = ops.sum(f1_weighted, axis=0)
+    f2_total = ops.sum(f2_weighted, axis=0)
+
+    wave_factor = wave_sq * common_factor
+    dispersion = wave_factor * f1_total
+    absorption = wave_factor * f2_total
+
+    return dispersion, absorption, f1_total, f2_total
+
+
+def _derived_quantities_kernel(
+    wavelength: Any,
+    dispersion: Any,
+    absorption: Any,
+    pi: float,
+) -> tuple[Any, Any, Any, Any]:
+    """JIT-compiled pure math kernel for derived X-ray quantities.
+
+    Computes critical angle, attenuation length, and SLD from dispersion
+    and absorption arrays. No validation or branching — pure array math.
+    """
+    critical_angle = ops.sqrt(ops.maximum(2.0 * dispersion, 0.0)) * (180.0 / pi)
+
+    absorption_safe = ops.maximum(absorption, 1e-30)
+    attenuation_length = wavelength / absorption_safe / (4 * pi) * 1e2
+
+    wavelength_sq = ops.square(wavelength)
+    sld_factor = 2 * pi / 1e20
+
+    re_sld = dispersion * sld_factor / wavelength_sq
+    im_sld = absorption * sld_factor / wavelength_sq
+
+    return critical_angle, attenuation_length, re_sld, im_sld
+
+
+# Keep raw functions and lazily apply JIT when JAX backend is active.
+# This ensures `set_backend('jax')` at runtime also gets JIT-compiled kernels.
+_scattering_math_kernel_raw = _scattering_math_kernel
+_derived_quantities_kernel_raw = _derived_quantities_kernel
+_jit_cache: dict[str, Any] = {}
+
+
+def _get_scattering_kernel() -> Any:
+    """Return JIT-compiled kernel when JAX is active, raw function otherwise."""
+    from xraylabtool.backend.array_ops import JaxBackend, _backend
+    if isinstance(_backend, JaxBackend):
+        if "scatter" not in _jit_cache:
+            import jax  # type: ignore[import-not-found]
+            _jit_cache["scatter"] = jax.jit(
+                _scattering_math_kernel_raw, static_argnums=(4,)
+            )
+        return _jit_cache["scatter"]
+    return _scattering_math_kernel_raw
+
+
+def _get_derived_kernel() -> Any:
+    """Return JIT-compiled kernel when JAX is active, raw function otherwise."""
+    from xraylabtool.backend.array_ops import JaxBackend, _backend
+    if isinstance(_backend, JaxBackend):
+        if "derived" not in _jit_cache:
+            import jax  # type: ignore[import-not-found]
+            _jit_cache["derived"] = jax.jit(
+                _derived_quantities_kernel_raw, static_argnums=(3,)
+            )
+        return _jit_cache["derived"]
+    return _derived_quantities_kernel_raw
+
+
 def calculate_scattering_factors(
     energy_ev: EnergyArray,
     wavelength: WavelengthArray,
@@ -943,7 +969,7 @@ def calculate_scattering_factors(
 
     This function performs the core calculation of dispersion, absorption, and total
     scattering factors for a material based on its elemental composition.
-    Optimized with improved vectorization and memory efficiency.
+    Interpolation runs in Python; the linear algebra is JIT-compiled when JAX is active.
 
     Args:
         energy_ev: X-ray energies in eV (numpy array)
@@ -974,76 +1000,30 @@ def calculate_scattering_factors(
     n_energies = len(energy_ev)
     n_elements = len(element_data)
 
-    # Pre-allocate C-contiguous arrays for better memory performance
-    # Using specific dtypes for better numerical precision and speed
-    dispersion = np.zeros(n_energies, dtype=np.float64, order="C")
-    absorption = np.zeros(n_energies, dtype=np.float64, order="C")
-    f1_total = np.zeros(n_energies, dtype=np.float64, order="C")
-    f2_total = np.zeros(n_energies, dtype=np.float64, order="C")
-
-    # Pre-compute common constants outside the loop
-    common_factor = SCATTERING_FACTOR * mass_density / molecular_weight
-    # Use np.square for better performance than ** or *
-    wave_sq = np.square(wavelength)
-
     # Handle empty element data case
     if n_elements == 0:
-        # Return zero arrays for empty element data
-        return dispersion, absorption, f1_total, f2_total
+        z = ops.zeros(n_energies, dtype=ops.float64)
+        return z, z, z, z
 
-    # Batch process elements for better vectorization
-    if n_elements > 1:
-        # For multiple elements, use vectorized operations with C-contiguous arrays
-        f1_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order="C")
-        f2_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order="C")
-        counts = np.empty(n_elements, dtype=np.float64, order="C")
+    common_factor = SCATTERING_FACTOR * mass_density / molecular_weight
+    wave_sq = ops.square(wavelength)
 
-        # Vectorized interpolation for all elements
-        for i, (count, f1_interp, f2_interp) in enumerate(element_data):
-            f1_matrix[i] = f1_interp(energy_ev)
-            f2_matrix[i] = f2_interp(energy_ev)
-            counts[i] = count
+    # Evaluate interpolators (Python-side, outside JIT boundary)
+    f1_rows = []
+    f2_rows = []
+    count_list = []
+    for count, f1_interp, f2_interp in element_data:
+        f1_rows.append(ops.asarray(f1_interp(energy_ev), dtype=ops.float64))
+        f2_rows.append(ops.asarray(f2_interp(energy_ev), dtype=ops.float64))
+        count_list.append(float(count))
 
-        # Vectorized computation using matrix operations
-        # This is much faster than individual loops
-        f1_weighted = f1_matrix * counts.reshape(-1, 1)
-        f2_weighted = f2_matrix * counts.reshape(-1, 1)
+    f1_matrix = ops.asarray(f1_rows, dtype=ops.float64)
+    f2_matrix = ops.asarray(f2_rows, dtype=ops.float64)
+    counts = ops.asarray(count_list, dtype=ops.float64)
 
-        # Sum across elements (axis=0) for total scattering factors
-        f1_total = np.sum(f1_weighted, axis=0)
-        f2_total = np.sum(f2_weighted, axis=0)
-
-        # Calculate optical properties with vectorized operations
-        wave_factor = wave_sq * common_factor
-        dispersion = wave_factor * f1_total
-        absorption = wave_factor * f2_total
-
-    else:
-        # Single element optimization - avoid matrix operations overhead
-        count, f1_interp, f2_interp = element_data[0]
-
-        # Direct vectorized computation for single element
-        f1_values = f1_interp(energy_ev)
-        f2_values = f2_interp(energy_ev)
-
-        # Ensure arrays are float64 and contiguous for best performance
-        # Only convert if not already the right type
-        if not isinstance(f1_values, np.ndarray) or f1_values.dtype != np.float64:
-            f1_values = np.asarray(f1_values, dtype=np.float64)
-        if not isinstance(f2_values, np.ndarray) or f2_values.dtype != np.float64:
-            f2_values = np.asarray(f2_values, dtype=np.float64)
-
-        # Pre-compute factors for efficiency
-        count_factor = float(count)
-        wave_element_factor = wave_sq * (common_factor * count_factor)
-
-        # Direct assignment for single element case - reuse pre-allocated arrays
-        f1_total[:] = count_factor * f1_values
-        f2_total[:] = count_factor * f2_values
-        dispersion[:] = wave_element_factor * f1_values
-        absorption[:] = wave_element_factor * f2_values
-
-    return dispersion, absorption, f1_total, f2_total
+    # Dispatch to JIT-compiled math kernel
+    kernel = _get_scattering_kernel()
+    return kernel(f1_matrix, f2_matrix, counts, wave_sq, common_factor)
 
 
 def calculate_derived_quantities(
@@ -1081,60 +1061,30 @@ def calculate_derived_quantities(
     """
     from xraylabtool.constants import AVOGADRO, PI
 
-    # Numerical stability checks - consistent with existing energy validation
-    if np.any(np.isnan(dispersion)) or np.any(np.isnan(absorption)):
+    # Numerical stability checks must run outside any JIT region because they
+    # branch on concrete array values (ops.any returns a Python bool here).
+    # These guards are intentionally kept as host-side checks.
+    if ops.any(ops.isnan(dispersion)) or ops.any(ops.isnan(absorption)):
         raise ValueError("NaN values detected in dispersion or absorption coefficients")
 
-    if np.any(np.isinf(dispersion)) or np.any(np.isinf(absorption)):
+    if ops.any(ops.isinf(dispersion)) or ops.any(ops.isinf(absorption)):
         raise ValueError(
             "Infinite values detected in dispersion or absorption coefficients"
         )
 
-    # Check for negative dispersion values (physically unrealistic)
-    if np.any(dispersion < 0):
+    if ops.any(ops.asarray(dispersion) < 0):
         raise ValueError("Negative dispersion values detected (physically unrealistic)")
 
-    # Calculate electron density (electrons per unit volume)
-    # ρₑ = ρ × Nₐ × Z / M × 10⁻³⁰ (converted to electrons/Å³)
-    # Ensure scalar inputs for density calculation
-    density_val = (
-        np.asarray(mass_density).item()
-        if np.asarray(mass_density).size == 1
-        else mass_density
-    )
-    mol_weight_val = (
-        np.asarray(molecular_weight).item()
-        if np.asarray(molecular_weight).size == 1
-        else molecular_weight
-    )
-    electrons_val = (
-        np.asarray(number_of_electrons).item()
-        if np.asarray(number_of_electrons).size == 1
-        else number_of_electrons
-    )
-
+    # Calculate electron density (electrons per unit volume).
     electron_density = float(
-        1e6 * density_val / mol_weight_val * AVOGADRO * electrons_val / 1e30
+        1e6 * float(mass_density) / float(molecular_weight) * AVOGADRO * float(number_of_electrons) / 1e30
     )
 
-    # Calculate critical angle for total external reflection
-    # θc = √(2δ) (in radians), converted to degrees
-    # Use np.maximum to ensure non-negative values under sqrt
-    critical_angle = np.sqrt(np.maximum(2.0 * dispersion, 0.0)) * (180.0 / PI)
-
-    # Calculate X-ray attenuation length
-    # 1/e attenuation length = λ/(4πβ) (in cm)
-    # Add small epsilon to prevent division by zero
-    absorption_safe = np.maximum(absorption, 1e-30)  # Minimum absorption to prevent inf
-    attenuation_length = wavelength / absorption_safe / (4 * PI) * 1e2
-
-    # Calculate scattering length densities (SLD)
-    # SLD = 2π × (δ + iβ) / λ² (in units of Å⁻²)
-    wavelength_sq = wavelength**2
-    sld_factor = 2 * PI / 1e20  # Conversion factor to Å⁻²
-
-    re_sld = dispersion * sld_factor / wavelength_sq  # Real part of SLD
-    im_sld = absorption * sld_factor / wavelength_sq  # Imaginary part of SLD
+    # Dispatch to JIT-compiled math kernel for array computations
+    kernel = _get_derived_kernel()
+    critical_angle, attenuation_length, re_sld, im_sld = kernel(
+        wavelength, dispersion, absorption, PI
+    )
 
     return electron_density, critical_angle, attenuation_length, re_sld, im_sld
 
@@ -1180,22 +1130,7 @@ def create_scattering_factor_interpolators(
     """
     # Check interpolator cache first
     if element in _interpolator_cache:
-        # Lazy import to avoid circular imports
-        try:
-            from xraylabtool.data_handling.cache_metrics import _record_cache_access
-
-            _record_cache_access(element, "interpolator_cache", hit=True)
-        except ImportError:
-            pass  # Silently continue if cache metrics not available
         return _interpolator_cache[element]
-
-    # Cache miss - need to create new interpolators
-    try:
-        from xraylabtool.data_handling.cache_metrics import _record_cache_access
-
-        _record_cache_access(element, "interpolator_cache", hit=False)
-    except ImportError:
-        pass  # Silently continue if cache metrics not available
 
     # Load scattering factor data
     scattering_factor_data = load_scattering_factor_data(element)
@@ -1209,27 +1144,23 @@ def create_scattering_factor_interpolators(
         )
 
     # Extract energy, f1, and f2 data
-    energy_values = np.asarray(scattering_factor_data["E"].values)
-    f1_values = np.asarray(scattering_factor_data["f1"].values)
-    f2_values = np.asarray(scattering_factor_data["f2"].values)
+    energy_values = ops.asarray(scattering_factor_data["E"].values)
+    f1_values = ops.asarray(scattering_factor_data["f1"].values)
+    f2_values = ops.asarray(scattering_factor_data["f2"].values)
 
     # Verify energy values are sorted (PCHIP requires sorted x values)
-    if not np.all(energy_values[:-1] <= energy_values[1:]):
+    if ops.any(ops.asarray(energy_values[:-1]) > ops.asarray(energy_values[1:])):
         # Sort the data if it's not already sorted
-        sort_indices = np.argsort(energy_values)
+        sort_indices = ops.argsort(energy_values)
         energy_values = energy_values[sort_indices]
         f1_values = f1_values[sort_indices]
         f2_values = f2_values[sort_indices]
 
-    # Create PCHIP interpolators
+    # Create PCHIP interpolators via backend abstraction layer
     # PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) preserves monotonicity
-    # and provides smooth, shape-preserving interpolation similar to Julia's
-    # behavior
-    # Lazy import scipy only when needed
-    from scipy.interpolate import PchipInterpolator
-
-    f1_interpolator = PchipInterpolator(energy_values, f1_values, extrapolate=False)
-    f2_interpolator = PchipInterpolator(energy_values, f2_values, extrapolate=False)
+    # and provides smooth, shape-preserving interpolation similar to Julia's behavior
+    f1_interpolator = InterpolationFactory.create_pchip(energy_values, f1_values, extrapolate=False)
+    f2_interpolator = InterpolationFactory.create_pchip(energy_values, f2_values, extrapolate=False)
 
     # Cache the interpolators for future use
     _interpolator_cache[element] = (f1_interpolator, f2_interpolator)
@@ -1246,7 +1177,7 @@ def _validate_single_material_inputs(
     if not formula_str or not isinstance(formula_str, str):
         raise ValueError("Formula must be a non-empty string")
 
-    if np.any(np.asarray(mass_density) <= 0):
+    if ops.any(ops.asarray(mass_density) <= 0):
         raise ValueError("Mass density must be positive")
 
     # Convert and validate energy
@@ -1262,21 +1193,21 @@ def _validate_single_material_inputs(
 
 
 def _convert_energy_input(energy_kev: Any) -> EnergyArray:
-    """Convert energy input to numpy array."""
+    """Convert energy input to array."""
     if np.isscalar(energy_kev):
         if isinstance(energy_kev, complex):
-            energy_kev = np.array([float(energy_kev.real)], dtype=np.float64)
+            energy_kev = ops.asarray([float(energy_kev.real)], dtype=ops.float64)
         elif isinstance(energy_kev, int | float | np.number):
-            energy_kev = np.array([float(energy_kev)], dtype=np.float64)
+            energy_kev = ops.asarray([float(energy_kev)], dtype=ops.float64)
         else:
             try:
-                energy_kev = np.array([float(energy_kev)], dtype=np.float64)
+                energy_kev = ops.asarray([float(energy_kev)], dtype=ops.float64)
             except (ValueError, TypeError) as e:
                 raise ValueError(f"Cannot convert energy to float: {energy_kev}") from e
     else:
-        energy_kev = np.array(energy_kev, dtype=np.float64)
+        energy_kev = ops.asarray(energy_kev, dtype=ops.float64)
 
-    return np.asarray(energy_kev)
+    return ops.asarray(energy_kev)  # type: ignore[no-any-return]
 
 
 def _calculate_molecular_properties(
@@ -1312,7 +1243,6 @@ def _prepare_element_data(
     return element_data
 
 
-# @ensure_c_contiguous  # Optimization decorator removed for compatibility
 def _calculate_single_material_xray_properties(
     formula_str: str,
     energy_kev: FloatLike | ArrayLike,
@@ -1411,7 +1341,6 @@ def _calculate_single_material_xray_properties(
     }
 
 
-# @ensure_c_contiguous  # Optimization decorator removed for compatibility
 def calculate_multiple_xray_properties(
     formula_list: list[str],
     energy_kev: FloatLike | ArrayLike,
@@ -1461,24 +1390,23 @@ def calculate_multiple_xray_properties(
                 formula, energy_kev, mass_density
             )
 
-            # Convert XRayResult to dictionary format for backward
-            # compatibility
+            # Convert XRayResult to dictionary format for backward compatibility
             result_dict: dict[str, str | float | np.ndarray] = {
-                "formula": result.Formula,
-                "molecular_weight": result.MW,
-                "number_of_electrons": result.Number_Of_Electrons,
-                "mass_density": result.Density,
-                "electron_density": result.Electron_Density,
-                "energy": result.Energy,
-                "wavelength": result.Wavelength,
-                "dispersion": result.Dispersion,
-                "absorption": result.Absorption,
-                "f1_total": result.f1,
-                "f2_total": result.f2,
-                "critical_angle": result.Critical_Angle,
-                "attenuation_length": result.Attenuation_Length,
-                "re_sld": result.reSLD,
-                "im_sld": result.imSLD,
+                "formula": result.formula,
+                "molecular_weight": result.molecular_weight_g_mol,
+                "number_of_electrons": result.total_electrons,
+                "mass_density": result.density_g_cm3,
+                "electron_density": result.electron_density_per_ang3,
+                "energy": result.energy_kev,
+                "wavelength": result.wavelength_angstrom,
+                "dispersion": result.dispersion_delta,
+                "absorption": result.absorption_beta,
+                "f1_total": result.scattering_factor_f1,
+                "f2_total": result.scattering_factor_f2,
+                "critical_angle": result.critical_angle_degrees,
+                "attenuation_length": result.attenuation_length_cm,
+                "re_sld": result.real_sld_per_ang2,
+                "im_sld": result.imaginary_sld_per_ang2,
             }
             results[formula] = result_dict
         except Exception as e:
@@ -1511,10 +1439,10 @@ def load_data_file(filename: str) -> Any:
     if file_path.suffix.lower() == ".csv":
         return pd.read_csv(file_path)
     elif file_path.suffix.lower() in [".txt", ".dat"]:
-        return pd.read_csv(file_path, delim_whitespace=True)
+        return pd.read_csv(file_path, delim_whitespace=True)  # type: ignore[call-overload]
     else:
         # Try to load as generic text file
-        return pd.read_csv(file_path, delim_whitespace=True)
+        return pd.read_csv(file_path, delim_whitespace=True)  # type: ignore[call-overload]
 
 
 # =====================================================================================
@@ -1522,7 +1450,6 @@ def load_data_file(filename: str) -> Any:
 # =====================================================================================
 
 
-# @ensure_c_contiguous  # Optimization decorator removed for compatibility
 def calculate_single_material_properties(
     formula: str,
     energy_keV: FloatLike | ArrayLike | None = None,
@@ -1647,39 +1574,25 @@ def calculate_single_material_properties(
         formula, energy_keV, density
     )
 
-    # Create and return XRayResult dataclass using new field names
+    # Create and return XRayResult dataclass using new field names.
+    # Arrays from _calculate_single_material_xray_properties are already
+    # float64 C-contiguous numpy arrays; no wrapping needed.
     return XRayResult(
         formula=str(properties["formula"]),
         molecular_weight_g_mol=float(properties["molecular_weight"]),
         total_electrons=float(properties["number_of_electrons"]),
         density_g_cm3=float(properties["mass_density"]),
         electron_density_per_ang3=float(properties["electron_density"]),
-        energy_kev=np.ascontiguousarray(properties["energy"], dtype=np.float64),
-        wavelength_angstrom=np.ascontiguousarray(
-            properties["wavelength"], dtype=np.float64
-        ),
-        dispersion_delta=np.ascontiguousarray(
-            properties["dispersion"], dtype=np.float64
-        ),
-        absorption_beta=np.ascontiguousarray(
-            properties["absorption"], dtype=np.float64
-        ),
-        scattering_factor_f1=np.ascontiguousarray(
-            properties["f1_total"], dtype=np.float64
-        ),
-        scattering_factor_f2=np.ascontiguousarray(
-            properties["f2_total"], dtype=np.float64
-        ),
-        critical_angle_degrees=np.ascontiguousarray(
-            properties["critical_angle"], dtype=np.float64
-        ),
-        attenuation_length_cm=np.ascontiguousarray(
-            properties["attenuation_length"], dtype=np.float64
-        ),
-        real_sld_per_ang2=np.ascontiguousarray(properties["re_sld"], dtype=np.float64),
-        imaginary_sld_per_ang2=np.ascontiguousarray(
-            properties["im_sld"], dtype=np.float64
-        ),
+        energy_kev=properties["energy"],
+        wavelength_angstrom=properties["wavelength"],
+        dispersion_delta=properties["dispersion"],
+        absorption_beta=properties["absorption"],
+        scattering_factor_f1=properties["f1_total"],
+        scattering_factor_f2=properties["f2_total"],
+        critical_angle_degrees=properties["critical_angle"],
+        attenuation_length_cm=properties["attenuation_length"],
+        real_sld_per_ang2=properties["re_sld"],
+        imaginary_sld_per_ang2=properties["im_sld"],
     )
 
 
@@ -1791,46 +1704,22 @@ def _process_formulas_parallel(
     process_func: Callable[[tuple[str, float]], tuple[str, XRayResult]],
 ) -> dict[str, XRayResult]:
     """
-    Process formulas with adaptive parallelization.
+    Process formulas with adaptive strategy.
 
-    Uses sequential processing for small batches (<20 items) to avoid
-    ThreadPoolExecutor overhead, and parallel processing for larger batches.
+    Uses sequential processing for all batches. Threading is avoided because
+    JAX's JIT-compiled kernels already parallelize at the XLA level — adding
+    Python threads on top adds GIL contention without GPU parallelism.
     """
     formula_density_pairs = list(zip(formulas, densities, strict=False))
     results = {}
 
-    # Use sequential processing for small batches to avoid thread overhead
-    if len(formulas) < 20:
-        for pair in formula_density_pairs:
-            try:
-                formula_result, xray_result = process_func(pair)
-                results[formula_result] = xray_result
-            except Exception as e:
-                print(f"Warning: Failed to process formula '{pair[0]}': {e}")
-                continue
-        return results
-
-    # Use parallel processing for larger batches
-    import concurrent.futures
-    import multiprocessing
-
-    optimal_workers = min(len(formulas), max(1, multiprocessing.cpu_count() // 2), 8)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=optimal_workers) as executor:
-        future_to_formula = {
-            executor.submit(process_func, pair): pair[0]
-            for pair in formula_density_pairs
-        }
-
-        for future in concurrent.futures.as_completed(future_to_formula):
-            formula = future_to_formula[future]
-            try:
-                formula_result, xray_result = future.result()
-                results[formula_result] = xray_result
-            except Exception as e:
-                print(f"Warning: Failed to process formula '{formula}': {e}")
-                continue
-
+    for pair in formula_density_pairs:
+        try:
+            formula_result, xray_result = process_func(pair)
+            results[formula_result] = xray_result
+        except Exception as e:
+            print(f"Warning: Failed to process formula '{pair[0]}': {e}")
+            continue
     return results
 
 

@@ -542,7 +542,7 @@ See Also
 
 - :doc:`cli_reference` - Complete CLI command reference
 - :doc:`getting_started` - Basic installation and setup
-- :doc:`index` - Main documentation index
+- :doc:`/index` - Main documentation index
 
 For more help, use:
 

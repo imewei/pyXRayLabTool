@@ -22,8 +22,8 @@ class ThemeProtocol(Protocol):
 
 
 class PlotThemeProtocol(Protocol):
-    """Interface for Matplotlib Integration."""
+    """Interface for Plot Theme Integration."""
 
     def apply_to_figure(self, figure: Any, mode: Literal["light", "dark"]) -> None:
-        """Update a matplotlib figure to match the theme."""
+        """Update a plot figure to match the theme."""
         ...

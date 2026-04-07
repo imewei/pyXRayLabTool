@@ -3,26 +3,32 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHeaderView, QMessageBox, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import (
+    QHeaderView,
+    QMessageBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QWidget,
+)
 
 from xraylabtool.validation import validate_chemical_formula, validate_density
 
 
 class MaterialTable(QTableWidget):
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(0, 2, parent)
         self.setHorizontalHeaderLabels(["Formula", "Density (g/cm³)"])
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)  # type: ignore[attr-defined]
         self.verticalHeader().setVisible(False)
         self.setSelectionBehavior(self.SelectionBehavior.SelectRows)
         self.setSelectionMode(self.SelectionMode.SingleSelection)
         self.setAlternatingRowColors(True)
         hdr = self.horizontalHeader()
-        hdr.setSectionResizeMode(QHeaderView.Interactive)
+        hdr.setSectionResizeMode(QHeaderView.Interactive)  # type: ignore[attr-defined]
         hdr.setDefaultSectionSize(140)
         hdr.setMinimumSectionSize(90)
         hdr.setStretchLastSection(True)
-        hdr.setTextElideMode(Qt.ElideMiddle)
+        hdr.setTextElideMode(Qt.ElideMiddle)  # type: ignore[attr-defined]
 
     def add_material(self, formula: str, density: float) -> None:
         if not formula:

@@ -28,13 +28,18 @@ Key Features
    - Transmission and reflection coefficients
 
 **Architecture**
-   - Modular design with 5 focused sub-packages:
+   - Modular design with focused sub-packages:
 
      - **calculators**: Core X-ray physics calculations
      - **data_handling**: Atomic data caching and batch processing
      - **interfaces**: CLI and completion systems
      - **io**: File operations and export functionality
      - **validation**: Input validation and error handling
+     - **analysis**: Material comparison and absorption edge detection
+     - **export**: CSV/JSON export for downstream analysis
+     - **optimization**: Vectorized and performance-tuned calculations
+     - **backend**: NumPy/JAX array backend abstraction
+     - **gui**: PySide6 desktop application
 
    - Type-safe with complete type hints
    - Extensive test coverage (>95%)
@@ -104,10 +109,10 @@ Navigation
    :maxdepth: 2
    :caption: User Guide
 
-   getting_started
-   tutorials/index
-   cli_reference
-   completion_guide
+   guides/getting_started
+   guides/cli_reference
+   guides/completion_guide
+   guides/migration_guide_v0_4
    examples/index
 
 .. toctree::
@@ -126,12 +131,19 @@ Navigation
 
 .. toctree::
    :maxdepth: 2
+   :caption: Architecture
+
+   architecture/index
+
+.. toctree::
+   :maxdepth: 2
    :caption: Development
 
-   contributing
-   performance
-   testing
-   changelog
+   development/contributing
+   development/performance
+   development/testing
+   development/changelog
+   development/rollback_procedures
 
 .. toctree::
    :maxdepth: 1

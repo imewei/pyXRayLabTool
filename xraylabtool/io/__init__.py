@@ -6,7 +6,7 @@ This module contains input/output operations, file handling, and data persistenc
 
 
 # Lazy import heavy modules to improve startup time
-def __getattr__(name):
+def __getattr__(name):  # type: ignore[no-untyped-def]
     if name in ["format_calculation_summary", "format_xray_result"]:
         from xraylabtool.io.data_export import (
             format_calculation_summary,

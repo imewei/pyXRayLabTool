@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xraylabtool"
-version = "0.3.0"
+version = "0.4.0"
 authors = [
     {name = "Wei Chen", email = "wchen@anl.gov"},
 ]
@@ -91,9 +91,14 @@ dependencies = [
     "numpy>=2.3.5",
     "pandas>=2.3.3",
     "scipy>=1.16.3",
-    "matplotlib>=3.10.8",
     "mendeleev>=1.1.0",
     "tqdm>=4.67.1",
+
+    # JAX ecosystem — CPU-only base (works on all platforms)
+    # GPU users: install gpu_cuda12 or gpu_cuda13 extra (see below)
+    "jax>=0.8.0",
+    "jaxlib>=0.8.0",
+    "interpax>=0.3.0",
     "psutil>=7.1.3",
 
     # Testing
@@ -137,8 +142,6 @@ dependencies = [
 
     # Enhanced export
     "openpyxl>=3.1.5",
-    "seaborn>=0.13.2",
-    "plotly>=6.5.0",
     "jinja2>=3.1.6",
 
     # API server
@@ -146,7 +149,7 @@ dependencies = [
     "uvicorn[standard]>=0.38.0",
     "python-multipart>=0.0.20",
     "PyJWT[crypto]>=2.10.0",
-    "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=4.2.0",
     "python-dateutil>=2.9.0.post0",
 
     # Advanced analysis
@@ -160,11 +163,29 @@ dependencies = [
 
     # Desktop GUI
     "PySide6>=6.10.1",
+    "pyqtgraph>=0.13.7",
 
     # Jupyter notebooks
     "jupyter>=1.1.1",
     "jupyterlab>=4.5.0",
     "ipywidgets>=8.1.8",
+]
+
+[project.optional-dependencies]
+gpu_cuda13 = [
+    # CUDA 13 GPU support (SM >= 7.5: Turing+) — versions must match jaxlib
+    "jax-cuda13-plugin>=0.8.0",
+    "jax-cuda13-pjrt>=0.8.0",
+]
+gpu_cuda12 = [
+    # CUDA 12 GPU support (SM >= 5.2: Maxwell+) — versions must match jaxlib
+    "jax-cuda12-plugin>=0.8.0",
+    "jax-cuda12-pjrt>=0.8.0",
+]
+plots = [
+    "matplotlib>=3.10.8",
+    "seaborn>=0.13.2",
+    "plotly>=6.5.0",
 ]
 
 [project.urls]
@@ -181,6 +202,15 @@ Repository = "https://github.com/imewei/pyXRayLabTool"
 
 [tool.uv]
 package = true
+# GPU extras are mutually exclusive — only ONE CUDA plugin set can be active.
+# Without this, `uv sync --all-extras` installs both cuda12 and cuda13 plugins
+# simultaneously, causing PJRT_Api ALREADY_EXISTS registration conflicts.
+conflicts = [
+    [
+        { extra = "gpu-cuda12" },
+        { extra = "gpu-cuda13" },
+    ],
+]
 
 [project.scripts]
 xraylabtool = "xraylabtool.interfaces.cli:main"
@@ -459,7 +489,7 @@ exclude = [
 "__init__.py" = ["F401", "PLR0911", "PLR0912", "PLC0415"]     # Allow unused imports, complexity, and lazy imports in __init__.py
 # Relax rules for completion system files (complex generated/template code)
 "**/interfaces/completion.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM102"]
-"**/interfaces/completion_v2/*.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112", "B006", "S604", "ARG002", "SIM118", "PLW0603", "ARG001", "S607", "S112", "PLW2901", "RUF001", "PLC0415", "S110"]
+"**/interfaces/completion_v2/*.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112", "B006", "S604", "ARG002", "SIM118", "PLW0603", "ARG001", "S112", "PLW2901", "RUF001", "PLC0415", "S110"]
 # Scientific computing files with performance-critical lazy imports
 "**/utils.py" = ["PLC0415", "ARG001"]  # Allow lazy imports and unused args in utility functions
 "**/typing_extensions.py" = ["PLC0415", "UP007"]  # Allow lazy imports and legacy union syntax for compatibility
@@ -471,6 +501,7 @@ exclude = [
 "scripts/test_docs.py" = ["PLR0912", "PLR0915", "S112", "S607"]  # Allow complex functions and subprocess calls in documentation testing script
 "scripts/gui_headless_smoke.py" = ["PLR0915"]
 "xraylabtool/gui/*.py" = ["PLR0915", "PLR0912", "PLR1714", "PLC0415", "E402", "SIM108"]
+"xraylabtool/backend/*.py" = ["PLC0415", "PLW0603"]  # Lazy imports and global state are intentional in the backend abstraction layer
 "scripts/validate_style_guide.py" = ["PLW2901", "SIM102", "S607", "PLR0912", "PLR0915", "PLC0415"]  # Allow style validation patterns
 
 [tool.ruff.lint.isort]

@@ -15,7 +15,7 @@ from .shells import CompletionManager, get_global_options, get_xraylabtool_comma
 class CompletionInstaller:
     """Handles virtual environment-centric completion installation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.env_detector = EnvironmentDetector()
         self.completion_manager = CompletionManager()
         self.marker_file = ".xraylabtool_completion"
@@ -620,15 +620,15 @@ fi
         print(f"   You may need to start a new {shell} session to see the changes.")
 
     # Backward compatibility methods for tests
-    def install_bash_completion(self, **kwargs) -> bool:
+    def install_bash_completion(self, **kwargs) -> bool:  # type: ignore[no-untyped-def]
         """Install bash completion (backward compatibility)."""
         return self.install(shell="bash", **kwargs)
 
-    def uninstall_bash_completion(self, **kwargs) -> bool:
+    def uninstall_bash_completion(self, **kwargs) -> bool:  # type: ignore[no-untyped-def]
         """Uninstall bash completion (backward compatibility)."""
         return self.uninstall(**kwargs)
 
-    def uninstall_completion(
+    def uninstall_completion(  # type: ignore[no-untyped-def]
         self, shell_type=None, cleanup_session=True, **kwargs
     ) -> bool:
         """Uninstall completion (backward compatibility)."""

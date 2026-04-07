@@ -9,13 +9,6 @@ Real-world examples and use cases for XRayLabTool.
 Interactive Examples
 --------------------
 
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-
-   getting_started
-   basic_examples
-
 These examples include downloadable Jupyter notebooks and Python scripts demonstrating applications of XRayLabTool.
 
 **Quick Start Examples:**

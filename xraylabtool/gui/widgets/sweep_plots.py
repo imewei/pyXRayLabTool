@@ -1,100 +1,124 @@
-"""Scattering factor plot widgets.
+"""Scattering factor plot widgets backed by PyQtGraph.
 
-This module contains small Matplotlib-based widgets used by the GUI.
+This module contains small PyQtGraph-based widgets used by the GUI.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from typing import Any
 
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
-from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
+import numpy as np
+import pyqtgraph as pg  # type: ignore[import-untyped]
 from PySide6.QtWidgets import QVBoxLayout, QWidget
+
+from xraylabtool.gui.widgets import (
+    apply_palette_to_item,
+    apply_palette_to_widget,
+    current_palette,
+)
 
 
 class F1F2Plot(QWidget):
+    """Single-panel plot showing f1 and f2 vs energy for one material."""
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.figure = Figure(figsize=(6, 3))
-        self.canvas = FigureCanvasQTAgg(self.figure)
+        self.plot_widget = pg.PlotWidget()
+        palette = current_palette()
+        apply_palette_to_widget(self.plot_widget, palette)
+        self._legend = self.plot_widget.addLegend()
+
         layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.plot_widget)
         self.setLayout(layout)
 
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
     def clear(self) -> None:
-        self.figure.clear()
-        self.canvas.draw_idle()
+        self.plot_widget.clear()
+        self._legend = self.plot_widget.addLegend()
 
-    def render_result(self, result) -> None:
-        import numpy as np
-
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
+    def render_result(self, result: Any) -> None:
+        self.clear()
+        palette = current_palette()
+        colors = palette.plot_cycle
         energy = np.array(result.energy_kev, ndmin=1, copy=False)
-        ax.plot(
+
+        self.plot_widget.plot(
             energy,
             result.scattering_factor_f1,
-            label="f1",
-            marker="o",
-            markersize=5,
-            linewidth=1.5,
+            pen=pg.mkPen(color=colors[0], width=1.5),
+            symbol="o",
+            symbolSize=5,
+            symbolBrush=pg.mkBrush(colors[0]),
+            symbolPen=pg.mkPen(None),
+            name="f1",
         )
-        ax.plot(
+        self.plot_widget.plot(
             energy,
             result.scattering_factor_f2,
-            label="f2",
-            marker="o",
-            markersize=5,
-            linewidth=1.5,
+            pen=pg.mkPen(color=colors[1], width=1.5),
+            symbol="o",
+            symbolSize=5,
+            symbolBrush=pg.mkBrush(colors[1]),
+            symbolPen=pg.mkPen(None),
+            name="f2",
         )
+
         if energy.size > 1:
-            ax.set_xscale("log", nonpositive="clip")
-        ax.set_xlabel("Energy (keV)")
-        ax.set_ylabel("Scattering factors (e)")
-        ax.grid(True, alpha=0.3)
-        ax.legend()
-        self.figure.subplots_adjust(left=0.12, right=0.98, top=0.92, bottom=0.14)
-        self.canvas.draw_idle()
+            self.plot_widget.setLogMode(x=True, y=False)
+        else:
+            self.plot_widget.setLogMode(x=False, y=False)
+
+        self.plot_widget.setLabel("bottom", "Energy (keV)")
+        self.plot_widget.setLabel("left", "Scattering factors (e)")
 
     def update_theme(self) -> None:
-        """Update figure appearance based on current RcParams."""
-        import matplotlib as mpl
-
-        rc = mpl.rcParams
-        self.figure.set_facecolor(rc["figure.facecolor"])
-        for ax in self.figure.axes:
-            ax.set_facecolor(rc["axes.facecolor"])
-            ax.grid(color=rc["grid.color"], alpha=rc["grid.alpha"])
-            ax.title.set_color(rc["text.color"])
-            ax.xaxis.label.set_color(rc["text.color"])
-            ax.yaxis.label.set_color(rc["text.color"])
-            ax.tick_params(colors=rc["xtick.color"], which="both")
-            for spine in ax.spines.values():
-                spine.set_edgecolor(rc["axes.edgecolor"])
-        self.canvas.draw_idle()
+        """Re-apply colors from the currently active palette."""
+        apply_palette_to_widget(self.plot_widget, current_palette())
 
 
 class MultiF1F2Plot(QWidget):
-    """Compare f1 and f2 across multiple materials."""
+    """Two-panel plot comparing f1 (top) and f2 (bottom) for multiple materials."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.figure = Figure(figsize=(6, 4))
-        self.canvas = FigureCanvasQTAgg(self.figure)
-        self.toolbar = NavigationToolbar(self.canvas, self)
         self.setMinimumHeight(320)
 
+        self.layout_widget = pg.GraphicsLayoutWidget()
+        palette = current_palette()
+        self.layout_widget.setBackground(palette.plot_bg)
+
+        self._ax1: Any = self.layout_widget.addPlot(row=0, col=0)
+        self._ax2: Any = self.layout_widget.addPlot(row=1, col=0)
+        self._ax2.setXLink(self._ax1)
+
+        apply_palette_to_item(self._ax1, palette)
+        apply_palette_to_item(self._ax2, palette)
+
+        self._ax1.addLegend()
+        self._ax2.addLegend()
+
         layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.canvas)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.layout_widget)
         self.setLayout(layout)
 
-    def clear(self) -> None:
-        self.figure.clear()
-        self.canvas.draw_idle()
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
-    def render_multi(self, results: Mapping[str, object]) -> None:
+    def clear(self) -> None:
+        self._ax1.clear()
+        self._ax2.clear()
+        self._ax1.addLegend()
+        self._ax2.addLegend()
+
+    def render_multi(self, results: Mapping[str, Any]) -> None:
         """Render f1 and f2 vs energy for multiple materials.
 
         Parameters
@@ -102,64 +126,52 @@ class MultiF1F2Plot(QWidget):
         results
             Mapping of formula -> XRayResult-like objects.
         """
+        self.clear()
+        palette = current_palette()
+        colors = palette.plot_cycle
 
-        import numpy as np
-
-        self.figure.clear()
-        ax1 = self.figure.add_subplot(211)
-        ax2 = self.figure.add_subplot(212, sharex=ax1)
-
-        for formula, res in results.items():
+        for idx, (formula, res) in enumerate(results.items()):
             energy = np.array(res.energy_kev, ndmin=1, copy=False)
-            ax1.plot(
+            color = colors[idx % len(colors)]
+            label = str(formula)
+
+            self._ax1.plot(
                 energy,
                 res.scattering_factor_f1,
-                label=str(formula),
-                marker="o",
-                markersize=4,
-                linewidth=1.3,
+                pen=pg.mkPen(color=color, width=1.3),
+                symbol="o",
+                symbolSize=4,
+                symbolBrush=pg.mkBrush(color),
+                symbolPen=pg.mkPen(None),
+                name=label,
             )
-            ax2.plot(
+            self._ax2.plot(
                 energy,
                 res.scattering_factor_f2,
-                label=str(formula),
-                marker="o",
-                markersize=4,
-                linewidth=1.3,
+                pen=pg.mkPen(color=color, width=1.3),
+                symbol="o",
+                symbolSize=4,
+                symbolBrush=pg.mkBrush(color),
+                symbolPen=pg.mkPen(None),
+                name=label,
             )
 
-        # Use log x-axis when energy is swept
-        any_energy = next(iter(results.values()), None)
-        if any_energy is not None and len(getattr(any_energy, "energy_kev", [])) > 1:
-            ax1.set_xscale("log", nonpositive="clip")
-            ax2.set_xscale("log", nonpositive="clip")
-
-        ax1.set_ylabel("f1 (e)")
-        ax2.set_ylabel("f2 (e)")
-        ax2.set_xlabel("Energy (keV)")
-        for ax in (ax1, ax2):
-            ax.grid(True, alpha=0.3)
-            if ax.get_legend_handles_labels()[0]:
-                ax.legend()
-
-        self.figure.subplots_adjust(
-            left=0.12, right=0.98, top=0.92, bottom=0.12, hspace=0.28
+        # Log x-axis when energy is swept over multiple points
+        any_res = next(iter(results.values()), None)
+        use_log = (
+            any_res is not None
+            and len(getattr(any_res, "energy_kev", [])) > 1
         )
-        self.canvas.draw_idle()
+        self._ax1.setLogMode(x=use_log, y=False)
+        self._ax2.setLogMode(x=use_log, y=False)
+
+        self._ax1.setLabel("left", "f1 (e)")
+        self._ax2.setLabel("left", "f2 (e)")
+        self._ax2.setLabel("bottom", "Energy (keV)")
 
     def update_theme(self) -> None:
-        """Update figure appearance based on current RcParams."""
-        import matplotlib as mpl
-
-        rc = mpl.rcParams
-        self.figure.set_facecolor(rc["figure.facecolor"])
-        for ax in self.figure.axes:
-            ax.set_facecolor(rc["axes.facecolor"])
-            ax.grid(color=rc["grid.color"], alpha=rc["grid.alpha"])
-            ax.title.set_color(rc["text.color"])
-            ax.xaxis.label.set_color(rc["text.color"])
-            ax.yaxis.label.set_color(rc["text.color"])
-            ax.tick_params(colors=rc["xtick.color"], which="both")
-            for spine in ax.spines.values():
-                spine.set_edgecolor(rc["axes.edgecolor"])
-        self.canvas.draw_idle()
+        """Re-apply colors from the currently active palette."""
+        palette = current_palette()
+        self.layout_widget.setBackground(palette.plot_bg)
+        apply_palette_to_item(self._ax1, palette)
+        apply_palette_to_item(self._ax2, palette)

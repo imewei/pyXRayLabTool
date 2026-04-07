@@ -17,7 +17,7 @@ from .comparator import MaterialComparator
 
 # Lazy-loaded numpy to improve startup performance
 @lru_cache(maxsize=1)
-def _get_numpy():
+def _get_numpy():  # type: ignore[no-untyped-def]
     """Lazy import numpy only when needed."""
     import numpy as np
 
@@ -28,7 +28,7 @@ def _get_numpy():
 class _NumpyProxy:
     """Proxy object that provides numpy functions on demand."""
 
-    def __getattr__(self, name):
+    def __getattr__(self, name):  # type: ignore[no-untyped-def]
         np = _get_numpy()
         return getattr(np, name)
 
@@ -38,7 +38,7 @@ np = _NumpyProxy()
 
 
 def find_absorption_edges(
-    energies: np.ndarray, f2_values: np.ndarray, threshold: float = 0.1
+    energies: np.ndarray, f2_values: np.ndarray, threshold: float = 0.1  # type: ignore[name-defined]
 ) -> list[tuple[float, float]]:
     """
     Simple absorption edge detection using f2 derivative.
@@ -72,7 +72,7 @@ def find_absorption_edges(
 
 def compare_materials(
     results: list[XRayResult], property_name: str = "critical_angle_degrees"
-) -> dict:
+) -> dict:  # type: ignore[type-arg]
     """
     Simple material comparison for a given property.
 

@@ -4,6 +4,11 @@ Vectorized optimization implementations for XRayLabTool core calculations.
 This module contains advanced vectorized implementations of core calculation
 functions designed to achieve the target 2x performance improvement while
 maintaining numerical accuracy and scientific precision.
+
+.. deprecated::
+    These manual SIMD heuristics are superseded by the JAX backend, which
+    delegates vectorization to XLA's compiler automatically.
+    Use ``set_backend('jax')`` instead of calling functions in this module directly.
 """
 
 from __future__ import annotations
@@ -15,6 +20,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from xraylabtool.backend import ops
+
 if TYPE_CHECKING:
     from xraylabtool.typing_extensions import (
         EnergyArray,
@@ -25,7 +32,7 @@ if TYPE_CHECKING:
     )
 
 
-def ensure_c_contiguous(func: Callable) -> Callable:
+def ensure_c_contiguous(func: Callable) -> Callable:  # type: ignore[type-arg]
     """
     Decorator to ensure arrays are C-contiguous for optimal performance.
 
@@ -35,12 +42,13 @@ def ensure_c_contiguous(func: Callable) -> Callable:
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs) -> Any:
-        # Convert numpy array arguments to C-contiguous if needed
+    def wrapper(*args, **kwargs) -> Any:  # type: ignore[no-untyped-def]
+        # Convert numpy array arguments to C-contiguous if needed.
+        # JAX arrays are always contiguous, so only act on np.ndarray.
         new_args = []
         for arg in args:
             if isinstance(arg, np.ndarray) and not arg.flags.c_contiguous:
-                new_args.append(np.ascontiguousarray(arg))
+                new_args.append(ops.ascontiguousarray(arg))
             else:
                 new_args.append(arg)
         return func(*new_args, **kwargs)
@@ -59,6 +67,9 @@ def vectorized_interpolation_batch(
     This function eliminates the for-loop in the original implementation by
     using advanced NumPy operations and memory-efficient array operations.
 
+    .. deprecated::
+        Use ``set_backend('jax')`` — XLA handles vectorization automatically.
+
     Args:
         energy_ev: Energy values in eV (1D array)
         interpolator_pairs: List of (f1_interpolator, f2_interpolator) tuples
@@ -67,51 +78,53 @@ def vectorized_interpolation_batch(
     Returns:
         Tuple of (f1_total, f2_total) arrays
     """
+    import warnings
+
+    warnings.warn(
+        "vectorized_interpolation_batch() is deprecated. "
+        "Use set_backend('jax') for vectorized GPU acceleration via XLA.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     n_elements = len(interpolator_pairs)
     n_energies = len(energy_ev)
 
     if n_elements == 0:
-        return np.zeros(n_energies, dtype=np.float64), np.zeros(
-            n_energies, dtype=np.float64
+        return ops.zeros(n_energies, dtype=ops.float64), ops.zeros(
+            n_energies, dtype=ops.float64
         )
 
     # For small numbers of elements and energies, use the original approach to avoid overhead
     if n_elements <= 2 and n_energies <= 200:
-        f1_total = np.zeros(n_energies, dtype=np.float64)
-        f2_total = np.zeros(n_energies, dtype=np.float64)
+        f1_total = ops.zeros(n_energies, dtype=ops.float64)
+        f2_total = ops.zeros(n_energies, dtype=ops.float64)
 
         # Direct calculation without matrix overhead
         for i, (f1_interp, f2_interp) in enumerate(interpolator_pairs):
             count = element_counts[i]
-            f1_values = f1_interp(energy_ev)
-            f2_values = f2_interp(energy_ev)
-
-            # Ensure arrays are contiguous and correct type
-            if not isinstance(f1_values, np.ndarray):
-                f1_values = np.asarray(f1_values, dtype=np.float64)
-            if not isinstance(f2_values, np.ndarray):
-                f2_values = np.asarray(f2_values, dtype=np.float64)
+            f1_values = ops.asarray(f1_interp(energy_ev), dtype=ops.float64)
+            f2_values = ops.asarray(f2_interp(energy_ev), dtype=ops.float64)
 
             # Accumulate weighted contributions
-            f1_total += count * f1_values
-            f2_total += count * f2_values
+            f1_total = f1_total + count * f1_values
+            f2_total = f2_total + count * f2_values
 
         return f1_total, f2_total
 
-    # For larger arrays, use fully vectorized approach
-    # Use np.empty with explicit dtype for better performance
-    f1_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order="C")
-    f2_matrix = np.empty((n_elements, n_energies), dtype=np.float64, order="C")
+    # For larger arrays, use fully vectorized approach.
+    # Build row lists then stack — avoids JAX immutability issues with slice assignment.
+    f1_rows = []
+    f2_rows = []
+    for f1_interp, f2_interp in interpolator_pairs:
+        f1_rows.append(ops.asarray(f1_interp(energy_ev), dtype=ops.float64))
+        f2_rows.append(ops.asarray(f2_interp(energy_ev), dtype=ops.float64))
 
-    # Optimized interpolation: use enumerate to avoid list comprehension overhead
-    for i, (f1_interp, f2_interp) in enumerate(interpolator_pairs):
-        f1_matrix[i, :] = f1_interp(energy_ev)
-        f2_matrix[i, :] = f2_interp(energy_ev)
+    f1_matrix = ops.asarray(f1_rows)
+    f2_matrix = ops.asarray(f2_rows)
 
     # Vectorized weighted sum using einsum (more efficient than reshape + broadcast)
-    # einsum is optimized for this type of operation
-    f1_total = np.einsum("i,ij->j", element_counts, f1_matrix)
-    f2_total = np.einsum("i,ij->j", element_counts, f2_matrix)
+    f1_total = ops.einsum("i,ij->j", element_counts, f1_matrix)
+    f2_total = ops.einsum("i,ij->j", element_counts, f2_matrix)
 
     return f1_total, f2_total
 
@@ -147,9 +160,9 @@ def vectorized_multi_material_batch(
         return []
 
     # Pre-compute common arrays once
-    wave_sq = np.square(wavelength)
-    if not wave_sq.flags.c_contiguous:
-        wave_sq = np.ascontiguousarray(wave_sq)
+    wave_sq = ops.square(wavelength)
+    if isinstance(wave_sq, np.ndarray) and not wave_sq.flags.c_contiguous:
+        wave_sq = ops.ascontiguousarray(wave_sq)
 
     results = []
 
@@ -188,18 +201,13 @@ def vectorized_multi_material_batch(
 def _process_single_element_batch(
     energy_ev: EnergyArray,
     wave_sq: np.ndarray,
-    materials: list[tuple[int, list, np.ndarray]],
+    materials: list[tuple[int, list, np.ndarray]],  # type: ignore[type-arg]
     material_properties: list[tuple[FloatLike, FloatLike]],
 ) -> list[tuple[int, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]]:
     """Process single-element materials in batch for optimal performance."""
     from xraylabtool.constants import SCATTERING_FACTOR
 
     results = []
-    n_energies = len(energy_ev)
-
-    # Pre-allocate arrays for batch processing
-    f1_batch = np.empty((len(materials), n_energies), dtype=np.float64, order="C")
-    f2_batch = np.empty((len(materials), n_energies), dtype=np.float64, order="C")
 
     # Collect unique interpolators and their indices
     unique_interpolators = {}
@@ -217,20 +225,21 @@ def _process_single_element_batch(
     # Batch interpolation for unique elements
     interpolation_cache = {}
     for key, (f1_interp, f2_interp) in unique_interpolators.items():
-        f1_values = f1_interp(energy_ev)
-        f2_values = f2_interp(energy_ev)
-
-        # Ensure C-contiguous arrays
         interpolation_cache[key] = (
-            np.ascontiguousarray(f1_values, dtype=np.float64),
-            np.ascontiguousarray(f2_values, dtype=np.float64),
+            ops.asarray(f1_interp(energy_ev), dtype=ops.float64),
+            ops.asarray(f2_interp(energy_ev), dtype=ops.float64),
         )
 
-    # Fill batch arrays using cached interpolations
+    # Build per-material weighted rows as lists, then stack
+    f1_rows: list[Any] = [None] * len(materials)
+    f2_rows: list[Any] = [None] * len(materials)
     for batch_idx, interp_key, count in interpolator_map:
         f1_values, f2_values = interpolation_cache[interp_key]
-        f1_batch[batch_idx, :] = count * f1_values
-        f2_batch[batch_idx, :] = count * f2_values
+        f1_rows[batch_idx] = count * f1_values
+        f2_rows[batch_idx] = count * f2_values
+
+    f1_batch = ops.asarray(f1_rows)
+    f2_batch = ops.asarray(f2_rows)
 
     # Vectorized property calculation for all materials
     for i, (mat_idx, _, _) in enumerate(materials):
@@ -251,7 +260,7 @@ def _process_single_element_batch(
 def _process_multi_element_batch(
     energy_ev: EnergyArray,
     wave_sq: np.ndarray,
-    materials: list[tuple[int, list, np.ndarray]],
+    materials: list[tuple[int, list, np.ndarray]],  # type: ignore[type-arg]
     material_properties: list[tuple[FloatLike, FloatLike]],
 ) -> list[tuple[int, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]]:
     """Process multi-element materials with optimized batch vectorization."""
@@ -297,6 +306,9 @@ def calculate_scattering_factors_vectorized(
     This optimized version eliminates the for-loop in the original implementation
     and uses advanced NumPy broadcasting techniques for better performance.
 
+    .. deprecated::
+        Use ``set_backend('jax')`` — XLA handles vectorization automatically.
+
     Performance improvements:
     - Eliminates explicit for-loop over elements
     - Uses C-contiguous arrays for optimal memory access
@@ -313,16 +325,24 @@ def calculate_scattering_factors_vectorized(
     Returns:
         Tuple of (dispersion, absorption, f1_total, f2_total) arrays
     """
+    import warnings
+
+    warnings.warn(
+        "calculate_scattering_factors_vectorized() is deprecated. "
+        "Use set_backend('jax') for vectorized GPU acceleration via XLA.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     from xraylabtool.constants import SCATTERING_FACTOR
 
     n_energies = len(energy_ev)
     n_elements = len(element_data)
 
-    # Pre-allocate arrays with explicit dtype and C-contiguous layout
-    dispersion = np.zeros(n_energies, dtype=np.float64, order="C")
-    absorption = np.zeros(n_energies, dtype=np.float64, order="C")
-    f1_total = np.zeros(n_energies, dtype=np.float64, order="C")
-    f2_total = np.zeros(n_energies, dtype=np.float64, order="C")
+    # Pre-allocate zero arrays
+    dispersion = ops.zeros(n_energies, dtype=ops.float64)
+    absorption = ops.zeros(n_energies, dtype=ops.float64)
+    f1_total = ops.zeros(n_energies, dtype=ops.float64)
+    f2_total = ops.zeros(n_energies, dtype=ops.float64)
 
     # Handle empty element data case
     if n_elements == 0:
@@ -330,40 +350,35 @@ def calculate_scattering_factors_vectorized(
 
     # Pre-compute common constants (same as original)
     common_factor = SCATTERING_FACTOR * mass_density / molecular_weight
-    wave_sq = np.square(wavelength)  # More efficient than wavelength ** 2
+    wave_sq = ops.square(wavelength)
 
-    # Ensure wavelength array is C-contiguous
-    if not wave_sq.flags.c_contiguous:
-        wave_sq = np.ascontiguousarray(wave_sq)
+    # Ensure wavelength array is C-contiguous (numpy path only)
+    if isinstance(wave_sq, np.ndarray) and not wave_sq.flags.c_contiguous:
+        wave_sq = ops.ascontiguousarray(wave_sq)
 
     if n_elements == 1:
         # Single element optimization - keep original efficient path
         count, f1_interp, f2_interp = element_data[0]
 
-        f1_values = f1_interp(energy_ev)
-        f2_values = f2_interp(energy_ev)
-
-        # Ensure arrays are C-contiguous and correct dtype
-        f1_values = np.ascontiguousarray(f1_values, dtype=np.float64)
-        f2_values = np.ascontiguousarray(f2_values, dtype=np.float64)
+        f1_values = ops.asarray(f1_interp(energy_ev), dtype=ops.float64)
+        f2_values = ops.asarray(f2_interp(energy_ev), dtype=ops.float64)
 
         count_factor = float(count)
         wave_element_factor = wave_sq * (common_factor * count_factor)
 
-        # Direct vectorized operations
-        f1_total[:] = count_factor * f1_values
-        f2_total[:] = count_factor * f2_values
-        dispersion[:] = wave_element_factor * f1_values
-        absorption[:] = wave_element_factor * f2_values
+        # Functional assignment (compatible with both numpy and JAX)
+        f1_total = count_factor * f1_values
+        f2_total = count_factor * f2_values
+        dispersion = wave_element_factor * f1_values
+        absorption = wave_element_factor * f2_values
 
     else:
         # Multi-element vectorized implementation
-        # Extract interpolators and counts
         interpolator_pairs = [
             (f1_interp, f2_interp) for _, f1_interp, f2_interp in element_data
         ]
-        element_counts = np.array(
-            [count for count, _, _ in element_data], dtype=np.float64
+        element_counts = ops.asarray(
+            [count for count, _, _ in element_data], dtype=ops.float64
         )
 
         # Vectorized batch interpolation (eliminates the for-loop)
@@ -386,7 +401,7 @@ def benchmark_vectorization_improvement(
     molecular_weight: FloatLike,
     element_data: list[tuple[float, InterpolatorProtocol, InterpolatorProtocol]],
     iterations: int = 10,
-) -> dict:
+) -> dict:  # type: ignore[type-arg]
     """
     Benchmark the vectorized implementation against the original.
 
@@ -462,7 +477,7 @@ def benchmark_vectorization_improvement(
 
 
 def create_simd_optimized_arrays(
-    shape: tuple[int, ...], dtype: np.dtype = np.float64, align: int = 32
+    shape: tuple[int, ...], dtype: np.dtype = np.float64, align: int = 32  # type: ignore[assignment]
 ) -> np.ndarray:
     """
     Create NumPy arrays optimized for SIMD operations.
@@ -550,7 +565,7 @@ def simd_vectorized_wavelength_operations(
     if not wave_factor.flags.c_contiguous:
         wave_factor = np.ascontiguousarray(wave_factor)
 
-    return wave_factor
+    return wave_factor  # type: ignore[no-any-return]
 
 
 def adaptive_simd_interpolation_batch(
@@ -564,6 +579,9 @@ def adaptive_simd_interpolation_batch(
     This function automatically selects the best vectorization strategy
     based on array size and SIMD capabilities of the current platform.
 
+    .. deprecated::
+        Use ``set_backend('jax')`` — XLA handles SIMD vectorization automatically.
+
     Args:
         energy_ev: Energy values in eV (1D array)
         interpolator_pairs: List of (f1_interpolator, f2_interpolator) tuples
@@ -572,12 +590,20 @@ def adaptive_simd_interpolation_batch(
     Returns:
         Tuple of (f1_total, f2_total) arrays
     """
+    import warnings
+
+    warnings.warn(
+        "adaptive_simd_interpolation_batch() is deprecated. "
+        "Use set_backend('jax') for vectorized GPU acceleration via XLA.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     n_elements = len(interpolator_pairs)
     n_energies = len(energy_ev)
 
     if n_elements == 0:
-        return np.zeros(n_energies, dtype=np.float64), np.zeros(
-            n_energies, dtype=np.float64
+        return ops.zeros(n_energies, dtype=ops.float64), ops.zeros(
+            n_energies, dtype=ops.float64
         )
 
     # Check SIMD support for adaptive optimization
@@ -603,41 +629,34 @@ def adaptive_simd_interpolation_batch(
         and n_energies <= vectorize_threshold_energies
     ):
         # Direct calculation for small arrays
-        f1_total = np.zeros(n_energies, dtype=np.float64)
-        f2_total = np.zeros(n_energies, dtype=np.float64)
+        f1_total = ops.zeros(n_energies, dtype=ops.float64)
+        f2_total = ops.zeros(n_energies, dtype=ops.float64)
 
         for i, (f1_interp, f2_interp) in enumerate(interpolator_pairs):
             count = element_counts[i]
-            f1_values = f1_interp(energy_ev)
-            f2_values = f2_interp(energy_ev)
+            f1_values = ops.asarray(f1_interp(energy_ev), dtype=ops.float64)
+            f2_values = ops.asarray(f2_interp(energy_ev), dtype=ops.float64)
 
-            # Ensure arrays are contiguous and correct type
-            if not isinstance(f1_values, np.ndarray):
-                f1_values = np.asarray(f1_values, dtype=np.float64)
-            if not isinstance(f2_values, np.ndarray):
-                f2_values = np.asarray(f2_values, dtype=np.float64)
-
-            # Use SIMD-optimized accumulation
-            f1_total += count * f1_values
-            f2_total += count * f2_values
+            # Accumulate weighted contributions
+            f1_total = f1_total + count * f1_values
+            f2_total = f2_total + count * f2_values
 
         return f1_total, f2_total
 
     else:
-        # Use SIMD-optimized matrix operations
-        # Create optimized arrays with proper alignment
-        f1_matrix = create_simd_optimized_arrays((n_elements, n_energies), np.float64)
-        f2_matrix = create_simd_optimized_arrays((n_elements, n_energies), np.float64)
+        # Build row lists then stack — avoids JAX immutability issues
+        f1_rows = []
+        f2_rows = []
+        for f1_interp, f2_interp in interpolator_pairs:
+            f1_rows.append(ops.asarray(f1_interp(energy_ev), dtype=ops.float64))
+            f2_rows.append(ops.asarray(f2_interp(energy_ev), dtype=ops.float64))
 
-        # Fill matrices with interpolated values
-        for i, (f1_interp, f2_interp) in enumerate(interpolator_pairs):
-            f1_matrix[i, :] = f1_interp(energy_ev)
-            f2_matrix[i, :] = f2_interp(energy_ev)
+        f1_matrix = ops.asarray(f1_rows)
+        f2_matrix = ops.asarray(f2_rows)
 
-        # Use SIMD-optimized summation
-        f1_total, f2_total = simd_optimized_element_sum(
-            f1_matrix, f2_matrix, element_counts
-        )
+        # Use einsum-based weighted summation
+        f1_total = ops.einsum("i,ij->j", element_counts, f1_matrix)
+        f2_total = ops.einsum("i,ij->j", element_counts, f2_matrix)
 
         return f1_total, f2_total
 
@@ -655,7 +674,7 @@ def configure_numpy_for_performance() -> None:
 
     # Get number of CPU cores
     n_cores = psutil.cpu_count(logical=False)  # Physical cores only
-    n_threads = min(n_cores, 8)  # Cap at 8 threads to avoid oversubscription
+    n_threads = min(n_cores, 8)  # type: ignore[type-var]  # Cap at 8 threads to avoid oversubscription
 
     # Set threading environment variables
     os.environ["OMP_NUM_THREADS"] = str(n_threads)
@@ -667,19 +686,19 @@ def configure_numpy_for_performance() -> None:
     os.environ["MKL_DYNAMIC"] = "FALSE"
     os.environ["OMP_DYNAMIC"] = "FALSE"
 
-    return {
+    return {  # type: ignore[return-value]
         "physical_cores": n_cores,
         "configured_threads": n_threads,
         "simd_support": _check_simd_support(),
     }
 
 
-def _check_simd_support() -> dict:
+def _check_simd_support() -> dict:  # type: ignore[type-arg]
     """Check available SIMD instruction support."""
     simd_info = {"sse": False, "sse2": False, "avx": False, "avx2": False, "fma": False}
 
     try:
-        import cpuinfo
+        import cpuinfo  # type: ignore[import-untyped]
 
         cpu_info = cpuinfo.get_cpu_info()
         flags = cpu_info.get("flags", [])

@@ -6,7 +6,7 @@ This module contains data management, caching, and atomic data utilities.
 
 
 # Lazy import heavy modules to improve startup time
-def __getattr__(name):
+def __getattr__(name: str) -> object:
     if name in [
         "BatchConfig",
         "MemoryMonitor",

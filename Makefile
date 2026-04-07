@@ -2,7 +2,7 @@
 # Provides convenient commands for testing, development, and CI
 # Supports both Python API and CLI functionality
 
-.PHONY: help install dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all test-all-log cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-log docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all dev validate ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test
+.PHONY: help install dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all test-all-log cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-log docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all dev validate ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose
 
 # Colors for output
 RED=\033[0;31m
@@ -34,6 +34,13 @@ help:
 	@echo "$(YELLOW)📦 Installation & Setup:$(NC)"
 	@echo "  install          Install package with all dependencies (Python >=3.12, prefers uv)"
 	@echo "  dev-setup        Complete development environment setup"
+	@echo ""
+	@echo "$(YELLOW)🖥️  GPU Acceleration:$(NC)"
+	@echo "  install-jax-gpu         Auto-detect system CUDA and install GPU support"
+	@echo "  install-jax-gpu-cuda13  Install with system CUDA 13 (SM >= 7.5)"
+	@echo "  install-jax-gpu-cuda12  Install with system CUDA 12 (SM >= 5.2)"
+	@echo "  gpu-check               Verify GPU backend, devices, SVD"
+	@echo "  gpu-diagnose            Diagnose common GPU issues"
 	@echo ""
 	@echo "$(YELLOW)🧪 Testing:$(NC)"
 	@echo "  test             Run all tests with coverage"
@@ -616,3 +623,137 @@ quick-test:
 	@python -c "import xraylabtool as xlt; result = xlt.calculate_single_material_properties('SiO2', 10.0, 2.2); print(f'✓ Python API: {result.critical_angle_degrees[0]:.3f}°')"
 	@xraylabtool calc SiO2 -e 10.0 -d 2.2 --fields critical_angle_degrees | grep -E "Critical|SiO2" | head -2
 	@echo "$(GREEN)✅ Quick test passed$(NC)"
+
+# GPU Acceleration Targets
+# ========================
+# System CUDA detection and JAX GPU installation.
+# See: GPU Acceleration Setup.txt for full documentation.
+
+UNAME_S := $(shell uname -s 2>/dev/null || echo "Windows")
+ifeq ($(UNAME_S),Linux)
+    PLATFORM := linux
+else ifeq ($(UNAME_S),Darwin)
+    PLATFORM := macos
+else
+    PLATFORM := windows
+endif
+
+install-jax-gpu:
+	@echo "$(YELLOW)Installing JAX with GPU support (auto-detect)...$(NC)"
+ifeq ($(PLATFORM),linux)
+	@CUDA_VERSION=$$(nvcc --version 2>/dev/null | grep -oP 'release \K[0-9]+' | head -1); \
+	if [ -z "$$CUDA_VERSION" ]; then \
+		echo "$(RED)Error: nvcc not found — install CUDA toolkit first$(NC)"; \
+		exit 1; \
+	fi; \
+	CUDA_FULL=$$(nvcc --version 2>/dev/null | grep -oP 'release \K[0-9]+\.[0-9]+'); \
+	SM_VERSION=$$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d '.'); \
+	SM_DISPLAY=$$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1); \
+	GPU_NAME=$$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1); \
+	echo "System CUDA: $$CUDA_FULL"; \
+	echo "GPU: $$GPU_NAME (SM $$SM_DISPLAY)"; \
+	if [ "$$CUDA_VERSION" = "13" ]; then \
+		if [ "$$SM_VERSION" -ge 75 ]; then \
+			$(MAKE) install-jax-gpu-cuda13; \
+		else \
+			echo "$(RED)Error: SM $$SM_DISPLAY < 7.5 — cannot use CUDA 13$(NC)"; \
+			exit 1; \
+		fi; \
+	elif [ "$$CUDA_VERSION" = "12" ]; then \
+		if [ "$$SM_VERSION" -ge 52 ]; then \
+			$(MAKE) install-jax-gpu-cuda12; \
+		else \
+			echo "$(RED)Error: SM $$SM_DISPLAY < 5.2 — GPU unsupported$(NC)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "$(RED)Error: CUDA $$CUDA_VERSION unsupported (need 12 or 13)$(NC)"; \
+		exit 1; \
+	fi
+else
+	@echo "$(RED)Error: GPU acceleration requires Linux$(NC)"
+	@echo "  Current platform: $(PLATFORM)"
+endif
+
+install-jax-gpu-cuda13:
+	@echo "$(YELLOW)Installing JAX with system CUDA 13...$(NC)"
+ifeq ($(PLATFORM),linux)
+	@echo "Step 1/3: Removing incompatible CUDA plugins..."
+	@pip uninstall -y jax-cuda12-plugin jax-cuda12-pjrt jax-cuda13-plugin jax-cuda13-pjrt 2>/dev/null || true
+	@echo "Step 2/3: Removing old jax/jaxlib..."
+	@pip uninstall -y jax jaxlib 2>/dev/null || true
+	@echo "Step 3/3: Installing jax[cuda13-local]..."
+	@pip install "jax[cuda13-local]"
+	@$(MAKE) gpu-check
+	@echo "$(GREEN)✅ GPU acceleration installed (CUDA 13)$(NC)"
+else
+	@echo "$(RED)Error: CUDA 13 GPU acceleration requires Linux$(NC)"
+endif
+
+install-jax-gpu-cuda12:
+	@echo "$(YELLOW)Installing JAX with system CUDA 12...$(NC)"
+ifeq ($(PLATFORM),linux)
+	@echo "Step 1/3: Removing incompatible CUDA plugins..."
+	@pip uninstall -y jax-cuda12-plugin jax-cuda12-pjrt jax-cuda13-plugin jax-cuda13-pjrt 2>/dev/null || true
+	@echo "Step 2/3: Removing old jax/jaxlib..."
+	@pip uninstall -y jax jaxlib 2>/dev/null || true
+	@echo "Step 3/3: Installing jax[cuda12-local]..."
+	@pip install "jax[cuda12-local]"
+	@$(MAKE) gpu-check
+	@echo "$(GREEN)✅ GPU acceleration installed (CUDA 12)$(NC)"
+else
+	@echo "$(RED)Error: CUDA 12 GPU acceleration requires Linux$(NC)"
+endif
+
+gpu-check:
+	@echo "$(YELLOW)GPU Verification$(NC)"
+	@$(PYTHON) -c "\
+	import sys, jax; \
+	v = jax.__version__; \
+	b = jax.default_backend(); \
+	d = jax.devices(); \
+	gpu = sum(1 for x in d if 'cuda' in str(x).lower()); \
+	print(f'JAX {v}  backend={b}  devices={gpu} GPU'); \
+	if b != 'gpu': \
+	    print('$(YELLOW)Note: Running on CPU (no GPU detected)$(NC)'); \
+	import jax.numpy as jnp; \
+	s = jnp.linalg.svd(jnp.eye(3))[1]; \
+	print(f'SVD check: {s}'); \
+	print('All checks passed')"
+
+gpu-diagnose:
+	@echo "$(YELLOW)GPU Diagnostics$(NC)"
+	@echo ""
+	@echo "1. Installed JAX/CUDA packages:"
+	@$(PYTHON) -m pip list 2>/dev/null | grep -iE "^(jax|cuda)" || echo "  (none found)"
+	@echo ""
+	@echo "2. Plugin conflict check:"
+	@HAS12=$$($(PYTHON) -m pip list 2>/dev/null | grep -c "jax-cuda12-plugin"); \
+	HAS13=$$($(PYTHON) -m pip list 2>/dev/null | grep -c "jax-cuda13-plugin"); \
+	if [ "$$HAS12" -gt 0 ] && [ "$$HAS13" -gt 0 ]; then \
+		echo "  $(RED)CONFLICT: Both cuda12 and cuda13 plugins installed!$(NC)"; \
+		echo "  Fix: make install-jax-gpu (will clean and reinstall)"; \
+	elif [ "$$HAS12" -gt 0 ] || [ "$$HAS13" -gt 0 ]; then \
+		echo "  $(GREEN)OK: Single plugin set installed$(NC)"; \
+	else \
+		echo "  No CUDA plugins installed (CPU-only mode)"; \
+	fi
+	@echo ""
+	@echo "3. Version match check:"
+	@$(PYTHON) -c "\
+	import importlib.metadata as md; \
+	jaxlib_v = md.version('jaxlib'); \
+	print(f'  jaxlib: {jaxlib_v}'); \
+	for pkg in ['jax-cuda12-plugin','jax-cuda13-plugin','jax-cuda12-pjrt','jax-cuda13-pjrt']: \
+	    try: \
+	        v = md.version(pkg); \
+	        match = 'OK' if v == jaxlib_v else 'MISMATCH'; \
+	        print(f'  {pkg}: {v} [{match}]'); \
+	    except md.PackageNotFoundError: pass" 2>/dev/null || echo "  (could not check)"
+	@echo ""
+	@echo "4. System CUDA:"
+	@nvcc --version 2>/dev/null | grep "release" || echo "  nvcc not found"
+	@echo ""
+	@echo "5. GPU hardware:"
+	@nvidia-smi --query-gpu=name,compute_cap,driver_version --format=csv,noheader 2>/dev/null \
+		|| echo "  nvidia-smi not found (no NVIDIA GPU or driver not installed)"

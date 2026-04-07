@@ -258,14 +258,14 @@ class TestXRayResultTyping(BaseXRayLabToolTest):
         assert validate_energy_array(invalid_energies_type) is False
         assert validate_energy_array(invalid_energies_range) is False
 
-        # Test array conversion helpers
+        # Test array conversion helpers (accepts both NumPy and JAX arrays)
         input_list = [1.0, 2.0, 3.0]
         converted_float = ensure_float64_array(input_list)
-        assert isinstance(converted_float, np.ndarray)
+        assert hasattr(converted_float, "dtype")
         assert converted_float.dtype == np.float64
 
         converted_complex = ensure_complex128_array(input_list)
-        assert isinstance(converted_complex, np.ndarray)
+        assert hasattr(converted_complex, "dtype")
         assert converted_complex.dtype == np.complex128
 
     def test_xray_result_type_guards(self):

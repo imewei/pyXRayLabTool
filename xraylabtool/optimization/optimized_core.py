@@ -26,6 +26,7 @@ from typing import Any
 
 import numpy as np
 
+from ..backend import InterpolationFactory
 from ..typing_extensions import InterpolatorProtocol
 
 # Global optimized caches
@@ -203,12 +204,9 @@ def create_scattering_factor_interpolators_optimized(
     # Skip sorting check for performance (atomic data is pre-sorted)
     # This saves ~15% overhead vs. the original implementation
 
-    # Create interpolators (import here to minimize startup time)
-    from scipy.interpolate import PchipInterpolator
-
-    # Create both interpolators efficiently
-    f1_interpolator = PchipInterpolator(energy_values, f1_values, extrapolate=False)
-    f2_interpolator = PchipInterpolator(energy_values, f2_values, extrapolate=False)
+    # Create interpolators via backend factory (scipy or interpax depending on backend)
+    f1_interpolator = InterpolationFactory.create_pchip(energy_values, f1_values, extrapolate=False)
+    f2_interpolator = InterpolationFactory.create_pchip(energy_values, f2_values, extrapolate=False)
 
     # Cache result
     interpolator_pair = (f1_interpolator, f2_interpolator)
@@ -225,6 +223,10 @@ def enable_optimizations() -> None:
     with optimized versions, providing transparent performance improvements
     for all downstream code.
 
+    .. deprecated::
+        Use ``set_backend('jax')`` for GPU acceleration instead.
+        The JAX backend supersedes these manual optimizations via XLA compilation.
+
     Warning: This modifies the global module state. Use with caution.
 
     Example:
@@ -234,12 +236,19 @@ def enable_optimizations() -> None:
         >>> import xraylabtool as xlt
         >>> result = xlt.calculate_single_material_properties('Si', 10.0, 2.33)
     """
+    import warnings
+
+    warnings.warn(
+        "enable_optimizations() is deprecated. Use set_backend('jax') for GPU acceleration.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     from .. import calculators
 
     # Patch the core functions
     calculators.core.load_scattering_factor_data = load_scattering_factor_data_optimized
     calculators.core.create_scattering_factor_interpolators = (
-        create_scattering_factor_interpolators_optimized
+        create_scattering_factor_interpolators_optimized  # type: ignore[assignment]
     )
 
     print("XRayLabTool optimizations enabled")

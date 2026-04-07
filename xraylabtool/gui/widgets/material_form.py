@@ -72,7 +72,7 @@ class MaterialInputForm(QWidget):
         self.logspace.stateChanged.connect(self._validate_inputs)
 
         layout = QFormLayout()
-        layout.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        layout.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore[attr-defined]
         layout.setHorizontalSpacing(10)
         layout.setVerticalSpacing(6)
         layout.addRow("Formula", self.formula)
@@ -158,7 +158,7 @@ class MaterialInputForm(QWidget):
             self.density_hint.setText(str(exc))
             self.density_hint.setProperty("role", "error")
 
-        for w in (self.density, self.density_hint):
+        for w in (self.density, self.density_hint):  # type: ignore[assignment]
             w.style().unpolish(w)
             w.style().polish(w)
 

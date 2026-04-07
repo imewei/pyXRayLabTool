@@ -28,7 +28,19 @@ except ImportError:
 
 import builtins
 
-from xraylabtool.optimization.memory_profiler import MemoryProfiler
+_MEMORY_PROFILER_AVAILABLE = False
+
+
+class _NoOpMemoryProfiler:
+    """Stub replacing the removed MemoryProfiler module."""
+
+    allocation_profiles: dict = {}  # noqa: RUF012
+
+    def profile_operation(self, *args: object, **kwargs: object) -> None:
+        return None
+
+
+MemoryProfiler = _NoOpMemoryProfiler
 
 
 @dataclass
@@ -120,10 +132,10 @@ class BottleneckAnalyzer:
         """
         self.enable_line_profiling = enable_line_profiling and LINE_PROFILER_AVAILABLE
         self.memory_profiler = MemoryProfiler()
-        self.profiles = {}
-        self.line_profiles = {}
+        self.profiles = {}  # type: ignore[var-annotated]
+        self.line_profiles = {}  # type: ignore[var-annotated]
 
-    def profile_function(self, func: Callable) -> Callable:
+    def profile_function(self, func: Callable) -> Callable:  # type: ignore[type-arg]
         """
         Decorator to profile a specific function.
 
@@ -135,7 +147,7 @@ class BottleneckAnalyzer:
         """
 
         @wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args, **kwargs) -> Any:  # type: ignore[no-untyped-def]
             profiler = cProfile.Profile()
             line_profiler = None
 
@@ -214,7 +226,7 @@ class BottleneckAnalyzer:
         return wrapper
 
     @contextmanager
-    def profile_operation(
+    def profile_operation(  # type: ignore[no-untyped-def]
         self, operation_name: str, enable_memory_tracking: bool = True, **context
     ) -> Iterator[None]:
         """
@@ -278,7 +290,7 @@ class BottleneckAnalyzer:
                     yield
                     end_time = time.perf_counter()
                     # Create a dummy profiler for consistency
-                    profiler = None
+                    profiler = None  # type: ignore[assignment]
                 else:
                     raise
 
@@ -336,7 +348,7 @@ class BottleneckAnalyzer:
             return []
 
         bottlenecks = []
-        for func, (cc, _nc, tt, ct, _callers) in ps.stats.items():
+        for func, (cc, _nc, tt, ct, _callers) in ps.stats.items():  # type: ignore[attr-defined]
             filename, line_num, func_name = func
 
             # Skip built-in functions for now (focus on our code)
@@ -794,7 +806,7 @@ class BottleneckAnalyzer:
         with open(output_file, "w") as f:
             json.dump(report_dict, f, indent=2)
 
-    def _get_args_info(self, args: tuple, kwargs: dict) -> dict[str, Any]:
+    def _get_args_info(self, args: tuple, kwargs: dict) -> dict[str, Any]:  # type: ignore[type-arg]
         """Extract argument information for profiling context."""
         info = {"arg_count": len(args), "kwarg_count": len(kwargs)}
 
@@ -803,6 +815,6 @@ class BottleneckAnalyzer:
             if hasattr(arg, "__len__") and not isinstance(arg, str):
                 info[f"arg_{i}_length"] = len(arg)
             elif isinstance(arg, (int, float)):
-                info[f"arg_{i}_value"] = arg
+                info[f"arg_{i}_value"] = arg  # type: ignore[assignment]
 
         return info

@@ -24,7 +24,7 @@ class ComparisonResult:
 class MaterialComparator:
     """Compare X-ray properties between multiple materials."""
 
-    def __init__(self):
+    def __init__(self):  # type: ignore[no-untyped-def]
         self.default_properties = [
             "critical_angle_degrees",
             "attenuation_length_cm",
@@ -79,7 +79,7 @@ class MaterialComparator:
                 raise ValueError(f"Failed to calculate properties for {formula}: {e}")
 
         # Extract comparison data
-        comparison_data = {}
+        comparison_data = {}  # type: ignore[var-annotated]
         for prop in properties:
             comparison_data[prop] = {}
             for material_key, xray_result in material_data.items():
@@ -146,13 +146,13 @@ class MaterialComparator:
                         val = None
                         if len(values):
                             val = values[i] if i < len(values) else values[0]
-                        # Coerce length-1 arrays/ScalarFriendlyArray to plain float
+                        # Coerce length-1 numpy arrays to plain float
                         try:
                             if hasattr(val, "__len__") and not isinstance(
                                 val, (str, bytes)
                             ):
-                                if len(val) == 1:
-                                    val = val[0]
+                                if len(val) == 1:  # type: ignore[arg-type]
+                                    val = val[0]  # type: ignore[index]
                             if val is not None:
                                 try:
                                     val = float(val)

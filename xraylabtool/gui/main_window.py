@@ -1,9 +1,21 @@
 from __future__ import annotations
 
+import contextlib
 import csv
 from pathlib import Path
+import types
+from typing import Any
 
-from PySide6.QtCore import QEvent, QObject, QPoint, QRect, QStandardPaths, Qt, QTimer
+from PySide6.QtCore import (
+    QEvent,
+    QObject,
+    QPoint,
+    QRect,
+    QStandardPaths,
+    Qt,
+    QThreadPool,
+    QTimer,
+)
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -100,9 +112,6 @@ PROPERTIES = [
 logger = get_logger(__name__)
 
 
-from typing import Any
-
-
 class MainWindow(QMainWindow):
     def __init__(self, theme_manager: Any | None = None) -> None:
         super().__init__()
@@ -111,7 +120,7 @@ class MainWindow(QMainWindow):
         self.resize(1100, 720)
         self.setMinimumSize(900, 620)
 
-        self.threadpool = None  # Assigned on first use to avoid import cycles
+        self.threadpool: QThreadPool | None = None  # Assigned on first use to avoid import cycles
 
         self.status_bar = QStatusBar()
         self.progress = QProgressBar()
@@ -157,7 +166,7 @@ class MainWindow(QMainWindow):
         self.single_result = None
         self.multi_results = None
         self.multi_comparison = None
-        self._workers: list = []
+        self._workers: list[Any] = []
 
         self.material_presets = {
             "Si": 2.33,
@@ -278,7 +287,7 @@ class MainWindow(QMainWindow):
         self.single_summary.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.single_summary.setMaximumHeight(64)
         self.single_summary.setMinimumHeight(48)
-        self.single_summary.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.single_summary.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         # Table
         # 12 columns: energy, wavelength, delta, beta, critical angles, attenuation, mu, f1/f2, SLDs
@@ -350,7 +359,7 @@ class MainWindow(QMainWindow):
 
         left_panel = QWidget()
         left_panel.setMinimumWidth(380)
-        left_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        left_panel.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         left_layout = QVBoxLayout(left_panel)
         left_layout.setSpacing(10)
         left_layout.addWidget(presets_box)
@@ -372,8 +381,8 @@ class MainWindow(QMainWindow):
 
         self.single_plot_scroll = QScrollArea()
         self.single_plot_scroll.setWidgetResizable(True)
-        self.single_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.single_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.single_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.single_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.single_plot_scroll.setWidget(single_plot_container)
         self._reserve_overlay_scrollbar_space(self.single_plot_scroll)
 
@@ -401,20 +410,20 @@ class MainWindow(QMainWindow):
         return container
 
     def _tune_table_headers(self) -> None:
-        def tune(table, default_size=110, min_size=80, stretch_last=True):
+        def tune(table: Any, default_size: int = 110, min_size: int = 80, stretch_last: bool = True) -> None:
             hdr = table.horizontalHeader()
-            hdr.setSectionResizeMode(QHeaderView.Interactive)
+            hdr.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
             hdr.setDefaultSectionSize(default_size)
             hdr.setMinimumSectionSize(min_size)
             hdr.setStretchLastSection(stretch_last)
-            hdr.setTextElideMode(Qt.ElideMiddle)
+            hdr.setTextElideMode(Qt.TextElideMode.ElideMiddle)
 
         tune(self.single_table, default_size=110, min_size=80, stretch_last=False)
         self.single_table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents
+            0, QHeaderView.ResizeMode.ResizeToContents
         )
         self.single_table.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeToContents
+            1, QHeaderView.ResizeMode.ResizeToContents
         )
         tune(self.single_summary, default_size=120, min_size=90)
         tune(self.multi_full_table, default_size=120, min_size=90)
@@ -456,7 +465,7 @@ class MainWindow(QMainWindow):
                 QTimer.singleShot(0, self.apply_margins)
 
             def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-                if event.type() in (QEvent.Resize, QEvent.Show, QEvent.Hide):
+                if event.type() in (QEvent.Type.Resize, QEvent.Type.Show, QEvent.Type.Hide):
                     self._schedule()
                 return super().eventFilter(watched, event)
 
@@ -465,10 +474,10 @@ class MainWindow(QMainWindow):
                 if not self._active:
                     return
 
-                try:
-                    import shiboken6
-                except ImportError:
-                    shiboken6 = None
+                shiboken6_mod: types.ModuleType | None = None
+                with contextlib.suppress(ImportError):
+                    import shiboken6 as shiboken6_mod
+                shiboken6 = shiboken6_mod
 
                 if shiboken6 is not None and (
                     not shiboken6.isValid(self._scroll_area)
@@ -519,16 +528,15 @@ class MainWindow(QMainWindow):
         self.single_save_png.setEnabled(False)
         self.single_export_csv.setEnabled(False)
         if self.threadpool is None:
-            from PySide6.QtCore import QThreadPool
-
             self.threadpool = QThreadPool.globalInstance()
         worker = CalculationWorker(compute_single, formula, density, energy_cfg)
         worker.signals.finished.connect(self._on_single_finished)
         worker.signals.error.connect(self._on_single_error)
         self._track_worker(worker)
-        self.threadpool.start(worker)
+        if self.threadpool is not None:
+            self.threadpool.start(worker)
 
-    def _on_single_finished(self, result) -> None:
+    def _on_single_finished(self, result: Any) -> None:
         self.single_form.compute_button.setEnabled(True)
         self.single_result = result
         self.single_save_png.setEnabled(True)
@@ -551,7 +559,7 @@ class MainWindow(QMainWindow):
     def _refresh_single_views(self) -> None:
         if self.single_result is None:
             return
-        prop = self.single_property.currentText()
+        prop = self.single_property.currentText()  # type: ignore[unreachable]
         self.single_plot.set_scales(
             self.single_logx.isChecked(), self.single_logy.isChecked()
         )
@@ -788,14 +796,14 @@ class MainWindow(QMainWindow):
 
         self.multi_plot_scroll = QScrollArea()
         self.multi_plot_scroll.setWidgetResizable(True)
-        self.multi_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.multi_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.multi_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.multi_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.multi_plot_scroll.setWidget(multi_plot_container)
         self._reserve_overlay_scrollbar_space(self.multi_plot_scroll)
 
         left_panel = QWidget()
         left_panel.setMinimumWidth(420)
-        left_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        left_panel.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         left_layout = QVBoxLayout(left_panel)
         left_layout.setSpacing(10)
         left_layout.addWidget(material_box)
@@ -906,8 +914,6 @@ class MainWindow(QMainWindow):
         self.multi_save_png.setEnabled(False)
         self.multi_export_csv.setEnabled(False)
         if self.threadpool is None:
-            from PySide6.QtCore import QThreadPool
-
             self.threadpool = QThreadPool.globalInstance()
         worker = CalculationWorker(
             compute_multiple,
@@ -919,9 +925,10 @@ class MainWindow(QMainWindow):
         worker.signals.finished.connect(self._on_multi_finished)
         worker.signals.error.connect(self._on_multi_error)
         self._track_worker(worker)
-        self.threadpool.start(worker)
+        if self.threadpool is not None:
+            self.threadpool.start(worker)
 
-    def _on_multi_finished(self, results) -> None:
+    def _on_multi_finished(self, results: Any) -> None:
         self.multi_compute_btn.setEnabled(True)
         self.multi_save_png.setEnabled(True)
         self.multi_export_csv.setEnabled(True)
@@ -950,7 +957,7 @@ class MainWindow(QMainWindow):
     def _refresh_multi_views(self) -> None:
         if not self.multi_results:
             return
-        prop = self.multi_property.currentText()
+        prop = self.multi_property.currentText()  # type: ignore[unreachable]
         self.multi_plot.set_scales(
             self.multi_logx.isChecked(), self.multi_logy.isChecked()
         )
@@ -1036,7 +1043,7 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage("File logging is disabled", 5000)
             logger.info("log_path_missing")
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event: Any) -> None:
         super().resizeEvent(event)
         if hasattr(self, "toast"):
             self.toast._reposition()
@@ -1047,7 +1054,7 @@ class MainWindow(QMainWindow):
         if self.single_result is None:
             self._error("No data to export yet")
             return
-        prop = self.single_property.currentText()
+        prop = self.single_property.currentText()  # type: ignore[unreachable]
         logger.info("single_save_png_clicked", extra={"property": prop})
         suggested = f"single_{self.single_result.formula}_{prop}.png"
         current_plot = self.single_plot_tabs.currentWidget()
@@ -1057,13 +1064,13 @@ class MainWindow(QMainWindow):
         if not self.multi_results:
             self._error("No data to export yet")
             return
-        prop = self.multi_property.currentText()
+        prop = self.multi_property.currentText()  # type: ignore[unreachable]
         logger.info("multi_save_png_clicked", extra={"property": prop})
         current_plot = self.multi_plot_tabs.currentWidget()
         self._save_plot(current_plot, f"multi_{prop}.png")
 
     def _save_plot(self, plot_widget: QWidget, suggested: str) -> None:
-        default_dir = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
+        default_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.PicturesLocation)
         if not default_dir:
             default_dir = str(Path.home())
         path, _ = QFileDialog.getSaveFileName(
@@ -1090,10 +1097,10 @@ class MainWindow(QMainWindow):
         if self.single_result is None:
             self._error("No data to export yet")
             return None
-        prop = self.single_property.currentText()
+        prop = self.single_property.currentText()  # type: ignore[unreachable]
         logger.info("single_export_csv_clicked", extra={"property": prop})
         fname = f"single_{self.single_result.formula}_{prop}.csv"
-        default_dir = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
+        default_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)
         if not default_dir:
             default_dir = str(Path.home())
         folder = QFileDialog.getExistingDirectory(
@@ -1159,9 +1166,9 @@ class MainWindow(QMainWindow):
         if not self.multi_results:
             self._error("No data to export yet")
             return None
-        logger.info("multi_export_csv_clicked")
+        logger.info("multi_export_csv_clicked")  # type: ignore[unreachable]
         fname = "multi_full.csv"
-        default_dir = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
+        default_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)
         if not default_dir:
             default_dir = str(Path.home())
         folder = QFileDialog.getExistingDirectory(
@@ -1234,12 +1241,12 @@ class MainWindow(QMainWindow):
         }
         return labels.get(prop, prop.replace("_", " "))
 
-    def _track_worker(self, worker):
+    def _track_worker(self, worker):  # type: ignore[no-untyped-def]
         self._workers.append(worker)
         worker.signals.finished.connect(lambda _res, w=worker: self._cleanup_worker(w))
         worker.signals.error.connect(lambda _msg, w=worker: self._cleanup_worker(w))
 
-    def _cleanup_worker(self, worker):
+    def _cleanup_worker(self, worker):  # type: ignore[no-untyped-def]
         if worker in self._workers:
             self._workers.remove(worker)
 

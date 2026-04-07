@@ -2,7 +2,7 @@
 
 This package provides a lightweight Qt-based desktop interface for running
 single-material and multi-material X-ray optical property calculations and
-plotting results using matplotlib.
+plotting results using PyQtGraph.
 """
 
 # Re-export the launcher for convenience

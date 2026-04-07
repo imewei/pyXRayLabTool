@@ -49,6 +49,7 @@ Access via ``xraylabtool`` command with specialized subcommands:
 For complete documentation, visit: https://pyxraylabtool.readthedocs.io
 """
 
+import os as _os
 import sys
 
 if sys.version_info < (3, 12):  # noqa: UP036
@@ -56,7 +57,9 @@ if sys.version_info < (3, 12):  # noqa: UP036
         "XRayLabTool requires Python 3.12+; please upgrade your interpreter."
     )
 
-__version__ = "0.3.0"
+_os.environ.setdefault("JAX_ENABLE_X64", "1")
+
+__version__ = "0.4.0"
 __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"
 
@@ -67,7 +70,7 @@ from xraylabtool.logging_utils import configure_logging, get_logger, log_environ
 
 
 # Lazy import heavy modules and functions to improve startup time
-def __getattr__(name):
+def __getattr__(name):  # type: ignore[no-untyped-def]
     # Lazy module imports
     if name == "calculators":
         from xraylabtool import calculators
@@ -326,6 +329,21 @@ def __getattr__(name):
 # Performance optimization modules (imported on demand to avoid unused
 # import warnings)
 _PERFORMANCE_MODULES_AVAILABLE = True
+
+
+def _configure_jax_float64() -> None:
+    """Enable float64 support in JAX if the JAX backend is active.
+
+    Only imports JAX when it's actually being used (GPU detected) to avoid
+    ~600ms import overhead on CPU-only systems. When JaxBackend is active,
+    float64 is already configured in JaxBackend.__init__.
+    """
+    from xraylabtool.backend.array_ops import JaxBackend, _backend
+    if isinstance(_backend, JaxBackend):
+        import jax  # type: ignore[import-not-found]
+        jax.config.update("jax_enable_x64", True)
+
+_configure_jax_float64()
 
 __all__ = [
     "AVOGADRO",

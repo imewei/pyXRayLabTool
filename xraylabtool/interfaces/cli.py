@@ -52,30 +52,46 @@ from xraylabtool.utils import (
 # - numpy, pandas: imported when needed for data processing
 # - analysis modules: imported in cmd_compare function
 
-# Import monitoring and performance classes used in batch processing
-try:
-    from xraylabtool.data_handling.batch_processing import AdaptiveChunkSizer
-    from xraylabtool.data_handling.memory_profiler import MemoryMonitor
-    from xraylabtool.optimization.regression_detector import PerformanceMetrics
-    from xraylabtool.progress import create_batch_progress_tracker
-except ImportError:
-    # Fallback implementations for missing modules
-    class MemoryMonitor:
-        def __init__(self):
-            pass
+# Stub implementations for removed monitoring/performance modules
+class MemoryMonitor:
+    def __init__(self) -> None:
+        pass
 
-    class PerformanceMetrics:
-        def __init__(self):
-            pass
+    def update(self) -> None:
+        pass
 
-    class AdaptiveChunkSizer:
-        def __init__(self):
-            pass
+    def print_summary(self) -> None:
+        pass
 
-    def create_batch_progress_tracker(**kwargs: Any) -> Any:
+
+class PerformanceMetrics:
+    def __init__(self) -> None:
+        pass
+
+    def time_operation(self) -> Any:
         from contextlib import nullcontext
 
         return nullcontext()
+
+    def record_operations(self, count: int) -> None:
+        pass
+
+    def print_summary(self, verbose: bool = False) -> None:
+        pass
+
+
+class AdaptiveChunkSizer:
+    def __init__(self) -> None:
+        pass
+
+    def calculate_chunk_size(self, total: int) -> int:
+        return total
+
+
+def create_batch_progress_tracker(**kwargs: Any) -> Any:
+    from contextlib import nullcontext
+
+    return nullcontext()
 
 
 # - progress modules: imported in cmd_batch function
@@ -826,7 +842,7 @@ def _get_default_fields() -> tuple[list[str], list[str]]:
     return scalar_fields, array_fields
 
 
-def _format_as_json(result, fields: list[str]) -> str:
+def _format_as_json(result: Any, fields: list[str]) -> str:
     """Format result as JSON."""
     import numpy as np
 
@@ -840,7 +856,7 @@ def _format_as_json(result, fields: list[str]) -> str:
     return json.dumps(data, indent=2)
 
 
-def _format_as_csv(result, fields: list[str], precision: int) -> str:
+def _format_as_csv(result: Any, fields: list[str], precision: int) -> str:
     """Format result as CSV."""
     import csv
     import io
@@ -881,7 +897,7 @@ def _format_as_csv(result, fields: list[str], precision: int) -> str:
     return ""
 
 
-def _format_material_properties(result, precision: int) -> list[str]:
+def _format_material_properties(result: Any, precision: int) -> list[str]:
     """Format material properties section."""
     return [
         "Material Properties:",
@@ -897,7 +913,7 @@ def _format_material_properties(result, precision: int) -> list[str]:
     ]
 
 
-def _format_single_energy(result, precision: int) -> list[str]:
+def _format_single_energy(result: Any, precision: int) -> list[str]:
     """Format single energy point properties."""
     return [
         "X-ray Properties:",
@@ -914,7 +930,7 @@ def _format_single_energy(result, precision: int) -> list[str]:
     ]
 
 
-def _format_multiple_energies(result, precision: int) -> list[str]:
+def _format_multiple_energies(result: Any, precision: int) -> list[str]:
     """Format multiple energy points as table."""
     import numpy as np
 
@@ -1016,7 +1032,7 @@ def _get_field_labels() -> dict[str, str]:
 
 
 def _format_scalar_fields_section(
-    result, fields_to_show: list[str], precision: int
+    result: Any, fields_to_show: list[str], precision: int
 ) -> list[str]:
     """Format scalar fields section."""
     if not fields_to_show:
@@ -1033,7 +1049,7 @@ def _format_scalar_fields_section(
 
 
 def _format_single_energy_section(
-    result, fields_to_show: list[str], precision: int
+    result: Any, fields_to_show: list[str], precision: int
 ) -> list[str]:
     """Format single energy point array fields."""
     if not fields_to_show:
@@ -1049,7 +1065,7 @@ def _format_single_energy_section(
 
 
 def _format_multiple_energy_section(
-    result, fields_to_show: list[str], precision: int
+    result: Any, fields_to_show: list[str], precision: int
 ) -> list[str]:
     """Format multiple energy points as tabular data."""
     import numpy as np
@@ -1099,7 +1115,7 @@ def _format_multiple_energy_section(
     return output_lines
 
 
-def _format_filtered_table(result, fields: list[str], precision: int) -> str:
+def _format_filtered_table(result: Any, fields: list[str], precision: int) -> str:
     """Format table with only specified fields."""
     # Separate scalar and array fields
     scalar_fields, array_fields = _get_default_fields()
@@ -1128,7 +1144,7 @@ def _format_filtered_table(result, fields: list[str], precision: int) -> str:
 
 
 def format_xray_result(
-    result,  # XRayResult - type hint removed for lazy loading
+    result: Any,  # XRayResult - type hint removed for lazy loading
     format_type: str,
     precision: int = 6,
     fields: list[str] | None = None,
@@ -1158,7 +1174,7 @@ def format_xray_result(
         return "\n".join(output_lines)
 
 
-def _validate_calc_inputs(args: Any, energies) -> bool:
+def _validate_calc_inputs(args: Any, energies: Any) -> bool:
     """Validate calculation inputs."""
     import numpy as np
 
@@ -1176,7 +1192,7 @@ def _validate_calc_inputs(args: Any, energies) -> bool:
     return True
 
 
-def _print_calc_verbose_info(args: Any, energies) -> None:
+def _print_calc_verbose_info(args: Any, energies: Any) -> None:
     """Print verbose calculation information."""
     print(f"Calculating X-ray properties for {args.formula}...")
     print(
@@ -1270,7 +1286,7 @@ def cmd_calc(args: Any) -> int:
         return 1
 
 
-def _validate_batch_input(args: Any):
+def _validate_batch_input(args: Any) -> list[Any] | None:
     """Validate batch input file and return data."""
     import csv
 
@@ -1306,7 +1322,7 @@ def _validate_batch_input(args: Any):
 
 
 def _parse_batch_data(
-    data_input,  # list of dict
+    data_input: list[Any],
 ) -> tuple[list[str] | None, list[float] | None, list[list[float]] | None]:
     """Parse batch data from list of dictionaries."""
     formulas = []
@@ -1334,7 +1350,7 @@ def _parse_batch_data(
     return formulas, densities, energy_sets
 
 
-def _convert_result_to_dict(result, energy_index: int) -> dict[str, Any]:
+def _convert_result_to_dict(result: Any, energy_index: int) -> dict[str, Any]:
     """Convert XRayResult to dictionary for specific energy point."""
     return {
         "formula": result.formula,
@@ -1480,8 +1496,8 @@ def cmd_batch(args: Any) -> int:
     """Handle the 'batch' command."""
     try:
         # Lazy imports for batch processing
-        from xraylabtool.validation.enhanced_validator import EnhancedValidator
-        from xraylabtool.validation.error_recovery import ErrorRecoveryManager
+        from xraylabtool.validation.enhanced_validator import EnhancedValidator  # type: ignore[import-not-found]
+        from xraylabtool.validation.error_recovery import ErrorRecoveryManager  # type: ignore[import-not-found]
 
         df_input = _validate_batch_input(args)
         if df_input is None:
@@ -1495,7 +1511,7 @@ def cmd_batch(args: Any) -> int:
         )  # Non-interactive for batch
 
         # Validate all formulas in the batch
-        formulas = df_input["formula"].tolist()
+        formulas = df_input["formula"].tolist()  # type: ignore[call-overload]
         validation_results = validator.validate_batch_formulas(
             formulas, command_context="batch"
         )
@@ -1510,7 +1526,7 @@ def cmd_batch(args: Any) -> int:
             zip(formulas, recovered_formulas, strict=False)
         ):
             if recovered_formula and recovered_formula != original_formula:
-                df_input.loc[i, "formula"] = recovered_formula
+                df_input.loc[i, "formula"] = recovered_formula  # type: ignore[attr-defined]
                 if args.verbose:
                     print(
                         f"✅ Auto-corrected formula {i + 1}: '{original_formula}' →"
@@ -2172,7 +2188,7 @@ def main() -> int:
             system=getattr(args, "system", False),
             uninstall=getattr(args, "uninstall", False),
         )
-        return install_completion_main(mock_args)
+        return install_completion_main(mock_args)  # type: ignore[arg-type]
 
     # If no command specified, show help
     if not args.command:

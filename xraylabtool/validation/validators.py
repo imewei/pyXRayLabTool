@@ -5,32 +5,18 @@ This module contains functions for validating input parameters,
 chemical formulas, energy ranges, and other data used in calculations.
 """
 
-from functools import lru_cache
-import re
+from __future__ import annotations
 
+import math
+import numbers
+import re
+from typing import TYPE_CHECKING
+
+from xraylabtool.backend import ops
 from xraylabtool.exceptions import EnergyError, FormulaError, ValidationError
 
-
-# Lazy-loaded numpy to improve startup performance
-@lru_cache(maxsize=1)
-def _get_numpy():
-    """Lazy import numpy only when needed."""
+if TYPE_CHECKING:
     import numpy as np
-
-    return np
-
-
-# Create a module-level numpy proxy
-class _NumpyProxy:
-    """Proxy object that provides numpy functions on demand."""
-
-    def __getattr__(self, name):
-        np = _get_numpy()
-        return getattr(np, name)
-
-
-# Replace np with the proxy
-np = _NumpyProxy()
 
 
 def validate_energy_range(
@@ -52,37 +38,37 @@ def validate_energy_range(
     Raises:
         EnergyError: If energies are invalid
     """
-    energy_array = np.asarray(energies)
+    energy_array = ops.asarray(energies)
 
     # Check for NaN or infinite values
-    if np.any(~np.isfinite(energy_array)):
+    if ops.any(~ops.isfinite(energy_array)):
         raise EnergyError(
             "Energy values must be finite", valid_range=f"{min_energy}-{max_energy} keV"
         )
 
     # Check for positive values
-    if np.any(energy_array <= 0):
+    if ops.any(energy_array <= 0):
         raise EnergyError(
             "Energy values must be positive",
             valid_range=f"{min_energy}-{max_energy} keV",
         )
 
     # Check energy range
-    if np.any(energy_array < min_energy):
+    if ops.any(energy_array < min_energy):
         raise EnergyError(
             "Energy below minimum allowed value",
             energy=float(energy_array.min()),
             valid_range=f"{min_energy}-{max_energy} keV",
         )
 
-    if np.any(energy_array > max_energy):
+    if ops.any(energy_array > max_energy):
         raise EnergyError(
             "Energy above maximum allowed value",
             energy=float(energy_array.max()),
             valid_range=f"{min_energy}-{max_energy} keV",
         )
 
-    return energy_array
+    return energy_array  # type: ignore[no-any-return]
 
 
 def validate_chemical_formula(formula: str) -> dict[str, float]:
@@ -153,12 +139,12 @@ def validate_density(
     Raises:
         ValidationError: If density is invalid
     """
-    if not isinstance(density, int | float | np.number):
+    if not isinstance(density, int | float | numbers.Number):
         raise ValidationError(
             "Density must be a numeric value", parameter="density", value=density
         )
 
-    if not np.isfinite(density):
+    if not math.isfinite(density):
         raise ValidationError(
             "Density must be finite", parameter="density", value=density
         )

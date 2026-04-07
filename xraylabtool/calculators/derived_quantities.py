@@ -5,9 +5,15 @@ This module contains functions for calculating derived X-ray properties such as
 critical angles, attenuation lengths, and other useful quantities.
 """
 
-import numpy as np
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+from xraylabtool.backend import ops
 from xraylabtool.constants import PI, RADIANS_TO_DEGREES
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 def calculate_critical_angle(dispersion_delta: np.ndarray) -> np.ndarray:
@@ -20,8 +26,8 @@ def calculate_critical_angle(dispersion_delta: np.ndarray) -> np.ndarray:
     Returns:
         Critical angle in degrees
     """
-    theta_c_rad = np.sqrt(2.0 * dispersion_delta)
-    return theta_c_rad * RADIANS_TO_DEGREES
+    theta_c_rad = ops.sqrt(2.0 * dispersion_delta)
+    return theta_c_rad * RADIANS_TO_DEGREES  # type: ignore[no-any-return]
 
 
 def calculate_attenuation_length(
@@ -55,7 +61,7 @@ def calculate_transmission(
     Returns:
         Transmission coefficient (0-1)
     """
-    return np.exp(-thickness_cm / attenuation_length_cm)
+    return ops.exp(-thickness_cm / attenuation_length_cm)  # type: ignore[no-any-return]
 
 
 def calculate_scattering_length_density(

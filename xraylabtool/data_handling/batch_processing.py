@@ -373,7 +373,7 @@ def _get_energy_point_data(result: XRayResult, index: int) -> dict[str, Any]:
     }
 
 
-def _filter_dataframe_fields(df, fields: list[str] | None):
+def _filter_dataframe_fields(df: Any, fields: list[str] | None) -> Any:
     """Filter DataFrame columns based on requested fields."""
     if fields is None:
         return df
@@ -389,7 +389,7 @@ def _filter_dataframe_fields(df, fields: list[str] | None):
     return df[valid_fields] if valid_fields else df
 
 
-def _save_dataframe(df, output_path: Path, format: str) -> None:
+def _save_dataframe(df: Any, output_path: Path, format: str) -> None:
     """Save DataFrame to file in specified format."""
     format_lower = format.lower()
 

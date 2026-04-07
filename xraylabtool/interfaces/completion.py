@@ -21,7 +21,7 @@ from .completion_v2.shells import (
 
 
 # Generate BASH_COMPLETION_SCRIPT for backward compatibility
-def _generate_bash_completion_script():
+def _generate_bash_completion_script() -> str:
     """Generate bash completion script for backward compatibility."""
     try:
         completion_manager = CompletionManager()

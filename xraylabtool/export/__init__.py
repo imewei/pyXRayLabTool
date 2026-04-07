@@ -56,7 +56,7 @@ def export_to_csv(
                 if hasattr(values, "__iter__"):
                     row.extend(values)
                 else:
-                    row.append(values)
+                    row.append(values)  # type: ignore[arg-type]
             writer.writerow(row)
 
 

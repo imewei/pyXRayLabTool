@@ -63,7 +63,7 @@ class CompletionCache:
                 cache_file.unlink()
             return None
 
-    def set(self, key: str, data: Any, metadata: dict | None = None) -> None:
+    def set(self, key: str, data: Any, metadata: dict[str, Any] | None = None) -> None:
         """Cache data with optional metadata."""
         cache_file = self.cache_dir / f"{key}.json"
 
@@ -106,19 +106,19 @@ class CompletionCache:
 class CompletionDataManager:
     """Manages and caches completion data for fast access."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache = CompletionCache()
         self._commands_cache_key = "xraylabtool_commands"
         self._options_cache_key = "xraylabtool_options"
 
-    def get_commands(self, force_refresh: bool = False) -> dict[str, dict]:
+    def get_commands(self, force_refresh: bool = False) -> dict[str, dict[str, Any]]:
         """Get command definitions with caching."""
         if not force_refresh:
             cached_commands = self.cache.get(
                 self._commands_cache_key, timeout=self.cache.command_cache_timeout
             )
             if cached_commands:
-                return cached_commands
+                return dict(cached_commands)
 
         # Import here to avoid circular imports
         from .shells import get_xraylabtool_commands
@@ -134,7 +134,7 @@ class CompletionDataManager:
                 self._options_cache_key, timeout=self.cache.command_cache_timeout
             )
             if cached_options:
-                return cached_options
+                return list(cached_options)
 
         # Import here to avoid circular imports
         from .shells import get_global_options
@@ -152,7 +152,7 @@ class CompletionDataManager:
         if not force_refresh:
             cached_script = self.cache.get(script_key)
             if cached_script:
-                return cached_script
+                return str(cached_script)
 
         return None
 
@@ -175,9 +175,9 @@ class CompletionDataManager:
 class FastCompletionProvider:
     """Optimized completion provider for runtime performance."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.data_manager = CompletionDataManager()
-        self._completion_cache = {}
+        self._completion_cache: dict[str, Any] = {}
 
     def get_command_completions(self, partial_command: str) -> list[str]:
         """Get command completions for partial input."""
@@ -235,7 +235,7 @@ class FastCompletionProvider:
                 return []
 
             # Fast globbing with limit
-            matches = []
+            matches: list[str] = []
             for item in path.glob(pattern):
                 if len(matches) >= 100:  # Limit results for performance
                     break
@@ -265,8 +265,8 @@ class FastCompletionProvider:
 class PerformanceMonitor:
     """Monitor completion performance for optimization."""
 
-    def __init__(self):
-        self.metrics = {
+    def __init__(self) -> None:
+        self.metrics: dict[str, Any] = {
             "completion_times": [],
             "cache_hits": 0,
             "cache_misses": 0,

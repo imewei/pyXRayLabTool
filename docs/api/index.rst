@@ -3,13 +3,18 @@ API Reference
 
 This section contains the API reference for XRayLabTool's modular architecture.
 
-XRayLabTool is organized into 5 focused sub-packages:
+XRayLabTool is organized into focused sub-packages:
 
 - **calculators**: Core X-ray physics calculations
 - **data_handling**: Atomic data caching and batch processing
 - **interfaces**: CLI and completion systems
 - **validation**: Input validation and error handling
 - **io_operations**: File operations and export functionality
+- **analysis**: Material comparison and absorption edge detection
+- **export**: CSV/JSON export for downstream analysis
+- **optimization**: Vectorized and performance-tuned calculations
+- **gui**: PySide6 desktop application
+- **backend**: NumPy/JAX array backend abstraction
 - **utils**: Utility functions and constants
 
 .. toctree::
@@ -23,6 +28,16 @@ XRayLabTool is organized into 5 focused sub-packages:
    io_operations
    utils
    constants
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Extended API
+
+   analysis
+   export
+   optimization
+   gui
+   backend
 
 High-Level Interface
 --------------------

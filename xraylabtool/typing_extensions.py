@@ -135,7 +135,7 @@ if TYPE_CHECKING:
     # =============================================================================
 
     # Vectorized calculation function signatures
-    VectorizedCalculator = Callable[[EnergyArray, ...], RealArray]
+    VectorizedCalculator = Callable[[EnergyArray, ...], RealArray]  # type: ignore[misc]
     ElementProcessor = Callable[[str, EnergyArray], ComplexArray]
     FormulaParser = Callable[[str], Mapping[str, int]]
 
@@ -280,9 +280,9 @@ def ensure_float64_array(array: ArrayLike) -> EnergyArray:
     EnergyArray
         Converted float64 array
     """
-    import numpy as np
+    from xraylabtool.backend import ops
 
-    return np.asarray(array, dtype=np.float64)
+    return ops.asarray(array, dtype=ops.float64)  # type: ignore[no-any-return]
 
 
 def ensure_complex128_array(array: ArrayLike) -> ComplexArray:
@@ -301,7 +301,9 @@ def ensure_complex128_array(array: ArrayLike) -> ComplexArray:
     """
     import numpy as np
 
-    return np.asarray(array, dtype=np.complex128)
+    from xraylabtool.backend import ops
+
+    return ops.asarray(array, dtype=np.complex128)  # type: ignore[no-any-return]
 
 
 # =============================================================================
@@ -331,7 +333,7 @@ def is_real_array(obj: Any) -> bool:
 # =============================================================================
 
 
-def optimize_array_memory_layout(array: NDArray) -> NDArray:
+def optimize_array_memory_layout(array: NDArray) -> NDArray:  # type: ignore[type-arg]
     """
     Optimize array memory layout for performance.
 

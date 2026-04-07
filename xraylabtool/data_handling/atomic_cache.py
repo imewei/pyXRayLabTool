@@ -117,6 +117,13 @@ _ATOMIC_DATA_PRELOADED = {
     "U": {"atomic_number": 92, "atomic_weight": 238.03},
 }
 
+# Pre-built MappingProxyType wrappers for preloaded data — created once at
+# import time so get_atomic_data_fast returns the same object on every hit
+# instead of constructing a new wrapper per call.
+_ATOMIC_DATA_PROXIES: dict[str, types.MappingProxyType[str, float]] = {
+    k: types.MappingProxyType(v) for k, v in _ATOMIC_DATA_PRELOADED.items()
+}
+
 # Runtime cache for elements not in the preloaded data
 _RUNTIME_CACHE: dict[str, dict[str, float]] = {}
 
@@ -139,49 +146,39 @@ def get_atomic_data_fast(element: str) -> types.MappingProxyType[str, float]:
     """
     element_key = element.capitalize()
 
-    # Check preloaded cache first (fastest) - record cache hit
-    if element_key in _ATOMIC_DATA_PRELOADED:
-        try:
-            from xraylabtool.data_handling.cache_metrics import _record_cache_access
+    # Check preloaded cache first (fastest) — return pre-built proxy, no allocation
+    if element_key in _ATOMIC_DATA_PROXIES:
+        return _ATOMIC_DATA_PROXIES[element_key]
 
-            _record_cache_access(element_key, "preloaded_atomic", hit=True)
-        except ImportError:
-            pass
-        return types.MappingProxyType(_ATOMIC_DATA_PRELOADED[element_key])
-
-    # Check runtime cache second - record cache hit
+    # Check runtime cache second — also pre-wrapped on insertion
     if element_key in _RUNTIME_CACHE:
-        try:
-            from xraylabtool.data_handling.cache_metrics import _record_cache_access
+        return _RUNTIME_CACHE[element_key]  # type: ignore[return-value]
 
-            _record_cache_access(element_key, "runtime_atomic", hit=True)
-        except ImportError:
-            pass
-        return types.MappingProxyType(_RUNTIME_CACHE[element_key])
-
-    # Fall back to Mendeleev (slowest) - record cache miss
+    # Fall back to Mendeleev (slowest) — single query for both fields
     try:
-        from xraylabtool.utils import get_atomic_number, get_atomic_weight
+        from mendeleev import element as _mendeleev_element
 
-        try:
-            from xraylabtool.data_handling.cache_metrics import _record_cache_access
+        elem = _mendeleev_element(element_key)
+        proxy = types.MappingProxyType({
+            "atomic_number": int(elem.atomic_number),
+            "atomic_weight": float(elem.atomic_weight),
+        })
 
-            _record_cache_access(element_key, "atomic_data", hit=False)
-        except ImportError:
-            pass
-
-        atomic_data = {
-            "atomic_number": get_atomic_number(element),
-            "atomic_weight": get_atomic_weight(element),
-        }
-
-        # Cache for future use - store the actual dict in cache
-        _RUNTIME_CACHE[element_key] = atomic_data
-        return types.MappingProxyType(atomic_data)
+        # Cache the proxy directly so future lookups return the same object
+        _RUNTIME_CACHE[element_key] = proxy  # type: ignore[assignment]
+        return proxy
 
     except UnknownElementError:
         # Re-raise UnknownElementError without wrapping
         raise
+    except ValueError as e:
+        # Mendeleev raises ValueError for unknown elements — map to UnknownElementError
+        error_str = str(e).lower()
+        if "not found" in error_str or "unknown" in error_str:
+            raise UnknownElementError(f"Unknown element symbol: '{element_key}'") from e
+        raise ValueError(
+            f"Cannot retrieve atomic data for element '{element}': {e}"
+        ) from e
     except Exception as e:
         raise ValueError(
             f"Cannot retrieve atomic data for element '{element}': {e}"
@@ -256,7 +253,6 @@ def warm_cache_for_compounds(
     """
     import time
 
-    from xraylabtool.data_handling.cache_metrics import track_compound_calculation
     from xraylabtool.data_handling.compound_analysis import (
         COMPOUND_FAMILIES,
         find_similar_compounds,
@@ -283,11 +279,6 @@ def warm_cache_for_compounds(
                 "similar_compounds": [],
                 "family_compounds": [],
             }
-
-            # Track this compound calculation
-            calc_start = time.perf_counter()
-            track_compound_calculation(formula, elements, 0.0)  # Placeholder timing
-            time.perf_counter() - calc_start
 
             # Find similar compounds if requested
             if include_similar:
@@ -381,7 +372,7 @@ def warm_cache_for_compounds(
 
     # Calculate timing
     end_time = time.perf_counter() if timing_info else None
-    total_time_ms = (end_time - start_time) * 1000.0 if timing_info else 0.0
+    total_time_ms = (end_time - start_time) * 1000.0 if timing_info else 0.0  # type: ignore[operator]
 
     # Calculate success rates
     atomic_success_rate = atomic_success / atomic_total if atomic_total > 0 else 0.0
@@ -393,12 +384,6 @@ def warm_cache_for_compounds(
         if (atomic_total + interpolator_total) > 0
         else 0.0
     )
-
-    # Update cache metrics with warming performance
-    from xraylabtool.data_handling.cache_metrics import _metrics_lock, _usage_patterns
-
-    with _metrics_lock:
-        _usage_patterns["performance_metrics"]["warming_time_ms"] = total_time_ms
 
     return {
         "elements_warmed": sorted(elements_to_warm),

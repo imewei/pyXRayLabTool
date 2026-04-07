@@ -350,11 +350,10 @@ Next steps:
 
 Key Documentation Sections:
 
-- `Tutorials <tutorials/index.rst>`_ - Step-by-step guides for common tasks
 - `CLI Reference <cli_reference.rst>`_ - Complete command-line interface documentation
-- `Examples <examples/index.rst>`_ - Real-world usage examples
-- `API Reference <api/index.rst>`_ - Complete API reference
-- `X-ray Physics <physics/xray_optics.rst>`_ - X-ray physics background
+- `Examples <../examples/index.rst>`_ - Real-world usage examples
+- `API Reference <../api/index.rst>`_ - Complete API reference
+- `X-ray Physics <../physics/xray_optics.rst>`_ - X-ray physics background
 
 Getting Help
 ------------

@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import time
+from typing import Any
 
 
 class EnvironmentType:
@@ -43,7 +44,7 @@ class EnvironmentInfo:
         self.python_version = python_version
         self.has_completion = has_completion
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "env_type": self.env_type,
@@ -55,7 +56,7 @@ class EnvironmentInfo:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "EnvironmentInfo":
+    def from_dict(cls, data: dict[str, Any]) -> "EnvironmentInfo":
         """Create from dictionary."""
         return cls(
             env_type=data["env_type"],
@@ -70,7 +71,7 @@ class EnvironmentInfo:
 class EnvironmentDetector:
     """Detects and manages Python virtual environments."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cache_file = Path.home() / ".xraylabtool" / "env_cache.json"
         self._cache_file.parent.mkdir(exist_ok=True)
         self._cache_timeout = 3600  # 1 hour in seconds
@@ -545,15 +546,15 @@ class EnvironmentDetector:
         except OSError:
             return False
 
-    def _load_cache(self) -> list[dict] | None:
+    def _load_cache(self) -> list[dict[str, Any]] | None:
         """Load cached environment data."""
         try:
             with open(self._cache_file) as f:
-                return json.load(f)
+                return json.load(f)  # type: ignore[no-any-return]
         except (json.JSONDecodeError, FileNotFoundError):
             return None
 
-    def _save_cache(self, environments: list[dict]) -> None:
+    def _save_cache(self, environments: list[dict[str, Any]]) -> None:
         """Save environment data to cache."""
         try:
             with open(self._cache_file, "w") as f:

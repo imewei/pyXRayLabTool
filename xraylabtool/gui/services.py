@@ -33,7 +33,7 @@ class EnergyConfig:
         return np.linspace(start, end, pts)
 
 
-def compute_single(formula: str, density: float, energy_cfg: EnergyConfig):
+def compute_single(formula: str, density: float, energy_cfg: EnergyConfig):  # type: ignore[no-untyped-def]
     energies = energy_cfg.to_array()
     logger.info(
         "Compute single material",
@@ -47,7 +47,7 @@ def compute_single(formula: str, density: float, energy_cfg: EnergyConfig):
     return calculate_single_material_properties(formula, energies, density)
 
 
-def compute_multiple(
+def compute_multiple(  # type: ignore[no-untyped-def]
     formulas: Iterable[str],
     densities: Iterable[float],
     energy_cfg: EnergyConfig,

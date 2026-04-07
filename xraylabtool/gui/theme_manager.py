@@ -7,7 +7,7 @@ from .style import (
     DARK_THEME,
     LIGHT_THEME,
     ColorPalette,
-    apply_matplotlib_theme,
+    apply_pyqtgraph_theme,
     apply_theme,
 )
 
@@ -60,8 +60,8 @@ class ThemeManager(QObject):
         # Update Qt styles
         apply_theme(app_instance, self.current_palette)
 
-        # Update Matplotlib styles
-        apply_matplotlib_theme(self.current_palette)
+        # Update PyQtGraph styles
+        apply_pyqtgraph_theme(self.current_palette)
 
         # Force palette update on app (sometimes needed for dynamic switches)
         app_instance.setPalette(self.current_palette.to_qpalette())

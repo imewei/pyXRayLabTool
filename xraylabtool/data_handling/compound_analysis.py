@@ -125,6 +125,13 @@ COMPOUND_FAMILIES: dict[str, list[str]] = {
     "sulfates": ["CaSO4", "BaSO4", "SrSO4"],
 }
 
+# Pre-computed element sets for all known compounds — avoids repeated
+# formula parsing and set construction inside find_similar_compounds.
+_COMPOUND_ELEMENTS: dict[str, frozenset[str]] = {
+    formula: frozenset(elements.keys())
+    for formula, elements in COMMON_COMPOUNDS.items()
+}
+
 
 def parse_chemical_formula(formula: str) -> dict[str, int]:
     """
@@ -289,16 +296,14 @@ def find_similar_compounds(
     Returns:
         List of similar compound formulas
     """
-    target_elements = set(get_elements_for_compound(formula))
+    target_elements = frozenset(get_elements_for_compound(formula))
+    if not target_elements:
+        return []
+
     similar_compounds = []
 
-    for compound in COMMON_COMPOUNDS:
-        compound_elements = set(get_elements_for_compound(compound))
-
-        if not target_elements or not compound_elements:
-            continue
-
-        # Calculate Jaccard similarity
+    for compound, compound_elements in _COMPOUND_ELEMENTS.items():
+        # Calculate Jaccard similarity using pre-computed frozensets
         intersection = len(target_elements & compound_elements)
         union = len(target_elements | compound_elements)
         similarity = intersection / union if union > 0 else 0.0
@@ -306,9 +311,9 @@ def find_similar_compounds(
         if similarity >= similarity_threshold:
             similar_compounds.append(compound)
 
-    # Sort by similarity score (descending)
+    # Sort by overlap size descending (uses pre-computed sets, no re-parsing)
     similar_compounds.sort(
-        key=lambda x: len(set(get_elements_for_compound(x)) & target_elements),
+        key=lambda x: len(_COMPOUND_ELEMENTS[x] & target_elements),
         reverse=True,
     )
 

@@ -190,7 +190,7 @@ def test_completion_installation() -> int:
         return 1
 
 
-def handle_new_completion_command(args: list) -> int:
+def handle_new_completion_command(args: list[str]) -> int:
     """Handle new 'completion' subcommand."""
     # Remove 'completion' from args
     if args and args[0] == "completion":
