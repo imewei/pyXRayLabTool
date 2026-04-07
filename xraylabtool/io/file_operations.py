@@ -35,8 +35,12 @@ def load_data_file(filename: str) -> np.ndarray:
     try:
         # Try to load as space-separated values (common for .nff files)
         if file_path.suffix == ".nff":
-            # Load .nff files with numpy - skip comments starting with #
-            data = np.loadtxt(filename, comments="#")
+            # .nff files may have a CSV header row; try skipping it first
+            try:
+                data = np.loadtxt(filename, delimiter=",", skiprows=1)
+            except ValueError:
+                # Fall back to space-separated without a header
+                data = np.loadtxt(filename, comments="#")
         else:
             # For CSV files, use numpy's CSV loader
             try:

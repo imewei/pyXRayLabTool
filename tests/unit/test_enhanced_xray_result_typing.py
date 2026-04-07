@@ -7,7 +7,6 @@ performance characteristics with enhanced type safety.
 """
 
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 import pytest
@@ -171,40 +170,6 @@ class TestXRayResultTyping(BaseXRayLabToolTest):
         assert result.energy_kev.dtype in [np.float32, np.float64]
         assert result.wavelength_angstrom.dtype == np.float64
         assert result.dispersion_delta.dtype in [np.float32, np.float64]
-
-    def test_xray_result_legacy_property_warnings(self):
-        """Test that legacy property access emits deprecation warnings."""
-        # Create a simple XRayResult
-        result = XRayResult(
-            formula="C",
-            molecular_weight_g_mol=12.01,
-            total_electrons=6.0,
-            density_g_cm3=3.52,
-            electron_density_per_ang3=0.18,
-            energy_kev=np.array([10.0]),
-            wavelength_angstrom=np.array([1.24]),
-            dispersion_delta=np.array([8.9e-7]),
-            absorption_beta=np.array([4.1e-8]),
-            scattering_factor_f1=np.array([5.8]),
-            scattering_factor_f2=np.array([0.04]),
-            critical_angle_degrees=np.array([0.125]),
-            attenuation_length_cm=np.array([21.5]),
-            real_sld_per_ang2=np.array([3.2e-5]),
-            imaginary_sld_per_ang2=np.array([5.8e-8]),
-        )
-
-        # Test that legacy properties emit warnings
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
-            # Access legacy property
-            formula = result.Formula
-            assert formula == "C"
-
-            # Check that warning was emitted
-            assert len(w) == 1
-            assert issubclass(w[0].category, DeprecationWarning)
-            assert "deprecated" in str(w[0].message).lower()
 
     @pytest.mark.performance
     def test_xray_result_memory_efficiency(self):

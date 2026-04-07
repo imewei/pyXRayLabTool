@@ -24,6 +24,11 @@ repos:
       - id: ruff-format
         name: ruff format
 
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.3
+    hooks:
+      - id: gitleaks
+
 
 
 # Configuration

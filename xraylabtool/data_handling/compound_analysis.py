@@ -9,7 +9,6 @@ materials science applications.
 from __future__ import annotations
 
 from collections import defaultdict
-import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -137,14 +136,14 @@ def parse_chemical_formula(formula: str) -> dict[str, int]:
     """
     Parse a chemical formula into element counts.
 
-    This function uses regular expressions to extract element symbols and their
-    counts from chemical formulas, handling parentheses and complex structures.
+    Delegates to the canonical :func:`xraylabtool.utils.parse_formula` and
+    rounds counts to integers.
 
     Args:
         formula: Chemical formula string (e.g., "Ca5(PO4)3OH")
 
     Returns:
-        Dictionary mapping element symbols to their counts
+        Dictionary mapping element symbols to their integer counts
 
     Examples:
         >>> parse_chemical_formula("SiO2")
@@ -152,63 +151,10 @@ def parse_chemical_formula(formula: str) -> dict[str, int]:
         >>> parse_chemical_formula("Ca5(PO4)3OH")
         {'Ca': 5, 'P': 3, 'O': 13, 'H': 1}
     """
-    element_counts: dict[str, int] = defaultdict(int)
+    from xraylabtool.utils import parse_formula
 
-    # Remove spaces and normalize formula
-    formula = formula.replace(" ", "")
-
-    # Handle parentheses by expanding them
-    while "(" in formula:
-        # Find the innermost parentheses
-        start = formula.rfind("(")
-        if start == -1:
-            break
-
-        # Find the matching closing parenthesis
-        end = formula.find(")", start)
-        if end == -1:
-            break
-
-        # Extract content inside parentheses
-        inside = formula[start + 1 : end]
-
-        # Find the multiplier after the parentheses
-        rest = formula[end + 1 :]
-        multiplier_match = re.match(r"(\d+)", rest)
-        multiplier = int(multiplier_match.group(1)) if multiplier_match else 1
-
-        # Parse elements inside parentheses
-        inside_elements = parse_chemical_formula(inside)
-
-        # Create expanded string
-        expanded = ""
-        for element, count in inside_elements.items():
-            total_count = count * multiplier
-            if total_count > 1:
-                expanded += f"{element}{total_count}"
-            else:
-                expanded += element
-
-        # Replace parentheses group with expanded form
-        if multiplier_match:
-            formula = (
-                formula[:start]
-                + expanded
-                + formula[end + 1 + len(multiplier_match.group(1)) :]
-            )
-        else:
-            formula = formula[:start] + expanded + formula[end + 1 :]
-
-    # Parse elements and their counts using regex
-    # Matches: Capital letter + optional lowercase letter + optional digit(s)
-    pattern = r"([A-Z][a-z]?)(\d*)"
-    matches = re.findall(pattern, formula)
-
-    for element, count_str in matches:
-        count = int(count_str) if count_str else 1
-        element_counts[element] += count
-
-    return dict(element_counts)
+    symbols, counts = parse_formula(formula)
+    return {sym: round(cnt) for sym, cnt in zip(symbols, counts, strict=True)}
 
 
 def get_elements_for_compound(formula: str) -> list[str]:

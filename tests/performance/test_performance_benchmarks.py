@@ -6,6 +6,7 @@ optimization improvements and detect performance regressions.
 """
 
 from contextlib import contextmanager
+import os
 import statistics
 import time
 
@@ -16,6 +17,9 @@ import xraylabtool as xlt
 from xraylabtool.calculators.core import calculate_single_material_properties
 from xraylabtool.data_handling import get_atomic_data_fast
 
+_IS_CI = os.environ.get("CI", "").lower() == "true"
+_CI_MULT = 3.0 if _IS_CI else 1.0
+
 
 @contextmanager
 def timer():
@@ -24,6 +28,7 @@ def timer():
     yield lambda: time.perf_counter() - start
 
 
+@pytest.mark.performance
 class TestPerformanceBenchmarks:
     """Performance benchmark tests."""
 
@@ -48,8 +53,11 @@ class TestPerformanceBenchmarks:
         std_time = statistics.stdev(times)
 
         # Performance targets (JAX backend has ~0.5ms XLA dispatch overhead per call)
-        assert avg_time < 0.005, f"Single calculation too slow: {avg_time:.6f}s (avg)"
-        assert median_time < 0.005, (
+        threshold = 0.005 * _CI_MULT
+        assert avg_time < threshold, (
+            f"Single calculation too slow: {avg_time:.6f}s (avg)"
+        )
+        assert median_time < threshold, (
             f"Single calculation too slow: {median_time:.6f}s (median)"
         )
 
@@ -72,8 +80,11 @@ class TestPerformanceBenchmarks:
         median_time = statistics.median(times)
 
         # Performance targets
-        assert avg_time < 0.01, f"Array calculation too slow: {avg_time:.6f}s (avg)"
-        assert median_time < 0.01, (
+        threshold = 0.01 * _CI_MULT
+        assert avg_time < threshold, (
+            f"Array calculation too slow: {avg_time:.6f}s (avg)"
+        )
+        assert median_time < threshold, (
             f"Array calculation too slow: {median_time:.6f}s (median)"
         )
 
@@ -97,10 +108,9 @@ class TestPerformanceBenchmarks:
         median_time = statistics.median(times)
 
         # Should be very fast due to caching optimization (realistic threshold for Python)
-        assert avg_time < 0.005, (  # Relaxed from 0.001 to 0.005
-            f"Cache access too slow: {avg_time:.8f}s (avg)"
-        )
-        assert median_time < 0.005, (  # Relaxed from 0.001 to 0.005
+        threshold = 0.005 * _CI_MULT
+        assert avg_time < threshold, f"Cache access too slow: {avg_time:.8f}s (avg)"
+        assert median_time < threshold, (
             f"Cache access too slow: {median_time:.8f}s (median)"
         )
 
@@ -127,8 +137,10 @@ class TestPerformanceBenchmarks:
         avg_per_material = avg_time / len(formulas)
 
         # Performance targets
-        assert avg_time < 0.05, f"Batch calculation too slow: {avg_time:.6f}s (avg)"
-        assert avg_per_material < 0.01, (
+        assert avg_time < 0.05 * _CI_MULT, (
+            f"Batch calculation too slow: {avg_time:.6f}s (avg)"
+        )
+        assert avg_per_material < 0.01 * _CI_MULT, (
             f"Per-material too slow: {avg_per_material:.6f}s"
         )
 
@@ -190,8 +202,10 @@ class TestPerformanceBenchmarks:
         time_per_point = avg_time / len(large_energies)
 
         # Performance targets for large arrays
-        assert avg_time < 0.1, f"Large array calculation too slow: {avg_time:.6f}s"
-        assert time_per_point < 0.0001, (
+        assert avg_time < 0.1 * _CI_MULT, (
+            f"Large array calculation too slow: {avg_time:.6f}s"
+        )
+        assert time_per_point < 0.0001 * _CI_MULT, (
             f"Per-point calculation too slow: {time_per_point:.8f}s"
         )
 
@@ -221,46 +235,17 @@ class TestPerformanceBenchmarks:
         throughput = count / actual_duration
 
         # Throughput target (JAX backend has higher per-call dispatch overhead)
-        assert throughput > 200, (
+        min_throughput = 200 / _CI_MULT
+        assert throughput > min_throughput, (
             f"Throughput too low: {throughput:.0f} calculations/second"
         )
 
         print(f"Throughput: {throughput:.0f} calculations/second")
 
 
+@pytest.mark.performance
 class TestPerformanceRegression:
     """Performance regression tests."""
-
-    def test_deprecation_warning_overhead(self):
-        """Test that deprecation warnings don't add significant overhead."""
-        result = calculate_single_material_properties("SiO2", 10.0, 2.2)
-        iterations = 1000
-
-        # Test new property access (baseline)
-        with timer() as get_time:
-            for _ in range(iterations):
-                _ = result.formula
-        baseline_time = get_time()
-
-        # Test deprecated property access (should be close to baseline)
-        import warnings
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")  # Suppress warnings for timing
-            with timer() as get_time:
-                for _ in range(iterations):
-                    _ = result.Formula
-        deprecated_time = get_time()
-
-        overhead_ratio = deprecated_time / baseline_time
-
-        # Deprecation warnings will have overhead, but shouldn't be excessive (less than 100x)
-        # Note: This is expected since warnings.warn() is called on each access
-        assert overhead_ratio < 100.0, (
-            f"Deprecation warning overhead too high: {overhead_ratio:.2f}x"
-        )
-
-        print(f"Deprecation warning overhead: {overhead_ratio:.2f}x baseline")
 
     def test_array_conversion_overhead(self):
         """Test that array conversion optimization reduces overhead."""
@@ -322,6 +307,7 @@ class TestPerformanceRegression:
         print(f"Cache consistency: {consistency_ratio:.2f}x variation between batches")
 
 
+@pytest.mark.performance
 class TestScalabilityBenchmarks:
     """Scalability benchmark tests."""
 
@@ -440,6 +426,7 @@ class TestScalabilityBenchmarks:
             )
 
 
+@pytest.mark.performance
 @pytest.mark.benchmark
 class TestBenchmarkComparison:
     """Benchmark comparison tests for optimization validation."""
@@ -462,21 +449,14 @@ class TestBenchmarkComparison:
         print(f"  Cache access: {cache_time:.8f}s")
 
         # Overall performance should meet targets (adjusted for CI environment variations)
-        # More relaxed targets for CI environments with variable performance
-        assert single_element_time < 0.015, (
+        assert single_element_time < 0.015 * _CI_MULT, (
             "Single element performance target not met"
-        )  # Relaxed from 0.005s
-        assert multi_element_time < 0.020, (
-            "Multi-element performance target not met"
-        )  # Relaxed from 0.01s
-        assert batch_time < 0.100, (
-            "Batch performance target not met"
-        )  # Relaxed from 0.05s
-        assert (
-            cache_time < 0.005
-        ), (  # Relaxed from 0.0001s for realistic Python performance
-            "Cache performance target not met"
         )
+        assert multi_element_time < 0.020 * _CI_MULT, (
+            "Multi-element performance target not met"
+        )
+        assert batch_time < 0.100 * _CI_MULT, "Batch performance target not met"
+        assert cache_time < 0.005 * _CI_MULT, "Cache performance target not met"
 
     def _benchmark_single_element(self):
         """Benchmark single element calculation."""

@@ -28,6 +28,7 @@ from xraylabtool.calculators.core import (
 )
 
 
+@pytest.mark.performance
 class TestBulkAtomicDataOptimization(BasePerformanceTest):
     """Test bulk atomic data loading optimizations."""
 
@@ -79,6 +80,7 @@ class TestBulkAtomicDataOptimization(BasePerformanceTest):
         get_bulk_atomic_data.cache_clear()
 
 
+@pytest.mark.performance
 class TestInterpolatorCaching(BasePerformanceTest):
     """Test the enhanced interpolator caching system."""
 
@@ -128,6 +130,7 @@ class TestInterpolatorCaching(BasePerformanceTest):
             )
 
 
+@pytest.mark.performance
 class TestElementPathOptimization(BasePerformanceTest):
     """Test the element path pre-computation optimization."""
 
@@ -170,6 +173,7 @@ class TestElementPathOptimization(BasePerformanceTest):
             _AVAILABLE_ELEMENTS.update(original_available)
 
 
+@pytest.mark.performance
 class TestArrayOptimization:
     """Test array optimization features."""
 
@@ -216,6 +220,7 @@ class TestArrayOptimization:
             assert len(result.energy_kev) == n_points
 
 
+@pytest.mark.performance
 class TestDeprecationWarningOptimization:
     """Test deprecation warning performance optimization."""
 
@@ -228,32 +233,8 @@ class TestDeprecationWarningOptimization:
         result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
         assert result.formula == "SiO2"
 
-    def test_warning_performance_benchmark(self):
-        """Test that deprecation warnings work and deprecated properties are accessible."""
-        result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
 
-        # Test that deprecated property access works and issues warning
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            formula_deprecated = result.Formula  # Deprecated property
-
-            # Should issue deprecation warning
-            assert len(w) == 1
-            assert issubclass(w[0].category, DeprecationWarning)
-            assert "Formula is deprecated" in str(w[0].message)
-
-        # Test that new property access works without warning
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            formula_new = result.formula  # New property
-
-            # Should not issue any warnings
-            assert len(w) == 0
-
-        # Both should return the same value
-        assert formula_deprecated == formula_new
-
-
+@pytest.mark.performance
 class TestNumericalStabilityOptimizations:
     """Test numerical stability improvements."""
 
@@ -282,6 +263,7 @@ class TestNumericalStabilityOptimizations:
         assert np.all(np.isfinite(result_low.absorption_beta))
 
 
+@pytest.mark.performance
 class TestPerformanceRegression:
     """Test that optimizations don't break functionality."""
 

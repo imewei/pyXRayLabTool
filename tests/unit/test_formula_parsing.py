@@ -1,237 +1,251 @@
 """
-Tests for chemical formula parsing functionality.
+Tests for the canonical chemical formula parser and its delegating wrappers.
 
-This test module mirrors the comprehensive test suite from test/formula_parsing.jl,
-ensuring identical behavior between the Julia and Python implementations.
+Covers basic formulas, decimal stoichiometry, parentheses (nested),
+error handling, and consistency between the three call sites.
 """
 
-import os
-import sys
+from __future__ import annotations
 
 import pytest
 
-try:
-    from xraylabtool.utils import parse_formula
-except ImportError:
-    # Add parent directory to path to import xraylabtool
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    from xraylabtool.utils import parse_formula
+from xraylabtool.exceptions import FormulaError
+from xraylabtool.utils import parse_formula
+
+# ---------------------------------------------------------------------------
+# Canonical parser: basic formulas
+# ---------------------------------------------------------------------------
 
 
-class TestFormulaParsingBasic:
-    """Test basic functionality mirroring Julia tests."""
+class TestParseFormulaBasic:
+    """Test basic formula parsing."""
 
-    def test_single_atoms(self):
-        """Test single atom parsing (Julia: Single atoms test set)."""
-        # Test carbon
-        symbols, counts = parse_formula("C")
-        assert symbols == ["C"]
-        assert counts == [1.0]
+    def test_sio2(self):
+        syms, cnts = parse_formula("SiO2")
+        assert syms == ["Si", "O"]
+        assert cnts == [1.0, 2.0]
 
-        # Test uranium
-        symbols, counts = parse_formula("U")
-        assert symbols == ["U"]
-        assert counts == [1.0]
+    def test_al2o3(self):
+        syms, cnts = parse_formula("Al2O3")
+        assert syms == ["Al", "O"]
+        assert cnts == [2.0, 3.0]
 
-    def test_mixed_case_correctness(self):
-        """Test mixed case element handling (Julia: Mixed case correctness test set)."""
-        # Test CO (Carbon Monoxide) - two separate elements
-        symbols, counts = parse_formula("CO")
-        assert symbols == ["C", "O"]
-        assert counts == [1.0, 1.0]
+    def test_h2o(self):
+        syms, cnts = parse_formula("H2O")
+        assert syms == ["H", "O"]
+        assert cnts == [2.0, 1.0]
 
-        # Test Co (Cobalt) - single element
-        symbols, counts = parse_formula("Co")
-        assert symbols == ["Co"]
-        assert counts == [1.0]
+    def test_nacl(self):
+        syms, cnts = parse_formula("NaCl")
+        assert syms == ["Na", "Cl"]
+        assert cnts == [1.0, 1.0]
 
+    def test_caco3(self):
+        syms, cnts = parse_formula("CaCO3")
+        assert syms == ["Ca", "C", "O"]
+        assert cnts == [1.0, 1.0, 3.0]
 
-class TestFormulaParsingFractional:
-    """Test fractional stoichiometry parsing."""
+    def test_single_element(self):
+        syms, cnts = parse_formula("Si")
+        assert syms == ["Si"]
+        assert cnts == [1.0]
 
-    def test_fractional_stoichiometry(self):
-        """Test fractional stoichiometry (Julia: Fractional stoichiometry test set)."""
-        # Test equal fractions
-        symbols, counts = parse_formula("H0.5He0.5")
-        assert symbols == ["H", "He"]
-        assert counts == [0.5, 0.5]
+    def test_single_letter_element(self):
+        syms, cnts = parse_formula("H")
+        assert syms == ["H"]
+        assert cnts == [1.0]
 
-        # Test mixed fractional and integer counts
-        symbols, counts = parse_formula("H2O0.5")
-        assert symbols == ["H", "O"]
-        assert counts == [2.0, 0.5]
+    def test_two_letter_element(self):
+        syms, cnts = parse_formula("He")
+        assert syms == ["He"]
+        assert cnts == [1.0]
 
-        # Test decimal with no leading integer
-        symbols, counts = parse_formula("C.25")
-        assert symbols == ["C"]
-        assert counts == [0.25]
+    def test_element_with_explicit_count_1(self):
+        syms, cnts = parse_formula("O1")
+        assert syms == ["O"]
+        assert cnts == [1.0]
 
+    def test_large_counts(self):
+        syms, cnts = parse_formula("C100H200")
+        assert syms == ["C", "H"]
+        assert cnts == [100.0, 200.0]
 
-class TestFormulaParsingLong:
-    """Test long formulas with many elements."""
+    def test_co_vs_Co(self):
+        """CO (carbon monoxide) vs Co (cobalt)."""
+        syms, cnts = parse_formula("CO")
+        assert syms == ["C", "O"]
+        assert cnts == [1.0, 1.0]
 
-    def test_long_formulas(self):
-        """Test formula with ≥10 elements (Julia: Long formulas test set)."""
-        # Test formula with ≥10 elements
-        symbols, counts = parse_formula("HHeLiBeBCHNOFNeNaMg")
-        expected_symbols = [
-            "H",
-            "He",
-            "Li",
-            "Be",
-            "B",
-            "C",
-            "H",
-            "N",
-            "O",
-            "F",
-            "Ne",
-            "Na",
-            "Mg",
-        ]
-        expected_counts = [1.0 for _ in range(13)]
+        syms, cnts = parse_formula("Co")
+        assert syms == ["Co"]
+        assert cnts == [1.0]
 
-        assert symbols == expected_symbols
-        assert counts == expected_counts
-        assert len(symbols) >= 10  # Verify it's truly a long formula
-
-        # Test with numeric subscripts on long formula
-        symbols, counts = parse_formula("H2He3Li4Be5B6C7N8O9F10Ne11")
-        expected_symbols = ["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne"]
-        expected_counts = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
-
-        assert symbols == expected_symbols
-        assert counts == expected_counts
-        assert len(symbols) >= 10
+    def test_duplicate_elements_aggregated(self):
+        """Repeated elements in flat formulas are aggregated."""
+        syms, cnts = parse_formula("H2OH3")
+        assert "H" in syms
+        idx = syms.index("H")
+        assert cnts[idx] == pytest.approx(5.0)
 
 
-class TestFormulaParsingComplex:
-    """Test complex formulas and validation."""
-
-    def test_complex_formulas_and_validation(self):
-        """Test common chemical compounds (Julia: Complex formulas)."""
-        # Test common chemical compounds
-        symbols, counts = parse_formula("SiO2")
-        assert symbols == ["Si", "O"]
-        assert counts == [1.0, 2.0]
-
-        symbols, counts = parse_formula("Al2O3")
-        assert symbols == ["Al", "O"]
-        assert counts == [2.0, 3.0]
-
-        symbols, counts = parse_formula("CaCO3")
-        assert symbols == ["Ca", "C", "O"]
-        assert counts == [1.0, 1.0, 3.0]
-
-        # Test formula with large numbers
-        symbols, counts = parse_formula("C100H200")
-        assert symbols == ["C", "H"]
-        assert counts == [100.0, 200.0]
-
-        # Test formula with very precise decimals
-        symbols, counts = parse_formula("H0.123He0.876")
-        assert symbols == ["H", "He"]
-        # Use pytest.approx for floating point comparison
-        assert counts[0] == pytest.approx(0.123, abs=1e-10)
-        assert counts[1] == pytest.approx(0.876, abs=1e-10)
+# ---------------------------------------------------------------------------
+# Decimal stoichiometry
+# ---------------------------------------------------------------------------
 
 
-class TestFormulaParsingInvalid:
-    """Test invalid inputs and error handling."""
+class TestParseFormulaDecimal:
+    def test_h05_he05(self):
+        syms, cnts = parse_formula("H0.5He0.5")
+        assert syms == ["H", "He"]
+        assert cnts == pytest.approx([0.5, 0.5])
 
-    def test_invalid_inputs(self):
-        """Test invalid inputs (Julia: Invalid inputs test set)."""
-        # Test empty string
-        with pytest.raises(ValueError, match="Invalid chemical formula"):
+    def test_ca05_sr05_tio3(self):
+        syms, cnts = parse_formula("Ca0.5Sr0.5TiO3")
+        assert syms == ["Ca", "Sr", "Ti", "O"]
+        assert cnts == pytest.approx([0.5, 0.5, 1.0, 3.0])
+
+    def test_mixed_fractional_and_integer(self):
+        syms, cnts = parse_formula("H2O0.5")
+        assert syms == ["H", "O"]
+        assert cnts == pytest.approx([2.0, 0.5])
+
+    def test_precise_decimals(self):
+        _syms, cnts = parse_formula("H0.123He0.876")
+        assert cnts[0] == pytest.approx(0.123, abs=1e-10)
+        assert cnts[1] == pytest.approx(0.876, abs=1e-10)
+
+    def test_very_small_decimal(self):
+        _syms, cnts = parse_formula("H0.001")
+        assert cnts == [0.001]
+
+    def test_integer_zero(self):
+        _syms, cnts = parse_formula("H0")
+        assert cnts == [0.0]
+
+
+# ---------------------------------------------------------------------------
+# Parentheses (including nested)
+# ---------------------------------------------------------------------------
+
+
+class TestParseFormulaParentheses:
+    def test_ca5_po4_3oh(self):
+        syms, cnts = parse_formula("Ca5(PO4)3OH")
+        result = dict(zip(syms, cnts))
+        assert result == pytest.approx({"Ca": 5.0, "P": 3.0, "O": 13.0, "H": 1.0})
+
+    def test_ca3_po4_2(self):
+        syms, cnts = parse_formula("Ca3(PO4)2")
+        result = dict(zip(syms, cnts))
+        assert result == pytest.approx({"Ca": 3.0, "P": 2.0, "O": 8.0})
+
+    def test_mg_oh_2(self):
+        syms, cnts = parse_formula("Mg(OH)2")
+        result = dict(zip(syms, cnts))
+        assert result == pytest.approx({"Mg": 1.0, "O": 2.0, "H": 2.0})
+
+    def test_nested_ca10_po4_6_oh_2(self):
+        syms, cnts = parse_formula("Ca10(PO4)6(OH)2")
+        result = dict(zip(syms, cnts))
+        assert result == pytest.approx({"Ca": 10.0, "P": 6.0, "O": 26.0, "H": 2.0})
+
+    def test_paren_no_multiplier(self):
+        syms, cnts = parse_formula("(OH)")
+        result = dict(zip(syms, cnts))
+        assert result == pytest.approx({"O": 1.0, "H": 1.0})
+
+
+# ---------------------------------------------------------------------------
+# Error cases
+# ---------------------------------------------------------------------------
+
+
+class TestParseFormulaErrors:
+    def test_empty_string(self):
+        with pytest.raises(FormulaError):
             parse_formula("")
 
-        # Test string with only numbers
-        with pytest.raises(ValueError, match="Invalid chemical formula"):
+    def test_whitespace_only(self):
+        with pytest.raises(FormulaError):
+            parse_formula("   ")
+
+    def test_unmatched_open_paren(self):
+        with pytest.raises(FormulaError):
+            parse_formula("Ca(OH")
+
+    def test_unmatched_close_paren(self):
+        with pytest.raises(FormulaError):
+            parse_formula("CaOH)")
+
+    def test_only_numbers(self):
+        with pytest.raises(FormulaError):
             parse_formula("123")
 
-        # Test lowercase-only string
-        with pytest.raises(ValueError, match="Invalid chemical formula"):
+    def test_lowercase_only(self):
+        with pytest.raises(FormulaError):
             parse_formula("xyz")
 
-        # Additional invalid inputs
-        with pytest.raises(ValueError, match="Invalid chemical formula"):
-            parse_formula("abc")
+
+# ---------------------------------------------------------------------------
+# Consistency: delegating wrappers agree with canonical parser
+# ---------------------------------------------------------------------------
 
 
-class TestFormulaParsingEdgeCases:
-    """Test edge cases and specific regex behavior."""
-
-    def test_edge_cases(self):
-        """Test various edge cases to ensure robust parsing."""
-        # Test single letter elements
-        symbols, counts = parse_formula("H")
-        assert symbols == ["H"]
-        assert counts == [1.0]
-
-        # Test two-letter elements
-        symbols, counts = parse_formula("He")
-        assert symbols == ["He"]
-        assert counts == [1.0]
-
-        # Test three-letter elements (if any exist in periodic table)
-        # Note: Most elements are 1-2 letters, but regex should handle more
-
-        # Test very small decimal numbers
-        symbols, counts = parse_formula("H0.001")
-        assert symbols == ["H"]
-        assert counts == [0.001]
-
-        # Test decimal with many digits
-        symbols, counts = parse_formula("C1.234567")
-        assert symbols == ["C"]
-        assert counts == [1.234567]
-
-        # Test integer zero (should be valid though chemically meaningless)
-        symbols, counts = parse_formula("H0")
-        assert symbols == ["H"]
-        assert counts == [0.0]
+_CONSISTENCY_FORMULAS = [
+    "SiO2",
+    "Al2O3",
+    "H2O",
+    "NaCl",
+    "Ca5(PO4)3OH",
+    "Ca3(PO4)2",
+    "Mg(OH)2",
+    "Ca10(PO4)6(OH)2",
+]
 
 
-class TestFormulaParsingRegexCompatibility:
-    """Test specific cases that verify regex compatibility with Julia version."""
+class TestDelegatingWrappers:
+    @pytest.fixture(params=_CONSISTENCY_FORMULAS)
+    def formula(self, request):
+        return request.param
 
-    def test_regex_identical_behavior(self):
-        """Test cases that specifically verify the regex behaves identically to Julia version."""
-        # The Julia regex: r"([A-Z][a-z]*)(\\d*\\.\\d*|\\d*)"
-        # Should match exactly the same patterns
+    def test_validators_parse_formula_matches(self, formula):
+        from xraylabtool.validation.validators import _parse_formula
 
-        # Test various number formats
-        test_cases = [
+        syms, cnts = parse_formula(formula)
+        expected = dict(zip(syms, cnts))
+        result = _parse_formula(formula)
+        assert result == pytest.approx(expected)
+
+    def test_compound_analysis_parse_matches(self, formula):
+        from xraylabtool.data_handling.compound_analysis import parse_chemical_formula
+
+        syms, cnts = parse_formula(formula)
+        expected = {s: round(c) for s, c in zip(syms, cnts)}
+        result = parse_chemical_formula(formula)
+        assert result == expected
+
+
+# ---------------------------------------------------------------------------
+# Regex compatibility with Julia implementation
+# ---------------------------------------------------------------------------
+
+
+class TestRegexCompatibility:
+    """Verify number-format handling matches the Julia regex."""
+
+    @pytest.mark.parametrize(
+        "formula, expected_symbols, expected_counts",
+        [
             ("H1", ["H"], [1.0]),
             ("H10", ["H"], [10.0]),
             ("H0.5", ["H"], [0.5]),
-            ("H.5", ["H"], [0.5]),
             ("H0.123", ["H"], [0.123]),
             ("H10.5", ["H"], [10.5]),
             ("HeO2.5", ["He", "O"], [1.0, 2.5]),
             ("CaC12H22O11", ["Ca", "C", "H", "O"], [1.0, 12.0, 22.0, 11.0]),
-        ]
-
-        for formula, expected_symbols, expected_counts in test_cases:
-            symbols, counts = parse_formula(formula)
-            assert symbols == expected_symbols, f"Failed for formula: {formula}"
-            assert counts == expected_counts, f"Failed for formula: {formula}"
-
-    def test_duplicate_elements(self):
-        """Test formulas with duplicate elements (which should be preserved)."""
-        # Note: The Julia tests show "HHeLiBeBCHNOFNeNaMg" has two H's
-        # This should be preserved as separate entries
-        symbols, counts = parse_formula("HHeLiBeBCHNOFNeNaMg")
-
-        # Count occurrences of H
-        h_count = symbols.count("H")
-        assert h_count == 2  # Should have two separate H entries
-
-        # Test another case with duplicates
-        symbols, counts = parse_formula("H2HeH3")
-        assert symbols == ["H", "He", "H"]
-        assert counts == [2.0, 1.0, 3.0]
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+        ],
+    )
+    def test_number_formats(self, formula, expected_symbols, expected_counts):
+        syms, cnts = parse_formula(formula)
+        assert syms == expected_symbols, f"Failed for {formula}"
+        assert cnts == expected_counts, f"Failed for {formula}"

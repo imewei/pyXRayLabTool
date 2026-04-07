@@ -12,6 +12,7 @@ import pytest
 from tests.fixtures.test_base import BaseIntegrationTest
 from tests.fixtures.test_config import NUMERICAL_TOLERANCES
 from xraylabtool import calculate_single_material_properties, calculate_xray_properties
+from xraylabtool.exceptions import EnergyError
 
 # Test constants (matching Julia test constants)
 DEFAULT_TOL = NUMERICAL_TOLERANCES["default"]
@@ -51,7 +52,7 @@ class TestSiO2Properties:
         ]
 
         for idx, expected_val in expected_dispersion:
-            actual = sio2.Dispersion[idx]
+            actual = sio2.dispersion_delta[idx]
             assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
                 f"SiO2 Dispersion[{idx}]: expected {expected_val}, got {actual}"
             )
@@ -69,7 +70,7 @@ class TestSiO2Properties:
         ]
 
         for idx, expected_val in expected_f1:
-            actual = sio2.f1[idx]
+            actual = sio2.scattering_factor_f1[idx]
             assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
                 f"SiO2 f1[{idx}]: expected {expected_val}, got {actual}"
             )
@@ -86,7 +87,7 @@ class TestSiO2Properties:
         ]
 
         for idx, expected_val in expected_reSLD:
-            actual = sio2.reSLD[idx]
+            actual = sio2.real_sld_per_ang2[idx]
             assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
                 f"SiO2 reSLD[{idx}]: expected {expected_val}, got {actual}"
             )
@@ -107,7 +108,7 @@ class TestH2OProperties:
         ]
 
         for idx, expected_val in expected_dispersion:
-            actual = h2o.Dispersion[idx]
+            actual = h2o.dispersion_delta[idx]
             assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
                 f"H2O Dispersion[{idx}]: expected {expected_val}, got {actual}"
             )
@@ -125,7 +126,7 @@ class TestH2OProperties:
         ]
 
         for idx, expected_val in expected_f1:
-            actual = h2o.f1[idx]
+            actual = h2o.scattering_factor_f1[idx]
             assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
                 f"H2O f1[{idx}]: expected {expected_val}, got {actual}"
             )
@@ -142,7 +143,7 @@ class TestH2OProperties:
         ]
 
         for idx, expected_val in expected_reSLD:
-            actual = h2o.reSLD[idx]
+            actual = h2o.real_sld_per_ang2[idx]
             assert np.isclose(actual, expected_val, atol=DEFAULT_TOL), (
                 f"H2O reSLD[{idx}]: expected {expected_val}, got {actual}"
             )
@@ -157,11 +158,11 @@ class TestSubRefracSiliconProperties:
 
         # Expected values for Silicon (index-1 based for Python)
         expected_values = [
-            ("Dispersion", 0, 1.20966554922812e-06),
-            ("f1", 0, 14.048053047106292),
-            ("f2", 0, 0.053331074920700626),
-            ("reSLD", 0, 1.9777910804587255e-5),
-            ("imSLD", 0, 7.508351793358633e-8),
+            ("dispersion_delta", 0, 1.20966554922812e-06),
+            ("scattering_factor_f1", 0, 14.048053047106292),
+            ("scattering_factor_f2", 0, 0.053331074920700626),
+            ("real_sld_per_ang2", 0, 1.9777910804587255e-5),
+            ("imaginary_sld_per_ang2", 0, 7.508351793358633e-8),
         ]
 
         for property_name, idx, expected_val in expected_values:
@@ -202,9 +203,9 @@ class TestPropertyConsistency:
 
         for material in MATERIALS:
             material_data = data[material]
-            assert len(material_data.f1) == len(ENERGIES)
-            assert len(material_data.Dispersion) == len(ENERGIES)
-            assert len(material_data.reSLD) == len(ENERGIES)
+            assert len(material_data.scattering_factor_f1) == len(ENERGIES)
+            assert len(material_data.dispersion_delta) == len(ENERGIES)
+            assert len(material_data.real_sld_per_ang2) == len(ENERGIES)
 
 
 class TestInputValidationAndErrorHandling:
@@ -212,16 +213,12 @@ class TestInputValidationAndErrorHandling:
 
     def test_refrac_energy_below_minimum(self):
         """Test energy below 0.03 keV."""
-        with pytest.raises(
-            ValueError, match=r".*Energy values must be in range 0\.03-30 keV.*"
-        ):
+        with pytest.raises(EnergyError, match=r".*[Ee]nergy.*range.*"):
             calculate_xray_properties(["SiO2"], [0.02, 5.0], [2.2])
 
     def test_refrac_energy_above_maximum(self):
         """Test energy above 30 keV."""
-        with pytest.raises(
-            ValueError, match=r".*Energy values must be in range 0\.03-30 keV.*"
-        ):
+        with pytest.raises(EnergyError, match=r".*[Ee]nergy.*range.*"):
             calculate_xray_properties(["SiO2"], [5.0, 35.0], [2.2])
 
     def test_mismatched_list_lengths(self):
@@ -243,7 +240,7 @@ class TestInputValidationAndErrorHandling:
 
     def test_empty_energy_vector(self):
         """Test empty energy vector."""
-        with pytest.raises(ValueError, match=r".*empty.*"):
+        with pytest.raises(EnergyError, match=r".*empty.*"):
             calculate_xray_properties(["SiO2"], [], [2.2])
 
 
@@ -259,7 +256,11 @@ class TestSubRefracErrorHandling:
 
     def test_empty_formula_string(self):
         """Test empty formula string."""
-        with pytest.raises(ValueError, match=r".*Formula must be a non-empty string.*"):
+        from xraylabtool.exceptions import FormulaError
+
+        with pytest.raises(
+            FormulaError, match=r".*Formula must be a non-empty string.*"
+        ):
             calculate_single_material_properties("", [8.0], 2.2)
 
 
@@ -280,9 +281,9 @@ class TestDuplicatedFormulasIndependence:
 
         # Results should be consistent for the same material
         sio2_result = results["SiO2"]
-        assert sio2_result.Formula == "SiO2"
-        assert sio2_result.Density == 2.2
-        assert len(sio2_result.Energy) == len(energies)
+        assert sio2_result.formula == "SiO2"
+        assert sio2_result.density_g_cm3 == 2.2
+        assert len(sio2_result.energy_kev) == len(energies)
 
 
 class TestEdgeCaseInputValues:
@@ -300,8 +301,8 @@ class TestEdgeCaseInputValues:
     def test_very_small_density(self):
         """Test with very small density."""
         result = calculate_single_material_properties("H2O", [8.0], 0.001)
-        assert result.Density == 0.001
-        assert result.Formula == "H2O"
+        assert result.density_g_cm3 == 0.001
+        assert result.formula == "H2O"
 
     def test_very_large_density(self):
         """Test with very large density."""
@@ -327,8 +328,8 @@ class TestPerformanceBenchmarks:
             )
 
         result = benchmark(single_calculation)
-        assert result.Formula == "SiO2"
-        assert len(result.Energy) == 191  # 1.0 to 20.0 in steps of 0.1
+        assert result.formula == "SiO2"
+        assert len(result.energy_kev) == 191  # 1.0 to 20.0 in steps of 0.1
 
     def test_benchmark_multi_calculation(self, benchmark):
         """Benchmark multi-material Refrac calculation."""
@@ -343,7 +344,7 @@ class TestPerformanceBenchmarks:
         assert len(result) == 5
         for formula in formulas:
             assert formula in result
-            assert len(result[formula].Energy) == 191
+            assert len(result[formula].energy_kev) == 191
 
     def test_benchmark_energy_sweep(self, benchmark):
         """Benchmark calculation with large energy sweep."""
@@ -353,7 +354,7 @@ class TestPerformanceBenchmarks:
             return calculate_single_material_properties("SiO2", energies, 2.2)
 
         result = benchmark(energy_sweep)
-        assert len(result.Energy) == 1000
+        assert len(result.energy_kev) == 1000
 
     def test_benchmark_formula_complexity(self, benchmark):
         """Benchmark calculation with complex formula."""
@@ -365,7 +366,7 @@ class TestPerformanceBenchmarks:
             )
 
         result = benchmark(complex_formula)
-        assert len(result.Energy) == 5
+        assert len(result.energy_kev) == 5
 
 
 if __name__ == "__main__":

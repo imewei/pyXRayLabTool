@@ -6,6 +6,7 @@ that activates/deactivates with virtual environment changes.
 
 import os
 from pathlib import Path
+import shlex
 import shutil
 
 from .environment import EnvironmentDetector, EnvironmentInfo, EnvironmentType
@@ -354,13 +355,15 @@ class CompletionInstaller:
         activate_dir.mkdir(parents=True, exist_ok=True)
         deactivate_dir.mkdir(parents=True, exist_ok=True)
 
+        quoted_path = shlex.quote(str(script_path))
+
         if shell == "bash":
             # Bash activation script
             activate_script = activate_dir / "xraylabtool-completion.sh"
             activate_script.write_text(f"""#!/bin/bash
 # XRayLabTool completion activation
-if [ -f "{script_path}" ]; then
-    source "{script_path}"
+if [ -f {quoted_path} ]; then
+    source {quoted_path}
 fi
 """)
 
@@ -375,8 +378,8 @@ complete -r xraylabtool 2>/dev/null || true
             # Fish activation script
             activate_script = activate_dir / "xraylabtool-completion.fish"
             activate_script.write_text(f"""# XRayLabTool completion activation
-if test -f "{script_path}"
-    source "{script_path}"
+if test -f {quoted_path}
+    source {quoted_path}
 end
 """)
 
@@ -385,8 +388,8 @@ end
             activate_script = activate_dir / "xraylabtool-completion.zsh"
             activate_script.write_text(f"""#!/bin/zsh
 # XRayLabTool completion activation
-if [ -f "{script_path}" ]; then
-    source "{script_path}"
+if [ -f {quoted_path} ]; then
+    source {quoted_path}
 fi
 """)
 
@@ -434,6 +437,9 @@ fi
         # Pipenv environments are typically handled like regular venv
         return self._install_venv_hooks(env_info, shell, script_path)
 
+    _SENTINEL_BEGIN = "# XRAYLABTOOL_COMPLETION_BEGIN"
+    _SENTINEL_END = "# XRAYLABTOOL_COMPLETION_END"
+
     def _modify_activation_script(
         self, activate_script: Path, completion_script: Path, shell: str
     ) -> None:
@@ -443,27 +449,33 @@ fi
 
         content = activate_script.read_text()
 
-        # Check if completion is already added
-        if "xraylabtool" in content.lower() and "completion" in content.lower():
+        # Check if completion is already added (via sentinels)
+        if self._SENTINEL_BEGIN in content:
             return
 
-        # Add completion activation
+        # Backup before modifying
+        shutil.copy2(activate_script, activate_script.with_suffix(".bak"))
+
+        quoted_path = shlex.quote(str(completion_script))
+
+        # Add completion activation between sentinel markers
         if shell == "fish":
             completion_code = f"""
-# XRayLabTool completion (added by xraylabtool completion installer)
-if test -f "{completion_script}"
-    source "{completion_script}"
+{self._SENTINEL_BEGIN}
+if test -f {quoted_path}
+    source {quoted_path}
 end
+{self._SENTINEL_END}
 """
         else:  # bash/zsh
             completion_code = f"""
-# XRayLabTool completion (added by xraylabtool completion installer)
-if [ -f "{completion_script}" ]; then
-    source "{completion_script}"
+{self._SENTINEL_BEGIN}
+if [ -f {quoted_path} ]; then
+    source {quoted_path}
 fi
+{self._SENTINEL_END}
 """
 
-        # Add before the end of the script
         content += completion_code
         activate_script.write_text(content)
 
@@ -530,24 +542,22 @@ fi
 
             content = script_path.read_text()
 
-            # Remove completion-related lines
+            if self._SENTINEL_BEGIN not in content:
+                continue
+
+            # Remove only lines between sentinel markers (inclusive)
             lines = content.split("\n")
-            filtered_lines = []
-            skip_until_end = False
+            filtered_lines: list[str] = []
+            inside_block = False
 
             for line in lines:
-                if "XRayLabTool completion" in line and "added by xraylabtool" in line:
-                    skip_until_end = True
+                if line.strip() == self._SENTINEL_BEGIN:
+                    inside_block = True
                     continue
-
-                if skip_until_end:
-                    if line.strip() == "" or line.startswith("#"):
-                        continue
-                    elif "fi" in line or "end" in line:
-                        skip_until_end = False
-                        continue
-
-                if not skip_until_end:
+                if line.strip() == self._SENTINEL_END:
+                    inside_block = False
+                    continue
+                if not inside_block:
                     filtered_lines.append(line)
 
             script_path.write_text("\n".join(filtered_lines))

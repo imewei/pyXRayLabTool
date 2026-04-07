@@ -18,6 +18,8 @@ from xraylabtool.constants import (
     AVOGADRO,
     ELEMENT_CHARGE,
     PLANCK,
+)
+from xraylabtool.constants import (
     SPEED_OF_LIGHT as _SPEED_OF_LIGHT,
 )
 from xraylabtool.exceptions import AtomicDataError, UnknownElementError
@@ -429,55 +431,99 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
     """
     Parse a chemical formula string into element symbols and their counts.
 
-    This function uses the identical regex pattern as the Julia implementation to ensure
-    exact compatibility. The regex matches:
-    - Capital letter + optional lowercase letter(s) for element symbols
-    - Optional numbers (integers or decimals) for stoichiometric counts
+    Canonical formula parser for the entire codebase.  Supports:
+    - Element symbols with integer or decimal stoichiometry (``SiO2``, ``H0.5He0.5``)
+    - Parentheses, including nested (``Ca5(PO4)3OH``, ``Ca10(PO4)6(OH)2``)
 
     Args:
-        formula_str: Chemical formula string (e.g., "SiO2", "Al2O3", "H0.5He0.5")
+        formula_str: Chemical formula string (e.g., "SiO2", "Al2O3", "Ca5(PO4)3OH")
 
     Returns:
         Tuple of (element_symbols, element_counts) where:
         - element_symbols: List of element symbols as strings
         - element_counts: List of corresponding stoichiometric counts as floats
 
+    Raises:
+        FormulaError: If formula string is empty, contains unmatched parentheses,
+            or no elements are found.
+
     Examples:
         >>> from xraylabtool.utils import parse_formula
-        >>> symbols, counts = parse_formula("SiO2")
-        >>> print(symbols, counts)
-        ['Si', 'O'] [1.0, 2.0]
-
-        >>> symbols, counts = parse_formula("Al2O3")
-        >>> print(symbols, counts)
-        ['Al', 'O'] [2.0, 3.0]
-
-        >>> symbols, counts = parse_formula("H0.5He0.5")
-        >>> print(symbols, counts)
-        ['H', 'He'] [0.5, 0.5]
-
-    Raises:
-        ValueError: If formula string is invalid or empty
+        >>> parse_formula("SiO2")
+        (['Si', 'O'], [1.0, 2.0])
+        >>> parse_formula("Ca5(PO4)3OH")
+        (['Ca', 'P', 'O', 'H'], [5.0, 3.0, 12.0, 1.0])
     """
-    # Regular expression identical to Julia implementation:
-    # Matches: Capital letter + optional lowercase + optional number
-    # (int or float)
-    elements_match = re.findall(r"([A-Z][a-z]*)(\d*\.\d*|\d*)", formula_str)
+    from xraylabtool.exceptions import FormulaError
 
-    if not elements_match:
-        raise ValueError(f"Invalid chemical formula: {formula_str}")
+    if not formula_str or not formula_str.strip():
+        raise FormulaError("Empty formula string", formula_str)
 
-    element_symbols = []
-    element_counts = []
+    formula = formula_str.replace(" ", "")
 
-    for element_symbol, count_str in elements_match:
-        element_symbols.append(element_symbol)
+    # Validate matched parentheses
+    depth = 0
+    for ch in formula:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        if depth < 0:
+            raise FormulaError("Unmatched closing parenthesis", formula_str)
+    if depth != 0:
+        raise FormulaError("Unmatched opening parenthesis", formula_str)
 
-        # Parse count (default to 1.0 if not specified)
-        if count_str == "":
-            element_counts.append(1.0)
+    # Expand parentheses iteratively (innermost first)
+    while "(" in formula:
+        start = formula.rfind("(")
+        end = formula.find(")", start)
+        inside = formula[start + 1 : end]
+
+        # Multiplier after closing paren (decimal or integer)
+        rest = formula[end + 1 :]
+        mult_match = re.match(r"(\d+\.?\d*)", rest)
+        multiplier = float(mult_match.group(1)) if mult_match else 1.0
+
+        # Parse the content inside parentheses
+        inner_elements: dict[str, float] = {}
+        for sym, cnt in re.findall(r"([A-Z][a-z]*)(\d*\.?\d*)", inside):
+            count = float(cnt) if cnt else 1.0
+            inner_elements[sym] = inner_elements.get(sym, 0.0) + count
+
+        # Build expanded string
+        expanded_parts: list[str] = []
+        for sym, cnt in inner_elements.items():
+            total = cnt * multiplier
+            expanded_parts.append(f"{sym}{total}")
+
+        expanded = "".join(expanded_parts)
+        mult_len = len(mult_match.group(1)) if mult_match else 0
+        formula = formula[:start] + expanded + formula[end + 1 + mult_len :]
+
+    # Final parse of the fully-expanded formula
+    matches = re.findall(r"([A-Z][a-z]*)(\d*\.?\d*)", formula)
+
+    if not matches or not any(sym for sym, _ in matches):
+        raise FormulaError(f"No elements found in formula: {formula_str}", formula_str)
+
+    # Aggregate counts per element while preserving first-seen order
+    seen: dict[str, int] = {}
+    element_symbols: list[str] = []
+    element_counts: list[float] = []
+
+    for sym, cnt_str in matches:
+        if not sym:
+            continue
+        count = float(cnt_str) if cnt_str else 1.0
+        if sym in seen:
+            element_counts[seen[sym]] += count
         else:
-            element_counts.append(float(count_str))
+            seen[sym] = len(element_symbols)
+            element_symbols.append(sym)
+            element_counts.append(count)
+
+    if not element_symbols:
+        raise FormulaError(f"No elements found in formula: {formula_str}", formula_str)
 
     return element_symbols, element_counts
 

@@ -272,6 +272,7 @@ class EnvironmentDetector:
                     capture_output=True,
                     text=True,
                     check=True,
+                    timeout=10,
                 )
                 info = json.loads(result.stdout)
                 active_prefix = info.get("active_prefix")
@@ -290,11 +291,15 @@ class EnvironmentDetector:
         try:
             python_exe = self._find_python_executable(env_path)
             if python_exe and python_exe.exists():
+                resolved = python_exe.resolve()
+                if not str(resolved).startswith(str(env_path.resolve())):
+                    return None
                 result = subprocess.run(
-                    [str(python_exe), "--version"],
+                    [str(resolved), "--version"],
                     capture_output=True,
                     text=True,
                     check=True,
+                    timeout=10,
                 )
                 return result.stdout.strip().replace("Python ", "")
         except (subprocess.CalledProcessError, OSError):
@@ -402,6 +407,7 @@ class EnvironmentDetector:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=10,
             )
             data = json.loads(result.stdout)
 
@@ -435,6 +441,7 @@ class EnvironmentDetector:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=10,
             )
 
             for line in result.stdout.strip().split("\n"):
@@ -502,6 +509,7 @@ class EnvironmentDetector:
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=10,
             )
             return result.stdout.strip().replace("Python ", "")
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -511,6 +519,7 @@ class EnvironmentDetector:
                     capture_output=True,
                     text=True,
                     check=True,
+                    timeout=10,
                 )
                 return result.stdout.strip().replace("Python ", "")
             except (subprocess.CalledProcessError, FileNotFoundError):
@@ -550,7 +559,23 @@ class EnvironmentDetector:
         """Load cached environment data."""
         try:
             with open(self._cache_file) as f:
-                return json.load(f)  # type: ignore[no-any-return]
+                data = json.load(f)
+            if not isinstance(data, list):
+                return None
+            validated: list[dict[str, Any]] = []
+            for entry in data:
+                if not isinstance(entry, dict):
+                    continue
+                path_val = entry.get("path")
+                if path_val is not None:
+                    try:
+                        p = Path(str(path_val)).resolve()
+                        if not p.is_dir():
+                            continue
+                    except (OSError, ValueError):
+                        continue
+                validated.append(entry)
+            return validated if validated else None
         except (json.JSONDecodeError, FileNotFoundError):
             return None
 
@@ -559,6 +584,7 @@ class EnvironmentDetector:
         try:
             with open(self._cache_file, "w") as f:
                 json.dump(environments, f, indent=2)
+            self._cache_file.chmod(0o600)
         except OSError:
             pass  # Fail silently if we can't write cache
 

@@ -266,6 +266,16 @@ def enforce_test_isolation():
     gc.collect()
 
 
+def pytest_addoption(parser):
+    """Add custom command-line options."""
+    parser.addoption(
+        "--run-performance",
+        action="store_true",
+        default=False,
+        help="run performance tests",
+    )
+
+
 def pytest_configure(config):
     """Configure pytest with custom markers and settings."""
     config.addinivalue_line(

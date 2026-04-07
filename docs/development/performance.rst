@@ -183,10 +183,6 @@ Enhanced Performance Mode
    import os
    os.environ['XRAYLABTOOL_ENABLE_OPTIMIZATIONS'] = '1'
 
-   # Or programmatically
-   from xraylabtool.optimization import optimized_core
-   optimized_core.enable_optimizations()
-
 **Performance Improvements:**
 - Single calculation: 2.1ms → 0.05ms (42x speedup)
 - Data loading: 18-21ms → 6-7ms (2.9x speedup)

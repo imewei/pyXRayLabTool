@@ -102,8 +102,10 @@ class NumpyBackend:
 class JaxBackend:
     def __init__(self) -> None:
         import jax  # type: ignore[import-not-found]
+
         jax.config.update("jax_enable_x64", True)
         import jax.numpy as jnp  # type: ignore[import-not-found]
+
         self._jnp = jnp
 
     @property
@@ -173,6 +175,7 @@ class JaxBackend:
 def _has_nvidia_gpu() -> bool:
     """Fast check for NVIDIA GPU without importing JAX (~1ms)."""
     import shutil
+
     return shutil.which("nvidia-smi") is not None
 
 
@@ -198,6 +201,7 @@ def _auto_select_backend() -> ArrayBackend:
     # GPU detected and JAX installed — pay the import cost
     try:
         import jax  # type: ignore[import-not-found]
+
         if jax.default_backend() == "gpu":
             return JaxBackend()
     except (ImportError, RuntimeError):
@@ -225,6 +229,7 @@ def set_backend(name: str) -> None:
     # Clear JIT cache so kernels recompile for the new backend
     try:
         from xraylabtool.calculators.core import _jit_cache
+
         _jit_cache.clear()
     except ImportError:
         pass
@@ -238,6 +243,10 @@ class _OpsProxy:
         # Cache on the proxy instance for subsequent calls
         object.__setattr__(self, name, attr)
         return attr
+
+    def is_jax(self) -> bool:
+        """Check whether the active backend is JAX."""
+        return isinstance(_backend, JaxBackend)
 
     def _invalidate_cache(self) -> None:
         """Clear cached methods when backend changes."""

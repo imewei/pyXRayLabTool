@@ -59,26 +59,26 @@ class TestMolecularWeightGolden:
     def test_sio2_mw(self) -> None:
         mw, _ = _calc("SiO2")
         # Golden: 60.083 g/mol (Si=28.085, O=15.999 × 2)
-        np.testing.assert_allclose(mw, 60.083, atol=1e-2,
-                                   err_msg="SiO2 MW regression")
+        np.testing.assert_allclose(mw, 60.083, atol=1e-2, err_msg="SiO2 MW regression")
 
     def test_al2o3_mw(self) -> None:
         mw, _ = _calc("Al2O3")
         # Golden: 101.961 g/mol
-        np.testing.assert_allclose(mw, 101.961, atol=1e-2,
-                                   err_msg="Al2O3 MW regression")
+        np.testing.assert_allclose(
+            mw, 101.961, atol=1e-2, err_msg="Al2O3 MW regression"
+        )
 
     def test_fe2o3_mw(self) -> None:
         mw, _ = _calc("Fe2O3")
         # Golden: 159.687 g/mol
-        np.testing.assert_allclose(mw, 159.687, atol=1e-2,
-                                   err_msg="Fe2O3 MW regression")
+        np.testing.assert_allclose(
+            mw, 159.687, atol=1e-2, err_msg="Fe2O3 MW regression"
+        )
 
     def test_au_mw(self) -> None:
         mw, _ = _calc("Au")
         # Golden: 196.97 g/mol
-        np.testing.assert_allclose(mw, 196.97, atol=1e-2,
-                                   err_msg="Au MW regression")
+        np.testing.assert_allclose(mw, 196.97, atol=1e-2, err_msg="Au MW regression")
 
 
 # ---------------------------------------------------------------------------
@@ -92,26 +92,28 @@ class TestElectronCountGolden:
     def test_sio2_z(self) -> None:
         _, z = _calc("SiO2")
         # Si(14) + 2×O(8) = 30
-        np.testing.assert_allclose(z, 30.0, atol=1e-10,
-                                   err_msg="SiO2 Z_total regression")
+        np.testing.assert_allclose(
+            z, 30.0, atol=1e-10, err_msg="SiO2 Z_total regression"
+        )
 
     def test_al2o3_z(self) -> None:
         _, z = _calc("Al2O3")
         # 2×Al(13) + 3×O(8) = 50
-        np.testing.assert_allclose(z, 50.0, atol=1e-10,
-                                   err_msg="Al2O3 Z_total regression")
+        np.testing.assert_allclose(
+            z, 50.0, atol=1e-10, err_msg="Al2O3 Z_total regression"
+        )
 
     def test_fe2o3_z(self) -> None:
         _, z = _calc("Fe2O3")
         # 2×Fe(26) + 3×O(8) = 76
-        np.testing.assert_allclose(z, 76.0, atol=1e-10,
-                                   err_msg="Fe2O3 Z_total regression")
+        np.testing.assert_allclose(
+            z, 76.0, atol=1e-10, err_msg="Fe2O3 Z_total regression"
+        )
 
     def test_au_z(self) -> None:
         _, z = _calc("Au")
         # Au(79) = 79
-        np.testing.assert_allclose(z, 79.0, atol=1e-10,
-                                   err_msg="Au Z_total regression")
+        np.testing.assert_allclose(z, 79.0, atol=1e-10, err_msg="Au Z_total regression")
 
 
 # ---------------------------------------------------------------------------
@@ -139,10 +141,12 @@ class TestExactCapturedValues:
         self, formula: str, expected_mw: float, expected_z: float
     ) -> None:
         mw, z = _calc(formula)
-        np.testing.assert_allclose(mw, expected_mw, rtol=1e-3,
-                                   err_msg=f"{formula} MW parametric")
-        np.testing.assert_allclose(z, expected_z, atol=1e-10,
-                                   err_msg=f"{formula} Z parametric")
+        np.testing.assert_allclose(
+            mw, expected_mw, rtol=1e-3, err_msg=f"{formula} MW parametric"
+        )
+        np.testing.assert_allclose(
+            z, expected_z, atol=1e-10, err_msg=f"{formula} Z parametric"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -154,21 +158,20 @@ class TestComplexFormula:
     """Test parenthesis-containing formula through the molecular properties path."""
 
     def test_hydroxyapatite_mw(self) -> None:
-        """Ca5(PO4)3OH: verify MW is positive and physically plausible."""
+        """Ca5(PO4)3OH: verify MW matches textbook value (~502.31 g/mol)."""
         mw, _ = _calc("Ca5(PO4)3OH")
-        # Exact value captured from v0.3.0: 312.367 g/mol.
-        # Note: standard textbook value is ~502.31 g/mol; the difference is
-        # due to this codebase's parse_formula treating Ca5(PO4)3OH as
-        # Ca=5, P=3, O=12+1=13, H=1 with the v0.3.0 atomic weight table
-        # producing 312.367.  We lock the captured value to detect any
-        # change in parsing or atomic data, not to validate chemistry.
-        np.testing.assert_allclose(mw, 312.367, atol=1e-2,
-                                   err_msg="Ca5(PO4)3OH MW regression")
+        # Ca5(PO4)3OH = Ca×5 + P×3 + O×13 + H×1 = 502.307 g/mol
+        # Previous v0.3.0 value (312.367) was wrong due to parser ignoring
+        # parentheses. Fixed in audit remediation (item 1.1).
+        np.testing.assert_allclose(
+            mw, 502.307, atol=1e-2, err_msg="Ca5(PO4)3OH MW regression"
+        )
 
     def test_hydroxyapatite_z(self) -> None:
         _, z = _calc("Ca5(PO4)3OH")
-        # Captured: 156.0 electrons (Ca×5=100, P×3=45, O×13=104, H×1=1)
-        # Wait: Ca(20)×5=100, P(15)×3=45, O(8)×13=104, H(1)×1=1 → 250?
-        # Actual captured value from v0.3.0 is 156.0 — lock it.
-        np.testing.assert_allclose(z, 156.0, atol=1e-10,
-                                   err_msg="Ca5(PO4)3OH Z_total regression")
+        # Ca(20)×5=100 + P(15)×3=45 + O(8)×13=104 + H(1)×1=1 = 250
+        # Previous v0.3.0 value (156.0) was wrong due to parser ignoring
+        # parentheses. Fixed in audit remediation (item 1.1).
+        np.testing.assert_allclose(
+            z, 250.0, atol=1e-10, err_msg="Ca5(PO4)3OH Z_total regression"
+        )

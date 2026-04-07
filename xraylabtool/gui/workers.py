@@ -23,7 +23,7 @@ class CalculationWorker(QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
-    def run(self) -> None:  # pragma: no cover - thin wrapper
+    def run(self) -> None:
         try:
             # Inject progress callback if the target function accepts it
             if "progress_cb" in self.fn.__code__.co_varnames:

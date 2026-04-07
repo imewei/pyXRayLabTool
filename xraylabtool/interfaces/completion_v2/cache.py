@@ -33,7 +33,7 @@ class CompletionCache:
         else:
             data_str = str(data)
 
-        return hashlib.md5(data_str.encode(), usedforsecurity=False).hexdigest()
+        return hashlib.sha256(data_str.encode()).hexdigest()
 
     def get(self, key: str, timeout: int | None = None) -> Any | None:
         """Get cached data by key."""

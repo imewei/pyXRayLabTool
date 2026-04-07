@@ -37,7 +37,6 @@ Key Features
      - **validation**: Input validation and error handling
      - **analysis**: Material comparison and absorption edge detection
      - **export**: CSV/JSON export for downstream analysis
-     - **optimization**: Vectorized and performance-tuned calculations
      - **backend**: NumPy/JAX array backend abstraction
      - **gui**: PySide6 desktop application
 

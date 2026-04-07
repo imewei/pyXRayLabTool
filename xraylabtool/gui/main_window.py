@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import contextlib
 import csv
 from pathlib import Path
-import types
+import re
 from typing import Any
 
 from PySide6.QtCore import (
-    QEvent,
     QObject,
-    QPoint,
-    QRect,
     QStandardPaths,
     Qt,
     QThreadPool,
@@ -46,9 +42,11 @@ from xraylabtool.logging_utils import get_log_file_path, get_logger
 from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
 
 from .services import EnergyConfig, compute_multiple, compute_single
+from .table_formatter import TableFormatter
 from .widgets.material_form import MaterialInputForm
 from .widgets.material_table import MaterialTable
 from .widgets.plot_canvas import PlotCanvas
+from .widgets.scrollbar_helper import OverlayScrollbarMarginHelper
 from .widgets.sweep_plots import F1F2Plot, MultiF1F2Plot
 from .workers import CalculationWorker
 
@@ -120,7 +118,9 @@ class MainWindow(QMainWindow):
         self.resize(1100, 720)
         self.setMinimumSize(900, 620)
 
-        self.threadpool: QThreadPool | None = None  # Assigned on first use to avoid import cycles
+        self.threadpool: QThreadPool | None = (
+            None  # Assigned on first use to avoid import cycles
+        )
 
         self.status_bar = QStatusBar()
         self.progress = QProgressBar()
@@ -287,7 +287,9 @@ class MainWindow(QMainWindow):
         self.single_summary.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.single_summary.setMaximumHeight(64)
         self.single_summary.setMinimumHeight(48)
-        self.single_summary.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.single_summary.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
 
         # Table
         # 12 columns: energy, wavelength, delta, beta, critical angles, attenuation, mu, f1/f2, SLDs
@@ -359,7 +361,9 @@ class MainWindow(QMainWindow):
 
         left_panel = QWidget()
         left_panel.setMinimumWidth(380)
-        left_panel.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        left_panel.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
+        )
         left_layout = QVBoxLayout(left_panel)
         left_layout.setSpacing(10)
         left_layout.addWidget(presets_box)
@@ -381,8 +385,12 @@ class MainWindow(QMainWindow):
 
         self.single_plot_scroll = QScrollArea()
         self.single_plot_scroll.setWidgetResizable(True)
-        self.single_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.single_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.single_plot_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.single_plot_scroll.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+        )
         self.single_plot_scroll.setWidget(single_plot_container)
         self._reserve_overlay_scrollbar_space(self.single_plot_scroll)
 
@@ -410,7 +418,12 @@ class MainWindow(QMainWindow):
         return container
 
     def _tune_table_headers(self) -> None:
-        def tune(table: Any, default_size: int = 110, min_size: int = 80, stretch_last: bool = True) -> None:
+        def tune(
+            table: Any,
+            default_size: int = 110,
+            min_size: int = 80,
+            stretch_last: bool = True,
+        ) -> None:
             hdr = table.horizontalHeader()
             hdr.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
             hdr.setDefaultSectionSize(default_size)
@@ -435,78 +448,11 @@ class MainWindow(QMainWindow):
         If the vertical scrollbar overlaps the viewport, reserve space via viewport
         margins so plot canvases and labels aren't clipped.
         """
-
         if not hasattr(self, "_scroll_overlay_helpers"):
             self._scroll_overlay_helpers: list[QObject] = []
 
-        class _OverlayScrollbarMarginHelper(QObject):
-            def __init__(self, parent: QObject, target: QScrollArea) -> None:
-                super().__init__(parent)
-                self._scroll_area = target
-                self._bar = target.verticalScrollBar()
-                self._active = True
-                self._scheduled = False
-                target.destroyed.connect(lambda *_args: self._deactivate())
-                self._bar.destroyed.connect(lambda *_args: self._deactivate())
-                target.installEventFilter(self)
-                target.viewport().installEventFilter(self)
-                self._bar.installEventFilter(self)
-
-                self._bar.rangeChanged.connect(lambda *_args: self._schedule())
-                self._schedule()
-
-            def _deactivate(self) -> None:
-                self._active = False
-
-            def _schedule(self) -> None:
-                if not self._active or self._scheduled:
-                    return
-                self._scheduled = True
-                QTimer.singleShot(0, self.apply_margins)
-
-            def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-                if event.type() in (QEvent.Type.Resize, QEvent.Type.Show, QEvent.Type.Hide):
-                    self._schedule()
-                return super().eventFilter(watched, event)
-
-            def apply_margins(self) -> None:
-                self._scheduled = False
-                if not self._active:
-                    return
-
-                shiboken6_mod: types.ModuleType | None = None
-                with contextlib.suppress(ImportError):
-                    import shiboken6 as shiboken6_mod
-                shiboken6 = shiboken6_mod
-
-                if shiboken6 is not None and (
-                    not shiboken6.isValid(self._scroll_area)
-                    or not shiboken6.isValid(self._bar)
-                ):
-                    self._active = False
-                    return
-
-                try:
-                    if not self._bar.isVisible():
-                        self._scroll_area.setViewportMargins(0, 0, 0, 0)
-                        return
-
-                    viewport_pos = self._scroll_area.viewport().mapTo(
-                        self._scroll_area, QPoint(0, 0)
-                    )
-                    viewport_rect = QRect(
-                        viewport_pos, self._scroll_area.viewport().size()
-                    )
-                    overlaps = self._bar.geometry().intersects(viewport_rect)
-                    margin = self._bar.sizeHint().width() if overlaps else 0
-                    self._scroll_area.setViewportMargins(0, 0, margin, 0)
-                except RuntimeError:
-                    # Underlying Qt objects may have been deleted during teardown.
-                    self._active = False
-                    return
-
         self._scroll_overlay_helpers.append(
-            _OverlayScrollbarMarginHelper(self, scroll_area)
+            OverlayScrollbarMarginHelper(self, scroll_area)
         )
 
     def _run_single(self) -> None:
@@ -568,31 +514,9 @@ class MainWindow(QMainWindow):
         self.single_plot.plot_single(self.single_result, prop, ylabel)
         # Update table with multiple properties
         energies = self.single_result.energy_kev
-        wl = self.single_result.wavelength_angstrom
-        delta = self.single_result.dispersion_delta
-        beta = self.single_result.absorption_beta
-        crit = self.single_result.critical_angle_degrees
-        atten = self.single_result.attenuation_length_cm
-        resld = self.single_result.real_sld_per_ang2
-        imsld = self.single_result.imaginary_sld_per_ang2
         self.single_table.setRowCount(len(energies))
-        for i, e in enumerate(energies):
-            mu = 1.0 / atten[i] if atten[i] != 0 else 0.0
-            mrad = crit[i] * 3.141592653589793 / 180.0 * 1000.0
-            cells = [
-                f"{e:.4f}",
-                f"{wl[i]:.5f}",
-                f"{delta[i]:.3e}",
-                f"{beta[i]:.3e}",
-                f"{crit[i]:.4f}",
-                f"{mrad:.3f}",
-                f"{atten[i]:.4e}",
-                f"{mu:.4e}",
-                f"{self.single_result.scattering_factor_f1[i]:.3f}",
-                f"{self.single_result.scattering_factor_f2[i]:.3f}",
-                f"{resld[i]:.3e}",
-                f"{imsld[i]:.3e}",
-            ]
+        for i in range(len(energies)):
+            cells = TableFormatter.format_single_row(self.single_result, i)
             for col, text in enumerate(cells):
                 item = QTableWidgetItem(text)
                 if col != 0 and col != 1:
@@ -601,21 +525,9 @@ class MainWindow(QMainWindow):
         self.single_table.resizeColumnsToContents()
 
         # Summary row
-        self.single_summary.setItem(0, 0, QTableWidgetItem(self.single_result.formula))
-        self.single_summary.setItem(
-            0, 1, QTableWidgetItem(f"{self.single_result.molecular_weight_g_mol:.4f}")
-        )
-        self.single_summary.setItem(
-            0, 2, QTableWidgetItem(f"{self.single_result.density_g_cm3:.4f}")
-        )
-        self.single_summary.setItem(
-            0,
-            3,
-            QTableWidgetItem(f"{self.single_result.electron_density_per_ang3:.4f}"),
-        )
-        self.single_summary.setItem(
-            0, 4, QTableWidgetItem(f"{self.single_result.total_electrons:.2f}")
-        )
+        summary = TableFormatter.format_summary(self.single_result)
+        for col, text in enumerate(summary):
+            self.single_summary.setItem(0, col, QTableWidgetItem(text))
         self.single_summary.resizeColumnsToContents()
 
         # Plot f1/f2 only if >1 point
@@ -796,14 +708,20 @@ class MainWindow(QMainWindow):
 
         self.multi_plot_scroll = QScrollArea()
         self.multi_plot_scroll.setWidgetResizable(True)
-        self.multi_plot_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.multi_plot_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.multi_plot_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.multi_plot_scroll.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+        )
         self.multi_plot_scroll.setWidget(multi_plot_container)
         self._reserve_overlay_scrollbar_space(self.multi_plot_scroll)
 
         left_panel = QWidget()
         left_panel.setMinimumWidth(420)
-        left_panel.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        left_panel.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
+        )
         left_layout = QVBoxLayout(left_panel)
         left_layout.setSpacing(10)
         left_layout.addWidget(material_box)
@@ -972,34 +890,8 @@ class MainWindow(QMainWindow):
         self.multi_full_table.setRowCount(total_rows)
         row_idx = 0
         for formula, res in self.multi_results.items():
-            energies = res.energy_kev
-            wl = res.wavelength_angstrom
-            delta = res.dispersion_delta
-            beta = res.absorption_beta
-            crit = res.critical_angle_degrees
-            atten = res.attenuation_length_cm
-            resld = res.real_sld_per_ang2
-            imsld = res.imaginary_sld_per_ang2
-            density = getattr(res, "density_g_cm3", 0.0)
-            for i, e in enumerate(energies):
-                mu = 1.0 / atten[i] if atten[i] != 0 else 0.0
-                mrad = crit[i] * 3.141592653589793 / 180.0 * 1000.0
-                cells = [
-                    str(formula),
-                    f"{density:.4f}",
-                    f"{e:.4f}",
-                    f"{wl[i]:.5f}",
-                    f"{delta[i]:.3e}",
-                    f"{beta[i]:.3e}",
-                    f"{crit[i]:.4f}",
-                    f"{mrad:.3f}",
-                    f"{atten[i]:.4e}",
-                    f"{mu:.4e}",
-                    f"{res.scattering_factor_f1[i]:.3f}",
-                    f"{res.scattering_factor_f2[i]:.3f}",
-                    f"{resld[i]:.3e}",
-                    f"{imsld[i]:.3e}",
-                ]
+            for i in range(len(res.energy_kev)):
+                cells = TableFormatter.format_multi_row(formula, res, i)
                 for col, text in enumerate(cells):
                     item = QTableWidgetItem(text)
                     if col >= 1:
@@ -1050,13 +942,21 @@ class MainWindow(QMainWindow):
 
     # ------------------------------------------------------------------
     # Export helpers
+
+    @staticmethod
+    def _sanitize_filename(text: str) -> str:
+        """Replace characters unsafe for filenames with underscores."""
+        return re.sub(r"[^\w\-.]", "_", text)
+
     def _save_single_png(self) -> None:
         if self.single_result is None:
             self._error("No data to export yet")
             return
         prop = self.single_property.currentText()  # type: ignore[unreachable]
         logger.info("single_save_png_clicked", extra={"property": prop})
-        suggested = f"single_{self.single_result.formula}_{prop}.png"
+        suggested = (
+            f"single_{self._sanitize_filename(self.single_result.formula)}_{prop}.png"
+        )
         current_plot = self.single_plot_tabs.currentWidget()
         self._save_plot(current_plot, suggested)
 
@@ -1070,7 +970,9 @@ class MainWindow(QMainWindow):
         self._save_plot(current_plot, f"multi_{prop}.png")
 
     def _save_plot(self, plot_widget: QWidget, suggested: str) -> None:
-        default_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.PicturesLocation)
+        default_dir = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.PicturesLocation
+        )
         if not default_dir:
             default_dir = str(Path.home())
         path, _ = QFileDialog.getSaveFileName(
@@ -1099,8 +1001,12 @@ class MainWindow(QMainWindow):
             return None
         prop = self.single_property.currentText()  # type: ignore[unreachable]
         logger.info("single_export_csv_clicked", extra={"property": prop})
-        fname = f"single_{self.single_result.formula}_{prop}.csv"
-        default_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)
+        fname = (
+            f"single_{self._sanitize_filename(self.single_result.formula)}_{prop}.csv"
+        )
+        default_dir = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DocumentsLocation
+        )
         if not default_dir:
             default_dir = str(Path.home())
         folder = QFileDialog.getExistingDirectory(
@@ -1168,7 +1074,9 @@ class MainWindow(QMainWindow):
             return None
         logger.info("multi_export_csv_clicked")  # type: ignore[unreachable]
         fname = "multi_full.csv"
-        default_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)
+        default_dir = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DocumentsLocation
+        )
         if not default_dir:
             default_dir = str(Path.home())
         folder = QFileDialog.getExistingDirectory(

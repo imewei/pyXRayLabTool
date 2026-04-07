@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import shutil
 import subprocess
 
 _logger = logging.getLogger(__name__)
@@ -14,10 +15,16 @@ def get_system_cuda_version() -> tuple[str | None, int | None]:
     Returns (full_version, major_version) or (None, None).
     Example: ("13.1", 13)
     """
+    nvcc_path = shutil.which("nvcc")
+    if nvcc_path is None:
+        return None, None
     try:
         result = subprocess.run(
-            ["nvcc", "--version"],
-            capture_output=True, text=True, timeout=5,
+            [nvcc_path, "--version"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if result.returncode == 0:
             for line in result.stdout.split("\n"):
@@ -37,11 +44,16 @@ def get_gpu_info() -> tuple[str | None, float | None]:
     Returns (gpu_name, sm_version) or (None, None).
     Example: ("NVIDIA GeForce RTX 4090", 8.9)
     """
+    nvidia_smi_path = shutil.which("nvidia-smi")
+    if nvidia_smi_path is None:
+        return None, None
     try:
         result = subprocess.run(
-            ["nvidia-smi", "--query-gpu=name,compute_cap",
-             "--format=csv,noheader"],
-            capture_output=True, text=True, timeout=5,
+            [nvidia_smi_path, "--query-gpu=name,compute_cap", "--format=csv,noheader"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if result.returncode == 0 and result.stdout.strip():
             parts = result.stdout.strip().split("\n")[0].split(", ")
@@ -106,6 +118,7 @@ def check_gpu_availability(warn: bool = True) -> bool:
             return False
 
         import jax
+
         devices = jax.devices()
         using_gpu = any("cuda" in str(d).lower() for d in devices)
 
@@ -118,7 +131,7 @@ def check_gpu_availability(warn: bool = True) -> bool:
             cuda_version, _cuda_major = get_system_cuda_version()
             plugin_issues = check_plugin_conflicts()
 
-            print(f"\nGPU AVAILABLE BUT NOT USED")
+            print("\nGPU AVAILABLE BUT NOT USED")
             print(f"  GPU: {gpu_name} (SM {sm_version})")
             print(f"  System CUDA: {cuda_version or 'Not found'}")
             print(f"  JAX backend: {jax.default_backend()}")
@@ -131,9 +144,11 @@ def check_gpu_availability(warn: bool = True) -> bool:
             print("\n  Fix: make install-jax-gpu")
             pkg = get_recommended_package()
             if pkg:
-                print("  Or:  pip uninstall -y "
-                      "jax-cuda13-plugin jax-cuda13-pjrt "
-                      "jax-cuda12-plugin jax-cuda12-pjrt")
+                print(
+                    "  Or:  pip uninstall -y "
+                    "jax-cuda13-plugin jax-cuda13-pjrt "
+                    "jax-cuda12-plugin jax-cuda12-pjrt"
+                )
                 print("       pip uninstall -y jax jaxlib")
                 print(f'       pip install "{pkg}"')
             print()
@@ -165,15 +180,22 @@ def get_recommended_package() -> str | None:
 def get_device_info() -> dict:
     """Get comprehensive device information as a dictionary."""
     info: dict = {
-        "jax_version": None, "jax_backend": None,
-        "devices": [], "gpu_count": 0, "using_gpu": False,
-        "gpu_hardware": None, "gpu_sm_version": None,
-        "system_cuda_version": None, "system_cuda_major": None,
-        "recommended_package": None, "plugin_issues": [],
+        "jax_version": None,
+        "jax_backend": None,
+        "devices": [],
+        "gpu_count": 0,
+        "using_gpu": False,
+        "gpu_hardware": None,
+        "gpu_sm_version": None,
+        "system_cuda_version": None,
+        "system_cuda_major": None,
+        "recommended_package": None,
+        "plugin_issues": [],
     }
 
     try:
         import jax
+
         info["jax_version"] = jax.__version__
         info["jax_backend"] = jax.default_backend()
         devices = jax.devices()

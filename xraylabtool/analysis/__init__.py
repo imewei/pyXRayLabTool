@@ -4,8 +4,9 @@ Basic analysis functions for X-ray optical properties.
 Simplified analysis functionality focused on core scientific calculations.
 """
 
-from functools import lru_cache
 from typing import TYPE_CHECKING
+
+import numpy as np
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -15,30 +16,8 @@ from xraylabtool.calculators.core import XRayResult
 from .comparator import MaterialComparator
 
 
-# Lazy-loaded numpy to improve startup performance
-@lru_cache(maxsize=1)
-def _get_numpy():  # type: ignore[no-untyped-def]
-    """Lazy import numpy only when needed."""
-    import numpy as np
-
-    return np
-
-
-# Create a module-level numpy proxy
-class _NumpyProxy:
-    """Proxy object that provides numpy functions on demand."""
-
-    def __getattr__(self, name):  # type: ignore[no-untyped-def]
-        np = _get_numpy()
-        return getattr(np, name)
-
-
-# Replace np with the proxy
-np = _NumpyProxy()
-
-
 def find_absorption_edges(
-    energies: np.ndarray, f2_values: np.ndarray, threshold: float = 0.1  # type: ignore[name-defined]
+    energies: np.ndarray, f2_values: np.ndarray, threshold: float = 0.1
 ) -> list[tuple[float, float]]:
     """
     Simple absorption edge detection using f2 derivative.

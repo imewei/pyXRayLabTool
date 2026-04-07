@@ -201,19 +201,14 @@ def validate_calculation_parameters(
 
 
 def _parse_formula(formula: str) -> dict[str, float]:
-    """Parse chemical formula into elements and quantities."""
-    # This is a simplified parser - in production, would use more robust parsing
-    elements: dict[str, float] = {}
+    """Parse chemical formula into elements and quantities.
 
-    # Simple regex to match element symbols and their quantities
-    pattern = r"([A-Z][a-z]?)(\d*\.?\d*)"
-    matches = re.findall(pattern, formula)
+    Delegates to the canonical :func:`xraylabtool.utils.parse_formula`.
+    """
+    from xraylabtool.utils import parse_formula
 
-    for element, count_str in matches:
-        count = float(count_str) if count_str else 1.0
-        elements[element] = elements.get(element, 0.0) + count
-
-    return elements
+    symbols, counts = parse_formula(formula)
+    return dict(zip(symbols, counts, strict=True))
 
 
 def _get_valid_element_symbols() -> set[str]:

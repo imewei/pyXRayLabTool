@@ -12,7 +12,6 @@ XRayLabTool is organized into focused sub-packages:
 - **io_operations**: File operations and export functionality
 - **analysis**: Material comparison and absorption edge detection
 - **export**: CSV/JSON export for downstream analysis
-- **optimization**: Vectorized and performance-tuned calculations
 - **gui**: PySide6 desktop application
 - **backend**: NumPy/JAX array backend abstraction
 - **utils**: Utility functions and constants
@@ -35,7 +34,6 @@ XRayLabTool is organized into focused sub-packages:
 
    analysis
    export
-   optimization
    gui
    backend
 

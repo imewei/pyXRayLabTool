@@ -24,6 +24,7 @@ from xraylabtool.data_handling.batch_processing import (
 )
 
 
+@pytest.mark.performance
 class TestMemoryMonitor:
     """Test the MemoryMonitor class and its optimizations."""
 
@@ -57,17 +58,29 @@ class TestMemoryMonitor:
 
     def test_force_gc_with_cache_clearing(self):
         """Test that force_gc clears caches and runs garbage collection."""
+        from xraylabtool.calculators.core import _scattering_factor_cache
+
         monitor = MemoryMonitor(4.0)
 
         # Populate some cache data first
         _ = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
         _ = xlt.calculate_single_material_properties("Al2O3", 10.0, 3.95)
 
+        # Verify cache is populated before clearing
+        assert len(_scattering_factor_cache) > 0, (
+            "Cache should be populated before force_gc"
+        )
+
         # Force garbage collection and cache clearing
         monitor.force_gc()
 
-        # Verify that garbage collection ran (hard to test directly, but we can check it doesn't error)
-        assert True  # If we get here, force_gc completed without error
+        # Verify that caches were actually cleared
+        assert len(_scattering_factor_cache) == 0, (
+            "Scattering factor cache should be empty after force_gc"
+        )
+        # Verify gc.get_count() returns a valid tuple (sanity check that gc ran)
+        gc_counts = gc.get_count()
+        assert isinstance(gc_counts, tuple) and len(gc_counts) == 3
 
     def test_memory_monitor_exception_handling(self):
         """Test exception handling in memory monitoring."""
@@ -86,6 +99,7 @@ class TestMemoryMonitor:
             assert within_limits
 
 
+@pytest.mark.performance
 class TestBatchConfig:
     """Test BatchConfig optimizations."""
 
@@ -149,6 +163,7 @@ class TestBatchConfig:
         assert config.cache_results
 
 
+@pytest.mark.performance
 class TestBatchProcessingMemoryManagement:
     """Test memory management in batch processing."""
 
@@ -288,6 +303,7 @@ class TestBatchProcessingMemoryManagement:
         assert success_rate > 0.8, f"Success rate too low: {success_rate:.2%}"
 
 
+@pytest.mark.performance
 class TestCacheManagement:
     """Test cache management optimizations."""
 
@@ -339,10 +355,14 @@ class TestCacheManagement:
             # Some operations might fail due to invalid formulas, that's ok for this test
             pass
 
-        # The important thing is that memory management doesn't crash
-        assert True
+        # Verify memory monitor is still functional after pressure scenario
+        usage_mb = monitor.get_memory_usage_mb()
+        assert isinstance(usage_mb, float) and usage_mb >= 0, (
+            "Memory monitor should report valid usage after pressure test"
+        )
 
 
+@pytest.mark.performance
 class TestMemoryLeakPrevention:
     """Test prevention of memory leaks."""
 

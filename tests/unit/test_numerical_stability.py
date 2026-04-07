@@ -11,6 +11,7 @@ import pytest
 
 import xraylabtool as xlt
 from xraylabtool.calculators.core import calculate_derived_quantities
+from xraylabtool.exceptions import EnergyError
 
 
 class TestNumericalStabilityChecks:
@@ -260,11 +261,11 @@ class TestBoundaryConditions:
     def test_energy_boundary_validation(self):
         """Test energy boundary validation."""
         # Test below lower bound
-        with pytest.raises(ValueError, match=r"Energy.*range"):
+        with pytest.raises(EnergyError, match=r"Energy.*range"):
             xlt.calculate_single_material_properties("SiO2", 0.02, 2.2)  # Too low
 
         # Test above upper bound
-        with pytest.raises(ValueError, match=r"Energy.*range"):
+        with pytest.raises(EnergyError, match=r"Energy.*range"):
             xlt.calculate_single_material_properties("SiO2", 31.0, 2.2)  # Too high
 
         # Test exactly at bounds (should work)
@@ -308,17 +309,74 @@ class TestBoundaryConditions:
 class TestPhysicalRealism:
     """Test that results maintain physical realism."""
 
-    def test_critical_angle_monotonicity(self):
-        """Test that critical angle decreases with increasing energy."""
-        energies = np.array([5.0, 10.0, 15.0, 20.0])
-        result = xlt.calculate_single_material_properties("SiO2", energies, 2.2)
+    def test_critical_angle_physical_bounds(self):
+        """Test that critical angles are always positive and physically reasonable.
 
-        # Critical angle should generally decrease with increasing energy
+        Critical angles for most materials at typical X-ray energies lie in the
+        range 0 < θc < 1 degree.  Global monotonicity is NOT a valid constraint
+        because absorption edges (e.g. Si K-edge at 1.839 keV) cause abrupt
+        discontinuities in the refractive index, and hence in the critical angle.
+        """
+        # Dense sweep from 2 to 25 keV for SiO2 (avoids Si K-edge at 1.839 keV)
+        energies = np.linspace(2.0, 25.0, 75)
+        result = xlt.calculate_single_material_properties("SiO2", energies, 2.2)
         angles = result.critical_angle_degrees
-        for i in range(len(angles) - 1):
-            assert angles[i] >= angles[i + 1], (
-                "Critical angle should decrease with energy"
-            )
+
+        # All critical angles must be strictly positive
+        assert np.all(angles > 0), "Critical angles must be positive"
+
+        # Physical upper bound: no common reflectometry material exceeds ~1 degree
+        # for energies above 2 keV
+        assert np.all(angles < 1.0), (
+            f"Critical angles exceed physical bound of 1 degree: max={angles.max():.4f}"
+        )
+
+    def test_critical_angle_monotonicity_away_from_edges(self):
+        """Test monotonic decrease in energy regions free of absorption edges.
+
+        Away from absorption edges the refractive index decrement δ scales as
+        E^{-2}, so the critical angle θc ∝ √δ ∝ E^{-1} and is strictly
+        decreasing.  We verify this for SiO2 in the range 5–25 keV, which is
+        well clear of the Si K-edge (1.839 keV) and O K-edge (0.532 keV).
+        """
+        energies = np.linspace(5.0, 25.0, 60)
+        result = xlt.calculate_single_material_properties("SiO2", energies, 2.2)
+        angles = result.critical_angle_degrees
+
+        # Expect monotonic (non-increasing) behaviour in this edge-free region
+        assert np.all(np.diff(angles) <= 0), (
+            "Critical angle should decrease monotonically with energy away from "
+            "absorption edges (5-25 keV for SiO2)"
+        )
+
+    def test_critical_angle_discontinuity_near_si_k_edge(self):
+        """Test that a discontinuity exists across the Si K-edge at 1.839 keV.
+
+        The real part of the scattering factor f1 for Si jumps at the K-edge,
+        causing a corresponding jump in the critical angle.  We verify that the
+        critical angle is *not* monotonically decreasing over the narrow window
+        [1.7, 2.0] keV, confirming edge physics is captured rather than smoothed.
+        """
+        # Probe energies that straddle the Si K-edge (1.839 keV)
+        below_edge = np.linspace(1.7, 1.82, 15)  # just below the edge
+        above_edge = np.linspace(1.86, 2.0, 15)  # just above the edge
+
+        result_below = xlt.calculate_single_material_properties("SiO2", below_edge, 2.2)
+        result_above = xlt.calculate_single_material_properties("SiO2", above_edge, 2.2)
+
+        # Each sub-range should contain positive angles
+        assert np.all(result_below.critical_angle_degrees > 0)
+        assert np.all(result_above.critical_angle_degrees > 0)
+
+        # The mean critical angle just above the edge should differ from just
+        # below — a jump of at least 0.005 degrees is expected from published
+        # optical constants for SiO2 near the Si K-edge.
+        mean_below = float(np.mean(result_below.critical_angle_degrees[-5:]))
+        mean_above = float(np.mean(result_above.critical_angle_degrees[:5]))
+        assert abs(mean_above - mean_below) > 0.005, (
+            f"Expected a critical-angle discontinuity at the Si K-edge; "
+            f"below={mean_below:.4f}°, above={mean_above:.4f}°"
+        )
 
     def test_attenuation_length_positive(self):
         """Test that attenuation length is always positive."""
