@@ -1,60 +1,39 @@
 # ReadTheDocs configuration file for XRayLabTool
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
-# Python 3.12 runtime on RTD; local builds should prefer `uv sync --dev` for reproducibility.
 
-# Required
 version: 2
 
-# Build configuration
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
-    python: "3.12"
-  jobs:
-    pre_build:
-      # Ensure we have the latest pip and build tools
-      - pip install --upgrade pip setuptools wheel
+    python: "3.13"
+  commands:
+    - asdf plugin add uv
+    - asdf install uv latest
+    - asdf global uv latest
+    - uv pip install --system -e .
+    - uv pip install --system sphinx furo sphinx-autodoc-typehints sphinx-copybutton sphinx-design sphinx-tabs sphinx-togglebutton myst-parser
+    - python -m sphinx -b html docs/ $READTHEDOCS_OUTPUT/html
 
-# Python configuration
-python:
-  install:
-    - method: pip
-      path: .
-
-# Sphinx configuration
 sphinx:
   configuration: docs/conf.py
-  builder: html
   fail_on_warning: false
 
-# Optional but recommended formats for download
 formats:
   - pdf
   - epub
-  - htmlzip
 
-# Search configuration with enhanced ranking
 search:
   ranking:
-    # Boost user-facing content
-    quickstart.html: 10
-    installation.html: 8
-    tutorials/: 5
-    examples.html: 4
-    cli_guide.html: 3
-    howto/: 2
-    faq.html: 1
-    # Reduce API reference prominence in search
+    guides/getting_started.html: 10
+    guides/cli_reference.html: 5
+    guides/completion_guide.html: 3
+    examples/: 4
     api/: -1
   ignore:
-    # Exclude certain patterns from search indexing
     - "_build"
     - "*.js"
     - "*.css"
 
-# Social cards and preview configuration
-# These help with link previews on social media
 submodules:
   include: []
-
-# Additional ReadTheDocs features are configured through the web interface
