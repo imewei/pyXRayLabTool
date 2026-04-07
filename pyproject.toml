@@ -555,4 +555,5 @@ ignore = []
 [dependency-groups]
 dev = [
     "pip-audit>=2.10.0",
+    "pip-licenses>=5.5.5",
 ]
