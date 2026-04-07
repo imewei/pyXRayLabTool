@@ -69,7 +69,7 @@ jobs:
           docs-deps-v4-${{ runner.os }}-
 
     - name: Install documentation dependencies
-      uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
       with:
         timeout_minutes: 8
         max_attempts: 3
@@ -200,7 +200,7 @@ jobs:
           docs-deps-v4-${{ runner.os }}-
 
     - name: Install documentation dependencies
-      uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
       with:
         timeout_minutes: 8
         max_attempts: 3
@@ -333,7 +333,7 @@ jobs:
           docs-deps-v4-${{ runner.os }}-
 
     - name: Install documentation dependencies
-      uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
       with:
         timeout_minutes: 8
         max_attempts: 3
@@ -393,7 +393,7 @@ jobs:
           doc-quality-tools-${{ runner.os }}-
 
     - name: Install quality tools
-      uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
       with:
         timeout_minutes: 5
         max_attempts: 3
