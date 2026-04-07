@@ -158,10 +158,7 @@ class MultiF1F2Plot(QWidget):
 
         # Log x-axis when energy is swept over multiple points
         any_res = next(iter(results.values()), None)
-        use_log = (
-            any_res is not None
-            and len(getattr(any_res, "energy_kev", [])) > 1
-        )
+        use_log = any_res is not None and len(getattr(any_res, "energy_kev", [])) > 1
         self._ax1.setLogMode(x=use_log, y=False)
         self._ax2.setLogMode(x=use_log, y=False)
 

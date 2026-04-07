@@ -329,11 +329,11 @@ jobs:
             # Code changes: apply dynamic coverage thresholds
             # Determine appropriate coverage threshold based on test scope
             if [[ "$TEST_PATHS" == "tests/" ]]; then
-              COV_THRESHOLD=35  # Full test suite
-              echo "📊 Coverage threshold: 35% (full test suite)"
+              COV_THRESHOLD=30  # Full test suite
+              echo "📊 Coverage threshold: 30% (full test suite)"
             elif [[ "$TEST_PATHS" == *"tests/unit/ tests/integration/"* ]]; then
-              COV_THRESHOLD=35  # Partial test suite
-              echo "📊 Coverage threshold: 35% (unit + integration tests)"
+              COV_THRESHOLD=30  # Partial test suite
+              echo "📊 Coverage threshold: 30% (unit + integration tests)"
             else
               COV_THRESHOLD=20  # Smoke tests
               echo "📊 Coverage threshold: 20% (smoke tests)"

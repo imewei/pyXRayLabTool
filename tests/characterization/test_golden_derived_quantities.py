@@ -78,9 +78,7 @@ class TestGoldenAttenuationLength:
 
     def test_golden_value(self):
         result = calculate_attenuation_length(self.WL_ANG, self.BETA)
-        np.testing.assert_allclose(
-            result[0], 0.025381184861793808, rtol=1e-10
-        )
+        np.testing.assert_allclose(result[0], 0.025381184861793808, rtol=1e-10)
 
     def test_formula_correctness(self):
         """Verify Λ = lambda_m / (4*pi*beta) * 100."""
@@ -88,9 +86,7 @@ class TestGoldenAttenuationLength:
         beta = 3.887268047879803e-08
         wl_m = wl_ang * 1e-10
         expected_cm = wl_m / (4.0 * PI * beta) * 100.0
-        result = calculate_attenuation_length(
-            np.array([wl_ang]), np.array([beta])
-        )
+        result = calculate_attenuation_length(np.array([wl_ang]), np.array([beta]))
         np.testing.assert_allclose(result[0], expected_cm, atol=1e-14)
 
     def test_larger_beta_gives_shorter_length(self):
@@ -128,9 +124,7 @@ class TestGoldenScatteringLengthDensity:
 
     @pytest.fixture(scope="class")
     def sld_outputs(self):
-        return calculate_scattering_length_density(
-            self.DELTA, self.BETA, self.WL_ANG
-        )
+        return calculate_scattering_length_density(self.DELTA, self.BETA, self.WL_ANG)
 
     def test_real_sld_golden(self, sld_outputs):
         re_sld, _ = sld_outputs
@@ -204,9 +198,7 @@ class TestGoldenTransmission:
         t_cm = 0.01
         lambda_cm = np.array([0.025381184861850772])
         result = calculate_transmission(t_cm, lambda_cm)
-        np.testing.assert_allclose(
-            result[0], np.exp(-t_cm / lambda_cm[0]), atol=1e-14
-        )
+        np.testing.assert_allclose(result[0], np.exp(-t_cm / lambda_cm[0]), atol=1e-14)
 
     def test_zero_thickness_is_unity(self):
         """Zero thickness must give T=1 exactly."""

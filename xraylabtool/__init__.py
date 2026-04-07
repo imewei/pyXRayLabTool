@@ -339,9 +339,12 @@ def _configure_jax_float64() -> None:
     float64 is already configured in JaxBackend.__init__.
     """
     from xraylabtool.backend.array_ops import JaxBackend, _backend
+
     if isinstance(_backend, JaxBackend):
         import jax  # type: ignore[import-not-found]
+
         jax.config.update("jax_enable_x64", True)
+
 
 _configure_jax_float64()
 

@@ -321,39 +321,51 @@ class TestGoldenFe2O3:
         assert np.asarray(result.wavelength_angstrom).dtype == np.float64
 
     def test_dispersion_delta_array(self, result):
-        expected = np.array([1.5699325422722898e-05, 1.0362034024426724e-05, 7.248916179697252e-06])
+        expected = np.array(
+            [1.5699325422722898e-05, 1.0362034024426724e-05, 7.248916179697252e-06]
+        )
         np.testing.assert_allclose(
             np.asarray(result.dispersion_delta), expected, rtol=1e-9
         )
         assert np.asarray(result.dispersion_delta).dtype == np.float64
 
     def test_absorption_beta_array(self, result):
-        expected = np.array([1.4005422853421068e-06, 6.262873111508109e-07, 3.1858563221542804e-07])
+        expected = np.array(
+            [1.4005422853421068e-06, 6.262873111508109e-07, 3.1858563221542804e-07]
+        )
         np.testing.assert_allclose(
             np.asarray(result.absorption_beta), expected, rtol=1e-9
         )
         assert np.asarray(result.absorption_beta).dtype == np.float64
 
     def test_critical_angle_array(self, result):
-        expected = np.array([0.321054030308344, 0.26083155903542726, 0.21815951991793991])
+        expected = np.array(
+            [0.321054030308344, 0.26083155903542726, 0.21815951991793991]
+        )
         np.testing.assert_allclose(
             np.asarray(result.critical_angle_degrees), expected, rtol=1e-9
         )
 
     def test_attenuation_length_array(self, result):
-        expected = np.array([0.0008805827389451401, 0.0015753707152314435, 0.002580767904396232])
+        expected = np.array(
+            [0.0008805827389451401, 0.0015753707152314435, 0.002580767904396232]
+        )
         np.testing.assert_allclose(
             np.asarray(result.attenuation_length_cm), expected, rtol=1e-9
         )
 
     def test_real_sld_array(self, result):
-        expected = np.array([4.1068453056634865e-05, 4.235380108349727e-05, 4.2666100172979545e-05])
+        expected = np.array(
+            [4.1068453056634865e-05, 4.235380108349727e-05, 4.2666100172979545e-05]
+        )
         np.testing.assert_allclose(
             np.asarray(result.real_sld_per_ang2), expected, rtol=1e-9
         )
 
     def test_imaginary_sld_array(self, result):
-        expected = np.array([3.6637309916611986e-06, 2.5598881585478413e-06, 1.8751501825674536e-06])
+        expected = np.array(
+            [3.6637309916611986e-06, 2.5598881585478413e-06, 1.8751501825674536e-06]
+        )
         np.testing.assert_allclose(
             np.asarray(result.imaginary_sld_per_ang2), expected, rtol=1e-9
         )

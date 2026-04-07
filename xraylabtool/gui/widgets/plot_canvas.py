@@ -57,8 +57,7 @@ class PlotCanvas(QWidget):
         x = np.array(result.energy_kev, ndmin=1, copy=False)
         y = np.array(getattr(result, property_name), ndmin=1, copy=False)
         label = (
-            f"{result.formula} "
-            f"({getattr(result, 'density_g_cm3', 0):.3g} g/cm\u00b3)"
+            f"{result.formula} ({getattr(result, 'density_g_cm3', 0):.3g} g/cm\u00b3)"
         )
         color = self._colors[0]
         self.plot_widget.plot(
@@ -87,10 +86,7 @@ class PlotCanvas(QWidget):
         for idx, (formula, res) in enumerate(results.items()):
             x = np.array(res.energy_kev, ndmin=1, copy=False)
             y = np.array(getattr(res, property_name), ndmin=1, copy=False)
-            label = (
-                f"{formula} "
-                f"({getattr(res, 'density_g_cm3', 0):.3g} g/cm\u00b3)"
-            )
+            label = f"{formula} ({getattr(res, 'density_g_cm3', 0):.3g} g/cm\u00b3)"
             color = colors[idx % len(colors)]
             self.plot_widget.plot(
                 x,

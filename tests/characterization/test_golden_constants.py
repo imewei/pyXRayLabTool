@@ -69,8 +69,12 @@ class TestDerivedConstants:
 
     def test_energy_to_wavelength_factor_derivation(self) -> None:
         """ENERGY_TO_WAVELENGTH_FACTOR must equal (h·c/e) / 1000."""
-        expected = (xconst.SPEED_OF_LIGHT * xconst.PLANCK / xconst.ELEMENT_CHARGE) / 1000.0
-        np.testing.assert_allclose(xconst.ENERGY_TO_WAVELENGTH_FACTOR, expected, rtol=1e-14)
+        expected = (
+            xconst.SPEED_OF_LIGHT * xconst.PLANCK / xconst.ELEMENT_CHARGE
+        ) / 1000.0
+        np.testing.assert_allclose(
+            xconst.ENERGY_TO_WAVELENGTH_FACTOR, expected, rtol=1e-14
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -149,11 +153,11 @@ class TestEnergyToWavelength:
         "energy_kev, expected_angstrom",
         [
             # (energy keV, captured wavelength Å)
-            (10.0,    1.2398417166827826),   # reference energy
-            (8.047,   1.5407502382040295),   # Cu Kα
-            (17.479,  0.7093321795770826),   # Mo Kα
-            (0.03,    413.2805722275943),    # soft X-ray lower bound
-            (30.0,    0.41328057222759423),  # hard X-ray upper bound
+            (10.0, 1.2398417166827826),  # reference energy
+            (8.047, 1.5407502382040295),  # Cu Kα
+            (17.479, 0.7093321795770826),  # Mo Kα
+            (0.03, 413.2805722275943),  # soft X-ray lower bound
+            (30.0, 0.41328057222759423),  # hard X-ray upper bound
         ],
     )
     def test_golden_values(self, energy_kev: float, expected_angstrom: float) -> None:
@@ -186,8 +190,12 @@ class TestEnergyToWavelength:
         for energy in [0.5, 1.0, 8.047, 10.0, 20.0]:
             wl = energy_to_wavelength_angstrom(energy)
             recovered = wavelength_angstrom_to_energy(wl)
-            np.testing.assert_allclose(recovered, energy, rtol=1e-12,
-                                       err_msg=f"round-trip failed at {energy} keV")
+            np.testing.assert_allclose(
+                recovered,
+                energy,
+                rtol=1e-12,
+                err_msg=f"round-trip failed at {energy} keV",
+            )
 
 
 # ---------------------------------------------------------------------------

@@ -68,6 +68,7 @@ class TestCodeQuality(BaseUnitTest):
             "from .environment",
             "from .. import calculators",
             "/gui/",  # GUI module uses relative imports for internal components
+            "\\gui\\",  # Windows path separator
         ]
         filtered_violations = [
             v

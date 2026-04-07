@@ -71,14 +71,15 @@ class TestFullPipelineSiO2:
 
     def test_molecular_weight(self) -> None:
         np.testing.assert_allclose(
-            self.r.molecular_weight_g_mol, 60.083, atol=1e-2,
-            err_msg="SiO2 MW regression"
+            self.r.molecular_weight_g_mol,
+            60.083,
+            atol=1e-2,
+            err_msg="SiO2 MW regression",
         )
 
     def test_total_electrons(self) -> None:
         np.testing.assert_allclose(
-            self.r.total_electrons, 30.0, atol=1e-10,
-            err_msg="SiO2 Z_total regression"
+            self.r.total_electrons, 30.0, atol=1e-10, err_msg="SiO2 Z_total regression"
         )
 
     def test_density(self) -> None:
@@ -87,8 +88,10 @@ class TestFullPipelineSiO2:
     def test_electron_density(self) -> None:
         # Captured: 0.6615205155201972 e/Å³
         np.testing.assert_allclose(
-            self.r.electron_density_per_ang3, 0.6615205155201972, atol=1e-12,
-            err_msg="SiO2 electron_density_per_ang3 regression"
+            self.r.electron_density_per_ang3,
+            0.6615205155201972,
+            atol=1e-12,
+            err_msg="SiO2 electron_density_per_ang3 regression",
         )
 
     # --- Array shape and dtype ---
@@ -107,8 +110,10 @@ class TestFullPipelineSiO2:
     def test_wavelength_angstrom(self) -> None:
         # Captured: 1.2398417166827826 Å
         np.testing.assert_allclose(
-            self.r.wavelength_angstrom[0], 1.2398417166827826, atol=1e-8,
-            err_msg="SiO2 wavelength_angstrom regression"
+            self.r.wavelength_angstrom[0],
+            1.2398417166827826,
+            atol=1e-8,
+            err_msg="SiO2 wavelength_angstrom regression",
         )
 
     # --- Optical constants ---
@@ -116,29 +121,37 @@ class TestFullPipelineSiO2:
     def test_dispersion_delta(self) -> None:
         # Captured: 4.613309228943556e-06
         np.testing.assert_allclose(
-            self.r.dispersion_delta[0], 4.613309228943556e-06, atol=1e-12,
-            err_msg="SiO2 dispersion_delta regression"
+            self.r.dispersion_delta[0],
+            4.613309228943556e-06,
+            atol=1e-12,
+            err_msg="SiO2 dispersion_delta regression",
         )
 
     def test_absorption_beta(self) -> None:
         # Captured: 3.887268047879803e-08
         np.testing.assert_allclose(
-            self.r.absorption_beta[0], 3.887268047879803e-08, atol=1e-12,
-            err_msg="SiO2 absorption_beta regression"
+            self.r.absorption_beta[0],
+            3.887268047879803e-08,
+            atol=1e-12,
+            err_msg="SiO2 absorption_beta regression",
         )
 
     def test_scattering_factor_f1(self) -> None:
         # Captured: 30.346324020501555
         np.testing.assert_allclose(
-            self.r.scattering_factor_f1[0], 30.346324020501555, atol=1e-10,
-            err_msg="SiO2 f1 regression"
+            self.r.scattering_factor_f1[0],
+            30.346324020501555,
+            atol=1e-10,
+            err_msg="SiO2 f1 regression",
         )
 
     def test_scattering_factor_f2(self) -> None:
         # Captured: 0.2557042892234579
         np.testing.assert_allclose(
-            self.r.scattering_factor_f2[0], 0.2557042892234579, atol=1e-10,
-            err_msg="SiO2 f2 regression"
+            self.r.scattering_factor_f2[0],
+            0.2557042892234579,
+            atol=1e-10,
+            err_msg="SiO2 f2 regression",
         )
 
     # --- Derived quantities ---
@@ -146,29 +159,37 @@ class TestFullPipelineSiO2:
     def test_critical_angle_degrees(self) -> None:
         # Captured: 0.1740379316778023 degrees
         np.testing.assert_allclose(
-            self.r.critical_angle_degrees[0], 0.1740379316778023, atol=1e-8,
-            err_msg="SiO2 critical_angle_degrees regression"
+            self.r.critical_angle_degrees[0],
+            0.1740379316778023,
+            atol=1e-8,
+            err_msg="SiO2 critical_angle_degrees regression",
         )
 
     def test_attenuation_length_cm(self) -> None:
         # Captured: 0.025381184861850772 cm
         np.testing.assert_allclose(
-            self.r.attenuation_length_cm[0], 0.025381184861850772, rtol=1e-6,
-            err_msg="SiO2 attenuation_length_cm regression"
+            self.r.attenuation_length_cm[0],
+            0.025381184861850772,
+            rtol=1e-6,
+            err_msg="SiO2 attenuation_length_cm regression",
         )
 
     def test_real_sld(self) -> None:
         # Captured: 1.885645047668597e-05 Å⁻²
         np.testing.assert_allclose(
-            self.r.real_sld_per_ang2[0], 1.885645047668597e-05, atol=1e-12,
-            err_msg="SiO2 real_sld_per_ang2 regression"
+            self.r.real_sld_per_ang2[0],
+            1.885645047668597e-05,
+            atol=1e-12,
+            err_msg="SiO2 real_sld_per_ang2 regression",
         )
 
     def test_imaginary_sld(self) -> None:
         # Captured: 1.5888828126796716e-07 Å⁻²
         np.testing.assert_allclose(
-            self.r.imaginary_sld_per_ang2[0], 1.5888828126796716e-07, atol=1e-12,
-            err_msg="SiO2 imaginary_sld_per_ang2 regression"
+            self.r.imaginary_sld_per_ang2[0],
+            1.5888828126796716e-07,
+            atol=1e-12,
+            err_msg="SiO2 imaginary_sld_per_ang2 regression",
         )
 
     # --- Physical sanity ---
@@ -201,9 +222,9 @@ class TestMultiMaterialEquivalence:
     """
 
     MATERIALS = [
-        ("SiO2",   10.0, 2.2),
-        ("Al2O3",  10.0, 3.95),
-        ("Fe2O3",  10.0, 5.24),
+        ("SiO2", 10.0, 2.2),
+        ("Al2O3", 10.0, 3.95),
+        ("Fe2O3", 10.0, 5.24),
     ]
 
     @pytest.fixture(scope="class", autouse=True)
@@ -229,8 +250,10 @@ class TestMultiMaterialEquivalence:
         multi_val = self.multi[formula]["dispersion"][0]
         single_val = float(self.singles[formula].dispersion_delta[0])
         np.testing.assert_allclose(
-            multi_val, single_val, atol=1e-15,
-            err_msg=f"{formula} dispersion mismatch between multi and single"
+            multi_val,
+            single_val,
+            atol=1e-15,
+            err_msg=f"{formula} dispersion mismatch between multi and single",
         )
 
     @pytest.mark.parametrize("formula", ["SiO2", "Al2O3", "Fe2O3"])
@@ -238,8 +261,10 @@ class TestMultiMaterialEquivalence:
         multi_val = self.multi[formula]["absorption"][0]
         single_val = float(self.singles[formula].absorption_beta[0])
         np.testing.assert_allclose(
-            multi_val, single_val, atol=1e-15,
-            err_msg=f"{formula} absorption mismatch between multi and single"
+            multi_val,
+            single_val,
+            atol=1e-15,
+            err_msg=f"{formula} absorption mismatch between multi and single",
         )
 
     @pytest.mark.parametrize("formula", ["SiO2", "Al2O3", "Fe2O3"])
@@ -247,8 +272,7 @@ class TestMultiMaterialEquivalence:
         multi_val = self.multi[formula]["molecular_weight"]
         single_val = self.singles[formula].molecular_weight_g_mol
         np.testing.assert_allclose(
-            multi_val, single_val, atol=1e-15,
-            err_msg=f"{formula} MW mismatch"
+            multi_val, single_val, atol=1e-15, err_msg=f"{formula} MW mismatch"
         )
 
     def test_multi_returns_all_three_keys(self) -> None:
@@ -288,7 +312,9 @@ class TestBatchProcessorEquivalence:
         energy = np.array([10.0])
         clear_scattering_factor_cache()
         batch_results = calculate_batch_properties(
-            ["SiO2"], energy, [2.2],
+            ["SiO2"],
+            energy,
+            [2.2],
             config=BatchConfig(max_workers=1, enable_progress=False),
         )
         key = "SiO2@2.200"
@@ -299,12 +325,16 @@ class TestBatchProcessorEquivalence:
         single_r = calculate_single_material_properties("SiO2", energy, 2.2)
 
         np.testing.assert_allclose(
-            batch_r.dispersion_delta[0], single_r.dispersion_delta[0], atol=1e-12,
-            err_msg="Batch vs single dispersion_delta mismatch for SiO2"
+            batch_r.dispersion_delta[0],
+            single_r.dispersion_delta[0],
+            atol=1e-12,
+            err_msg="Batch vs single dispersion_delta mismatch for SiO2",
         )
         np.testing.assert_allclose(
-            batch_r.absorption_beta[0], single_r.absorption_beta[0], atol=1e-12,
-            err_msg="Batch vs single absorption_beta mismatch for SiO2"
+            batch_r.absorption_beta[0],
+            single_r.absorption_beta[0],
+            atol=1e-12,
+            err_msg="Batch vs single absorption_beta mismatch for SiO2",
         )
 
     def test_batch_three_materials_all_match_singles(self) -> None:
@@ -320,7 +350,9 @@ class TestBatchProcessorEquivalence:
 
         clear_scattering_factor_cache()
         batch_results = calculate_batch_properties(
-            formulas, energy, densities,
+            formulas,
+            energy,
+            densities,
             config=BatchConfig(max_workers=2, enable_progress=False),
         )
 
@@ -331,9 +363,10 @@ class TestBatchProcessorEquivalence:
             assert key in batch_results, f"Key {key!r} missing from batch results"
             batch_r = batch_results[key]
             np.testing.assert_allclose(
-                batch_r.dispersion_delta[0], single_r.dispersion_delta[0],
+                batch_r.dispersion_delta[0],
+                single_r.dispersion_delta[0],
                 atol=1e-12,
-                err_msg=f"Batch vs single dispersion mismatch for {formula}"
+                err_msg=f"Batch vs single dispersion mismatch for {formula}",
             )
 
 
@@ -388,36 +421,46 @@ class TestEnergySweepSi:
     def test_snapshot_index0_dispersion(self) -> None:
         # Captured: 0.1453834710364258
         np.testing.assert_allclose(
-            self.r.dispersion_delta[0], 0.1453834710364258, atol=1e-10,
-            err_msg="Si sweep dispersion_delta[0] regression"
+            self.r.dispersion_delta[0],
+            0.1453834710364258,
+            atol=1e-10,
+            err_msg="Si sweep dispersion_delta[0] regression",
         )
 
     def test_snapshot_index0_absorption(self) -> None:
         # Captured: 0.014289187705435344
         np.testing.assert_allclose(
-            self.r.absorption_beta[0], 0.014289187705435344, atol=1e-10,
-            err_msg="Si sweep absorption_beta[0] regression"
+            self.r.absorption_beta[0],
+            0.014289187705435344,
+            atol=1e-10,
+            err_msg="Si sweep absorption_beta[0] regression",
         )
 
     def test_snapshot_index0_wavelength(self) -> None:
         # Captured: 413.2805722275943 Å
         np.testing.assert_allclose(
-            self.r.wavelength_angstrom[0], 413.2805722275943, atol=1e-6,
-            err_msg="Si sweep wavelength_angstrom[0] regression"
+            self.r.wavelength_angstrom[0],
+            413.2805722275943,
+            atol=1e-6,
+            err_msg="Si sweep wavelength_angstrom[0] regression",
         )
 
     def test_snapshot_index0_critical_angle(self) -> None:
         # Captured: 30.895494231525966 degrees
         np.testing.assert_allclose(
-            self.r.critical_angle_degrees[0], 30.895494231525966, atol=1e-8,
-            err_msg="Si sweep critical_angle_degrees[0] regression"
+            self.r.critical_angle_degrees[0],
+            30.895494231525966,
+            atol=1e-8,
+            err_msg="Si sweep critical_angle_degrees[0] regression",
         )
 
     def test_snapshot_index0_attenuation_length(self) -> None:
         # Captured: 2.301588001704564e-05 cm
         np.testing.assert_allclose(
-            self.r.attenuation_length_cm[0], 2.301588001704564e-05, rtol=1e-6,
-            err_msg="Si sweep attenuation_length_cm[0] regression"
+            self.r.attenuation_length_cm[0],
+            2.301588001704564e-05,
+            rtol=1e-6,
+            err_msg="Si sweep attenuation_length_cm[0] regression",
         )
 
     # --- Snapshot at index 249 (mid-range ~15 keV) ---
@@ -425,36 +468,46 @@ class TestEnergySweepSi:
     def test_snapshot_index249_dispersion(self) -> None:
         # Captured: 2.1610269670902516e-06
         np.testing.assert_allclose(
-            self.r.dispersion_delta[249], 2.1610269670902516e-06, atol=1e-12,
-            err_msg="Si sweep dispersion_delta[249] regression"
+            self.r.dispersion_delta[249],
+            2.1610269670902516e-06,
+            atol=1e-12,
+            err_msg="Si sweep dispersion_delta[249] regression",
         )
 
     def test_snapshot_index249_absorption(self) -> None:
         # Captured: 1.4722650524080965e-08
         np.testing.assert_allclose(
-            self.r.absorption_beta[249], 1.4722650524080965e-08, atol=1e-12,
-            err_msg="Si sweep absorption_beta[249] regression"
+            self.r.absorption_beta[249],
+            1.4722650524080965e-08,
+            atol=1e-12,
+            err_msg="Si sweep absorption_beta[249] regression",
         )
 
     def test_snapshot_index249_wavelength(self) -> None:
         # Captured: 0.8273901927445118 Å
         np.testing.assert_allclose(
-            self.r.wavelength_angstrom[249], 0.8273901927445118, atol=1e-8,
-            err_msg="Si sweep wavelength_angstrom[249] regression"
+            self.r.wavelength_angstrom[249],
+            0.8273901927445118,
+            atol=1e-8,
+            err_msg="Si sweep wavelength_angstrom[249] regression",
         )
 
     def test_snapshot_index249_critical_angle(self) -> None:
         # Captured: 0.11911534787852067 degrees
         np.testing.assert_allclose(
-            self.r.critical_angle_degrees[249], 0.11911534787852067, atol=1e-8,
-            err_msg="Si sweep critical_angle_degrees[249] regression"
+            self.r.critical_angle_degrees[249],
+            0.11911534787852067,
+            atol=1e-8,
+            err_msg="Si sweep critical_angle_degrees[249] regression",
         )
 
     def test_snapshot_index249_attenuation_length(self) -> None:
         # Captured: 0.04472130844431125 cm
         np.testing.assert_allclose(
-            self.r.attenuation_length_cm[249], 0.04472130844431125, rtol=1e-6,
-            err_msg="Si sweep attenuation_length_cm[249] regression"
+            self.r.attenuation_length_cm[249],
+            0.04472130844431125,
+            rtol=1e-6,
+            err_msg="Si sweep attenuation_length_cm[249] regression",
         )
 
     # --- Snapshot at index 499 (30 keV — hard X-ray upper bound) ---
@@ -462,36 +515,46 @@ class TestEnergySweepSi:
     def test_snapshot_index499_dispersion(self) -> None:
         # Captured: 5.365535935522566e-07
         np.testing.assert_allclose(
-            self.r.dispersion_delta[499], 5.365535935522566e-07, atol=1e-12,
-            err_msg="Si sweep dispersion_delta[499] regression"
+            self.r.dispersion_delta[499],
+            5.365535935522566e-07,
+            atol=1e-12,
+            err_msg="Si sweep dispersion_delta[499] regression",
         )
 
     def test_snapshot_index499_absorption(self) -> None:
         # Captured: 8.743484809443038e-10
         np.testing.assert_allclose(
-            self.r.absorption_beta[499], 8.743484809443038e-10, atol=1e-14,
-            err_msg="Si sweep absorption_beta[499] regression"
+            self.r.absorption_beta[499],
+            8.743484809443038e-10,
+            atol=1e-14,
+            err_msg="Si sweep absorption_beta[499] regression",
         )
 
     def test_snapshot_index499_wavelength(self) -> None:
         # Captured: 0.41328057222759423 Å
         np.testing.assert_allclose(
-            self.r.wavelength_angstrom[499], 0.41328057222759423, atol=1e-8,
-            err_msg="Si sweep wavelength_angstrom[499] regression"
+            self.r.wavelength_angstrom[499],
+            0.41328057222759423,
+            atol=1e-8,
+            err_msg="Si sweep wavelength_angstrom[499] regression",
         )
 
     def test_snapshot_index499_critical_angle(self) -> None:
         # Captured: 0.059353206215586506 degrees
         np.testing.assert_allclose(
-            self.r.critical_angle_degrees[499], 0.059353206215586506, atol=1e-8,
-            err_msg="Si sweep critical_angle_degrees[499] regression"
+            self.r.critical_angle_degrees[499],
+            0.059353206215586506,
+            atol=1e-8,
+            err_msg="Si sweep critical_angle_degrees[499] regression",
         )
 
     def test_snapshot_index499_attenuation_length(self) -> None:
         # Captured: 0.3761409059853941 cm
         np.testing.assert_allclose(
-            self.r.attenuation_length_cm[499], 0.3761409059853941, rtol=1e-6,
-            err_msg="Si sweep attenuation_length_cm[499] regression"
+            self.r.attenuation_length_cm[499],
+            0.3761409059853941,
+            rtol=1e-6,
+            err_msg="Si sweep attenuation_length_cm[499] regression",
         )
 
     # --- Physical monotonicity ---
