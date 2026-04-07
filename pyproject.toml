@@ -552,3 +552,8 @@ directory = "htmlcov"
 # Configuration for safety vulnerability scanning
 # Ignore specific vulnerabilities if they are false positives
 ignore = []
+
+[dependency-groups]
+dev = [
+    "pip-audit>=2.10.0",
+]
