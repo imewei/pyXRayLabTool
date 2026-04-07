@@ -165,6 +165,11 @@ dependencies = [
     "PySide6>=6.10.1",
     "pyqtgraph>=0.13.7",
 
+    # Plotting
+    "matplotlib>=3.10.8",
+    "seaborn>=0.13.2",
+    "plotly>=6.5.0",
+
     # Jupyter notebooks
     "jupyter>=1.1.1",
     "jupyterlab>=4.5.0",
@@ -182,12 +187,6 @@ gpu_cuda12 = [
     "jax-cuda12-plugin>=0.8.0",
     "jax-cuda12-pjrt>=0.8.0",
 ]
-plots = [
-    "matplotlib>=3.10.8",
-    "seaborn>=0.13.2",
-    "plotly>=6.5.0",
-]
-
 [project.urls]
 Homepage = "https://github.com/imewei/pyXRayLabTool"
 Documentation = "https://pyxraylabtool.readthedocs.io"
