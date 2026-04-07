@@ -75,7 +75,16 @@ except (ImportError, PermissionError, OSError):
     pass
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints", "archive/*"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "**.ipynb_checkpoints",
+    "archive/*",
+    "audit_remediation_plan.md",
+    "security_audit_cicd.md",
+    "test_coverage_audit.md",
+]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
