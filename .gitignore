@@ -221,3 +221,4 @@ benchmark-results.json
 .cleanup_backup/
 .cleanup_reports/
 .remember/
+.worktrees/
