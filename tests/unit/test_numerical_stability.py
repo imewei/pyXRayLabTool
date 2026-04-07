@@ -23,7 +23,7 @@ class TestNumericalStabilityChecks:
         dispersion = np.array([1e-6, np.nan])  # One NaN value
         absorption = np.array([1e-8, 1e-8])  # Valid absorption
 
-        with pytest.raises(ValueError, match="NaN values detected in dispersion"):
+        with pytest.raises(ValueError, match=r"Non-finite values"):
             calculate_derived_quantities(
                 wavelength,
                 dispersion,
@@ -39,7 +39,7 @@ class TestNumericalStabilityChecks:
         dispersion = np.array([1e-6, 1e-6])
         absorption = np.array([1e-8, np.nan])  # One NaN value
 
-        with pytest.raises(ValueError, match=r"NaN values detected.*absorption"):
+        with pytest.raises(ValueError, match=r"Non-finite values"):
             calculate_derived_quantities(
                 wavelength,
                 dispersion,
@@ -55,7 +55,7 @@ class TestNumericalStabilityChecks:
         dispersion = np.array([1e-6, np.inf])  # One infinite value
         absorption = np.array([1e-8, 1e-8])
 
-        with pytest.raises(ValueError, match="Infinite values detected in dispersion"):
+        with pytest.raises(ValueError, match=r"Non-finite values"):
             calculate_derived_quantities(
                 wavelength,
                 dispersion,
@@ -71,7 +71,7 @@ class TestNumericalStabilityChecks:
         dispersion = np.array([1e-6, 1e-6])
         absorption = np.array([1e-8, np.inf])  # One infinite value
 
-        with pytest.raises(ValueError, match=r"Infinite values detected.*absorption"):
+        with pytest.raises(ValueError, match=r"Non-finite values"):
             calculate_derived_quantities(
                 wavelength,
                 dispersion,

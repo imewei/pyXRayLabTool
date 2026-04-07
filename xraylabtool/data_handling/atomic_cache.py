@@ -159,10 +159,12 @@ def get_atomic_data_fast(element: str) -> types.MappingProxyType[str, float]:
         from mendeleev import element as _mendeleev_element
 
         elem = _mendeleev_element(element_key)
-        proxy = types.MappingProxyType({
-            "atomic_number": int(elem.atomic_number),
-            "atomic_weight": float(elem.atomic_weight),
-        })
+        proxy = types.MappingProxyType(
+            {
+                "atomic_number": int(elem.atomic_number),
+                "atomic_weight": float(elem.atomic_weight),
+            }
+        )
 
         # Cache the proxy directly so future lookups return the same object
         _RUNTIME_CACHE[element_key] = proxy  # type: ignore[assignment]
@@ -217,7 +219,7 @@ def warm_up_cache(elements: list[str]) -> None:
     import contextlib
 
     for element in elements:
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(ValueError, KeyError, ImportError, OSError):
             get_atomic_data_fast(element)
 
 

@@ -217,12 +217,9 @@ def calculate_derived_quantities(
     # Numerical stability checks must run outside any JIT region because they
     # branch on concrete array values (ops.any returns a Python bool here).
     # These guards are intentionally kept as host-side checks.
-    if ops.any(ops.isnan(dispersion)) or ops.any(ops.isnan(absorption)):
-        raise ValueError("NaN values detected in dispersion or absorption coefficients")
-
-    if ops.any(ops.isinf(dispersion)) or ops.any(ops.isinf(absorption)):
+    if not ops.all(ops.isfinite(dispersion)) or not ops.all(ops.isfinite(absorption)):
         raise ValueError(
-            "Infinite values detected in dispersion or absorption coefficients"
+            "Non-finite values (NaN or Inf) detected in dispersion or absorption coefficients"
         )
 
     if ops.any(ops.asarray(dispersion) < 0):
