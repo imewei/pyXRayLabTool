@@ -69,6 +69,11 @@ jobs:
           docs-deps-v5-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
           docs-deps-v5-${{ runner.os }}-
 
+    - name: Install pandoc
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq pandoc
+
     - name: Install documentation dependencies
       uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
       with:
