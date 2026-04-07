@@ -59,8 +59,8 @@ env:
   MALLOC_TRIM_THRESHOLD_: 100000
   MALLOC_MMAP_THRESHOLD_: 100000
 
-  # Tool versions (synced with local environment Dec 2024)
-  RUFF_VERSION: "0.14.9"
+  # Tool versions (synced with local environment Apr 2026)
+  RUFF_VERSION: "0.15.9"
   MYPY_VERSION: "1.19.0"
   PYTEST_VERSION: "9.0.2"
   UV_VERSION: "0.5.0"  # Ultra-fast Python package installer
@@ -315,7 +315,7 @@ jobs:
         # Execute tests with optimal configuration
         # Note: --benchmark-disable prevents pytest-benchmark warning when xdist is active
         # Ignore GUI tests (require PySide6 which is only installed on Ubuntu for smoke test)
-        IGNORE_GUI="--ignore=tests/test_gui_progress.py --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py"
+        IGNORE_GUI="--ignore=tests/test_gui_progress.py --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py --ignore=tests/unit/test_calculation_worker.py"
 
         if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.python-version }}" == "3.12" ]]; then
           # Primary test run - decide coverage strategy
@@ -388,8 +388,8 @@ jobs:
       env:
         QT_QPA_PLATFORM: offscreen
       run: |
-        # Run GUI widget tests in a separate process to avoid QApplication segfaults
-        pytest tests/unit/test_gui_widgets.py -v --tb=short --timeout=30
+        # Run GUI-dependent tests in a separate process to avoid QApplication segfaults
+        pytest tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py -v --tb=short --timeout=30
 
     - name: Backend compatibility test (JAX)
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
