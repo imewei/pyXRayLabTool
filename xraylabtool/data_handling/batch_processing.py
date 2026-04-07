@@ -167,12 +167,17 @@ def process_batch_chunk(
     results = []
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
 
-    # Use ThreadPoolExecutor for I/O bound operations (file loading)
-    # ProcessPoolExecutor would be better for CPU-bound, but has pickle
-    # overhead
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=config.max_workers
-    ) as executor:
+    # Choose executor based on batch size: ProcessPoolExecutor gives true
+    # parallelism for CPU-bound work but pays IPC serialisation cost per
+    # task (~0.5 ms for numpy arrays).  Only worth it when per-material
+    # calc time * batch size exceeds the overhead.
+    process_pool_threshold = 8  # switch at 8+ items
+    executor_cls: type[concurrent.futures.Executor] = (
+        concurrent.futures.ProcessPoolExecutor
+        if len(chunk) >= process_pool_threshold
+        else concurrent.futures.ThreadPoolExecutor
+    )
+    with executor_cls(max_workers=config.max_workers) as executor:
         # Submit all calculations in the chunk
         future_to_formula = {
             executor.submit(
