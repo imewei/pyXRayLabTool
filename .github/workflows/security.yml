@@ -1,0 +1,92 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6 AM UTC
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  PYTHONUNBUFFERED: 1
+
+jobs:
+  sast:
+    name: Static Analysis (Bandit via Ruff)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Set up Python 3.13
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3.13'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+
+    - name: Install ruff
+      run: uv pip install --system ruff==0.15.9
+
+    - name: Run Bandit security rules (ruff S-series)
+      run: |
+        echo "::group::Security lint (Bandit rules)"
+        ruff check xraylabtool/ --select S --output-format=github
+        echo "::endgroup::"
+
+  dependency-audit:
+    name: Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Set up Python 3.13
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3.13'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+
+    - name: Install project and audit tools
+      run: |
+        uv pip install --system -e .
+        uv pip install --system pip-audit safety
+
+    - name: Run pip-audit
+      run: pip-audit --desc
+
+    - name: Run safety check
+      run: safety check --short-report
+
+  secret-detection:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        fetch-depth: 0  # Full history for secret scanning
+
+    - name: Run gitleaks
+      uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eef42b7e7a284461384 # v2.3.9
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

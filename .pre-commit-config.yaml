@@ -1,5 +1,5 @@
-# Pre-commit configuration for XRayLabTool (2025)
-# Optimized for fast execution with latest tool versions; Python >=3.12, uv preferred for environment setup.
+# Pre-commit configuration for XRayLabTool (2026)
+# Optimized for fast execution with latest tool versions; Python >=3.13, uv preferred for environment setup.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -16,7 +16,7 @@ repos:
 
   # Use Ruff for fast linting and formatting (replaces multiple tools)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.9
+    rev: v0.15.9
     hooks:
       - id: ruff
         name: ruff lint
