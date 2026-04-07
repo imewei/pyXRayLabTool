@@ -16,6 +16,13 @@ Version Categories
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
 
+v0.4.1 (2026-04-07)
+--------------------
+
+**Fixed**
+
+- Version bump for patch release
+
 v0.4.0 (2026-04-07)
 --------------------
 
@@ -118,6 +125,11 @@ Compatibility Matrix
      - Python 3.13
      - Windows
      - macOS/Linux
+   * - v0.4.1
+     - ✅
+     - ✅
+     - ✅
+     - ✅
    * - v0.4.0
      - ✅
      - ✅

@@ -59,7 +59,7 @@ if sys.version_info < (3, 12):  # noqa: UP036
 
 _os.environ.setdefault("JAX_ENABLE_X64", "1")
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"
 
