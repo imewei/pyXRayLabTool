@@ -15,115 +15,96 @@ Version Categories
 - **Removed**: Now removed features
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
-- **Performance**: Performance improvements
 
-Unreleased
-----------
-
-Features planned for future releases:
-
-**Planned Features:**
-- GPU acceleration support
-- Additional atomic data sources
-- Machine learning interpolation
-- Web interface
-- Zsh/Fish shell completion
-- Docker containerization
-
-**Changed**
-- Refreshed Qt GUI styling: shared palette/QSS, clearer header/action hierarchy, table striping/alignment, visible progress, and non-blocking toasts for status.
-- Standardized offscreen capture for GUI snapshots at ``build/gui_single.png`` and ``build/gui_multi.png``.
-
-v0.2.0 (Planned)
-----------------
+v0.4.0 (2026-04-07)
+--------------------
 
 **Added**
+
+- Backend abstraction layer (``xraylabtool.backend``) supporting NumPy and JAX backends
+- ``set_backend("jax")`` / ``set_backend("numpy")`` for runtime backend switching
+- ``InterpolationFactory`` for backend-agnostic PCHIP interpolation (scipy ↔ interpax)
+- PyQtGraph-based interactive plotting widgets (replaces matplotlib in GUI)
+- JAX float64 auto-configuration at package import time
+- 202 characterization tests with golden-value assertions for migration safety
+- Optional ``[jax]`` dependency group: ``pip install xraylabtool[jax]``
+- Optional ``[plots]`` dependency group for matplotlib (publication plots)
+- Architecture Decision Records in ``docs/architecture/``
+- Security scanning workflow and license compliance auditing
+
+**Changed**
+
+- All core computation modules now use backend ops instead of direct NumPy
+- GUI plotting migrated from matplotlib to PyQtGraph for interactive performance
+- ``ColorPalette.mpl_cycle`` renamed to ``ColorPalette.plot_cycle``
+- ``apply_matplotlib_theme()`` replaced with ``apply_pyqtgraph_theme()``
+- ``scipy.constants`` eliminated from utils.py (uses constants.py directly)
+- matplotlib moved from required to optional dependency
+- ReadTheDocs migrated to uv-based builds on Ubuntu 24.04 / Python 3.13
+- CI updated to Python 3.13, latest GitHub Actions with SHA-pinned versions
+
+**Deprecated**
+
+- ``optimization/vectorized_core.py`` manual SIMD heuristics (use JAX backend instead)
+- ``optimization/optimized_core.py`` monkey-patching (use ``set_backend('jax')``)
+
+**Removed**
+
+- ``ScalarFriendlyArray`` numpy subclass (replaced with plain numpy arrays)
+- Direct matplotlib dependency (now optional via ``[plots]`` extra)
+- Direct scipy.constants usage in computation path
+
+v0.3.0 (2025-12-15)
+--------------------
+
+**Added**
+
+- GUI modernization: dark mode toggle with persistent preferences
+- New theme engine supporting light and dark themes
+
+**Security**
+
+- Replaced python-jose with PyJWT to address Minerva attack vulnerability
+
+**Fixed**
+
+- Plot clipping issues with scrollbars
+- Single-point plot visibility in energy sweeps
+- Log path toggle contrast
+- GUI smoke test made non-blocking for CI reliability
+
+**Maintenance**
+
+- Removed obsolete workflows (security.yml, performance-monitoring.yml, dependabot.yml)
+- Simplified lint job to use ruff only (removed isort/black)
+- Updated tool versions in CI
+- Added explicit permissions to all GitHub Actions workflows
+
+v0.2.x (2025)
+--------------
+
+See the full history in `CHANGELOG.md <https://github.com/imewei/pyXRayLabTool/blob/main/CHANGELOG.md>`_
+for detailed v0.2.0 through v0.2.7 release notes covering:
+
 - Enhanced CLI with shell completion support
 - Batch processing from CSV files
-- Multiple output formats (CSV, JSON, table)
-- Energy range specifications (e.g., "1000-20000:100")
-- Formula validation and parsing improvements
-- Performance benchmarking suite
-- Complete error handling
-- Unit conversion utilities
-- Scientific notation support
+- Performance benchmarking suite (150,000+ calculations/sec)
+- Cross-platform shell completion (bash, zsh, fish, PowerShell)
+- Mamba support and environment isolation
 
-**Changed**
-- Improved atomic data caching performance
-- Restructured package architecture into focused modules
-- Enhanced documentation with tutorials and examples
-- Modernized type hints for Python 3.12+
-- Upgraded to latest NumPy and SciPy versions
-
-**Performance**
-- 10-50x speedup through preloaded atomic data cache
-- Vectorized calculations for energy arrays
-- Memory-efficient batch processing
-- Smart interpolation caching
-
-**Documentation**
-- Complete API reference with examples
-- Interactive Jupyter notebooks
-- Scientific background documentation
-- Performance optimization guide
-- Contributing guidelines
-- Complete testing documentation
-
-v0.1.0 (Initial Release)
-------------------------
+v0.1.0 (2024)
+--------------
 
 **Added**
+
 - Core X-ray optical properties calculations
 - Support for single materials and compounds
 - Complex refractive index calculations (delta, beta)
-- Critical angle calculations
-- Attenuation length and absorption coefficients
+- Critical angle and attenuation length calculations
 - Chemical formula parsing
 - Energy-wavelength conversions
 - Basic command-line interface
 - Atomic scattering factor data for 92 elements
-- Unit test framework
-- Basic documentation
-
-**Features**
-- Calculate properties for single materials
-- Support for compound formulas (e.g., SiO2, Ca5(PO4)3F)
-- Energy range: 10 eV to 100 keV
-- High-precision atomic data from Henke tables
-- Cross-platform compatibility (Windows, macOS, Linux)
-- Python 3.12+ support
-
-**Technical Implementation**
-- NumPy-based calculations for performance
-- Object-oriented design with dataclasses
-- Complete input validation
-- Memory-efficient atomic data storage
-- Linear interpolation for energy-dependent properties
-
-Migration Guides
-----------------
-
-Migrating to v0.2.0
-~~~~~~~~~~~~~~~~~~~
-
-**API Changes:**
-- No breaking changes in core API
-- New optional parameters added to existing functions
-- Deprecated CamelCase field names (still supported with warnings)
-
-**CLI Changes:**
-- New commands added: ``batch``, ``convert``, ``formula``, etc.
-- Existing ``calc`` command updated with new options
-- Output format options added
-
-**Dependencies:**
-- Minimum Python version increased to 3.12
-- NumPy minimum version updated
-- New optional dependencies for additional features
-
-**Configuration:**
-- New configuration options for caching and performance
-- Environment variables for settings
 
 Compatibility Matrix
 --------------------
@@ -137,206 +118,30 @@ Compatibility Matrix
      - Python 3.13
      - Windows
      - macOS/Linux
+   * - v0.4.0
+     - ✅
+     - ✅
+     - ✅
+     - ✅
+   * - v0.3.0
+     - ✅
+     - ✅
+     - ✅
+     - ✅
+   * - v0.2.x
+     - ✅
+     - ✅
+     - ✅
+     - ✅
    * - v0.1.0
      - ✅
      - ❌
      - ✅
      - ✅
-   * - v0.2.0
-     - ✅
-     - ✅
-     - ✅
-     - ✅
 
-.. list-table:: Dependency Compatibility
-   :header-rows: 1
-   :widths: 25 25 25 25
-
-   * - Component
-     - v0.1.0
-     - v0.2.0
-     - Notes
-   * - NumPy
-     - ≥1.21.0
-     - ≥1.24.0
-     - Improved performance
-   * - SciPy
-     - ≥1.7.0
-     - ≥1.11.0
-     - Enhanced interpolation
-   * - Matplotlib
-     - Optional
-     - ≥3.7.0
-     - For examples
-   * - Pandas
-     - Not supported
-     - ≥2.0.0
-     - For CSV processing
-
-Breaking Changes History
-------------------------
-
-**None Yet**
-XRayLabTool maintains backward compatibility. When breaking changes are necessary, they will be:
-
-1. **Announced** in advance with deprecation warnings
-2. **Documented** with migration guides
-3. **Versioned** according to semantic versioning
-4. **Supported** with compatibility shims when possible
-
-Deprecation Schedule
---------------------
-
-**v0.2.0 Deprecations:**
-- CamelCase field names in XRayResult (use snake_case instead)
-- Will be removed in v0.3.0
-
-**Planned Deprecations:**
-- Old CLI command structure (when new interface stabilizes)
-- Legacy atomic data format (when new format is ready)
-
-Notable Bug Fixes
-------------------
-
-**Performance Issues:**
-- Fixed memory leak in atomic data caching
-- Resolved slow formula parsing for complex compounds
-- Optimized interpolation for large energy arrays
-
-**Calculation Accuracy:**
-- Corrected edge case handling near absorption edges
-- Fixed precision loss in critical angle calculations
-- Resolved numerical instability for very light elements
-
-**Platform Compatibility:**
-- Fixed path handling on Windows
-- Resolved encoding issues with atomic data files
-- Corrected floating-point precision differences
-
-**CLI and User Interface:**
-- Fixed error messages not showing proper context
-- Resolved CSV parsing issues with various formats
-- Corrected shell completion installation
-
-Security Updates
+Migration Guides
 ----------------
 
-**Data Integrity:**
-- Validated atomic scattering factor data sources
-- Added checksums for atomic data files
-- Implemented input sanitization for formula parsing
+For upgrading between versions, see:
 
-**Dependency Security:**
-- Regular updates of all dependencies
-- Security scanning with safety checks
-- Minimal dependency footprint
-
-Development History
--------------------
-
-**Project Origins:**
-XRayLabTool was developed to provide accurate X-ray optical property calculations for synchrotron science and materials research.
-
-**Key Milestones:**
-- **2024**: Core development, performance optimization, CLI, and community release
-- **2025**: Continued development and community feedback integration
-
-**Contributors:**
-- Core development team
-- Scientific advisory board
-- Community contributors
-- Beta testers from synchrotron facilities
-
-Performance History
--------------------
-
-**Benchmarks Over Time:**
-
-.. list-table:: Performance Evolution
-   :header-rows: 1
-   :widths: 25 25 25 25
-
-   * - Version
-     - Single Calc (ms)
-     - Batch 1000 (ms)
-     - Memory Usage (MB)
-   * - v0.1.0
-     - 5.0
-     - 500
-     - 50
-   * - v0.2.0
-     - 0.05
-     - 8
-     - 10
-
-**Optimization Highlights:**
-- **100x** speedup in single calculations through caching
-- **60x** improvement in batch processing efficiency
-- **5x** reduction in memory usage
-- **Sub-millisecond** response times for cached calculations
-
-Future Roadmap
---------------
-
-**Version 0.3.0 (2025 Q2)**
-- GPU acceleration with CuPy support
-- Machine learning-based interpolation
-- Extended atomic data sources
-- Web API and REST interface
-
-**Version 0.4.0 (2025 Q4)**
-- Distributed computing support
-- Real-time beamline integration
-- Advanced visualization tools
-- Mobile application interface
-
-**Long-term Vision:**
-- Integration with major synchrotron facilities
-- Community-driven atomic data contributions
-- Educational partnerships and courseware
-- Industrial applications and consulting
-
-Contributing to Changelog
---------------------------
-
-**For Contributors:**
-When submitting pull requests, include changelog entries:
-
-.. code-block:: text
-
-   ## Added
-   - New feature description with context
-
-   ## Fixed
-   - Bug fix description with issue reference (#123)
-
-   ## Changed
-   - Breaking change with migration notes
-
-**Format Guidelines:**
-- Use present tense ("Add feature" not "Added feature")
-- Include issue/PR references when applicable
-- Provide context for breaking changes
-- Group related changes together
-- Follow semantic versioning principles
-
-**Review Process:**
-- Changelog entries reviewed with code changes
-- Version numbering confirmed by maintainers
-- Release notes generated from changelog
-- Community notification for major releases
-
-Stay Updated
-------------
-
-**Release Notifications:**
-- Watch the GitHub repository for releases
-- Subscribe to the mailing list for announcements
-- Follow social media accounts for updates
-- Check PyPI for latest package versions
-
-**Communication Channels:**
-- GitHub Issues for bug reports
-- GitHub Discussions for feature requests
-- Documentation for detailed changes
-- Community forums for user discussions
+- :doc:`/guides/migration_guide_v0_4` — Upgrading from v0.3.0 to v0.4.0

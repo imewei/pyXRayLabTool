@@ -12,6 +12,7 @@ XRayLabTool follows a comprehensive testing strategy:
 - **Unit Tests**: Test individual functions and classes
 - **Integration Tests**: Test complete workflows and CLI commands
 - **Performance Tests**: Ensure performance requirements are met
+- **Characterization Tests**: 202 golden-value assertions for migration safety
 - **Physics Tests**: Validate scientific accuracy
 
 **Testing Principles:**
@@ -30,18 +31,25 @@ Directory Structure
 
    tests/
    ├── conftest.py                 # Pytest configuration and fixtures
-   ├── fixtures/                   # Shared test utilities
+   ├── test_code_quality.py        # Code quality checks (naming, imports, types)
    ├── unit/                       # Unit tests
    │   ├── test_core.py            # Core calculation tests
    │   ├── test_utils.py           # Utility function tests
-   │   ├── test_exceptions.py      # Exception handling tests
-   │   ├── test_formula_parsing.py # Formula parsing tests
-   │   └── test_atomic_data.py     # Atomic data cache tests
+   │   ├── test_backend_dispatch.py # Backend abstraction tests
+   │   └── ...
    ├── integration/                # Integration tests
-   │   ├── test_cli.py             # CLI command tests
-   │   └── test_workflows.py       # End-to-end workflow tests
-   └── performance/                # Performance tests
-       └── test_benchmarks.py      # Performance regression tests
+   │   ├── test_integration.py     # End-to-end workflow tests
+   │   └── test_completion_installer.py
+   ├── characterization/           # Golden-value migration safety tests
+   │   ├── test_golden_constants.py
+   │   ├── test_golden_interpolation.py
+   │   ├── test_golden_molecular.py
+   │   ├── test_golden_pipeline.py
+   │   └── ...                     # 202 assertions total
+   └── performance/                # Performance regression tests
+       ├── test_performance_benchmarks.py
+       ├── test_memory_management.py
+       └── ...
 
 Running Tests
 -------------
@@ -51,19 +59,24 @@ Basic Test Execution
 
 .. code-block:: bash
 
-   # Run all tests
-   pytest tests/ -v
+   # Run all tests (using uv)
+   uv run pytest tests/ -v
 
    # Run specific test categories
-   pytest tests/unit/ -v          # Unit tests only
-   pytest tests/integration/ -v   # Integration tests only
-   pytest tests/performance/ -v   # Performance tests only
+   uv run pytest tests/unit/ -v              # Unit tests only
+   uv run pytest tests/integration/ -v       # Integration tests only
+   uv run pytest tests/characterization/ -v  # Golden-value tests
+   uv run pytest tests/performance/ -v       # Performance tests only
 
    # Run with coverage
-   pytest tests/ --cov=xraylabtool --cov-report=html
+   uv run pytest tests/ --cov=xraylabtool --cov-report=html
 
    # Run tests matching pattern
-   pytest tests/ -k "test_silicon" -v
+   uv run pytest tests/ -k "test_silicon" -v
+
+   # Or use Makefile shortcuts
+   make test          # Tests with coverage
+   make test-all      # Full suite
 
 Writing Tests
 -------------
@@ -258,9 +271,10 @@ Test Matrix
 
 Tests run across multiple configurations:
 
-- **Python versions**: 3.12+
+- **Python versions**: 3.12, 3.13
 - **Operating systems**: Ubuntu, macOS, Windows
-- **Dependencies**: Latest and minimum versions
+- **Toolchain**: ruff (lint + format), mypy (type checking), pytest (testing)
+- **CI**: GitHub Actions with SHA-pinned action versions
 
 Contributing Tests
 ------------------

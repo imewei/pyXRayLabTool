@@ -32,20 +32,26 @@ Install XRayLabTool using pip:
 
 .. code-block:: bash
 
-   pip install xraylabtool[all]
+   # Core package (NumPy backend)
+   pip install xraylabtool
 
-This installs the package with required dependencies.
+   # With JAX backend for GPU acceleration
+   pip install xraylabtool[jax]
+
+   # With matplotlib for publication-quality plots
+   pip install xraylabtool[plots]
 
 Development Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-For development or to get the latest features:
+For development or to get the latest features (uses ``uv``):
 
 .. code-block:: bash
 
-   git clone https://github.com/b80985/pyXRayLabTool.git
+   git clone https://github.com/imewei/pyXRayLabTool.git
    cd pyXRayLabTool
-   pip install -e .[dev]
+   uv sync
+   uv run pytest  # verify installation
 
 Verify Installation
 ~~~~~~~~~~~~~~~~~~~
@@ -307,10 +313,13 @@ For synchrotron beamline design:
 Understanding the Architecture
 ------------------------------
 
-XRayLabTool uses a modular architecture with 5 focused sub-packages:
+XRayLabTool uses a modular architecture:
+
+**backend/**
+   NumPy/JAX array backend abstraction. Switch at runtime with ``set_backend("jax")`` for JIT-compiled GPU acceleration.
 
 **calculators/**
-   Core X-ray physics calculations and algorithms. Contains the main calculation functions and XRayResult data structure.
+   Core X-ray physics calculations and algorithms. Contains the main calculation functions and ``XRayResult`` data structure.
 
 **data_handling/**
    Atomic data caching and batch processing. Provides high-performance data management with preloaded elements.
@@ -324,6 +333,9 @@ XRayLabTool uses a modular architecture with 5 focused sub-packages:
 **validation/**
    Input validation and error handling. Ensures data quality and provides detailed error messages.
 
+**gui/**
+   PySide6 desktop application with PyQtGraph interactive plots.
+
 This modular design allows you to import only what you need:
 
 .. code-block:: python
@@ -334,8 +346,9 @@ This modular design allows you to import only what you need:
    # Import specific utilities
    from xraylabtool.utils import parse_formula, energy_to_wavelength
 
-   # Import data structures
-   from xraylabtool.calculators.core import XRayResult
+   # Switch to JAX backend for GPU acceleration
+   from xraylabtool.backend import set_backend
+   set_backend("jax")
 
 Next Steps
 ----------

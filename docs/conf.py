@@ -21,8 +21,8 @@ warnings.filterwarnings("ignore", message=".*jupyter.*")
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "XRayLabTool"
-copyright = "2025, XRayLabTool Contributors"  # noqa: A001
-author = "XRayLabTool Contributors"
+copyright = "2024–2026, Wei Chen"  # noqa: A001
+author = "Wei Chen"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -108,7 +108,7 @@ html_theme_options = {
     "footer_icons": [
         {
             "name": "GitHub",
-            "url": "https://github.com/b80985/pyXRayLabTool",
+            "url": "https://github.com/imewei/pyXRayLabTool",
             "html": (
                 """
                 <svg stroke="currentColor" fill="currentColor" "

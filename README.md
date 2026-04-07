@@ -4,15 +4,22 @@
 [![PyPI version](https://badge.fury.io/py/xraylabtool.svg)](https://badge.fury.io/py/xraylabtool)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://readthedocs.org/projects/pyxraylabtool/badge/?version=latest)](https://pyxraylabtool.readthedocs.io/en/latest/?badge=latest)
+[![CI](https://github.com/imewei/pyXRayLabTool/actions/workflows/ci.yml/badge.svg)](https://github.com/imewei/pyXRayLabTool/actions/workflows/ci.yml)
 
-Python package and CLI for calculating X-ray optical properties of materials using CXRO/NIST atomic scattering factor data.
+Ultra-fast Python package and CLI for calculating X-ray optical properties of materials using CXRO/NIST atomic scattering factor data. Supports NumPy and JAX backends for CPU/GPU acceleration.
 
 ## Installation
 
 ```bash
 pip install xraylabtool
 
-# Or with uv (recommended for development)
+# With JAX backend for GPU acceleration
+pip install xraylabtool[jax]
+
+# With matplotlib for publication plots
+pip install xraylabtool[plots]
+
+# Development (uses uv)
 git clone https://github.com/imewei/pyXRayLabTool.git
 cd pyXRayLabTool
 uv sync
@@ -74,6 +81,18 @@ Single-material analysis and multi-material comparison with interactive plots an
 
 All properties are returned as NumPy arrays in the `XRayResult` dataclass, supporting single energies or energy sweeps.
 
+## Backend Selection
+
+```python
+import xraylabtool as xlt
+
+# Switch to JAX for JIT-compiled GPU acceleration
+xlt.set_backend("jax")
+
+# Switch back to NumPy (default)
+xlt.set_backend("numpy")
+```
+
 ## Scientific Background
 
 Calculations use Henke, Gullikson, and Davis atomic scattering factor tabulations (0.03–30 keV):
@@ -87,18 +106,20 @@ Calculations use Henke, Gullikson, and Davis atomic scattering factor tabulation
 Full documentation: **[pyxraylabtool.readthedocs.io](https://pyxraylabtool.readthedocs.io)**
 
 - [API Reference](https://pyxraylabtool.readthedocs.io/en/latest/api/)
-- [CLI Guide](https://pyxraylabtool.readthedocs.io/en/latest/cli_guide.html)
-- [Shell Completion](https://pyxraylabtool.readthedocs.io/en/latest/completion_guide.html)
+- [CLI Guide](https://pyxraylabtool.readthedocs.io/en/latest/guides/cli_reference.html)
+- [Migration Guide (v0.3 → v0.4)](https://pyxraylabtool.readthedocs.io/en/latest/guides/migration_guide_v0_4.html)
+- [Architecture Decisions](https://pyxraylabtool.readthedocs.io/en/latest/architecture/)
 - [Changelog](CHANGELOG.md)
 
 ## Development
 
 ```bash
-make test          # Run tests with coverage
-make test-all      # Full suite (unit + integration + perf + CLI)
-make format        # Format with ruff
-make lint          # Lint with ruff
-make docs          # Build Sphinx docs
+uv sync                          # Install dependencies
+uv run pytest                    # Run tests
+uv run ruff check .              # Lint
+uv run ruff format .             # Format
+uv run sphinx-build docs docs/_build  # Build docs
+make test                        # Or use Makefile shortcuts
 ```
 
 ## Citation
@@ -108,7 +129,8 @@ make docs          # Build Sphinx docs
   title = {XRayLabTool: High-Performance X-ray Optical Properties Calculator},
   author = {Wei Chen},
   url = {https://github.com/imewei/pyXRayLabTool},
-  year = {2024}
+  version = {0.4.0},
+  year = {2024--2026}
 }
 ```
 

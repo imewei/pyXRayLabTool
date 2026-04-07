@@ -6,17 +6,15 @@ Contributions welcome: code, documentation, scientific validation, and community
 Development Setup
 -----------------
 
-**Prerequisites:** Python 3.12+, Git
+**Prerequisites:** Python 3.12+, Git, `uv <https://docs.astral.sh/uv/>`_
 
 .. code-block:: bash
 
-   git clone https://github.com/b80985/pyXRayLabTool.git
+   git clone https://github.com/imewei/pyXRayLabTool.git
    cd pyXRayLabTool
-   python -m venv xraylabtool-dev
-   source xraylabtool-dev/bin/activate
-   pip install -e .[dev]
-   pre-commit install
-   pytest tests/ -v
+   uv sync
+   uv run pre-commit install
+   uv run pytest tests/ -v
 
 Development Workflow
 --------------------
@@ -28,10 +26,10 @@ Development Workflow
    git checkout main && git pull origin main
    git checkout -b feature/my-new-feature
    # Make changes, add tests, update docs
-   black xraylabtool tests *.py
-   ruff check xraylabtool tests
-   mypy xraylabtool
-   pytest tests/ -v --cov=xraylabtool
+   uv run ruff format .
+   uv run ruff check .
+   uv run mypy xraylabtool
+   uv run pytest tests/ -v --cov=xraylabtool
    git add . && git commit -m "feat: descriptive message"
    git push origin feature/my-new-feature
 

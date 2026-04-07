@@ -20,6 +20,7 @@ Key Features
    - 150,000+ calculations per second
    - Preloaded atomic data cache for 10-50x speed improvement
    - Vectorized calculations and smart memory management
+   - JAX JIT compilation for 5-100x additional speedup (optional)
 
 **X-ray Physics**
    - Complex refractive index calculations
@@ -27,7 +28,8 @@ Key Features
    - Critical angles for total external reflection
    - Transmission and reflection coefficients
 
-**Architecture**
+**Architecture (v0.4.0)**
+   - **Backend abstraction**: Runtime switching between NumPy and JAX via ``set_backend()``
    - Modular design with focused sub-packages:
 
      - **calculators**: Core X-ray physics calculations
@@ -38,11 +40,11 @@ Key Features
      - **analysis**: Material comparison and absorption edge detection
      - **export**: CSV/JSON export for downstream analysis
      - **backend**: NumPy/JAX array backend abstraction
-     - **gui**: PySide6 desktop application
+     - **gui**: PySide6 desktop application with PyQtGraph interactive plots
 
    - Type-safe with complete type hints
-   - Extensive test coverage (>95%)
-   - Cross-platform compatibility
+   - 202 characterization tests with golden-value assertions
+   - Cross-platform compatibility (Linux, macOS, Windows)
 
 **CLI Interface**
    - 10+ commands for common tasks and completion management
@@ -70,7 +72,9 @@ Installation
 
 .. code-block:: bash
 
-   pip install xraylabtool
+   pip install xraylabtool          # Core (NumPy backend)
+   pip install xraylabtool[jax]     # With JAX backend
+   pip install xraylabtool[plots]   # With matplotlib
 
 Basic Usage
 ~~~~~~~~~~~
@@ -148,9 +152,9 @@ Navigation
    :maxdepth: 1
    :caption: Links
 
-   GitHub Repository <https://github.com/b80985/pyXRayLabTool>
+   GitHub Repository <https://github.com/imewei/pyXRayLabTool>
    PyPI Package <https://pypi.org/project/xraylabtool/>
-   Issue Tracker <https://github.com/b80985/pyXRayLabTool/issues>
+   Issue Tracker <https://github.com/imewei/pyXRayLabTool/issues>
 
 Performance Highlights
 ----------------------
@@ -188,11 +192,11 @@ If you use XRayLabTool in your research, please cite:
 .. code-block:: bibtex
 
    @software{xraylabtool,
-     title={XRayLabTool: X-ray Optical Properties Calculator},
-     author={XRayLabTool Contributors},
-     url={https://github.com/b80985/pyXRayLabTool},
-     version={0.2.3},
-     year={2025}
+     title={XRayLabTool: High-Performance X-ray Optical Properties Calculator},
+     author={Wei Chen},
+     url={https://github.com/imewei/pyXRayLabTool},
+     version={0.4.0},
+     year={2024--2026}
    }
 
 Indices and Tables
