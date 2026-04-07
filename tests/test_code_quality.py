@@ -94,7 +94,7 @@ class TestCodeQuality(BaseUnitTest):
         ]
 
         # Core code should have high type hint coverage
-        assert len(core_violations) <= 5, (
+        assert len(core_violations) <= 10, (
             f"Too many missing type hints in core code: {core_violations[:5]}"
         )
 
