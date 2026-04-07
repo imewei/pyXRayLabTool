@@ -17,6 +17,7 @@ on:
       - '.gitignore'
       - 'LICENSE'
       - 'assets/**'
+  workflow_call:
   workflow_dispatch:
     inputs:
       skip_tests:

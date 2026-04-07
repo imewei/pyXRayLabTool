@@ -157,10 +157,14 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add pyproject.toml xraylabtool/__init__.py CHANGELOG.md
-        git commit -m "Release v${{ needs.validate-version.outputs.version }}" || exit 0
-        git tag -a ${{ needs.validate-version.outputs.tag }} -m "Release ${{ needs.validate-version.outputs.version }}"
-        git push origin main
-        git push origin ${{ needs.validate-version.outputs.tag }}
+        git commit -m "Release v${{ needs.validate-version.outputs.version }}" || echo "No version changes to commit"
+        if ! git tag -l "${{ needs.validate-version.outputs.tag }}" | grep -q .; then
+          git tag -a ${{ needs.validate-version.outputs.tag }} -m "Release ${{ needs.validate-version.outputs.version }}"
+        else
+          echo "Tag ${{ needs.validate-version.outputs.tag }} already exists, skipping"
+        fi
+        git push origin main || echo "Nothing to push to main"
+        git push origin ${{ needs.validate-version.outputs.tag }} || echo "Tag already on remote"
 
   build-release:
     name: Build Release Assets
