@@ -79,8 +79,8 @@ jobs:
 
     - name: Run safety check
       run: |
-        safety check --json --output safety-audit.json
-        safety check --short-report
+        safety check --save-json safety-audit.json || true
+        safety check --output text
 
     - name: Run pip-audit
       run: |
