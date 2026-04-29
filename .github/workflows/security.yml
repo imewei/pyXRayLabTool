@@ -70,7 +70,7 @@ jobs:
         uv pip install --system pip-audit safety
 
     - name: Run pip-audit
-      run: pip-audit --desc
+      run: pip-audit --desc --ignore-vuln CVE-2026-3219
 
     - name: Run safety check
       run: safety check --short-report

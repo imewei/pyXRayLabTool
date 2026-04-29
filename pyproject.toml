@@ -552,6 +552,13 @@ directory = "htmlcov"
 # Ignore specific vulnerabilities if they are false positives
 ignore = []
 
+# pip-audit configuration
+[tool.pip-audit]
+# CVE-2026-3219: pip handles concatenated tar+ZIP files as ZIP files.
+# Affects pip itself (not a project dependency). No fix version available.
+# Re-evaluate when a patched pip release is published.
+ignore-vuln = ["CVE-2026-3219"]
+
 [dependency-groups]
 dev = [
     "pip-audit>=2.10.0",
