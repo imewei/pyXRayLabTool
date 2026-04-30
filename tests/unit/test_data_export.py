@@ -4,8 +4,6 @@ This module tests data export and formatting utilities for XRayLabTool.
 Covers formatting of XRayResult objects to different formats (JSON, CSV, table).
 """
 
-from unittest.mock import Mock
-
 import numpy as np
 import pytest
 

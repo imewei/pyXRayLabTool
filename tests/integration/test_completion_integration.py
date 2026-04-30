@@ -5,9 +5,7 @@ compatibility with existing CLI and integration functions.
 """
 
 import argparse
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, patch
 
 from xraylabtool.interfaces.completion_v2.integration import (
     install_completion_main,
