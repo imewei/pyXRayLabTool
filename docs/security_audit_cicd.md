@@ -1,6 +1,6 @@
 # CI/CD Security Audit Report
 
-**Date:** 2026-04-07  
+**Date:** 2026-04-07
 **Scope:** `.github/workflows/`, `pyproject.toml`, `Makefile`, `.pre-commit-config.yaml`
 
 ---

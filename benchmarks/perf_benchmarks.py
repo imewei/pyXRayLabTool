@@ -14,10 +14,10 @@ import sys
 import textwrap
 import time
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _ns_to_ms(ns: float) -> float:
     return ns / 1_000_000
@@ -79,6 +79,7 @@ def _print_table(rows: list[dict[str, float]]) -> None:
 # 1. Cold-start benchmark (runs in a subprocess)
 # ---------------------------------------------------------------------------
 
+
 def bench_cold_start() -> dict[str, float]:
     """Measure import + first calculation in a fresh process."""
     script = textwrap.dedent("""\
@@ -131,6 +132,7 @@ def bench_cold_start() -> dict[str, float]:
 # 2. Warm single-material benchmarks
 # ---------------------------------------------------------------------------
 
+
 def bench_single_material() -> list[dict[str, float]]:
     """Benchmark calculate_single_material_properties with warm cache."""
     import numpy as np
@@ -160,6 +162,7 @@ def bench_single_material() -> list[dict[str, float]]:
 # 3. Multi-material batch benchmarks
 # ---------------------------------------------------------------------------
 
+
 def bench_multi_material() -> list[dict[str, float]]:
     """Benchmark calculate_xray_properties for multiple materials."""
     import numpy as np
@@ -172,16 +175,48 @@ def bench_multi_material() -> list[dict[str, float]]:
     densities_5 = [2.2, 3.95, 5.24, 4.23, 2.71]
 
     materials_20 = [
-        "SiO2", "Al2O3", "Fe2O3", "TiO2", "CaCO3",
-        "MgO", "ZnO", "CuO", "NiO", "CoO",
-        "Cr2O3", "MnO2", "V2O5", "ZrO2", "HfO2",
-        "Nb2O5", "Ta2O5", "WO3", "MoO3", "GeO2",
+        "SiO2",
+        "Al2O3",
+        "Fe2O3",
+        "TiO2",
+        "CaCO3",
+        "MgO",
+        "ZnO",
+        "CuO",
+        "NiO",
+        "CoO",
+        "Cr2O3",
+        "MnO2",
+        "V2O5",
+        "ZrO2",
+        "HfO2",
+        "Nb2O5",
+        "Ta2O5",
+        "WO3",
+        "MoO3",
+        "GeO2",
     ]
     densities_20 = [
-        2.2, 3.95, 5.24, 4.23, 2.71,
-        3.58, 5.61, 6.31, 6.67, 6.44,
-        5.22, 5.03, 3.36, 5.68, 9.68,
-        4.60, 8.20, 7.16, 4.69, 4.23,
+        2.2,
+        3.95,
+        5.24,
+        4.23,
+        2.71,
+        3.58,
+        5.61,
+        6.31,
+        6.67,
+        6.44,
+        5.22,
+        5.03,
+        3.36,
+        5.68,
+        9.68,
+        4.60,
+        8.20,
+        7.16,
+        4.69,
+        4.23,
     ]
 
     results = []
@@ -211,6 +246,7 @@ def bench_multi_material() -> list[dict[str, float]]:
 # ---------------------------------------------------------------------------
 # 4. Element data loading benchmarks
 # ---------------------------------------------------------------------------
+
 
 def bench_element_loading() -> list[dict[str, float]]:
     """Benchmark loading a single element's .nff data (cold and warm)."""
@@ -243,15 +279,17 @@ def bench_element_loading() -> list[dict[str, float]]:
         timings_ns.append(t1 - t0)
 
     timings_ms = [_ns_to_ms(t) for t in timings_ns]
-    results.append({
-        "label": "Element data load - cold (Si)",
-        "iterations": n_cold,
-        "mean_ms": statistics.mean(timings_ms),
-        "std_ms": statistics.stdev(timings_ms) if len(timings_ms) > 1 else 0.0,
-        "min_ms": min(timings_ms),
-        "max_ms": max(timings_ms),
-        "median_ms": statistics.median(timings_ms),
-    })
+    results.append(
+        {
+            "label": "Element data load - cold (Si)",
+            "iterations": n_cold,
+            "mean_ms": statistics.mean(timings_ms),
+            "std_ms": statistics.stdev(timings_ms) if len(timings_ms) > 1 else 0.0,
+            "min_ms": min(timings_ms),
+            "max_ms": max(timings_ms),
+            "median_ms": statistics.median(timings_ms),
+        }
+    )
 
     return results
 
@@ -259,6 +297,7 @@ def bench_element_loading() -> list[dict[str, float]]:
 # ---------------------------------------------------------------------------
 # 5. XRayResult construction benchmark
 # ---------------------------------------------------------------------------
+
 
 def bench_xray_result_construction() -> dict[str, float]:
     """Benchmark constructing XRayResult objects."""
@@ -303,6 +342,7 @@ def bench_xray_result_construction() -> dict[str, float]:
 # 6. Interpolator creation benchmark
 # ---------------------------------------------------------------------------
 
+
 def bench_interpolator_creation() -> list[dict[str, float]]:
     """Benchmark creating scattering factor interpolators."""
     from xraylabtool.calculators.core import (
@@ -334,15 +374,17 @@ def bench_interpolator_creation() -> list[dict[str, float]]:
         timings_ns.append(t1 - t0)
 
     timings_ms = [_ns_to_ms(t) for t in timings_ns]
-    results.append({
-        "label": "Interpolator creation - cold (Si)",
-        "iterations": n_cold,
-        "mean_ms": statistics.mean(timings_ms),
-        "std_ms": statistics.stdev(timings_ms) if len(timings_ms) > 1 else 0.0,
-        "min_ms": min(timings_ms),
-        "max_ms": max(timings_ms),
-        "median_ms": statistics.median(timings_ms),
-    })
+    results.append(
+        {
+            "label": "Interpolator creation - cold (Si)",
+            "iterations": n_cold,
+            "mean_ms": statistics.mean(timings_ms),
+            "std_ms": statistics.stdev(timings_ms) if len(timings_ms) > 1 else 0.0,
+            "min_ms": min(timings_ms),
+            "max_ms": max(timings_ms),
+            "median_ms": statistics.median(timings_ms),
+        }
+    )
 
     return results
 
@@ -350,6 +392,7 @@ def bench_interpolator_creation() -> list[dict[str, float]]:
 # ---------------------------------------------------------------------------
 # 7. Atomic data lookup benchmark
 # ---------------------------------------------------------------------------
+
 
 def bench_atomic_data_lookup() -> dict[str, float]:
     """Benchmark get_atomic_data_fast for preloaded elements."""
@@ -375,6 +418,7 @@ def bench_atomic_data_lookup() -> dict[str, float]:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     print("=" * 120)

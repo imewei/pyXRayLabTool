@@ -85,29 +85,29 @@ These are small arrays. The transfer overhead matters not because of data size, 
 # calculators/core.py (migrated)
 def calculate_single_material_properties(formula, energy_keV, density):
     from xraylabtool.backend import ops
-    
+
     # === SINGLE HOST -> DEVICE TRANSFER ===
     energy_kev = ops.asarray(energy_kev, dtype=ops.float64)
-    
+
     # ... parse formula (pure Python, no arrays) ...
-    
+
     # === ALL COMPUTATION ON DEVICE ===
     wavelength = ENERGY_TO_WAVELENGTH_FACTOR / energy_kev  # JAX scalar / JAX array
     energy_ev = energy_kev * 1000.0
-    
+
     # Interpolation (interpax, device-side)
     f1_values = f1_interp(energy_ev)  # JAX array in, JAX array out
-    
+
     # Scattering factors (JIT-compiled, all device-side)
     dispersion, absorption, f1_total, f2_total = _calculate_scattering_factors_jit(
         energy_ev, wavelength, mass_density, molecular_weight, element_data
     )
-    
+
     # Derived quantities (JIT-compiled, all device-side)
     electron_density, critical_angle, attenuation_length, re_sld, im_sld = (
         _calculate_derived_quantities_jit(wavelength, dispersion, absorption, ...)
     )
-    
+
     # === SINGLE DEVICE -> HOST TRANSFER ===
     return XRayResult(
         formula=formula_str,

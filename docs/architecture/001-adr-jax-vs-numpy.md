@@ -12,8 +12,8 @@
 pyXRayLabTool v0.3.0 performs all X-ray optical property calculations using NumPy arrays with SciPy for interpolation. The computation pipeline is:
 
 ```
-parse_formula -> load_scattering_data -> PchipInterpolator(energy) 
-  -> calculate_scattering_factors (einsum/broadcast) 
+parse_formula -> load_scattering_data -> PchipInterpolator(energy)
+  -> calculate_scattering_factors (einsum/broadcast)
   -> calculate_derived_quantities (sqrt, exp, division)
   -> XRayResult
 ```

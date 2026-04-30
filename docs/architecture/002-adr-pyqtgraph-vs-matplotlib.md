@@ -18,7 +18,7 @@ The pyXRayLabTool GUI currently uses matplotlib embedded in PySide6 via `FigureC
 | `MultiF1F2Plot` | `gui/widgets/sweep_plots.py` | Multi-material f1/f2 comparison (2 subplots) | Medium -- shared x-axis, dual subplot |
 
 All three widgets follow the same pattern:
-1. `self.figure = Figure(figsize=...)` 
+1. `self.figure = Figure(figsize=...)`
 2. `self.canvas = FigureCanvasQTAgg(self.figure)`
 3. `self.figure.clear()` then `self.figure.add_subplot(111)`
 4. `ax.plot(x, y, label=..., marker=..., linewidth=...)`
@@ -77,7 +77,7 @@ class PlotCanvas(QWidget):
     def __init__(self):
         self.figure = Figure(figsize=(6, 4))
         self.canvas = FigureCanvasQTAgg(self.figure)
-    
+
     def plot_single(self, result, property_name, ylabel):
         self.figure.clear()
         ax = self.figure.add_subplot(111)
@@ -96,10 +96,10 @@ class PlotCanvas(QWidget):
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setBackground(None)  # Use Qt palette
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
-    
+
     def plot_single(self, result, property_name, ylabel):
         self.plot_widget.clear()
-        self.plot_widget.plot(x, y, name=label, 
+        self.plot_widget.plot(x, y, name=label,
             pen=pg.mkPen(width=1.5), symbol='o', symbolSize=6)
         self.plot_widget.setLabel('bottom', "Energy (keV)")
 ```
