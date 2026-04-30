@@ -518,11 +518,8 @@ omit = [
     "*/conftest.py",
     # Exclude modules with specialized functionality that have limited test coverage
     "*/interfaces/completion.py",          # Shell completion bridge - basic functionality
-    "*/interfaces/completion_legacy.py",   # Legacy completion system - deprecated
     "*/interfaces/completion_v2/*.py",     # New completion system - complex to test
     "*/io/data_export.py",                 # Data export utilities - basic functionality
-    "*/io/file_operations.py",             # File I/O operations - basic functionality
-    "*/validation/exceptions.py",          # Exception definitions - simple classes
     "*/validation/validators.py",          # Validation utilities - limited usage
     "*/gui/*",                             # GUI module - requires PySide6/Qt infrastructure
 ]
