@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-04-30
+
+### Changed
+- UI/UX Pro Max upgrade applied to PySide6 interface.
+- Upgraded form validation to use non-blocking toast notifications instead of blocking message boxes.
+- Enhanced touch target sizes for all inputs and buttons.
+- Standardized UI spacing and interactive states (loading buttons, disabled opacities).
 ## [0.4.1] - 2026-04-07
 
 ### Fixed

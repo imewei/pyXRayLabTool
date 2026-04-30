@@ -129,7 +129,7 @@ make test                        # Or use Makefile shortcuts
   title = {XRayLabTool: High-Performance X-ray Optical Properties Calculator},
   author = {Wei Chen},
   url = {https://github.com/imewei/pyXRayLabTool},
-  version = {0.4.1},
+  version = {0.4.2},
   year = {2024--2026}
 }
 ```
