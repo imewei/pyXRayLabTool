@@ -10,16 +10,28 @@ Ultra-fast Python package and CLI for calculating X-ray optical properties of ma
 
 ## Installation
 
+### Using uv (Recommended)
+
 ```bash
-pip install xraylabtool
+# Core package
+uv pip install xraylabtool
 
 # With JAX backend for GPU acceleration
-pip install xraylabtool[jax]
+uv pip install "xraylabtool[jax]"
 
 # With matplotlib for publication plots
-pip install xraylabtool[plots]
+uv pip install "xraylabtool[plots]"
+```
 
-# Development (uses uv)
+### Using pip
+
+```bash
+pip install xraylabtool
+```
+
+### Development
+
+```bash
 git clone https://github.com/imewei/pyXRayLabTool.git
 cd pyXRayLabTool
 uv sync
