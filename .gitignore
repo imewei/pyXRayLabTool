@@ -209,6 +209,7 @@ scripts/claude_summary_display.py
 CLAUDE*.md
 CLAUDE.md
 .claude-progress.md
+.research-log.jsonl
 AGENTS.md
 GEMINI.md
 CODE_QUALITY_REPORT.md
