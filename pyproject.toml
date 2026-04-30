@@ -503,6 +503,7 @@ exclude = [
 "xraylabtool/calculators/scattering_data.py" = ["PLC0415"]  # Deferred imports for cache and pandas
 "xraylabtool/device.py" = ["PLC0415", "SIM105", "S603"]  # Lazy imports for optional JAX; try/except for optional packages; subprocess calls to nvcc/nvidia-smi
 "scripts/validate_style_guide.py" = ["PLW2901", "SIM102", "S607", "PLR0912", "PLR0915", "PLC0415"]  # Allow style validation patterns
+"benchmarks/*.py" = ["PLC0415", "PLW1510"]  # Lazy imports and subprocess without check are intentional in benchmark scripts
 
 [tool.ruff.lint.isort]
 known-first-party = ["xraylabtool"]
