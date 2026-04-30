@@ -45,43 +45,29 @@ class ColorPalette:
         return p
 
 
-LIGHT_THEME = ColorPalette(
-    name="light",
-    window_bg="#f7f9fb",
-    panel_bg="#f1f5f9",  # Slightly darker than window for contrast
-    input_bg="#ffffff",
-    text_primary="#0f172a",
-    text_secondary="#64748b",
-    border="#cbd5e1",
-    border_focus="#2563eb",
-    accent="#2563eb",
-    accent_hover="#1d4ed8",
-    accent_text="#ffffff",
-    error="#dc2626",
-    error_bg="#fee2e2",
-    success="#16a34a",
-    plot_bg="#ffffff",
-    plot_cycle=["#2563eb", "#f97316", "#16a34a", "#9333ea", "#0ea5e9", "#dc2626"],
+# Enforce Dark Industrial Aesthetic (Overwriting both to ensure uniformity)
+DARK_INDUSTRIAL = ColorPalette(
+    name="dark_industrial",
+    window_bg="#0a0a0a",  # Deep void black
+    panel_bg="#141414",  # Industrial grey
+    input_bg="#050505",  # Inset darkness for inputs
+    text_primary="#f8f9fa",  # Stark white
+    text_secondary="#737373",  # Muted technical grey
+    border="#2a2a2a",  # Subtle machined edges
+    border_focus="#00f0ff",  # Cyber-cyan focus
+    accent="#00f0ff",  # Cyber-cyan primary
+    accent_hover="#5cffff",  # Bright cyan hover
+    accent_text="#000000",  # Black text on cyan buttons
+    error="#ff9d00",  # Vibrant amber/orange
+    error_bg="#2a1a00",  # Dark amber background
+    success="#00ff9d",  # Tech green
+    plot_bg="#050505",  # Deep background for plots
+    plot_cycle=["#00f0ff", "#ff00aa", "#00ff9d", "#ff9d00", "#b700ff", "#ffee00"],
 )
 
-DARK_THEME = ColorPalette(
-    name="dark",
-    window_bg="#0f172a",
-    panel_bg="#1e293b",
-    input_bg="#1e293b",  # Matches panel for unified look or slightly lighter
-    text_primary="#f8fafc",
-    text_secondary="#94a3b8",
-    border="#334155",
-    border_focus="#3b82f6",
-    accent="#3b82f6",  # Lighter blue for dark mode
-    accent_hover="#2563eb",
-    accent_text="#ffffff",
-    error="#ef4444",
-    error_bg="#450a0a",
-    success="#22c55e",
-    plot_bg="#1e293b",  # Match panel
-    plot_cycle=["#3b82f6", "#fb923c", "#4ade80", "#a855f7", "#38bdf8", "#f87171"],
-)
+# Maintain legacy references pointing to the new unified aesthetic
+LIGHT_THEME = DARK_INDUSTRIAL
+DARK_THEME = DARK_INDUSTRIAL
 
 
 def get_qss(t: ColorPalette) -> str:
@@ -89,7 +75,8 @@ def get_qss(t: ColorPalette) -> str:
     return f"""
     /* Base typography + spacing */
     * {{
-        font-size: 14px;
+        font-family: "Roboto", "Segoe UI", -apple-system, sans-serif;
+        font-size: 13px;
         color: {t.text_primary};
         selection-background-color: {t.accent};
         selection-color: {t.accent_text};
@@ -100,84 +87,121 @@ def get_qss(t: ColorPalette) -> str:
         color: {t.text_primary};
     }}
 
+    /* Machined GroupBoxes */
     QGroupBox {{
         border: 1px solid {t.border};
-        border-radius: 6px;
-        margin-top: 12px;
-        padding: 10px;
-        font-weight: 600;
-        background: {t.window_bg};
+        border-radius: 0px; /* Sharp corners */
+        margin-top: 18px;
+        padding: 14px;
+        background: {t.panel_bg};
     }}
 
     QGroupBox::title {{
-        color: {t.text_primary};
+        color: {t.accent};
+        font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+        font-size: 11px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        subcontrol-origin: margin;
+        subcontrol-position: top left;
+        padding-left: 4px;
+        padding-right: 4px;
+        top: 0px;
     }}
 
     QLabel {{
         color: {t.text_primary};
+        font-weight: 500;
     }}
 
     QLabel[role="hint"] {{
         color: {t.text_secondary};
+        font-size: 11px;
     }}
 
     QLabel[role="success"] {{
         color: {t.success};
+        font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
     }}
 
     QLabel[role="error"] {{
         color: {t.error};
+        font-weight: bold;
     }}
 
-    /* Form controls */
+    /* Form controls - Monospaced data entry */
     QCheckBox {{
         color: {t.text_primary};
         font-weight: 600;
         background: transparent;
     }}
 
-    QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {{
-        padding: 6px;
+    QCheckBox::indicator {{
+        width: 14px;
+        height: 14px;
         border: 1px solid {t.border};
-        border-radius: 4px;
         background: {t.input_bg};
-        color: {t.text_primary};
+    }}
+
+    QCheckBox::indicator:checked {{
+        background: {t.accent};
+        border: 1px solid {t.accent};
+    }}
+
+    QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {{
+        padding: 10px 12px;
+        min-height: 20px;
+        border: 1px solid {t.border};
+        border-radius: 2px;
+        background: {t.input_bg};
+        color: {t.accent};
+        font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+        font-size: 13px;
     }}
 
     QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {{
         border: 1px solid {t.border_focus};
+        background: {t.window_bg};
     }}
 
     QLineEdit[validation="invalid"], QSpinBox[validation="invalid"], QDoubleSpinBox[validation="invalid"] {{
         border: 1px solid {t.error};
         background: {t.error_bg};
+        color: {t.error};
     }}
 
     QComboBox::drop-down {{
         border: 0px;
+        width: 20px;
     }}
 
     QComboBox QAbstractItemView {{
-        background: {t.input_bg};
-        border: 1px solid {t.border};
+        background: {t.panel_bg};
+        border: 1px solid {t.accent};
         color: {t.text_primary};
         selection-background-color: {t.accent};
         selection-color: {t.accent_text};
+        font-family: "Roboto", sans-serif;
     }}
 
-    /* Buttons */
+    /* Buttons - Hard edged */
     QPushButton {{
-        padding: 8px 12px;
-        border-radius: 6px;
+        padding: 10px 16px;
+        min-height: 20px;
+        border-radius: 2px;
         background: {t.panel_bg};
         border: 1px solid {t.border};
         color: {t.text_primary};
-        font-weight: 500;
+        font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+        font-weight: bold;
+        font-size: 11px;
+        text-transform: uppercase;
     }}
 
     QPushButton:hover {{
-        background: {t.border}; /* Slightly simplistic, but usually panel darker */
-        border-color: {t.text_secondary};
+        background: {t.border};
+        border-color: {t.accent};
+        color: {t.accent};
     }}
 
     QPushButton:pressed {{
@@ -187,8 +211,9 @@ def get_qss(t: ColorPalette) -> str:
 
     QPushButton:disabled {{
         color: {t.text_secondary};
-        background: {t.panel_bg};
-        border-color: {t.border};
+        background: {t.window_bg};
+        border-color: {t.window_bg};
+        opacity: 0.5;
     }}
 
     QPushButton[class="primary"] {{
@@ -204,67 +229,106 @@ def get_qss(t: ColorPalette) -> str:
     /* Tabs */
     QTabWidget::pane {{
         border: 1px solid {t.border};
-        border-radius: 6px;
-        padding: 4px;
-        margin-top: 6px;
+        border-radius: 0px;
+        padding: 8px;
         background: {t.window_bg};
     }}
 
     QTabBar::tab {{
         background: {t.panel_bg};
-        color: {t.text_primary};
-        padding: 8px 14px;
+        color: {t.text_secondary};
+        padding: 12px 20px;
         border: 1px solid {t.border};
         border-bottom: 0;
-        border-top-left-radius: 6px;
-        border-top-right-radius: 6px;
-        font-weight: 700;
-        min-width: 140px;
+        font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        min-width: 120px;
     }}
 
     QTabBar::tab:hover {{
-        background: {t.border}; /* Reuse border color as hover shade */
         color: {t.text_primary};
     }}
 
     QTabBar::tab:selected {{
         background: {t.window_bg};
         color: {t.accent};
-        border-bottom: 2px solid {t.window_bg}; /* Blend with pane */
+        border-top: 2px solid {t.accent};
     }}
 
-    QTabBar::tab:!selected {{
-        margin-top: 2px;
-    }}
-
-    /* Tables */
+    /* Tables - Data grid look */
     QTableWidget {{
         background: {t.input_bg};
         color: {t.text_primary};
         alternate-background-color: {t.panel_bg};
-        gridline-color: {t.border};
-        selection-background-color: {t.accent};
-        selection-color: {t.accent_text};
+        gridline-color: {t.window_bg};
+        selection-background-color: {t.border};
+        selection-color: {t.accent};
         border: 1px solid {t.border};
+        font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+        font-size: 12px;
     }}
 
     QHeaderView::section {{
         background: {t.panel_bg};
         padding: 6px;
-        border: 1px solid {t.border};
-        color: {t.text_primary};
-        font-weight: 600;
+        border: none;
+        border-bottom: 1px solid {t.border};
+        border-right: 1px solid {t.window_bg};
+        color: {t.text_secondary};
+        font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
     }}
 
     QStatusBar {{
         background: {t.panel_bg};
-        color: {t.text_primary};
+        color: {t.accent};
+        font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+        font-size: 11px;
         border-top: 1px solid {t.border};
     }}
 
     QScrollArea {{
         border: none;
         background: transparent;
+    }}
+
+    /* Scrollbars */
+    QScrollBar:vertical {{
+        background: {t.window_bg};
+        width: 10px;
+        margin: 0px 0px 0px 0px;
+    }}
+    QScrollBar::handle:vertical {{
+        background: {t.border};
+        min-height: 20px;
+        border-radius: 5px;
+    }}
+    QScrollBar::handle:vertical:hover {{
+        background: {t.text_secondary};
+    }}
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+        height: 0px;
+    }}
+
+    QScrollBar:horizontal {{
+        background: {t.window_bg};
+        height: 10px;
+        margin: 0px 0px 0px 0px;
+    }}
+    QScrollBar::handle:horizontal {{
+        background: {t.border};
+        min-width: 20px;
+        border-radius: 5px;
+    }}
+    QScrollBar::handle:horizontal:hover {{
+        background: {t.text_secondary};
+    }}
+    QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+        width: 0px;
     }}
     """
 
@@ -276,11 +340,11 @@ def apply_theme(app: QApplication, theme: ColorPalette) -> None:
 
 
 def apply_styles(app: QApplication) -> None:
-    """Legacy entry point: Defaults to Light Theme."""
-    apply_theme(app, LIGHT_THEME)
+    """Entry point: Defaults to Dark Industrial Theme."""
+    apply_theme(app, DARK_INDUSTRIAL)
 
 
-def apply_pyqtgraph_theme(theme: ColorPalette = LIGHT_THEME) -> None:
+def apply_pyqtgraph_theme(theme: ColorPalette = DARK_INDUSTRIAL) -> None:
     """Apply a PyQtGraph theme aligned with the GUI palette."""
     try:
         import pyqtgraph as pg  # type: ignore[import-untyped]
@@ -289,6 +353,9 @@ def apply_pyqtgraph_theme(theme: ColorPalette = LIGHT_THEME) -> None:
 
     pg.setConfigOptions(
         background=theme.plot_bg,
-        foreground=theme.text_primary,
+        foreground=theme.text_secondary,  # Subdued axes
         antialias=True,
     )
+
+    # Custom PyQtGraph default styles for lines
+    pg.setConfigOption("leftButtonPan", False)

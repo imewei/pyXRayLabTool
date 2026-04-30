@@ -65,9 +65,9 @@ class Toast(QLabel):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self.hide)
         self._kind_colors = {
-            "info": "#2563eb",
-            "success": "#16a34a",
-            "error": "#dc2626",
+            "info": "#00f0ff",
+            "success": "#00ff9d",
+            "error": "#ff9d00",
         }
         self._durations = {"info": 2000, "success": 2400, "error": 3500}
 
@@ -365,7 +365,7 @@ class MainWindow(QMainWindow):
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
         )
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setSpacing(10)
+        left_layout.setSpacing(24)
         left_layout.addWidget(presets_box)
         left_layout.addWidget(input_box)
         left_layout.addStretch(1)
@@ -395,16 +395,16 @@ class MainWindow(QMainWindow):
         self._reserve_overlay_scrollbar_space(self.single_plot_scroll)
 
         right_layout = QGridLayout()
-        right_layout.setHorizontalSpacing(10)
-        right_layout.setVerticalSpacing(8)
+        right_layout.setHorizontalSpacing(24)
+        right_layout.setVerticalSpacing(16)
         right_layout.addLayout(plot_header, 0, 0)
         right_layout.addWidget(self.single_summary, 1, 0)
         right_layout.addWidget(self.single_plot_scroll, 2, 0)
         right_layout.setRowStretch(2, 2)
 
         layout = QGridLayout()
-        layout.setHorizontalSpacing(14)
-        layout.setVerticalSpacing(10)
+        layout.setHorizontalSpacing(24)
+        layout.setVerticalSpacing(20)
         layout.addWidget(left_panel, 0, 0, 1, 1)
         layout.addLayout(right_layout, 0, 1, 1, 1)
         # Full-width rows below
@@ -471,6 +471,7 @@ class MainWindow(QMainWindow):
         )
         self._info("Computing…")
         self.single_form.compute_button.setEnabled(False)
+        self.single_form.compute_button.setText("Computing...")
         self.single_save_png.setEnabled(False)
         self.single_export_csv.setEnabled(False)
         if self.threadpool is None:
@@ -484,6 +485,7 @@ class MainWindow(QMainWindow):
 
     def _on_single_finished(self, result: Any) -> None:
         self.single_form.compute_button.setEnabled(True)
+        self.single_form.compute_button.setText("Compute")
         self.single_result = result
         self.single_save_png.setEnabled(True)
         self.single_export_csv.setEnabled(True)
@@ -497,6 +499,7 @@ class MainWindow(QMainWindow):
 
     def _on_single_error(self, message: str) -> None:
         self.single_form.compute_button.setEnabled(True)
+        self.single_form.compute_button.setText("Compute")
         self.single_save_png.setEnabled(True)
         self.single_export_csv.setEnabled(True)
         logger.error("single_compute_failed", extra={"message": message})
@@ -723,7 +726,7 @@ class MainWindow(QMainWindow):
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
         )
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setSpacing(10)
+        left_layout.setSpacing(24)
         left_layout.addWidget(material_box)
         left_layout.addWidget(energy_box)
         left_layout.addWidget(self.multi_table)
@@ -731,15 +734,15 @@ class MainWindow(QMainWindow):
         left_layout.addStretch(1)
 
         right_layout = QGridLayout()
-        right_layout.setHorizontalSpacing(10)
-        right_layout.setVerticalSpacing(8)
+        right_layout.setHorizontalSpacing(24)
+        right_layout.setVerticalSpacing(16)
         right_layout.addLayout(header_row, 0, 0)
         right_layout.addWidget(self.multi_plot_scroll, 1, 0)
         right_layout.setRowStretch(1, 2)
 
         layout = QGridLayout()
-        layout.setHorizontalSpacing(14)
-        layout.setVerticalSpacing(10)
+        layout.setHorizontalSpacing(24)
+        layout.setVerticalSpacing(20)
         layout.addWidget(left_panel, 0, 0, 1, 1)
         layout.addLayout(right_layout, 0, 1, 1, 1)
         layout.addWidget(self.multi_full_table, 1, 0, 1, 2)
@@ -783,12 +786,15 @@ class MainWindow(QMainWindow):
     def _add_material(self) -> None:
         formula = self.multi_formula.text().strip()
         density = float(self.multi_density.value())
-        self.multi_table.add_material(formula, density)
-        self.multi_formula.clear()
-        self.multi_formula.setFocus()
-        logger.info(
-            "multi_add_material", extra={"formula": formula, "density": density}
-        )
+        try:
+            self.multi_table.add_material(formula, density)
+            self.multi_formula.clear()
+            self.multi_formula.setFocus()
+            logger.info(
+                "multi_add_material", extra={"formula": formula, "density": density}
+            )
+        except ValueError as exc:
+            self.toast.show_toast(str(exc), "error")
 
     def _add_multi_preset(self, name: str) -> None:
         if name in self.material_presets:
@@ -829,6 +835,7 @@ class MainWindow(QMainWindow):
         self._info("Computing…")
         self._show_progress(True, 0)
         self.multi_compute_btn.setEnabled(False)
+        self.multi_compute_btn.setText("Computing...")
         self.multi_save_png.setEnabled(False)
         self.multi_export_csv.setEnabled(False)
         if self.threadpool is None:
@@ -848,6 +855,7 @@ class MainWindow(QMainWindow):
 
     def _on_multi_finished(self, results: Any) -> None:
         self.multi_compute_btn.setEnabled(True)
+        self.multi_compute_btn.setText("Compute comparison")
         self.multi_save_png.setEnabled(True)
         self.multi_export_csv.setEnabled(True)
         self._show_progress(False, 0)
@@ -863,6 +871,7 @@ class MainWindow(QMainWindow):
 
     def _on_multi_error(self, message: str) -> None:
         self.multi_compute_btn.setEnabled(True)
+        self.multi_compute_btn.setText("Compute comparison")
         self.multi_save_png.setEnabled(True)
         self.multi_export_csv.setEnabled(True)
         self._show_progress(False, 0)

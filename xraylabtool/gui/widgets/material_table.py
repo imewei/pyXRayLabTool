@@ -5,7 +5,6 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHeaderView,
-    QMessageBox,
     QTableWidget,
     QTableWidgetItem,
     QWidget,
@@ -32,14 +31,11 @@ class MaterialTable(QTableWidget):
 
     def add_material(self, formula: str, density: float) -> None:
         if not formula:
-            QMessageBox.warning(self, "Invalid input", "Formula cannot be empty")
-            return
-        try:
-            validate_chemical_formula(formula)
-            validate_density(density)
-        except Exception as exc:
-            QMessageBox.warning(self, "Invalid input", str(exc))
-            return
+            raise ValueError("Formula cannot be empty")
+        # Let the underlying validators raise exceptions if invalid
+        validate_chemical_formula(formula)
+        validate_density(density)
+
         row = self.rowCount()
         self.insertRow(row)
         self.setItem(row, 0, QTableWidgetItem(formula))
