@@ -224,3 +224,14 @@ benchmark-results.json
 .cleanup_reports/
 .remember/
 .worktrees/
+# Graphify semantic cache (ephemeral build artifacts)
+graphify-out/cache/
+
+# Claude session scratch files in docs
+docs/.claude-progress.md
+
+# Graphify internal working state files
+graphify-out/.graphify_*.json
+graphify-out/.graphify_*.txt
+graphify-out/.obsidian/
+graphify-out/_COMMUNITY_*.md

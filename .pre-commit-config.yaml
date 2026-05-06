@@ -12,6 +12,7 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
         args: ['--maxkb=1000']
+        exclude: ^graphify-out/
       - id: debug-statements
 
   # Use Ruff for fast linting and formatting (replaces multiple tools)

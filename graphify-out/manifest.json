@@ -1,0 +1,642 @@
+{
+  "/Users/b80985/Projects/pyXRayLabTool/tests/test_gui_smoke.py": {
+    "mtime": 1765826742.245091,
+    "hash": "1f2a3ea331010da2aa186f5a109fd4aa"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/conftest.py": {
+    "mtime": 1775548640.2552774,
+    "hash": "86d4551730f1975f3485d1d464e04351"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/test_ci_cd_integration.py": {
+    "mtime": 1765826742.2444937,
+    "hash": "ba4b2f5d0f2c5ea76b1a5d3e57d57cc5"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/__init__.py": {
+    "mtime": 1757503852.933987,
+    "hash": "629aafaede60173be32fd10680ba028f"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/test_code_quality.py": {
+    "mtime": 1775587742.8365824,
+    "hash": "4f1e429db4b97a362908181ad5003bc1"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/test_gui_progress.py": {
+    "mtime": 1765826742.2449393,
+    "hash": "54d06579fb7b3709149dec4bd21bc9bb"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_utils.py": {
+    "mtime": 1757516000.3731816,
+    "hash": "40cc07a822d8b5be13ebfc83fd9cb682"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_atomic_data.py": {
+    "mtime": 1757516000.3744614,
+    "hash": "332e733f5fc719d5e00dbbcd0e26111d"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_numerical_stability.py": {
+    "mtime": 1775549090.7654796,
+    "hash": "7db0bad33a0a2b19cb96c99405370673"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_backend_dispatch.py": {
+    "mtime": 1775578701.0567544,
+    "hash": "90f262f8c3fdaa6f28f7bfa953033a86"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_calculation_worker.py": {
+    "mtime": 1775548640.2603064,
+    "hash": "9acbd426350f623b48237e6d12cc775d"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_file_operations.py": {
+    "mtime": 1775548640.2693267,
+    "hash": "3daa4f7a11b1228fe09ac1b86dbb0912"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_core.py": {
+    "mtime": 1758314239.381872,
+    "hash": "fdcf65100bd3bdaf5f274cf40f9dbdb4"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_batch_partial_failure.py": {
+    "mtime": 1775548640.260022,
+    "hash": "cb9765689f506769f815bbbd9f423f87"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_exceptions.py": {
+    "mtime": 1757516000.3799443,
+    "hash": "f8a2dc4e10e1da11f1de7448ce263758"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/__init__.py": {
+    "mtime": 1757503852.8834708,
+    "hash": "64e65df18d209d09742e70ecc03087d7"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_compound_analysis.py": {
+    "mtime": 1775548640.2606292,
+    "hash": "63ce37667f63bf780a639ce4c1ddbe47"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_validators.py": {
+    "mtime": 1777570358.8549566,
+    "hash": "f7395b6a4f0869ba0d2fa236911e0114"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_completion_environment.py": {
+    "mtime": 1777570358.8549592,
+    "hash": "1b76a646bacbd0c91ac363a4e6341488"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_enhanced_xray_result_typing.py": {
+    "mtime": 1775548640.2618413,
+    "hash": "538a6fe85a5260d3d1c0146235217150"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_logging_utils.py": {
+    "mtime": 1765826742.2451785,
+    "hash": "302811d294c7aa5d5cf151f9fb00edfc"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_data_export.py": {
+    "mtime": 1777574888.1524642,
+    "hash": "2293a14cb7e86c29680f9bcc34dd29c1"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_device.py": {
+    "mtime": 1775548640.261438,
+    "hash": "542a8c85dd7662813091235073876aa0"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_gui_widgets.py": {
+    "mtime": 1775548640.270507,
+    "hash": "95a1cd0d3881cb883661ce7617693d92"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_crystal_structure.py": {
+    "mtime": 1775578688.1718478,
+    "hash": "584402a40e1e2a7747c1ad2164fbaa6e"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_concurrent_cache.py": {
+    "mtime": 1775548640.2609043,
+    "hash": "bd0359f1fb78b430bfd6d998456d620f"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_formula_parsing.py": {
+    "mtime": 1775548640.27025,
+    "hash": "87761811c3800845d8188c507e706637"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_type_safety_config.py": {
+    "mtime": 1758314239.3826258,
+    "hash": "920566463fac1e99d5100e8dee855b22"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_advanced_analysis.py": {
+    "mtime": 1758183155.9075646,
+    "hash": "4ac78e6483e68ca90f232d7821fd5061"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_completion_cache.py": {
+    "mtime": 1777570358.819543,
+    "hash": "74ad681e315f855f7e4a60af95ad6abc"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/unit/test_export_functionality.py": {
+    "mtime": 1758314239.3823807,
+    "hash": "8d090c805435010c7905a840c1aa9d93"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/characterization/test_golden_constants.py": {
+    "mtime": 1775586799.7316253,
+    "hash": "e273836c69ce5e6e6e45a48d76a5c4ca"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/characterization/test_golden_interpolation.py": {
+    "mtime": 1775586809.219547,
+    "hash": "f2fbbb6eb2001eacdac50fb51616fdc7"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/characterization/__init__.py": {
+    "mtime": 1775501852.222826,
+    "hash": "dd1fe322daeba0ebbe0e425bac5e29b8"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/characterization/test_golden_molecular.py": {
+    "mtime": 1775548640.2543159,
+    "hash": "eaed0cf27c20bcb5ecb39185b7a7f8d1"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/characterization/test_golden_derived_quantities.py": {
+    "mtime": 1775586809.2202945,
+    "hash": "0f365d709641023e00213eb273b928f1"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/characterization/test_golden_integration.py": {
+    "mtime": 1775586809.2204938,
+    "hash": "5eefcf9aa2bfbd39c6c49afc2987bfc3"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/characterization/test_golden_pipeline.py": {
+    "mtime": 1775586809.2204604,
+    "hash": "183d50bab0b4546ef65ed6fa23e23a66"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/integration/__init__.py": {
+    "mtime": 1757503852.9059045,
+    "hash": "a5b309436d1ce23223a2d2330b343a7d"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/integration/test_export_integration.py": {
+    "mtime": 1758314239.3788967,
+    "hash": "3041b3e339df11a661305b90a7807ac9"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/integration/test_cli_edge_cases.py": {
+    "mtime": 1758314239.3785887,
+    "hash": "8581d12374876339b59091b06e51017a"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/integration/test_completion_integration.py": {
+    "mtime": 1777574893.471083,
+    "hash": "85a49e48b1481e266d7a3a3da52bd3df"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/integration/test_integration.py": {
+    "mtime": 1775548640.2565722,
+    "hash": "271a5bcf6408ea67d4cfef3369bfad1b"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/integration/test_completion_bridge.py": {
+    "mtime": 1777570358.8549395,
+    "hash": "76349cc3442fa61ea38333d0c4c61ac8"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/integration/test_completion_installer.py": {
+    "mtime": 1775548640.2556198,
+    "hash": "b4a45dd460f076956210df0154082c87"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/integration/test_cli.py": {
+    "mtime": 1758327582.4921396,
+    "hash": "e587ab9e7b0bbcaac8063a998edc7e68"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/fixtures/test_utilities.py": {
+    "mtime": 1758314239.3776655,
+    "hash": "9296df5e73178597de4fcfc0c7233554"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/fixtures/__init__.py": {
+    "mtime": 1757503852.9500775,
+    "hash": "069f4674365e302651c0834f6678380e"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/fixtures/test_config.py": {
+    "mtime": 1757516000.401882,
+    "hash": "ea01969028fffe0710d94d9ae487e210"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/fixtures/test_base.py": {
+    "mtime": 1758313071.8158252,
+    "hash": "0399cf2554be8a9623cac29777210aff"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/performance/conftest.py": {
+    "mtime": 1775548640.25696,
+    "hash": "a77d088fee5f55eeb50836b4330ce956"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/performance/test_optimization_validation.py": {
+    "mtime": 1775548640.2584677,
+    "hash": "a640f19bba952c248454cea3d8e61d54"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/performance/test_performance_benchmarks.py": {
+    "mtime": 1775548640.2588356,
+    "hash": "f6e272bb82ea41cea5e6dde87a8c93b3"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/performance/__init__.py": {
+    "mtime": 1757503852.9824915,
+    "hash": "49d296629cef83682de49d765b09696b"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/performance/test_memory_management.py": {
+    "mtime": 1775548640.257846,
+    "hash": "30617a265e906a5d76a808cbed265137"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/performance/test_speed_optimization_benchmarks.py": {
+    "mtime": 1775548640.2593837,
+    "hash": "a0aeb292f343da47a70cdbc8f418fad3"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/conf.py": {
+    "mtime": 1777577487.1270568,
+    "hash": "9f30a32c864cc96c282e601353066bef"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/scripts/test_docs.py": {
+    "mtime": 1765826742.2436323,
+    "hash": "6afe70d3b30e52f43822c7c6dbd97350"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/scripts/create_favicon.py": {
+    "mtime": 1765826742.2395692,
+    "hash": "c50f21fc0de0b980a62459c4386440d9"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/scripts/gui_headless_smoke.py": {
+    "mtime": 1765826742.2434437,
+    "hash": "f5a54a48cfed502485368ee9b9e90aa7"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/scripts/validate_style_guide.py": {
+    "mtime": 1765826742.2441154,
+    "hash": "3bf8a5397335fdc73c82362a56d2c7fe"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/scripts/run_type_check.py": {
+    "mtime": 1758314239.376019,
+    "hash": "f1af46a96df0fc785447edf3d8f8e62b"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/device.py": {
+    "mtime": 1775548640.2839298,
+    "hash": "4593383bc0c60af7110f23894630dc6a"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/constants.py": {
+    "mtime": 1759384103.6502087,
+    "hash": "6eb0c3f54837bb269bda57ad1e5b85fc"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/__init__.py": {
+    "mtime": 1777577487.127275,
+    "hash": "4553e37cc13a706d8a01f94d251a0c73"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/utils.py": {
+    "mtime": 1775548640.2924874,
+    "hash": "46316972c9063b74ffad88b3d9f0a6ee"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/exceptions.py": {
+    "mtime": 1758135753.3430464,
+    "hash": "646e6f681bfcdd5e934a62bdc2910a65"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/logging_utils.py": {
+    "mtime": 1765826742.257322,
+    "hash": "c6a525ed4e71c4dddce88b45d272f6c6"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/typing_extensions.py": {
+    "mtime": 1775543971.065278,
+    "hash": "21f2696ed1353a303f93533f950f96a1"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/analysis/comparator.py": {
+    "mtime": 1775543971.0612235,
+    "hash": "ca35b7055a4d16d9c0a3cc7910ed3f98"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/analysis/__init__.py": {
+    "mtime": 1775548640.2713563,
+    "hash": "e96d974328ddebb9872ba5443838ef74"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/__init__.py": {
+    "mtime": 1775543971.061488,
+    "hash": "db511acc792b05c248ccae13f0660401"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/atomic_cache.py": {
+    "mtime": 1775549218.0377665,
+    "hash": "dd7ec532aa2031b6725fc0b2c57f76b6"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/batch_processing.py": {
+    "mtime": 1775561812.2589078,
+    "hash": "138a05522a5686aaf37fe4eb2d7db1c4"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/data_handling/compound_analysis.py": {
+    "mtime": 1775548640.2832708,
+    "hash": "aeb393831c9324eca8f6048bb6388ced"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/__init__.py": {
+    "mtime": 1775543971.0648956,
+    "hash": "004fc87f680e0fa2cc45e1ee2a94a01d"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/data_export.py": {
+    "mtime": 1758246900.3347347,
+    "hash": "839d953a0977496fe68aa67bbcbecf6e"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/io/file_operations.py": {
+    "mtime": 1775548640.2920437,
+    "hash": "f554cc011b02fd7adbceabf802ac3e94"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/backend/array_ops.py": {
+    "mtime": 1775548640.2764702,
+    "hash": "69011cc27919eb00b7ed2fbe7e13d340"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/backend/interpolation.py": {
+    "mtime": 1775548640.277553,
+    "hash": "ff57a0f484789e7e76373edff3ec03e4"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/backend/__init__.py": {
+    "mtime": 1775502325.8419378,
+    "hash": "e48035189033b16642db5381e58053ba"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/derived_quantities.py": {
+    "mtime": 1775543971.061404,
+    "hash": "2cb45e81182f7d36ad19c96d60428573"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/xray_result.py": {
+    "mtime": 1775548640.2827156,
+    "hash": "1c23db0ff6c5f803acfff5d9ea310f61"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/cache.py": {
+    "mtime": 1775548640.277891,
+    "hash": "3b79de00be760ac678acfb03135ef1bb"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/__init__.py": {
+    "mtime": 1758314239.383337,
+    "hash": "32a9483cfb82a7d5dc93aad9e7a413d5"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/core.py": {
+    "mtime": 1775548640.2783325,
+    "hash": "a23eb4565e0bc250729b374b9f76afc4"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/kernels.py": {
+    "mtime": 1775549043.7246454,
+    "hash": "532f485b671d3356f66aa756ab8499ee"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/calculators/scattering_data.py": {
+    "mtime": 1775578671.3996124,
+    "hash": "3bf49859406e8a1fda3b5ea85279f309"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/main_window.py": {
+    "mtime": 1777577016.4890294,
+    "hash": "4be114694695a683966403d0bdb6c9ba"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/services.py": {
+    "mtime": 1775543971.0623233,
+    "hash": "87284dc5f8ad6332f8804c27487072c3"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/style.py": {
+    "mtime": 1777577461.8111017,
+    "hash": "76e592d1c3eede2701046d7001bb33f2"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/protocols.py": {
+    "mtime": 1775543971.0622308,
+    "hash": "e24b0b87f506d5955efa9f9d3753ebd5"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/__init__.py": {
+    "mtime": 1775543971.0619926,
+    "hash": "a2dffdd9b8c772a21c418b25db544d66"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/table_formatter.py": {
+    "mtime": 1775548640.2858026,
+    "hash": "15eefa13ccb9cd1a565a0d54574ab8eb"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/logging_filters.py": {
+    "mtime": 1775543971.062068,
+    "hash": "e9028db2ccc5443df06af7d2e6a20e7f"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/workers.py": {
+    "mtime": 1775548640.2885022,
+    "hash": "5d0511e11ded8b6dbd6cad061aa2e141"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/theme_manager.py": {
+    "mtime": 1775543971.0624917,
+    "hash": "de25d4b4fd41d990f66f1430937e9f08"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/__main__.py": {
+    "mtime": 1765826742.253542,
+    "hash": "0b5b56994dfb3e40f09c68b082c984c0"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/widgets/material_table.py": {
+    "mtime": 1777577316.3169549,
+    "hash": "39dac15ea25181b15c26a40e9dccdece"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/widgets/scrollbar_helper.py": {
+    "mtime": 1775548640.2865543,
+    "hash": "0f3cf63af9187039164638f5703e4375"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/widgets/__init__.py": {
+    "mtime": 1775543971.0628695,
+    "hash": "bbca16b817a9ee3f5677999a74dcb493"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/widgets/material_form.py": {
+    "mtime": 1775543971.062961,
+    "hash": "e75941e91c0a51c362f9bae31b3da23b"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/widgets/sweep_plots.py": {
+    "mtime": 1775586809.220599,
+    "hash": "f0155c298ea9a3986e5b7c657f7d5f4a"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/gui/widgets/plot_canvas.py": {
+    "mtime": 1775586809.2204602,
+    "hash": "ba59e44a5a6aa330043466fc8f086be8"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/export/__init__.py": {
+    "mtime": 1775543971.0619104,
+    "hash": "cc9ed16902c4ccf13459877d477e5824"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/validation/validators.py": {
+    "mtime": 1775548640.2929056,
+    "hash": "f718fda4b4e0d1eca77e7268cbf9c843"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/validation/__init__.py": {
+    "mtime": 1758246900.3351858,
+    "hash": "317426f938dc7df6e816a4cf0095b7b4"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion.py": {
+    "mtime": 1775543971.0643356,
+    "hash": "1e35ee8cc2c1d9e167cc4b1a1663f85c"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/__init__.py": {
+    "mtime": 1758135753.3383071,
+    "hash": "ec9bf566217dd837c1fa569d5c576a96"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/cli.py": {
+    "mtime": 1775586809.222313,
+    "hash": "9f19f4f5d97bdc52be388e33f8957bed"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion_v2/shells.py": {
+    "mtime": 1759384103.6521642,
+    "hash": "74411378ef40b3777ef5d52794d43b88"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion_v2/cache.py": {
+    "mtime": 1775548640.2896204,
+    "hash": "e11130ac4b09d6ee89937382d03602ba"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion_v2/__init__.py": {
+    "mtime": 1758231718.971734,
+    "hash": "d3f4a9523964e276e88a46a9af68d29f"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion_v2/integration.py": {
+    "mtime": 1775543971.064796,
+    "hash": "d114efad3b3f4f73f9769b03408a8c27"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion_v2/installer.py": {
+    "mtime": 1775548640.2911978,
+    "hash": "ac8ea84b6e61fad6a2be29f355131ea7"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion_v2/cli.py": {
+    "mtime": 1758247035.606047,
+    "hash": "1db4afd29e94cc5a5787d10fb6359b58"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/xraylabtool/interfaces/completion_v2/environment.py": {
+    "mtime": 1775548640.2907295,
+    "hash": "9cbcdcb73771aa6576c817eb2e2cdffa"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/tests/data/README.md": {
+    "mtime": 1757369320.5204685,
+    "hash": "bddbed67e17ba93d3dd9f11e6bbfc82f"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/index.rst": {
+    "mtime": 1775592406.8907826,
+    "hash": "7ca3b68f0747a6ada074c316fd0932a3"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/audit_remediation_plan.md": {
+    "mtime": 1775543663.1678958,
+    "hash": "f629cb21d26c6d59f53daf163af63ceb"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/security_audit_cicd.md": {
+    "mtime": 1777575721.153283,
+    "hash": "0c5849e045ae2c9e9d3ff0cb75ab8ce7"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/test_coverage_audit.md": {
+    "mtime": 1777575721.1533632,
+    "hash": "36b23b0d39ccd829caba9e3653936483"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/development/rollback_procedures.rst": {
+    "mtime": 1775528879.7570941,
+    "hash": "8753fe318b1c9608cd99197a6f1dfdac"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/development/contributing.rst": {
+    "mtime": 1775592502.2116404,
+    "hash": "0b95fd41ea5a5ed45b226d332fb7e131"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/development/testing.rst": {
+    "mtime": 1775592564.411253,
+    "hash": "dad16de233f70f91cbb0851290c7eed7"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/development/changelog.rst": {
+    "mtime": 1775603515.7187922,
+    "hash": "cabd7ffa1d2c4f89c2b3cde14abe295d"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/development/performance.rst": {
+    "mtime": 1775548640.250899,
+    "hash": "7529f689b82651756019d676ba71bb89"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/architecture/index.rst": {
+    "mtime": 1775528863.719996,
+    "hash": "12e07622fceb0fb65e045576da452f27"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/architecture/001-adr-jax-vs-numpy.md": {
+    "mtime": 1777575721.1529553,
+    "hash": "79a544e2eb47ff0484cb1201f5745524"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/architecture/002-adr-pyqtgraph-vs-matplotlib.md": {
+    "mtime": 1777575721.1530375,
+    "hash": "705a245a44deb7475b64ff5d1a46752a"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/architecture/004-adr-host-device-transfers.md": {
+    "mtime": 1777575721.1531646,
+    "hash": "821c003bf7534e5d549c644407dc1b23"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/architecture/003-adr-dtype-policy.md": {
+    "mtime": 1775527758.0786018,
+    "hash": "9abcf9cb30d7f492e308d04ef7fd2afe"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/architecture/jax_architecture.rst": {
+    "mtime": 1775528872.151844,
+    "hash": "0f409cc995f1cf2447290ed5778d7182"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/guides/getting_started.rst": {
+    "mtime": 1775592474.1254034,
+    "hash": "672f63b403c91c44e12b0218bd679344"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/guides/cli_reference.rst": {
+    "mtime": 1758246900.3271556,
+    "hash": "89cb25cccee6ae15bdd7860d2bec7c2c"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/guides/completion_guide.rst": {
+    "mtime": 1775543971.0598729,
+    "hash": "9d61eb90c78d130974842769f47f7ff3"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/guides/migration_guide_v0_4.rst": {
+    "mtime": 1775528886.8338299,
+    "hash": "56ffed027373e0d47e97fd95014c382c"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/examples/index.rst": {
+    "mtime": 1775543971.059735,
+    "hash": "4bed1951f1cddeae500dff78938fb00c"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/index.rst": {
+    "mtime": 1775548640.250003,
+    "hash": "781dfcb2d2a7972196bd67bc25fb780e"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/gui.rst": {
+    "mtime": 1775528066.5393617,
+    "hash": "3f464df13de4a9fdde939aead37e5101"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/export.rst": {
+    "mtime": 1775528063.594952,
+    "hash": "e0ccfaff161d32ba56776e6dcc547f44"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/calculators.rst": {
+    "mtime": 1757480007.2285511,
+    "hash": "5bdda461b83e62b7edf7e4b42fea668b"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/constants.rst": {
+    "mtime": 1757480007.242765,
+    "hash": "63949e5406f20a6e19b9e58c8dd8f006"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/utils.rst": {
+    "mtime": 1757913714.611593,
+    "hash": "d34aaf245d6f5c5dab93d2e2c740ab9f"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/data_handling.rst": {
+    "mtime": 1758045162.5691612,
+    "hash": "e73e0103fb457cdf5d13bd1f545bea48"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/analysis.rst": {
+    "mtime": 1775528061.8302736,
+    "hash": "a6d234a3e4b0565678c235b738062d43"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/validation.rst": {
+    "mtime": 1757482210.179584,
+    "hash": "64b63cbe7c3436e196a7a0cada714078"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/backend.rst": {
+    "mtime": 1775530619.9303594,
+    "hash": "4e6a3df32e5c66e082ea093ed811374a"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/interfaces.rst": {
+    "mtime": 1757913753.663419,
+    "hash": "d8a67f78dc240e7146636e9501290525"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/api/io_operations.rst": {
+    "mtime": 1758246900.3269567,
+    "hash": "ef019ad8313fcb641ef5e174ec6975da"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/physics/xray_optics.rst": {
+    "mtime": 1757914229.7593932,
+    "hash": "6984f3ded395c465c556df5461d5a977"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/physics/atomic_data.rst": {
+    "mtime": 1757504741.5869122,
+    "hash": "1ff01bf5a68642e776e892f56fb0f5af"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/physics/calculations.rst": {
+    "mtime": 1757914144.1663628,
+    "hash": "9f27d9be8a85cf6fcdf52c05dbf5c43c"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/scripts/README.md": {
+    "mtime": 1775283509.9114776,
+    "hash": "4964e799b55e054dd595883c2ab1d37f"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/_static/gui_main_offscreen.png": {
+    "mtime": 1765826742.240457,
+    "hash": "7fa28248e5d7c3311dd3a99be9ddeb03"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/_static/logo-dark.svg": {
+    "mtime": 1759384103.6476648,
+    "hash": "7345e8a9660689bf333a95af0bdf5287"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/_static/logo-light.svg": {
+    "mtime": 1759384103.6478999,
+    "hash": "0bdb8bbf510d8cdf3da08c614addb62a"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/_static/logo.svg": {
+    "mtime": 1758227637.459145,
+    "hash": "4f5dc280c98bbf30899e51693c009669"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/_static/logo-light.jpg": {
+    "mtime": 1778016880.3557546,
+    "hash": "8574830ae59f4769ff1d3a4ac6f504ed"
+  },
+  "/Users/b80985/Projects/pyXRayLabTool/docs/_static/favicon.svg": {
+    "mtime": 1758227778.683691,
+    "hash": "ab173c1c0dbbb1fd51c9fc65fea73832"
+  }
+}

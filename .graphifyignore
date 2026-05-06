@@ -1,0 +1,19 @@
+# .graphifyignore
+node_modules/
+dist/
+*.generated.py
+
+# only index src/, ignore everything else
+*
+!xraylabtool/
+!xraylabtool/**
+!docs/
+!docs/**
+docs/_build/
+docs/_build/**
+docs/superpowers/
+docs/superpowers/**
+!tests
+!tests/**
+!scripts
+!scripts/**
