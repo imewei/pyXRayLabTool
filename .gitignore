@@ -1,12 +1,32 @@
-# Byte-compiled / optimized / DLL files
+# ==============================================================================
+# Python Core & Compiled
+# ==============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
+*.manifest
+*.spec
 
-# Distribution / packaging
+# ==============================================================================
+# Dependency & Environment Management (uv, venv, pyenv)
+# ==============================================================================
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+activate_venv.sh
+.python-version
+__pypackages__/
+.pdm.toml
+.installed.cfg
+
+# ==============================================================================
+# Distribution & Packaging
+# ==============================================================================
 .Python
 build/
 develop-eggs/
@@ -22,156 +42,64 @@ var/
 wheels/
 share/python-wheels/
 *.egg-info/
-.installed.cfg
 *.egg
 MANIFEST
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
+# ==============================================================================
+# Testing, Coverage & Static Analysis
+# ==============================================================================
+.cache
+.pytest_cache/
 .tox/
 .nox/
 .coverage
 .coverage.*
+.hypothesis/
+.benchmarks/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+.dmypy.json
+dmypy.json
+htmlcov/
 coverage.json
-.cache
-nosetests.xml
 coverage.xml
+nosetests.xml
 *.cover
 *.py,cover
-.hypothesis/
-.pytest_cache/
 cover/
+
+# Quality Reports
 bandit_report.json
 bandit-report.json
+bandit-claude-report.json
 baseline_ci_report.json
 performance_baseline_summary.json
 performance_history.json
-.benchmarks/
 bottleneck_analysis_report.json
-.claude/
-.code/
-.gemini/
-agent-os/
-.agent/
-.codex/
-.ruff_cache/
-.specify/
-specs/
+consistency_report.json
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
+# ==============================================================================
+# Documentation (Sphinx, MkDocs)
+# ==============================================================================
 docs/_build/
 docs/build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/#use-with-ide
-.pdm.toml
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-activate_venv.sh
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
 /site
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# ==============================================================================
+# Editor, IDE & OS Generated Files
+# ==============================================================================
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.spyderproject
+.spyproject
+.ropeproject
 
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# OS generated files
+# OS junk
 .DS_Store
 .DS_Store?
 ._*
@@ -180,58 +108,64 @@ cython_debug/
 ehthumbs.db
 Thumbs.db
 
-# Editor files
+# Temporary/Backup files
 *.swp
 *.swo
 *~
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# Temporary files
 *.tmp
 *.temp
 *.bak
-RELEASE_GUIDE.md
-WARP.md
 
-# Security reports
-bandit-report.json
-
-# Claude Code Quality Analysis artifacts
-bandit-claude-report.json
-coverage-claude.json
-consistency_report.json
-CLAUDE_QUALITY_SUMMARY.json
-scripts/claude_quality_report.py
-scripts/claude_summary_display.py
+# ==============================================================================
+# AI Agent & Research Artifacts
+# ==============================================================================
+.claude/
+.agent/
+.codex/
+.gemini/
+.specify/
+specs/
+agent-os/
+.research-log.jsonl
+.claude-progress.md
+docs/.claude-progress.md
 CLAUDE*.md
 CLAUDE.md
-.claude-progress.md
-.research-log.jsonl
 AGENTS.md
 GEMINI.md
+CLAUDE_QUALITY_SUMMARY.json
 CODE_QUALITY_REPORT.md
-benchmark-results.json
-# Trigger fresh CI run - Wed Sep 10 09:22:37 CDT 2025
-# Final CI alignment - Wed Sep 10 09:27:52 CDT 2025
-# Force CI update - Wed Sep 10 09:32:42 CDT 2025
-# Import sorting fix applied - Wed Sep 10 09:53:48 CDT 2025
+coverage-claude.json
 
-# Cleanup system temporary files
-.cleanup_backup/
-.cleanup_reports/
-.remember/
-.worktrees/
-# Graphify semantic cache (ephemeral build artifacts)
+# ==============================================================================
+# Knowledge Graph & Scientific Artifacts
+# ==============================================================================
+# Graphify
 graphify-out/cache/
-
-# Claude session scratch files in docs
-docs/.claude-progress.md
-
-# Graphify internal working state files
 graphify-out/.graphify_*.json
 graphify-out/.graphify_*.txt
 graphify-out/.obsidian/
 graphify-out/_COMMUNITY_*.md
+.graphify_*.txt
+.graphify_uncached.txt
+
+# Scientific/Data
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+benchmark-results.json
+jax_cache/
+
+# ==============================================================================
+# Project Specific & Misc
+# ==============================================================================
+RELEASE_GUIDE.md
+WARP.md
+.cleanup_backup/
+.cleanup_reports/
+.remember/
+.worktrees/
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
