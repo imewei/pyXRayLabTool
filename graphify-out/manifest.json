@@ -1,7 +1,7 @@
 {
   "/home/wei/Documents/GitHub/pyXRayLabTool/docs/conf.py": {
-    "mtime": 1777873210.6337056,
-    "hash": "9f30a32c864cc96c282e601353066bef"
+    "mtime": 1778239365.0786643,
+    "hash": "09836bf1de41c3c5d0e4d78a3c23055a"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/xraylabtool/exceptions.py": {
     "mtime": 1758586796.471627,
@@ -16,8 +16,8 @@
     "hash": "21f2696ed1353a303f93533f950f96a1"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/xraylabtool/__init__.py": {
-    "mtime": 1777873210.6457055,
-    "hash": "4553e37cc13a706d8a01f94d251a0c73"
+    "mtime": 1778239361.481675,
+    "hash": "af9cc22b59393d9efdc3bf016385c294"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/xraylabtool/device.py": {
     "mtime": 1777045627.453371,
@@ -564,8 +564,8 @@
     "hash": "63949e5406f20a6e19b9e58c8dd8f006"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/docs/api/utils.rst": {
-    "mtime": 1758586796.4646268,
-    "hash": "d34aaf245d6f5c5dab93d2e2c740ab9f"
+    "mtime": 1778224308.1961522,
+    "hash": "6dff4db52758a8490217decc0b90ef98"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/docs/api/backend.rst": {
     "mtime": 1777045627.4413712,
@@ -580,20 +580,20 @@
     "hash": "ef019ad8313fcb641ef5e174ec6975da"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/docs/api/interfaces.rst": {
-    "mtime": 1758586796.4646268,
-    "hash": "d8a67f78dc240e7146636e9501290525"
+    "mtime": 1778224300.5881689,
+    "hash": "881ec9e59dc67dbd7737ff7d9161aba9"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/docs/api/data_handling.rst": {
     "mtime": 1758586796.4636269,
     "hash": "e73e0103fb457cdf5d13bd1f545bea48"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/docs/api/calculators.rst": {
-    "mtime": 1757558761.592583,
-    "hash": "5bdda461b83e62b7edf7e4b42fea668b"
+    "mtime": 1778224345.1690702,
+    "hash": "45fe9c3fc6f6779af17467e6c8b56533"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/docs/api/gui.rst": {
-    "mtime": 1777045627.4413712,
-    "hash": "3f464df13de4a9fdde939aead37e5101"
+    "mtime": 1778224268.4242399,
+    "hash": "97eda211342b027a060e1d7dd812408b"
   },
   "/home/wei/Documents/GitHub/pyXRayLabTool/docs/api/index.rst": {
     "mtime": 1777045627.4423711,
