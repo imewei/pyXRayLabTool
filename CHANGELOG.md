@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-05-08
+
+### Changed
+- Upgraded pip to >=26.1 in CI to resolve CVE-2026-6357.
+- Expanded `.gitignore` with comprehensive uv/venv, CI, and tooling patterns.
+- Updated Sphinx API docs to cover all public modules (calculators, gui, interfaces, utils).
+- Fixed Sphinx build output path in README development commands.
+
+### Security
+- CI: pin `pip>=26.1` in dependency-audit job to prevent CVE-2026-6357 false positives.
+
 ## [0.4.2] - 2026-04-30
 
 ### Changed
