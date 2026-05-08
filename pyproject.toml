@@ -549,8 +549,7 @@ ignore = []
 # pip-audit configuration
 [tool.pip-audit]
 # CVE-2026-3219: pip handles concatenated tar+ZIP files as ZIP files.
-# Affects pip itself (not a project dependency). No fix version available.
-# Re-evaluate when a patched pip release is published.
+# Affects pip itself (not a project dependency). Fixed in pip>=26.1 (uv.lock pins 26.1.1).
 ignore-vuln = ["CVE-2026-3219"]
 
 [dependency-groups]
