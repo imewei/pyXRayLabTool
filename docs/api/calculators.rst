@@ -66,6 +66,39 @@ Derived Quantities
    :undoc-members:
    :show-inheritance:
 
+XRay Result
+-----------
+
+.. automodule:: xraylabtool.calculators.xray_result
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+Calculation Cache
+-----------------
+
+.. automodule:: xraylabtool.calculators.cache
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Scattering Data
+---------------
+
+.. automodule:: xraylabtool.calculators.scattering_data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Kernels
+-------
+
+.. automodule:: xraylabtool.calculators.kernels
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Physics Background
 ------------------
 

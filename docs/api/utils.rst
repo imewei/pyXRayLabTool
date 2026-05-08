@@ -3,6 +3,30 @@ Utilities Module
 
 The utils module provides utility functions for formula parsing, unit conversions, and mathematical operations.
 
+Device Detection
+----------------
+
+.. automodule:: xraylabtool.device
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Logging Utilities
+-----------------
+
+.. automodule:: xraylabtool.logging_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Typing Extensions
+-----------------
+
+.. automodule:: xraylabtool.typing_extensions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: xraylabtool.utils
    :members:
    :undoc-members:

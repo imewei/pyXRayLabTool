@@ -84,6 +84,9 @@ exclude_patterns = [
     "audit_remediation_plan.md",
     "security_audit_cicd.md",
     "test_coverage_audit.md",
+    # Notebooks linked externally (Colab/nbviewer) — not rendered inline
+    "examples/basic_examples.ipynb",
+    "examples/getting_started.ipynb",
 ]
 
 # -- Options for HTML output -------------------------------------------------

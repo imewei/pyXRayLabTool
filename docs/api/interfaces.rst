@@ -147,10 +147,46 @@ All commands support multiple output formats:
 - **csv**: Comma-separated values for spreadsheet import
 - **json**: JSON format for programmatic processing
 
-Shell Completion
-----------------
+Shell Completion (Legacy Bridge)
+--------------------------------
 
 .. automodule:: xraylabtool.interfaces.completion
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Shell Completion v2
+-------------------
+
+The ``completion_v2`` sub-package is the current virtual-environment-centric
+completion system, replacing the legacy bridge above.
+
+.. automodule:: xraylabtool.interfaces.completion_v2.installer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.completion_v2.shells
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.completion_v2.environment
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.completion_v2.cache
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.completion_v2.integration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.completion_v2.cli
    :members:
    :undoc-members:
    :show-inheritance:

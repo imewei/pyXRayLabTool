@@ -130,7 +130,7 @@ uv sync                          # Install dependencies
 uv run pytest                    # Run tests
 uv run ruff check .              # Lint
 uv run ruff format .             # Format
-uv run sphinx-build docs docs/_build  # Build docs
+uv run sphinx-build docs docs/_build/html  # Build docs
 make test                        # Or use Makefile shortcuts
 ```
 

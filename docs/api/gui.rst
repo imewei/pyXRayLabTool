@@ -30,6 +30,30 @@ Theme Manager
    :undoc-members:
    :show-inheritance:
 
+Workers
+-------
+
+.. automodule:: xraylabtool.gui.workers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Protocols
+---------
+
+.. automodule:: xraylabtool.gui.protocols
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Logging Filters
+---------------
+
+.. automodule:: xraylabtool.gui.logging_filters
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Widgets
 -------
 
