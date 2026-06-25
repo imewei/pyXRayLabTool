@@ -16,6 +16,54 @@ Version Categories
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
 
+v0.4.4 (2026-06-25)
+--------------------
+
+**Added**
+
+- Python 3.14 support: ``pyproject.toml`` classifier and CI matrix coverage (ubuntu/macOS/windows)
+
+**Fixed**
+
+- ``parse_formula`` now rejects trailing/invalid characters (e.g. ``SiO2junk``, ``Si-O2``) instead of silently ignoring them
+- Complex energy inputs are rejected with a clear ``EnergyError`` rather than being coerced to their real part
+- Empty energy arrays now raise ``EnergyError`` instead of producing empty results
+- Batch processing disambiguates colliding result keys so no result is silently dropped
+- ``calculate_scattering_length_density`` reconciled with the pipeline kernel (SLD = 2π·δ/λ²; real part positive for δ > 0)
+- ``validate_energy_range`` defaults corrected to the supported 0.03–30 keV range
+- GUI: density spinbox range aligned with ``validate_density`` (0.001–30 g/cm³); non-numeric density cells are skipped instead of crashing
+- GUI "Save PNG" now exports the plot via pyqtgraph's ``ImageExporter`` (the PyQtGraph widgets have no matplotlib figure, so the previous ``savefig`` path always errored)
+- ``xraylabtool batch`` no longer crashes on the default non-progress path, where the progress tracker yielded ``None``
+
+**Changed**
+
+- Removed unused ``EnhancedValidator`` / ``ErrorRecoveryManager`` machinery from the batch CLI path
+- Migrated class-scoped pytest fixtures to ``@classmethod`` for pytest 9 compatibility
+
+v0.4.3 (2026-05-08)
+--------------------
+
+**Changed**
+
+- Upgraded pip to >=26.1 in CI to resolve CVE-2026-6357
+- Expanded ``.gitignore`` with comprehensive uv/venv, CI, and tooling patterns
+- Updated Sphinx API docs to cover all public modules (calculators, gui, interfaces, utils)
+- Fixed Sphinx build output path in README development commands
+
+**Security**
+
+- CI: pin ``pip>=26.1`` in dependency-audit job to prevent CVE-2026-6357 false positives
+
+v0.4.2 (2026-04-30)
+--------------------
+
+**Changed**
+
+- UI/UX Pro Max upgrade applied to PySide6 interface
+- Upgraded form validation to use non-blocking toast notifications instead of blocking message boxes
+- Enhanced touch target sizes for all inputs and buttons
+- Standardized UI spacing and interactive states (loading buttons, disabled opacities)
+
 v0.4.1 (2026-04-07)
 --------------------
 

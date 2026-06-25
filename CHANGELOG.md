@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `calculate_scattering_length_density` reconciled with the pipeline kernel (SLD = 2π·δ/λ²; real part positive for δ > 0).
 - `validate_energy_range` defaults corrected to the supported 0.03–30 keV range.
 - GUI: density spinbox range aligned with `validate_density` (0.001–30 g/cm³); non-numeric density cells are skipped instead of crashing.
+- GUI "Save PNG" now exports the plot instead of raising an error: the PyQtGraph plot widgets have no matplotlib figure, so export now uses pyqtgraph's `ImageExporter`.
+- `xraylabtool batch` no longer crashes on the default (non-progress) path, where the progress tracker yielded `None` and the per-item update raised `AttributeError`.
 
 ### Changed
 - Removed unused `EnhancedValidator`/`ErrorRecoveryManager` machinery from the batch CLI path.
