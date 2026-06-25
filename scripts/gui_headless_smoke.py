@@ -71,8 +71,16 @@ def _run_smoke() -> None:
             counter += 1
         return str(path), ""
 
+    def _fake_get_existing_directory(*_args, **_kwargs):
+        # Qt signature: (parent, caption, dir, options) -> str. The CSV export
+        # handlers use getExistingDirectory (not getSaveFileName), so it must be
+        # patched too or the exports block / return cancelled in headless runs.
+        return str(tmpdir)
+
     orig_get = QFileDialog.getSaveFileName
+    orig_dir = QFileDialog.getExistingDirectory
     QFileDialog.getSaveFileName = _fake_get_save_file_name  # type: ignore
+    QFileDialog.getExistingDirectory = _fake_get_existing_directory  # type: ignore
     try:
         window._save_single_png()
         window._save_multi_png()
@@ -80,6 +88,7 @@ def _run_smoke() -> None:
         multi_csv = window._export_multi_csv()
     finally:
         QFileDialog.getSaveFileName = orig_get  # type: ignore
+        QFileDialog.getExistingDirectory = orig_dir  # type: ignore
 
     # Basic CSV sanity checks
     for csv_path in [single_csv, multi_csv]:

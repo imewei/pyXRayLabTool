@@ -53,8 +53,14 @@ class MaterialTable(QTableWidget):
             formula_item = self.item(row, 0)
             density_item = self.item(row, 1)
             formula = formula_item.text().strip() if formula_item else ""
-            density = float(density_item.text()) if density_item else 0.0
-            if formula:
-                formulas.append(formula)
-                densities.append(density)
+            if not formula:
+                continue
+            try:
+                density = float(density_item.text()) if density_item else 0.0
+            except ValueError:
+                # Skip rows whose density cell is not a valid number rather than
+                # crashing the GUI with an unhandled ValueError.
+                continue
+            formulas.append(formula)
+            densities.append(density)
         return formulas, densities

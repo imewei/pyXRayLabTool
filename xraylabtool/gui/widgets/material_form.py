@@ -29,7 +29,9 @@ class MaterialInputForm(QWidget):
         self.formula.setPlaceholderText("e.g. SiO2")
 
         self.density = QDoubleSpinBox()
-        self.density.setRange(0.001, 100.0)
+        # Match validate_density()'s accepted range (0.001-30 g/cm³) so the
+        # spinbox cannot enter a value the validator will reject.
+        self.density.setRange(0.001, 30.0)
         self.density.setDecimals(4)
         self.density.setValue(2.2)
         self.density.setSuffix(" g/cm³")
