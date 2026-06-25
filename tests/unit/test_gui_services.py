@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+import pytest
+
+# services.py is logically Qt-free, but importing it goes through
+# xraylabtool.gui.__init__, which eagerly imports the Qt launcher. Skip on
+# headless runners without the Qt stack (libEGL), matching the other GUI tests.
+pytest.importorskip("PySide6.QtWidgets")
+
 from xraylabtool.gui.services import EnergyConfig, compute_multiple
 
 
