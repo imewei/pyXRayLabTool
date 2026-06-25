@@ -12,7 +12,6 @@ __all__ = [
     "AtomicDataError",
     "BatchProcessingError",
     "CalculationError",
-    "ConfigurationError",
     "DataFileError",
     "EnergyError",
     "FormulaError",
@@ -171,24 +170,5 @@ class BatchProcessingError(XRayLabToolError):
             message = f"{message} ({len(failed_items)}/{total_items} items failed)"
         elif failed_items:
             message = f"{message} ({len(failed_items)} items failed)"
-
-        super().__init__(message)
-
-
-class ConfigurationError(XRayLabToolError):
-    """Exception raised for configuration-related errors."""
-
-    def __init__(self, message: str, config_key: str | None = None):
-        """
-        Initialize ConfigurationError with message and optional config key context.
-
-        Args:
-            message: The error message
-            config_key: Optional configuration key that caused the error
-        """
-        self.config_key = config_key
-
-        if config_key:
-            message = f"{message} (config: {config_key})"
 
         super().__init__(message)

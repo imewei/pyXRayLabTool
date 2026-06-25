@@ -54,39 +54,6 @@ from xraylabtool.utils import (
 
 
 # Stub implementations for removed monitoring/performance modules
-class MemoryMonitor:
-    def __init__(self) -> None:
-        pass
-
-    def update(self) -> None:
-        pass
-
-    def print_summary(self) -> None:
-        pass
-
-
-class PerformanceMetrics:
-    def __init__(self) -> None:
-        pass
-
-    def time_operation(self) -> Any:
-        from contextlib import nullcontext
-
-        return nullcontext()
-
-    def record_operations(self, count: int) -> None:
-        pass
-
-    def print_summary(self, verbose: bool = False) -> None:
-        pass
-
-
-class AdaptiveChunkSizer:
-    def __init__(self) -> None:
-        pass
-
-    def calculate_chunk_size(self, total: int) -> int:
-        return total
 
 
 def create_batch_progress_tracker(**kwargs: Any) -> Any:
@@ -1414,12 +1381,6 @@ def _process_batch_materials(
     # Auto-enable progress for large batches unless explicitly disabled
     if len(formulas) > 10 and not getattr(args, "no_progress", False):
         enable_progress = True
-
-    # Initialize monitoring
-    memory_monitor = MemoryMonitor()
-    performance_metrics = PerformanceMetrics()
-    chunk_sizer = AdaptiveChunkSizer()
-
     if args.verbose:
         print(f"Processing {len(formulas)} materials...")
         if enable_progress:
@@ -1436,24 +1397,16 @@ def _process_batch_materials(
             zip(formulas, densities, energy_sets, strict=False)
         ):
             try:
-                # Update memory monitoring
-                memory_monitor.update()
+                if args.verbose and not enable_progress:
+                    print(f"  {i + 1}/{len(formulas)}: {formula}")
 
-                # Time the operation for performance metrics
-                with performance_metrics.time_operation():
-                    if args.verbose and not enable_progress:
-                        print(f"  {i + 1}/{len(formulas)}: {formula}")
+                result = calculate_single_material_properties(
+                    formula, energies, density
+                )
 
-                    result = calculate_single_material_properties(
-                        formula, energies, density
-                    )
-
-                    for j, _energy in enumerate(energies):
-                        result_dict = _convert_result_to_dict(result, j)
-                        results.append(result_dict)
-
-                # Record the operation
-                performance_metrics.record_operations(len(energies))
+                for j, _energy in enumerate(energies):
+                    result_dict = _convert_result_to_dict(result, j)
+                    results.append(result_dict)
 
             except Exception as e:
                 if not enable_progress:  # Only print if progress bar isn't showing
@@ -1463,21 +1416,6 @@ def _process_batch_materials(
             finally:
                 # Update progress
                 progress.update(1)
-
-    # Show performance summary if verbose
-    if args.verbose:
-        print("\n" + "=" * 50)
-        performance_metrics.print_summary(verbose=True)
-        memory_monitor.print_summary()
-
-        # Show chunk sizing recommendation for future runs
-        recommended_chunk = chunk_sizer.calculate_chunk_size(len(formulas))
-        if len(formulas) > recommended_chunk:
-            print(
-                "💡 For optimal memory usage, consider processing in chunks of"
-                f" {recommended_chunk}"
-            )
-
     return results
 
 

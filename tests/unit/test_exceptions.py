@@ -11,7 +11,6 @@ from xraylabtool.exceptions import (
     AtomicDataError,
     BatchProcessingError,
     CalculationError,
-    ConfigurationError,
     DataFileError,
     EnergyError,
     FormulaError,
@@ -41,7 +40,6 @@ class TestExceptionHierarchy:
             AtomicDataError("test"),
             UnknownElementError("H"),
             BatchProcessingError("test"),
-            ConfigurationError("test"),
         ]
 
         for error in exceptions_to_test:
@@ -216,21 +214,6 @@ class TestBatchProcessingError:
         assert "1/5" in str(error)
         assert error.failed_items == failed
         assert error.total_items == 5
-
-
-class TestConfigurationError:
-    """Test ConfigurationError class."""
-
-    def test_basic_message(self):
-        """Test basic error message."""
-        error = ConfigurationError("Config error")
-        assert str(error) == "Config error"
-
-    def test_with_config_key(self):
-        """Test error with configuration key."""
-        error = ConfigurationError("Invalid setting", config_key="max_workers")
-        assert "max_workers" in str(error)
-        assert error.config_key == "max_workers"
 
 
 class TestExceptionUsage:

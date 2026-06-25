@@ -38,14 +38,6 @@ Workers
    :undoc-members:
    :show-inheritance:
 
-Protocols
----------
-
-.. automodule:: xraylabtool.gui.protocols
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Logging Filters
 ---------------
 

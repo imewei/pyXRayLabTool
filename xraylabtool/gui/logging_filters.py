@@ -48,9 +48,3 @@ def enable_offscreen_quiet_env() -> None:
         # Try minimal first; if unavailable Qt will fall back automatically or emit once
         os.environ["QT_QPA_PLATFORM"] = "minimal"
     # Caller can still override by setting QT_QPA_PLATFORM before import
-
-
-def suggest_quiet_platforms() -> list[str]:
-    """Return optional platform plugins that can be quieter offscreen (opt-in)."""
-
-    return ["minimal", "offscreen"]

@@ -205,9 +205,9 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
         )
         return globals()[name]
 
-    # Lazy function imports from export
+    # Lazy function imports from io
     elif name in ["export_to_csv", "export_to_json"]:
-        from xraylabtool.export import export_to_csv, export_to_json
+        from xraylabtool.io import export_to_csv, export_to_json
 
         globals().update(
             {
@@ -264,7 +264,6 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
         "AtomicDataError",
         "BatchProcessingError",
         "CalculationError",
-        "ConfigurationError",
         "DataFileError",
         "EnergyError",
         "FormulaError",
@@ -279,7 +278,6 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
             AtomicDataError,
             BatchProcessingError,
             CalculationError,
-            ConfigurationError,
             DataFileError,
             EnergyError,
             FormulaError,
@@ -296,7 +294,6 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
                 "AtomicDataError": AtomicDataError,
                 "BatchProcessingError": BatchProcessingError,
                 "CalculationError": CalculationError,
-                "ConfigurationError": ConfigurationError,
                 "DataFileError": DataFileError,
                 "EnergyError": EnergyError,
                 "FormulaError": FormulaError,
@@ -358,7 +355,6 @@ __all__ = [
     "AtomicDataError",
     "BatchProcessingError",
     "CalculationError",
-    "ConfigurationError",
     "DataFileError",
     "EnergyError",
     "FormulaError",
