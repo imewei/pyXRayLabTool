@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-06-25
+
+### Added
+- Python 3.14 support: classifier in `pyproject.toml` and CI matrix coverage (ubuntu/macOS/windows).
+
+### Fixed
+- `parse_formula` now rejects trailing/invalid characters (e.g. `SiO2junk`, `Si-O2`) instead of silently ignoring them.
+- Complex energy inputs are now rejected with a clear `EnergyError` rather than being coerced to their real part.
+- Empty energy arrays now raise `EnergyError` instead of producing empty results.
+- Batch processing disambiguates colliding result keys (densities rounding to the same 3 decimals) so no result is silently dropped.
+- `calculate_scattering_length_density` reconciled with the pipeline kernel (SLD = 2π·δ/λ²; real part positive for δ > 0).
+- `validate_energy_range` defaults corrected to the supported 0.03–30 keV range.
+- GUI: density spinbox range aligned with `validate_density` (0.001–30 g/cm³); non-numeric density cells are skipped instead of crashing.
+
+### Changed
+- Removed unused `EnhancedValidator`/`ErrorRecoveryManager` machinery from the batch CLI path.
+- Migrated class-scoped pytest fixtures to `@classmethod` for pytest 9 compatibility.
+
 ## [0.4.3] - 2026-05-08
 
 ### Changed
