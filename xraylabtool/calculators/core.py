@@ -128,6 +128,9 @@ def _validate_single_material_inputs(
     # Convert and validate energy
     energy_kev = _convert_energy_input(energy_kev)
 
+    if energy_kev.size == 0:
+        raise EnergyError("Energies array cannot be empty", valid_range="0.03-30 keV")
+
     if np.any(energy_kev <= 0):
         raise EnergyError("All energies must be positive", valid_range="0.03-30 keV")
 
@@ -143,7 +146,10 @@ def _convert_energy_input(energy_kev: Any) -> EnergyArray:
     """Convert energy input to array."""
     if np.isscalar(energy_kev):
         if isinstance(energy_kev, complex):
-            energy_kev = ops.asarray([float(energy_kev.real)], dtype=ops.float64)
+            raise EnergyError(
+                "Complex energy values are not supported; pass real energies in keV",
+                valid_range="0.03-30 keV",
+            )
         elif isinstance(energy_kev, int | float | np.number):
             energy_kev = ops.asarray([float(energy_kev)], dtype=ops.float64)
         else:
@@ -439,7 +445,10 @@ def _validate_and_process_energies(energies: Any) -> EnergyArray:
     """Validate and convert energies to numpy array."""
     if np.isscalar(energies):
         if isinstance(energies, complex):
-            energies_array = np.array([float(energies.real)], dtype=np.float64)
+            raise EnergyError(
+                "Complex energy values are not supported; pass real energies in keV",
+                valid_range="0.03-30 keV",
+            )
         elif isinstance(energies, int | float | np.number):
             energies_array = np.array([float(energies)], dtype=np.float64)
         else:

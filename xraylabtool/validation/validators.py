@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 def validate_energy_range(
     energies: float | np.ndarray,
-    min_energy: float = 0.1,
-    max_energy: float = 100.0,
+    min_energy: float = 0.03,
+    max_energy: float = 30.0,
 ) -> np.ndarray:
     """
     Validate X-ray energy values.

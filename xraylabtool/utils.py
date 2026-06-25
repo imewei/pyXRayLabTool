@@ -503,6 +503,14 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
     # Final parse of the fully-expanded formula
     matches = re.findall(r"([A-Z][a-z]*)(\d*\.?\d*)", formula)
 
+    # Reject any characters the element pattern could not consume, e.g. trailing
+    # junk ("SiO2junk"), stray separators ("Si-O2"), or operators ("SiO2+").
+    # re.findall() silently skips these, so without this check malformed input
+    # is calculated as if the junk were absent.
+    leftover = re.sub(r"([A-Z][a-z]*)(\d*\.?\d*)", "", formula)
+    if leftover:
+        raise FormulaError(f"Invalid characters in formula: {leftover!r}", formula_str)
+
     if not matches or not any(sym for sym, _ in matches):
         raise FormulaError(f"No elements found in formula: {formula_str}", formula_str)
 

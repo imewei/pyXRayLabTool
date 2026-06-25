@@ -41,8 +41,10 @@ class TestValidateEnergyRange:
 
     def test_energy_below_minimum(self):
         """Test that energy below minimum raises EnergyError."""
+        # Default minimum is 0.03 keV (matching the calculator's valid range);
+        # 0.01 keV is below it.
         with pytest.raises(EnergyError, match="below minimum"):
-            validate_energy_range(0.05)
+            validate_energy_range(0.01)
 
     def test_energy_above_maximum(self):
         """Test that energy above maximum raises EnergyError."""

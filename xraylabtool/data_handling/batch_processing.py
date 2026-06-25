@@ -273,10 +273,20 @@ def _process_chunks(
             if result is not None:
                 # Use both formula and density to create a unique key
                 key = f"{result.formula}@{result.density_g_cm3:.3f}"
-                all_results[key] = result
             else:
                 # For failed calculations, use original formula as key
-                all_results[formula] = result
+                key = formula
+
+            # Densities that round to the same 3 decimals (or genuinely duplicate
+            # inputs) would otherwise overwrite each other and silently drop a
+            # result. Disambiguate colliding keys with a "#N" suffix so every
+            # input is preserved while the first occurrence keeps the canonical key.
+            if key in all_results:
+                suffix = 2
+                while f"{key}#{suffix}" in all_results:
+                    suffix += 1
+                key = f"{key}#{suffix}"
+            all_results[key] = result
 
         if progress_bar is not None:
             progress_bar.update(len(chunk))

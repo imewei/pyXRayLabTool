@@ -1496,65 +1496,9 @@ def _save_batch_results(results: list[dict[str, Any]], args: Any) -> None:
 def cmd_batch(args: Any) -> int:
     """Handle the 'batch' command."""
     try:
-        # Lazy imports for batch processing
-        from xraylabtool.validation.enhanced_validator import EnhancedValidator  # type: ignore[import-not-found]
-        from xraylabtool.validation.error_recovery import ErrorRecoveryManager  # type: ignore[import-not-found]
-
         df_input = _validate_batch_input(args)
         if df_input is None:
             return 1
-
-        # Initialize enhanced error handling for batch processing
-        debug_mode = getattr(args, "debug", False)
-        validator = EnhancedValidator(debug=debug_mode)
-        recovery_manager = ErrorRecoveryManager(
-            validator, interactive=False
-        )  # Non-interactive for batch
-
-        # Validate all formulas in the batch
-        formulas = df_input["formula"].tolist()  # type: ignore[call-overload]
-        validation_results = validator.validate_batch_formulas(
-            formulas, command_context="batch"
-        )
-
-        # Try to recover from validation errors
-        recovered_formulas = recovery_manager.recover_batch_errors(
-            validation_results, "batch processing", fail_fast=False
-        )
-
-        # Update the dataframe with recovered formulas
-        for i, (original_formula, recovered_formula) in enumerate(
-            zip(formulas, recovered_formulas, strict=False)
-        ):
-            if recovered_formula and recovered_formula != original_formula:
-                df_input.loc[i, "formula"] = recovered_formula  # type: ignore[attr-defined]
-                if args.verbose:
-                    print(
-                        f"✅ Auto-corrected formula {i + 1}: '{original_formula}' →"
-                        f" '{recovered_formula}'"
-                    )
-            elif not recovered_formula:
-                if args.verbose:
-                    print(
-                        f"⚠️  Could not process formula {i + 1}: '{original_formula}' -"
-                        " skipping"
-                    )
-
-        # Generate batch improvement suggestions
-        batch_suggestions = recovery_manager.suggest_batch_improvements(
-            validation_results
-        )
-        if batch_suggestions["status"] == "errors_found" and (
-            args.verbose or debug_mode
-        ):
-            print("\n📊 Batch Processing Summary:")
-            print(f"   Total items: {batch_suggestions['summary']['total_items']}")
-            print(f"   Success rate: {batch_suggestions['summary']['success_rate']}")
-            if batch_suggestions["recommendations"]:
-                print("   Recommendations:")
-                for rec in batch_suggestions["recommendations"]:
-                    print(f"   • {rec}")
-            print()
 
         parsed_data = _parse_batch_data(df_input)
         if parsed_data[0] is None:
@@ -1571,18 +1515,6 @@ def cmd_batch(args: Any) -> int:
             return 1
 
         _save_batch_results(results, args)
-
-        # Show recovery statistics if in verbose or debug mode
-        if args.verbose or debug_mode:
-            recovery_stats = recovery_manager.get_recovery_stats()
-            if recovery_stats["total_errors"] > 0:
-                print("\n📈 Error Recovery Statistics:")
-                print(f"   Total errors encountered: {recovery_stats['total_errors']}")
-                print(f"   Auto-recovery rate: {recovery_stats['auto_recovery_rate']}")
-                print(
-                    "   Overall recovery rate:"
-                    f" {recovery_stats['overall_recovery_rate']}"
-                )
 
         return 0
 
