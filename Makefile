@@ -761,14 +761,13 @@ endif
 gpu-check:
 	@echo "$(YELLOW)GPU Verification$(NC)"
 	@$(PYTHON) -c "\
-	import sys, jax; \
+	import jax; \
 	v = jax.__version__; \
 	b = jax.default_backend(); \
 	d = jax.devices(); \
 	gpu = sum(1 for x in d if 'cuda' in str(x).lower()); \
 	print(f'JAX {v}  backend={b}  devices={gpu} GPU'); \
-	if b != 'gpu': \
-	    print('$(YELLOW)Note: Running on CPU (no GPU detected)$(NC)'); \
+	print('$(YELLOW)Note: Running on CPU (no GPU detected)$(NC)') if b != 'gpu' else None; \
 	import jax.numpy as jnp; \
 	s = jnp.linalg.svd(jnp.eye(3))[1]; \
 	print(f'SVD check: {s}'); \
