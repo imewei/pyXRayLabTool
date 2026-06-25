@@ -60,7 +60,8 @@ class TestFullPipelineSiO2:
     """
 
     @pytest.fixture(scope="class", autouse=True)
-    def result(self, request) -> None:
+    @classmethod
+    def result(cls, request) -> None:
         clear_scattering_factor_cache()
         request.cls.r = calculate_single_material_properties("SiO2", 10.0, 2.2)
 
@@ -228,9 +229,10 @@ class TestMultiMaterialEquivalence:
     ]
 
     @pytest.fixture(scope="class", autouse=True)
-    def results(self, request) -> None:
-        formulas = [m[0] for m in self.MATERIALS]
-        densities = [m[2] for m in self.MATERIALS]
+    @classmethod
+    def results(cls, request) -> None:
+        formulas = [m[0] for m in cls.MATERIALS]
+        densities = [m[2] for m in cls.MATERIALS]
 
         clear_scattering_factor_cache()
         request.cls.multi = calculate_multiple_xray_properties(
@@ -238,7 +240,7 @@ class TestMultiMaterialEquivalence:
         )
 
         singles = {}
-        for formula, energy, density in self.MATERIALS:
+        for formula, energy, density in cls.MATERIALS:
             clear_scattering_factor_cache()
             singles[formula] = calculate_single_material_properties(
                 formula, energy, density
@@ -387,10 +389,11 @@ class TestEnergySweepSi:
     DENSITY = 2.33  # g/cm³
 
     @pytest.fixture(scope="class", autouse=True)
-    def sweep_result(self, request) -> None:
+    @classmethod
+    def sweep_result(cls, request) -> None:
         clear_scattering_factor_cache()
         request.cls.r = calculate_single_material_properties(
-            "Si", self.ENERGIES, self.DENSITY
+            "Si", cls.ENERGIES, cls.DENSITY
         )
 
     # --- Finiteness ---

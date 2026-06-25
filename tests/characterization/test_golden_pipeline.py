@@ -42,7 +42,8 @@ class TestGoldenSiO2:
     """SiO2 at 10.0 keV, density 2.2 g/cm³."""
 
     @pytest.fixture(scope="class")
-    def result(self):
+    @classmethod
+    def result(cls):
         clear_scattering_factor_cache()
         return calculate_single_material_properties("SiO2", 10.0, 2.2)
 
@@ -128,7 +129,8 @@ class TestGoldenSi:
     """Si at 8.047 keV (Cu Ka), density 2.33 g/cm³."""
 
     @pytest.fixture(scope="class")
-    def result(self):
+    @classmethod
+    def result(cls):
         clear_scattering_factor_cache()
         return calculate_single_material_properties("Si", 8.047, 2.33)
 
@@ -213,7 +215,8 @@ class TestGoldenAu:
     """Au at 10.0 keV, density 19.3 g/cm³."""
 
     @pytest.fixture(scope="class")
-    def result(self):
+    @classmethod
+    def result(cls):
         clear_scattering_factor_cache()
         return calculate_single_material_properties("Au", 10.0, 19.3)
 
@@ -298,7 +301,8 @@ class TestGoldenFe2O3:
     """Fe2O3 at [8, 10, 12] keV, density 5.24 g/cm³ — full array assertions."""
 
     @pytest.fixture(scope="class")
-    def result(self):
+    @classmethod
+    def result(cls):
         clear_scattering_factor_cache()
         return calculate_single_material_properties("Fe2O3", [8.0, 10.0, 12.0], 5.24)
 
@@ -395,7 +399,8 @@ class TestGoldenScatteringFactors:
     """
 
     @pytest.fixture(scope="class")
-    def outputs(self):
+    @classmethod
+    def outputs(cls):
         clear_scattering_factor_cache()
         energy_kev = np.array([8.0, 10.0, 12.0])
         energy_ev = energy_kev * 1000.0
@@ -452,15 +457,16 @@ class TestGoldenDerivedQuantities:
     ELECTRONS = 30.0
 
     @pytest.fixture(scope="class")
-    def outputs(self):
+    @classmethod
+    def outputs(cls):
         clear_scattering_factor_cache()
         return calculate_derived_quantities(
-            self.WAVELENGTH_M,
-            self.DISPERSION,
-            self.ABSORPTION,
-            self.DENSITY,
-            self.MW,
-            self.ELECTRONS,
+            cls.WAVELENGTH_M,
+            cls.DISPERSION,
+            cls.ABSORPTION,
+            cls.DENSITY,
+            cls.MW,
+            cls.ELECTRONS,
         )
 
     def test_electron_density(self, outputs):
