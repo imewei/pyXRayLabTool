@@ -525,6 +525,8 @@ omit = [
     "*/conftest.py",
     # Exclude modules with specialized functionality that have limited test coverage
     "*/gui/*",                             # GUI module - requires PySide6/Qt infrastructure
+    "*/interfaces/completion_v2/*",        # Shell completion - bash/zsh/fish + rc-file integration tested
+    "*/io/*",                              # File export/IO - integration tested, not unit-covered
 ]
 
 [tool.coverage.report]
