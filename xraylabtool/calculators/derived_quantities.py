@@ -81,7 +81,10 @@ def calculate_scattering_length_density(
         Tuple of (real_sld, imaginary_sld) in units of Å⁻²
     """
     wavelength_ang = wavelength_angstrom
-    real_sld = -dispersion_delta / (PI * wavelength_ang**2) * 1e20  # Convert to Å⁻²
-    imaginary_sld = absorption_beta / (PI * wavelength_ang**2) * 1e20  # Convert to Å⁻²
+    # SLD = 2π·(δ or β)/λ²; with λ in Å this yields Å⁻² directly. The real part
+    # is positive for δ > 0. This matches the JIT kernel in kernels.py
+    # (re_sld = dispersion * 2π / λ_m² / 1e20), since λ_m² = λ_Å²·1e-20.
+    real_sld = 2.0 * PI * dispersion_delta / wavelength_ang**2
+    imaginary_sld = 2.0 * PI * absorption_beta / wavelength_ang**2
 
     return real_sld, imaginary_sld

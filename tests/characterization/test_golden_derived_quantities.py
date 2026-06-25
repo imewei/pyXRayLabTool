@@ -107,11 +107,11 @@ class TestGoldenAttenuationLength:
 
 # ---------------------------------------------------------------------------
 # P2-C  calculate_scattering_length_density
-# Note: this function takes wavelength in ANGSTROMS (not meters) and uses a
-# different formula than core.calculate_derived_quantities.
-# Formula:
-#   real_sld  = -delta / (pi * wl_ang^2) * 1e20
-#   im_sld    =  beta  / (pi * wl_ang^2) * 1e20
+# Note: this function takes wavelength in ANGSTROMS (not meters). It yields the
+# same physical SLD as core.calculate_derived_quantities (which takes meters).
+# Formula (SLD = 2*pi*X/wl^2, wl in Angstroms -> Ang^-2):
+#   real_sld  = 2*pi * delta / wl_ang^2   (positive for delta > 0)
+#   im_sld    = 2*pi * beta  / wl_ang^2
 # ---------------------------------------------------------------------------
 
 
@@ -123,34 +123,35 @@ class TestGoldenScatteringLengthDensity:
     WL_ANG = np.array([1.2398417166827826])  # Angstroms
 
     @pytest.fixture(scope="class")
-    def sld_outputs(self):
-        return calculate_scattering_length_density(self.DELTA, self.BETA, self.WL_ANG)
+    @classmethod
+    def sld_outputs(cls):
+        return calculate_scattering_length_density(cls.DELTA, cls.BETA, cls.WL_ANG)
 
     def test_real_sld_golden(self, sld_outputs):
         re_sld, _ = sld_outputs
-        np.testing.assert_allclose(re_sld[0], -95527894079547.34, atol=1e-12)
+        np.testing.assert_allclose(re_sld[0], 1.885645047668597e-05, atol=1e-12)
 
     def test_im_sld_golden(self, sld_outputs):
         _, im_sld = sld_outputs
-        np.testing.assert_allclose(im_sld[0], 804937436248.356, atol=1e-12)
+        np.testing.assert_allclose(im_sld[0], 1.5888828126796718e-07, atol=1e-12)
 
-    def test_real_sld_is_negative(self, sld_outputs):
-        """real_sld = -delta/(...) is always negative for positive delta."""
+    def test_real_sld_is_positive(self, sld_outputs):
+        """real_sld = 2*pi*delta/(...) is positive for positive delta."""
         re_sld, _ = sld_outputs
-        assert re_sld[0] < 0.0
+        assert re_sld[0] > 0.0
 
     def test_im_sld_is_positive(self, sld_outputs):
-        """im_sld = beta/(...) is always positive for positive beta."""
+        """im_sld = 2*pi*beta/(...) is always positive for positive beta."""
         _, im_sld = sld_outputs
         assert im_sld[0] > 0.0
 
     def test_formula_correctness(self):
-        """Verify exact formula: -delta / (pi*wl^2) * 1e20."""
+        """Verify exact formula: 2*pi * delta / wl^2 (wl in Angstroms)."""
         delta = 4.613309228943556e-06
         beta = 3.887268047879803e-08
         wl = 1.2398417166827826
-        expected_re = -delta / (PI * wl**2) * 1e20
-        expected_im = beta / (PI * wl**2) * 1e20
+        expected_re = 2.0 * PI * delta / wl**2
+        expected_im = 2.0 * PI * beta / wl**2
         re_sld, im_sld = calculate_scattering_length_density(
             np.array([delta]), np.array([beta]), np.array([wl])
         )
