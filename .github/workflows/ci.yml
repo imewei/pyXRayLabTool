@@ -227,14 +227,20 @@ jobs:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
         os: [ubuntu-latest]
-        python-version: ['3.13']
+        python-version: ['3.13', '3.14']
         include:
           # Conditional matrix expansion
           - os: macos-latest
             python-version: '3.13'
             if: ${{ needs.change-detection.outputs.should-run-full-matrix == 'true' }}
+          - os: macos-latest
+            python-version: '3.14'
+            if: ${{ needs.change-detection.outputs.should-run-full-matrix == 'true' }}
           - os: windows-latest
             python-version: '3.13'
+            if: ${{ needs.change-detection.outputs.should-run-full-matrix == 'true' }}
+          - os: windows-latest
+            python-version: '3.14'
             if: ${{ needs.change-detection.outputs.should-run-full-matrix == 'true' }}
 
     steps:
