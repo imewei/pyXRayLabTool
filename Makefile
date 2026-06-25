@@ -26,6 +26,12 @@ PYTEST_XDIST_ARGS := $(shell \
 		$(PYTHON) -c "import xdist" >/dev/null 2>&1 && printf '%s %s' "$(PYTEST_PARALLEL)" "$(PYTEST_BENCHMARK_DISABLE)"; \
 	fi)
 
+# GUI/Qt tests segfault when split across xdist workers (native Qt state + worker
+# threads from the threaded smoke test corrupt the process running another GUI
+# test). Like CI, exclude them from the parallel run and execute them serially.
+GUI_SERIAL_TESTS := tests/test_gui_smoke.py tests/unit/test_gui_widgets.py
+GUI_IGNORE := --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py
+
 # Default target
 help:
 	@echo "$(BLUE)XRayLabTool Development Commands$(NC)"
@@ -143,12 +149,16 @@ version-check:
 # Testing targets
 test:
 	@echo "$(YELLOW)Running tests with coverage...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -v --cov=xraylabtool --cov-report=term-missing
+	$(PYTEST) $(PYTEST_XDIST_ARGS) $(GUI_IGNORE) tests/ -v --cov=xraylabtool --cov-report=term-missing
+	@echo "$(YELLOW)Running GUI tests serially...$(NC)"
+	$(PYTEST) $(GUI_SERIAL_TESTS) -v --cov=xraylabtool --cov-append --cov-report=term-missing
 	@echo "$(GREEN)✅ Tests completed$(NC)"
 
 test-fast:
 	@echo "$(YELLOW)Running fast tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -v
+	$(PYTEST) $(PYTEST_XDIST_ARGS) $(GUI_IGNORE) tests/ -v
+	@echo "$(YELLOW)Running GUI tests serially...$(NC)"
+	$(PYTEST) $(GUI_SERIAL_TESTS) -v
 	@echo "$(GREEN)✅ Fast tests completed$(NC)"
 
 # Core test categories

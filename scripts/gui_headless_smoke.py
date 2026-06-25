@@ -16,7 +16,7 @@ import os
 from pathlib import Path
 import tempfile
 
-from PySide6.QtWidgets import QApplication, QFileDialog
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from xraylabtool.gui.main_window import MainWindow
 from xraylabtool.gui.services import EnergyConfig, compute_multiple, compute_single
@@ -43,28 +43,15 @@ def _run_smoke() -> None:
     tmpdir = Path(tempfile.mkdtemp(prefix="xlt_gui_smoke_"))
 
     def _fake_get_save_file_name(*_args, **_kwargs):
-        # Qt signature: (parent, caption, dir, filter, selectedFilter, options)
-        cap_arg = _args[1] if len(_args) > 1 else ""
-        dir_arg = _args[2] if len(_args) > 2 else ""
-        filt_arg = _args[3] if len(_args) > 3 else ""
-        flt = str(_kwargs.get("filter", filt_arg)).lower()
-        cap = str(_kwargs.get("caption", cap_arg)).lower()
-        base = (
-            _kwargs.get("selectFile")
-            or dir_arg
-            or _kwargs.get("caption")
-            or cap
-            or "export"
-        )
-        base_clean = base.replace(" ", "_").lower()
-        # If caller already passed an extension, honor it; otherwise append one
-        if base_clean.endswith((".csv", ".png")):
-            fname = base_clean
-        else:
-            suffix = ".csv" if "csv" in flt or "csv" in cap else ".png"
-            fname = f"{base_clean}{suffix}"
-        # ensure uniqueness if multiple calls use same caption
-        path = tmpdir / fname
+        # Qt signature: (parent, caption, dir, filter, ...). The handlers pass a
+        # suggested path as `dir`; take only its basename so the file always lands
+        # in tmpdir (never lowercase the whole path — that corrupts the directory).
+        suggested = _kwargs.get("dir") or (_args[2] if len(_args) > 2 else "") or ""
+        name = Path(str(suggested)).name.replace(" ", "_") or "export"
+        if not name.lower().endswith((".csv", ".png")):
+            flt = str(_kwargs.get("filter", _args[3] if len(_args) > 3 else "")).lower()
+            name += ".csv" if "csv" in flt else ".png"
+        path = tmpdir / name
         counter = 1
         while path.exists():
             path = tmpdir / f"{path.stem}_{counter}{path.suffix}"
@@ -77,10 +64,21 @@ def _run_smoke() -> None:
         # patched too or the exports block / return cancelled in headless runs.
         return str(tmpdir)
 
+    # Any modal QMessageBox (e.g. an error popup) would block forever with no
+    # user to dismiss it, so stub the modal entry points to a no-op for the run.
     orig_get = QFileDialog.getSaveFileName
     orig_dir = QFileDialog.getExistingDirectory
+    orig_msg = {
+        n: getattr(QMessageBox, n) for n in ("critical", "warning", "information")
+    }
     QFileDialog.getSaveFileName = _fake_get_save_file_name  # type: ignore
     QFileDialog.getExistingDirectory = _fake_get_existing_directory  # type: ignore
+
+    def _noop_dialog(*_a, **_k):
+        return QMessageBox.StandardButton.Ok
+
+    for _name in orig_msg:
+        setattr(QMessageBox, _name, staticmethod(_noop_dialog))
     try:
         window._save_single_png()
         window._save_multi_png()
@@ -89,6 +87,8 @@ def _run_smoke() -> None:
     finally:
         QFileDialog.getSaveFileName = orig_get  # type: ignore
         QFileDialog.getExistingDirectory = orig_dir  # type: ignore
+        for _name, _fn in orig_msg.items():
+            setattr(QMessageBox, _name, _fn)
 
     # Basic CSV sanity checks
     for csv_path in [single_csv, multi_csv]:

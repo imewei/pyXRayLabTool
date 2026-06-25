@@ -247,17 +247,14 @@ class TestBatchCommand:
                 fields = None
                 verbose = False
 
-            try:
-                result = cmd_batch(MockArgs())
-                assert result == 0
+            result = cmd_batch(MockArgs())
+            assert result == 0
 
-                # Check output file was created
-                output_path = Path(output_filename)
-                assert output_path.exists()
-                content = output_path.read_text()
-                assert len(content) > 0
-            except Exception:
-                pytest.skip("Cannot test batch command - atomic data not available")
+            # Check output file was created
+            output_path = Path(output_filename)
+            assert output_path.exists()
+            content = output_path.read_text()
+            assert len(content) > 0
 
         finally:
             # Clean up

@@ -993,15 +993,35 @@ class MainWindow(QMainWindow):
         if not path:
             logger.info("save_plot_cancelled", extra={"suggested": suggested})
             return
-        fig = getattr(plot_widget, "figure", None)
-        if fig is None:
-            self._error("Plot figure not available to save")
-            logger.error(
-                "plot_save_failed", extra={"path": path, "reason": "no figure"}
-            )
+        if not self._render_plot_to_png(plot_widget, path):
+            self._error("Could not render plot to image")
+            logger.error("plot_save_failed", extra={"path": path})
             return
-        fig.savefig(path, dpi=300)
         logger.info("plot_saved", extra={"path": path, "suggested": suggested})
+
+    def _render_plot_to_png(self, plot_widget: QWidget, path: str) -> bool:
+        """Export a PyQtGraph plot widget to a PNG file.
+
+        The plot widgets wrap either a ``pg.PlotWidget`` (``.plot_widget``) or a
+        ``pg.GraphicsLayoutWidget`` (``.layout_widget``); both expose a scene that
+        ImageExporter renders offscreen, so this works without the window shown
+        (e.g. headless smoke tests). Falls back to grabbing the rendered widget.
+        """
+        view = getattr(plot_widget, "plot_widget", None) or getattr(
+            plot_widget, "layout_widget", None
+        )
+        if view is not None:
+            try:
+                from pyqtgraph.exporters import ImageExporter
+
+                exporter = ImageExporter(view.scene())
+                exporter.parameters()["width"] = 1200
+                exporter.export(path)
+                return Path(path).exists() and Path(path).stat().st_size > 0
+            except Exception:
+                logger.exception("plot_export_failed", extra={"path": path})
+        pixmap = plot_widget.grab()
+        return bool(not pixmap.isNull() and pixmap.save(path, "PNG"))
         self._info(f"Saved plot to {path}")
 
     def _export_single_csv(self) -> str | None:

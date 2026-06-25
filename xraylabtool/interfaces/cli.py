@@ -92,7 +92,13 @@ class AdaptiveChunkSizer:
 def create_batch_progress_tracker(**kwargs: Any) -> Any:
     from contextlib import nullcontext
 
-    return nullcontext()
+    class _NoOpProgress:
+        # The batch loop calls progress.update(1); yield an object that accepts
+        # it. A bare nullcontext() yields None, which crashes that call.
+        def update(self, _n: int = 1) -> None:
+            pass
+
+    return nullcontext(_NoOpProgress())
 
 
 # - progress modules: imported in cmd_batch function

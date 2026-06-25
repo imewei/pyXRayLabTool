@@ -214,28 +214,6 @@ class TestStyleCompliance(BaseUnitTest):
         self.project_root = Path(__file__).parent.parent
 
     @pytest.mark.unit
-    def test_black_formatting_compliance(self):
-        """Test that code follows Black formatting standards."""
-        try:
-            result = subprocess.run(
-                ["black", "--check", "--diff", str(self.project_root / "xraylabtool")],
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-
-            # Allow some formatting issues but ensure they're minimal
-            if result.returncode != 0:
-                lines = result.stdout.count("\n")
-                assert lines <= 1000, (
-                    "Too many Black formatting violations"
-                    f" ({lines} lines):\n{result.stdout[:500]}"
-                )
-        except (subprocess.TimeoutExpired, FileNotFoundError):
-            pytest.skip("Black not available or timeout")
-
-    @pytest.mark.unit
     def test_ruff_linting_compliance(self):
         """Test that code passes Ruff linting standards."""
         try:

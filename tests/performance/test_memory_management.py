@@ -212,11 +212,10 @@ class TestBatchProcessingMemoryManagement:
         # (memory cleanup should be triggered)
         results = calculate_batch_properties(formulas, energies, densities, config)
 
-        # Verify results
-        unique_combinations = len(set(zip(formulas, densities, strict=False)))
-        assert (
-            len(results) <= unique_combinations
-        )  # Results keyed by unique formula+density combinations
+        # Every input is preserved: duplicate formula+density combinations are
+        # disambiguated with "#N"-suffixed keys rather than silently overwritten,
+        # so the batch must return one result per input (no silent data loss).
+        assert len(results) == len(formulas)
 
         # At least some results should succeed
         successful_results = [
