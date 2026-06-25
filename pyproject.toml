@@ -298,6 +298,11 @@ markers = [
 filterwarnings = [
     "error",  # Treat warnings as errors by default
     # Ignore specific warnings
+    # pytest-benchmark warns (and, under filterwarnings=error, hard-fails with an
+    # INTERNALERROR) when it auto-disables itself under pytest-xdist. This fires in
+    # any pytest process that has both plugins active, including subprocesses that
+    # tests spawn. Benchmarks are deselected by default, so silence it.
+    "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
     "ignore::ResourceWarning",
     "ignore:unclosed database in:ResourceWarning",
     "ignore::DeprecationWarning:tests.*",

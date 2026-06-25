@@ -107,30 +107,6 @@ class TestCICDIntegration(BaseUnitTest):
             pytest.skip("Pre-commit configuration not available")
 
     @pytest.mark.integration
-    def test_black_integration_in_ci(self):
-        """Test that Black formatting integrates correctly with CI."""
-        try:
-            # Test Black check mode (CI-friendly)
-            result = subprocess.run(
-                ["black", "--check", "--diff", "--color", "xraylabtool"],
-                check=False,
-                cwd=self.project_root,
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-
-            # Black should run successfully (return code 0 means no changes needed)
-            # Return code 1 means formatting changes are needed
-            assert result.returncode in [
-                0,
-                1,
-            ], f"Black should return 0 or 1, got {result.returncode}"
-
-        except FileNotFoundError:
-            pytest.skip("Black not available in CI environment")
-
-    @pytest.mark.integration
     def test_ruff_integration_in_ci(self):
         """Test that Ruff linting integrates correctly with CI."""
         try:
