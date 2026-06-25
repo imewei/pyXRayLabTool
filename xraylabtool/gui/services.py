@@ -69,9 +69,13 @@ def compute_multiple(  # type: ignore[no-untyped-def]
     for idx, (formula, density) in enumerate(
         zip(formulas_list, densities_list, strict=False)
     ):
-        results[formula] = calculate_single_material_properties(
-            formula, energies, density
-        )
+        # Key on the formula string, but disambiguate when the same formula
+        # appears more than once (e.g. amorphous vs crystalline SiO2 at
+        # different densities) so neither result is silently overwritten.
+        key = formula
+        if key in results:
+            key = f"{formula} ({density:g} g/cm³)"
+        results[key] = calculate_single_material_properties(formula, energies, density)
         if progress_cb:
             pct = int(((idx + 1) / total) * 100)
             progress_cb(pct)

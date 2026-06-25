@@ -68,6 +68,42 @@ def test_gui_smoke_offscreen() -> None:
     win.close()
 
 
+def test_export_csv_handles_io_error(monkeypatch) -> None:
+    """Regression: a CSV export to an unwritable location must report the error
+    instead of letting an OSError escape the click slot (which aborts the app
+    on PySide6 >= 6.5)."""
+    from unittest.mock import MagicMock
+
+    from xraylabtool.gui import main_window as mw
+    from xraylabtool.gui.services import (
+        EnergyConfig,
+        compute_multiple,
+        compute_single,
+    )
+
+    app = _ensure_app()
+    with suppress_qt_noise():
+        win = MainWindow()
+
+    cfg = EnergyConfig(8.0, 12.0, 3, False)
+    win._on_single_finished(compute_single("Si", 2.33, cfg))
+    win._on_multi_finished(compute_multiple(["Si", "Au"], [2.33, 19.3], cfg))
+    app.processEvents()
+
+    # Save dialog returns a directory that does not exist -> open() raises OSError.
+    bad_dir = "/nonexistent-xrlt/does/not/exist"
+    monkeypatch.setattr(mw.QFileDialog, "getExistingDirectory", lambda *a, **k: bad_dir)
+    # Replace _error to avoid a blocking QMessageBox and to capture the call.
+    win._error = MagicMock()
+
+    # Neither slot may raise; both must report the error and return None.
+    assert win._export_single_csv() is None
+    assert win._export_multi_csv() is None
+    assert win._error.call_count == 2
+
+    win.close()
+
+
 def test_gui_smoke_threaded_offscreen() -> None:
     app = _ensure_app()
     with suppress_qt_noise():

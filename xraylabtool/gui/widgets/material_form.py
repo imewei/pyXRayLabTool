@@ -137,6 +137,7 @@ class MaterialInputForm(QWidget):
                 self.formula.setProperty("validation", "invalid")
                 self.formula_hint.setText("Enter a chemical formula")
                 self.formula_hint.setProperty("role", "error")
+                self.composition_hint.setText("")
         except Exception as exc:
             ok = False
             self.formula.setProperty("validation", "invalid")

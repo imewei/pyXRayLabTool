@@ -145,15 +145,15 @@ complete -F _{command_name}_complete {command_name}
                     return 0
                     ;;"""
 
-                completion_logic += """
+                completion_logic += f"""
             esac
         fi
 
         # Complete subcommands if at the right position
-        if [[ ${COMP_CWORD} -eq 2 ]]; then
-            COMPREPLY=( $(compgen -W "${{cmd_name}_subcommands} ${{cmd_name}_opts}" -- "${cur}") )
+        if [[ ${{COMP_CWORD}} -eq 2 ]]; then
+            COMPREPLY=( $(compgen -W "${{{cmd_name}_subcommands}} ${{{cmd_name}_opts}}" -- "${{cur}}") )
         else
-            COMPREPLY=( $(compgen -W "${{cmd_name}_opts}" -- "${cur}") )
+            COMPREPLY=( $(compgen -W "${{{cmd_name}_opts}}" -- "${{cur}}") )
         fi
         return 0
     fi

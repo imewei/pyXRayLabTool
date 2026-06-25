@@ -12,6 +12,7 @@ from PySide6.QtCore import (
     QThreadPool,
     QTimer,
 )
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -920,6 +921,14 @@ class MainWindow(QMainWindow):
         self.toast.show_toast(message, "error", duration_ms=3500)
         QMessageBox.critical(self, "Error", message)
 
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Drop queued-but-unstarted compute jobs so the app shuts down
+        promptly instead of blocking on the global QThreadPool destructor
+        while a large sweep is in flight."""
+        if self.threadpool is not None:
+            self.threadpool.clear()
+        super().closeEvent(event)
+
     def _show_progress(self, active: bool, value: int = 0) -> None:
         if active:
             self.progress.setRange(0, 100)
@@ -998,6 +1007,7 @@ class MainWindow(QMainWindow):
             logger.error("plot_save_failed", extra={"path": path})
             return
         logger.info("plot_saved", extra={"path": path, "suggested": suggested})
+        self._info(f"Saved plot to {path}")
 
     def _render_plot_to_png(self, plot_widget: QWidget, path: str) -> bool:
         """Export a PyQtGraph plot widget to a PNG file.
@@ -1022,7 +1032,6 @@ class MainWindow(QMainWindow):
                 logger.exception("plot_export_failed", extra={"path": path})
         pixmap = plot_widget.grab()
         return bool(not pixmap.isNull() and pixmap.save(path, "PNG"))
-        self._info(f"Saved plot to {path}")
 
     def _export_single_csv(self) -> str | None:
         if self.single_result is None:
@@ -1046,45 +1055,50 @@ class MainWindow(QMainWindow):
             return None
         path = str(Path(folder) / fname)
         energies = self.single_result.energy_kev
-        with open(path, "w", newline="", encoding="utf-8") as fh:
-            writer = csv.writer(fh)
-            writer.writerow(
-                [
-                    "energy_kev",
-                    "wavelength_angstrom",
-                    "delta",
-                    "beta",
-                    "critical_angle_deg",
-                    "critical_angle_mrad",
-                    "attenuation_length_cm",
-                    "mu_1_per_cm",
-                    "f1",
-                    "f2",
-                    "real_sld_per_ang2",
-                    "imag_sld_per_ang2",
-                ]
-            )
-            for i, e in enumerate(energies):
-                crit_deg = self.single_result.critical_angle_degrees[i]
-                crit_mrad = crit_deg * 3.141592653589793 / 180.0 * 1000.0
-                atten = self.single_result.attenuation_length_cm[i]
-                mu = 1.0 / atten if atten != 0 else 0.0
+        try:
+            with open(path, "w", newline="", encoding="utf-8") as fh:
+                writer = csv.writer(fh)
                 writer.writerow(
                     [
-                        e,
-                        self.single_result.wavelength_angstrom[i],
-                        self.single_result.dispersion_delta[i],
-                        self.single_result.absorption_beta[i],
-                        crit_deg,
-                        crit_mrad,
-                        atten,
-                        mu,
-                        self.single_result.scattering_factor_f1[i],
-                        self.single_result.scattering_factor_f2[i],
-                        self.single_result.real_sld_per_ang2[i],
-                        self.single_result.imaginary_sld_per_ang2[i],
+                        "energy_kev",
+                        "wavelength_angstrom",
+                        "delta",
+                        "beta",
+                        "critical_angle_deg",
+                        "critical_angle_mrad",
+                        "attenuation_length_cm",
+                        "mu_1_per_cm",
+                        "f1",
+                        "f2",
+                        "real_sld_per_ang2",
+                        "imag_sld_per_ang2",
                     ]
                 )
+                for i, e in enumerate(energies):
+                    crit_deg = self.single_result.critical_angle_degrees[i]
+                    crit_mrad = crit_deg * 3.141592653589793 / 180.0 * 1000.0
+                    atten = self.single_result.attenuation_length_cm[i]
+                    mu = 1.0 / atten if atten != 0 else 0.0
+                    writer.writerow(
+                        [
+                            e,
+                            self.single_result.wavelength_angstrom[i],
+                            self.single_result.dispersion_delta[i],
+                            self.single_result.absorption_beta[i],
+                            crit_deg,
+                            crit_mrad,
+                            atten,
+                            mu,
+                            self.single_result.scattering_factor_f1[i],
+                            self.single_result.scattering_factor_f2[i],
+                            self.single_result.real_sld_per_ang2[i],
+                            self.single_result.imaginary_sld_per_ang2[i],
+                        ]
+                    )
+        except OSError as exc:
+            self._error(f"Could not save CSV: {exc}")
+            logger.exception("export_single_csv_failed", extra={"path": path})
+            return None
         self._info(f"Saved CSV to {path}")
         logger.info(
             "export_single_csv",
@@ -1132,34 +1146,39 @@ class MainWindow(QMainWindow):
             "real_sld_per_ang2",
             "imag_sld_per_ang2",
         ]
-        with open(path, "w", newline="", encoding="utf-8") as fh:
-            writer = csv.writer(fh)
-            writer.writerow(headers)
-            for formula, res in self.multi_results.items():
-                density = getattr(res, "density_g_cm3", 0.0)
-                for i, e in enumerate(res.energy_kev):
-                    crit_deg = res.critical_angle_degrees[i]
-                    crit_mrad = crit_deg * 3.141592653589793 / 180.0 * 1000.0
-                    atten = res.attenuation_length_cm[i]
-                    mu = 1.0 / atten if atten != 0 else 0.0
-                    writer.writerow(
-                        [
-                            formula,
-                            density,
-                            e,
-                            res.wavelength_angstrom[i],
-                            res.dispersion_delta[i],
-                            res.absorption_beta[i],
-                            crit_deg,
-                            crit_mrad,
-                            atten,
-                            mu,
-                            res.scattering_factor_f1[i],
-                            res.scattering_factor_f2[i],
-                            res.real_sld_per_ang2[i],
-                            res.imaginary_sld_per_ang2[i],
-                        ]
-                    )
+        try:
+            with open(path, "w", newline="", encoding="utf-8") as fh:
+                writer = csv.writer(fh)
+                writer.writerow(headers)
+                for formula, res in self.multi_results.items():
+                    density = getattr(res, "density_g_cm3", 0.0)
+                    for i, e in enumerate(res.energy_kev):
+                        crit_deg = res.critical_angle_degrees[i]
+                        crit_mrad = crit_deg * 3.141592653589793 / 180.0 * 1000.0
+                        atten = res.attenuation_length_cm[i]
+                        mu = 1.0 / atten if atten != 0 else 0.0
+                        writer.writerow(
+                            [
+                                formula,
+                                density,
+                                e,
+                                res.wavelength_angstrom[i],
+                                res.dispersion_delta[i],
+                                res.absorption_beta[i],
+                                crit_deg,
+                                crit_mrad,
+                                atten,
+                                mu,
+                                res.scattering_factor_f1[i],
+                                res.scattering_factor_f2[i],
+                                res.real_sld_per_ang2[i],
+                                res.imaginary_sld_per_ang2[i],
+                            ]
+                        )
+        except OSError as exc:
+            self._error(f"Could not save CSV: {exc}")
+            logger.exception("export_multi_csv_failed", extra={"path": path})
+            return None
         self._info(f"Saved CSV to {path}")
         logger.info(
             "export_multi_csv",
