@@ -1273,6 +1273,18 @@ def cmd_calc(args: Any) -> int:
         fields = None
         if args.fields:
             fields = [field.strip() for field in args.fields.split(",")]
+            # Validate field names up front so every output format behaves the
+            # same: previously an unknown field was silently dropped in table
+            # format (exit 0) but raised AttributeError for csv/json (exit 1).
+            scalar_fields, array_fields = _get_default_fields()
+            known = set(scalar_fields) | set(array_fields)
+            unknown = [f for f in fields if f not in known]
+            if unknown:
+                print(
+                    f"Error: Unknown field(s): {', '.join(unknown)}",
+                    file=sys.stderr,
+                )
+                return 1
 
         output_format = _determine_output_format(args)
         formatted_output = format_xray_result(
@@ -1337,22 +1349,27 @@ def _parse_batch_data(
     energy_sets = []
 
     for row in data_input:
-        formulas.append(row["formula"])
-        densities.append(float(row["density"]))
-
-        energy_str = str(row["energy"])
+        # Parse the whole row inside the guard so a single malformed cell skips
+        # only that row (with a warning) instead of aborting the entire batch
+        # and discarding every valid material. Keeps the three lists aligned.
         try:
+            formula = row["formula"]
+            density = float(row["density"])
+            energy_str = str(row["energy"])
             if "," in energy_str:
                 energies = [float(x.strip()) for x in energy_str.split(",")]
             else:
                 energies = [float(energy_str)]
-            energy_sets.append(energies)
-        except ValueError:
+        except (ValueError, KeyError) as exc:
             print(
-                f"Error: Invalid energy format for {row['formula']}: {energy_str}",
+                f"Warning: Skipping {row.get('formula', '?')}: invalid row ({exc})",
                 file=sys.stderr,
             )
-            return None, None, None
+            continue
+
+        formulas.append(formula)
+        densities.append(density)
+        energy_sets.append(energies)
 
     return formulas, densities, energy_sets
 

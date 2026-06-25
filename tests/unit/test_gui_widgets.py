@@ -89,6 +89,14 @@ class TestFormulaValidation:
         form.formula.setText("")
         assert not form.compute_button.isEnabled()
 
+    def test_clearing_formula_clears_composition_hint(self, form) -> None:
+        # Regression: the composition hint was only cleared on the parse-error
+        # path, so clearing a valid formula left a stale "Composition: ..." label.
+        form.formula.setText("SiO2")
+        assert form.composition_hint.text() != ""
+        form.formula.setText("")
+        assert form.composition_hint.text() == ""
+
 
 # ---------------------------------------------------------------------------
 # Density validation

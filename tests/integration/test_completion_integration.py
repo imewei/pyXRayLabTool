@@ -249,3 +249,27 @@ class TestCompletionIntegrationFlow:
         from xraylabtool.interfaces.completion_v2 import cli
 
         assert hasattr(cli, "completion_main")
+
+
+class TestBashCompletionSubstitution:
+    """Regression: generated bash for subcommand-bearing commands."""
+
+    def test_subcommand_block_has_no_bad_substitution(self):
+        """The subcommand-completion block was a plain (non-f) string, so it
+        emitted literal ``${{cmd_name}_subcommands}`` which bash rejects with
+        'bad substitution', yielding zero completions."""
+        from xraylabtool.interfaces.completion_v2.shells import (
+            BashCompletionGenerator,
+        )
+
+        cmds = {
+            "completion": {
+                "options": ["--shell", "--help"],
+                "subcommands": {"install": {"options": ["--user"]}},
+            },
+        }
+        script = BashCompletionGenerator()._generate_command_completions(cmds)
+
+        assert "${{" not in script, "literal ${{ is 'bad substitution' in bash"
+        assert "${completion_subcommands}" in script
+        assert "${completion_opts}" in script

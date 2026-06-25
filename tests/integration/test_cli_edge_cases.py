@@ -387,3 +387,71 @@ class TestCLICompatibility:
         parser = cli.create_parser()
         # Version action should be present
         assert any(action.dest == "version" for action in parser._actions)
+
+
+class TestBatchRowResilience:
+    """Regression: one malformed row must not discard the whole batch."""
+
+    def test_one_bad_row_skipped_others_processed(self, tmp_path: Path) -> None:
+        in_csv = tmp_path / "in.csv"
+        out_csv = tmp_path / "out.csv"
+        # Middle row has a non-numeric density -> previously aborted everything.
+        in_csv.write_text(
+            "formula,density,energy\nSiO2,2.2,10.0\nAl2O3,abc,10.0\nFe,7.87,8.0\n"
+        )
+
+        class MockArgs:
+            input_file = str(in_csv)
+            output = str(out_csv)
+            format = None
+            workers = None
+            fields = None
+            verbose = False
+
+        try:
+            rc = cli.cmd_batch(MockArgs())
+        except Exception:
+            pytest.skip("atomic data not available")
+
+        assert rc == 0, "batch aborted on a single bad row"
+        content = out_csv.read_text()
+        assert "SiO2" in content and "Fe" in content
+        assert "Al2O3" not in content  # the bad row was skipped
+
+
+class TestFieldNameValidation:
+    """Regression: unknown --fields must error consistently across formats."""
+
+    def test_unknown_field_errors_in_table_format(self) -> None:
+        class MockArgs:
+            formula = "SiO2"
+            energy = "10.0"
+            density = 2.2
+            verbose = False
+            output = None
+            format = "table"  # previously silently dropped + returned 0
+            fields = "formula,bogus_field"
+            precision = 6
+
+        try:
+            rc = cli.cmd_calc(MockArgs())
+        except Exception:
+            pytest.skip("atomic data not available")
+        assert rc == 1, "unknown field should fail in table format too"
+
+    def test_known_fields_still_succeed(self) -> None:
+        class MockArgs:
+            formula = "SiO2"
+            energy = "10.0"
+            density = 2.2
+            verbose = False
+            output = None
+            format = "table"
+            fields = "formula,dispersion_delta"
+            precision = 6
+
+        try:
+            rc = cli.cmd_calc(MockArgs())
+        except Exception:
+            pytest.skip("atomic data not available")
+        assert rc == 0
