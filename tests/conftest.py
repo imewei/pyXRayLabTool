@@ -15,6 +15,15 @@ import numpy as np
 import psutil
 import pytest
 
+# JAX preallocates ~75% of GPU memory per process at device init. Under
+# pytest-xdist each worker is its own process, so N workers all grabbing that
+# slice causes GPU OOM ("RESOURCE_EXHAUSTED") and autotuning failures. Disable
+# preallocation and bound each worker's slice so parallel runs share the GPU.
+# Must run before xraylabtool (and thus JAX) is imported below.
+# ponytail: env guard for xdist+JAX; raise MEM_FRACTION if a worker needs more.
+os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
+os.environ.setdefault("XLA_PYTHON_CLIENT_MEM_FRACTION", ".05")
+
 # Import centralized test configuration
 from tests.fixtures.test_config import (
     PERFORMANCE_THRESHOLDS,
