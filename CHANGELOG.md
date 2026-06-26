@@ -7,14 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Short console-script aliases: `xtool` (for `xraylabtool`) and `xtool-gui` (for `xraylabtool-gui`).
-- Shell completion now registers the `xtool` alias alongside `xraylabtool` for bash, zsh, fish, and PowerShell, so a single `xraylabtool completion install` enables tab-completion for both command names.
-
 ## [0.4.4] - 2026-06-25
 
 ### Added
 - Python 3.14 support: classifier in `pyproject.toml` and CI matrix coverage (ubuntu/macOS/windows).
+- Short console-script aliases: `xtool` (for `xraylabtool`) and `xtool-gui` (for `xraylabtool-gui`).
+- Shell completion now registers the `xtool` alias alongside `xraylabtool` for bash, zsh, fish, and PowerShell, so a single `xraylabtool completion install` enables tab-completion for both command names.
 
 ### Fixed
 - `parse_formula` now rejects trailing/invalid characters (e.g. `SiO2junk`, `Si-O2`) instead of silently ignoring them.
