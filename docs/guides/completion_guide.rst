@@ -26,6 +26,10 @@ Key Features
 **Environment Detection**
    Supports venv, virtualenv, conda, mamba, Poetry, and Pipenv environments.
 
+**Command Aliases**
+   The same completion is registered for the ``xtool`` short alias as well as ``xraylabtool``,
+   so ``xtool <TAB>`` behaves identically. A single ``xraylabtool completion install`` covers both.
+
 Quick Start
 -----------
 

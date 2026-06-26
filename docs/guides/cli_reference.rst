@@ -5,6 +5,10 @@ Command-line interface with 10+ commands for X-ray property calculations and com
 
 **Usage:** ``xraylabtool [COMMAND] [OPTIONS]``
 
+**Alias:** ``xtool`` is a short alias for ``xraylabtool`` and accepts the same commands and options
+(e.g. ``xtool calc Si --density 2.33 --energy 8000``). The desktop GUI is launched with
+``xraylabtool-gui`` or its alias ``xtool-gui``.
+
 **Commands:** calc, batch, convert, formula, atomic, bragg, list, completion, install-completion, uninstall-completion
 
 **Global Options:** --version, --help, --verbose/-v, --quiet/-q

@@ -176,11 +176,6 @@ completion system, replacing the legacy bridge above.
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: xraylabtool.interfaces.completion_v2.cache
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. automodule:: xraylabtool.interfaces.completion_v2.integration
    :members:
    :undoc-members:

@@ -11,8 +11,14 @@ from typing import Any
 class CompletionGenerator(ABC):
     """Base class for shell completion generators."""
 
-    def __init__(self, command_name: str = "xraylabtool"):
+    def __init__(
+        self, command_name: str = "xraylabtool", aliases: list[str] | None = None
+    ):
         self.command_name = command_name
+        # CLI command aliases that share the same completion (e.g. the ``xtool``
+        # short alias). ``xtool-gui`` is intentionally excluded: it launches the
+        # GUI and takes no CLI subcommands.
+        self.aliases = ["xtool"] if aliases is None else aliases
 
     @abstractmethod
     def generate(
@@ -60,12 +66,16 @@ class BashCompletionGenerator(CompletionGenerator):
         # Generate command-specific completion logic
         command_completions = self._generate_command_completions(commands)
 
-        return template.format(
+        script = template.format(
             command_name=self.command_name,
             commands=command_list,
             global_options=global_opts,
             command_completions=command_completions,
         )
+        # Register aliases against the same completion function.
+        for alias in self.aliases:
+            script += f"complete -F _{self.command_name}_complete {alias}\n"
+        return script
 
     def _get_template(self) -> str:
         """Get the Bash completion template."""
@@ -206,11 +216,15 @@ class ZshCompletionGenerator(CompletionGenerator):
         command_data = self._generate_command_definitions(commands, global_options)
         command_definitions, command_args = command_data.split("||")
 
-        return template.format(
+        script = template.format(
             command_name=self.command_name,
             command_definitions=command_definitions,
             command_args=command_args,
         )
+        # Register aliases against the same completion function.
+        for alias in self.aliases:
+            script += f"compdef _{self.command_name} {alias}\n"
+        return script
 
     def _get_template(self) -> str:
         """Get the Zsh completion template."""
@@ -391,10 +405,14 @@ class FishCompletionGenerator(CompletionGenerator):
             commands, global_options
         )
 
-        return template.format(
+        script = template.format(
             command_name=self.command_name,
             command_completions=command_completions,
         )
+        # Aliases inherit the command's completions via --wraps.
+        for alias in self.aliases:
+            script += f"complete -c {alias} --wraps {self.command_name}\n"
+        return script
 
     def _get_template(self) -> str:
         """Get the Fish completion template."""
@@ -525,8 +543,13 @@ class PowerShellCompletionGenerator(CompletionGenerator):
         # Generate global options
         global_opts = ", ".join(f'"{opt}"' for opt in global_options)
 
+        # One completer covers the command and all its aliases.
+        names = [self.command_name, *self.aliases]
+        command_names = "@(" + ", ".join(f"'{n}'" for n in names) + ")"
+
         return template.format(
             command_name=self.command_name,
+            command_names=command_names,
             command_cases=command_cases,
             global_options=global_opts,
         )
@@ -536,7 +559,7 @@ class PowerShellCompletionGenerator(CompletionGenerator):
         return """# {command_name} shell completion for PowerShell
 # Generated automatically by XRayLabTool completion system
 
-Register-ArgumentCompleter -Native -CommandName {command_name} -ScriptBlock {{
+Register-ArgumentCompleter -Native -CommandName {command_names} -ScriptBlock {{
     param($commandName, $wordToComplete, $cursorPosition)
 
     $command = $wordToComplete

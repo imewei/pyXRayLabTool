@@ -60,8 +60,9 @@ Verify installation:
 
 .. code-block:: bash
 
-   # Test CLI
+   # Test CLI (xtool is a short alias for xraylabtool)
    xraylabtool --version
+   xtool --version
    xraylabtool --help
 
    # Test Python API
@@ -89,6 +90,7 @@ The new completion system provides:
 - **Multi-Shell Support**: Native completion for bash, zsh, fish, PowerShell
 - **No System Changes**: No sudo required, installs per environment
 - **Auto-Activation**: Completion activates/deactivates with environment
+- **Alias Support**: Completion works for both ``xraylabtool`` and its short alias ``xtool``
 
 For legacy compatibility, the old commands still work:
 

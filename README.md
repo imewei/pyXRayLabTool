@@ -70,10 +70,14 @@ xraylabtool batch materials.csv -o results.csv    # Batch processing
 xraylabtool completion install                    # Shell tab-completion
 ```
 
+`xtool` is a short alias for `xraylabtool` (e.g. `xtool calc SiO2 -e 10.0 -d 2.2`).
+Shell tab-completion installed via `xraylabtool completion install` works for both names.
+
 ### GUI
 
 ```bash
-python -m xraylabtool.gui
+xraylabtool-gui        # or the short alias: xtool-gui
+python -m xraylabtool.gui   # equivalent module form
 ```
 
 Single-material analysis and multi-material comparison with interactive plots and CSV/PNG export.
