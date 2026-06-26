@@ -1,0 +1,3 @@
+# Exclude generated/vendored assets from GitHub Linguist language stats
+*.html linguist-vendored
+*.js linguist-vendored
