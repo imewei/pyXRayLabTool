@@ -215,6 +215,9 @@ conflicts = [
 [project.scripts]
 xraylabtool = "xraylabtool.interfaces.cli:main"
 xraylabtool-gui = "xraylabtool.gui.__main__:main"
+# Short aliases
+xtool = "xraylabtool.interfaces.cli:main"
+xtool-gui = "xraylabtool.gui.__main__:main"
 
 [tool.setuptools]
 zip-safe = false
