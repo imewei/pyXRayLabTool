@@ -16,6 +16,19 @@ Version Categories
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
 
+v0.4.5 (2026-08-12)
+--------------------
+
+**Fixed**
+
+- GUI now applies the persisted/default theme immediately on launch instead of staying unstyled until the first theme toggle
+- Light theme is now a real palette (``LIGHT_INDUSTRIAL``) tuned for WCAG contrast on white, instead of aliasing the dark palette's neon accents
+- GUI layout: consistent control spacing in the converter/presets/energy-range rows, the converter row no longer stretches full-width, and the multi-material table has a minimum height
+
+**Changed**
+
+- ``jax``/``jaxlib`` dependency bounds constrained to ``<0.11`` to avoid untested upstream releases
+
 v0.4.4 (2026-06-25)
 --------------------
 
