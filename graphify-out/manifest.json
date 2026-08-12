@@ -40,8 +40,8 @@
     "semantic_hash": "6eb0c3f54837bb269bda57ad1e5b85fc"
   },
   "xraylabtool/gui/main_window.py": {
-    "mtime": 1782430970.4321458,
-    "ast_hash": "bec945ce3b4e4841176c0c5a50f5ab6b",
+    "mtime": 1786504992.3463097,
+    "ast_hash": "9c9d47392a928cf83e6c77cf6d8e94b6",
     "semantic_hash": ""
   },
   "xraylabtool/gui/workers.py": {
@@ -70,14 +70,14 @@
     "semantic_hash": ""
   },
   "xraylabtool/gui/style.py": {
-    "mtime": 1777873210.6467056,
-    "ast_hash": "76e592d1c3eede2701046d7001bb33f2",
-    "semantic_hash": "76e592d1c3eede2701046d7001bb33f2"
+    "mtime": 1786550100.8917062,
+    "ast_hash": "a36548e2dd85b6b556d1c3b05cfa9b07",
+    "semantic_hash": ""
   },
   "xraylabtool/gui/__main__.py": {
-    "mtime": 1765773744.815345,
-    "ast_hash": "0b5b56994dfb3e40f09c68b082c984c0",
-    "semantic_hash": "0b5b56994dfb3e40f09c68b082c984c0"
+    "mtime": 1786550111.131557,
+    "ast_hash": "d44ae025c57f60dd81aaf304ae2e2aa1",
+    "semantic_hash": ""
   },
   "xraylabtool/gui/table_formatter.py": {
     "mtime": 1777045627.453371,

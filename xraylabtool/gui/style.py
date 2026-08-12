@@ -65,8 +65,29 @@ DARK_INDUSTRIAL = ColorPalette(
     plot_cycle=["#00f0ff", "#ff00aa", "#00ff9d", "#ff9d00", "#b700ff", "#ffee00"],
 )
 
-# Maintain legacy references pointing to the new unified aesthetic
-LIGHT_THEME = DARK_INDUSTRIAL
+# Light counterpart: same industrial/monospace structure, colors re-tuned so
+# every token still clears WCAG contrast against a light surface (the dark
+# palette's neon accents read as near-invisible on white).
+LIGHT_INDUSTRIAL = ColorPalette(
+    name="light_industrial",
+    window_bg="#f0f1f3",  # Light machined grey
+    panel_bg="#ffffff",  # Elevated white panel
+    input_bg="#f7f8fa",  # Inset off-white for inputs
+    text_primary="#15181c",  # Near-black
+    text_secondary="#5b6270",  # Muted technical grey
+    border="#d3d7dd",  # Subtle machined edges
+    border_focus="#0072ce",  # Deep blue focus (readable on white)
+    accent="#0064c8",  # Deep blue primary
+    accent_hover="#0078e8",  # Brighter blue hover
+    accent_text="#ffffff",  # White text on blue buttons
+    error="#b3540a",  # Dark amber/orange
+    error_bg="#fdefe0",  # Light amber background
+    success="#0a8754",  # Dark tech green
+    plot_bg="#ffffff",  # White background for plots
+    plot_cycle=["#0064c8", "#c2185b", "#00796b", "#e65100", "#6a1b9a", "#9e8a00"],
+)
+
+LIGHT_THEME = LIGHT_INDUSTRIAL
 DARK_THEME = DARK_INDUSTRIAL
 
 

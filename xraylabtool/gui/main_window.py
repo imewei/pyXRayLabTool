@@ -321,6 +321,7 @@ class MainWindow(QMainWindow):
         # Converter
         converter = QGroupBox("Energy ↔ Wavelength")
         conv_layout = QHBoxLayout()
+        conv_layout.setSpacing(10)
         self.conv_energy = QDoubleSpinBox()
         self.conv_energy.setRange(0.01, 100.0)
         self.conv_energy.setDecimals(4)
@@ -343,6 +344,7 @@ class MainWindow(QMainWindow):
 
         presets_box = QGroupBox("Presets")
         presets_row = QHBoxLayout()
+        presets_row.setSpacing(10)
         presets_row.addWidget(QLabel("Material"))
         presets_row.addWidget(self.single_preset)
         presets_row.addWidget(QLabel("Energy"))
@@ -408,8 +410,10 @@ class MainWindow(QMainWindow):
         layout.setVerticalSpacing(20)
         layout.addWidget(left_panel, 0, 0, 1, 1)
         layout.addLayout(right_layout, 0, 1, 1, 1)
-        # Full-width rows below
-        layout.addWidget(converter, 1, 0, 1, 2)
+        # Full-width rows below. The converter's controls are compact, so keep
+        # it left-aligned within its full-width cell instead of stretching a
+        # small toolset across the whole window.
+        layout.addWidget(converter, 1, 0, 1, 2, Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(self.single_table, 2, 0, 1, 2)
         layout.setColumnStretch(0, 0)
         layout.setColumnStretch(1, 1)
@@ -619,6 +623,7 @@ class MainWindow(QMainWindow):
 
         energy_box = QGroupBox("Energy range")
         energy_layout = QHBoxLayout()
+        energy_layout.setSpacing(10)
         energy_layout.addWidget(QLabel("Start"))
         energy_layout.addWidget(self.multi_energy_start)
         energy_layout.addWidget(QLabel("End"))
@@ -630,6 +635,7 @@ class MainWindow(QMainWindow):
         energy_box.setLayout(energy_layout)
 
         self.multi_table = MaterialTable()
+        self.multi_table.setMinimumHeight(160)
 
         self.multi_property = QComboBox()
         self.multi_property.addItems(PROPERTIES)

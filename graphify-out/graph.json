@@ -10488,7 +10488,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "test_completion_integration.py"
     },
@@ -10501,7 +10501,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testlegacyinstallcompletionmain",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "testlegacyinstallcompletionmain"
     },
@@ -10513,7 +10513,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testlegacyinstallcompletionmain_test_function_exists",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": ".test_function_exists()"
     },
@@ -10525,7 +10525,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testlegacyinstallcompletionmain_test_accepts_namespace_argument",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": ".test_accepts_namespace_argument()"
     },
@@ -10536,7 +10536,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_py_patch",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "patch"
     },
@@ -10548,7 +10548,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testlegacyinstallcompletionmain_test_handles_legacy_arguments",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": ".test_handles_legacy_arguments()"
     },
@@ -10560,7 +10560,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testlegacyinstallcompletionmain_test_uninstall_mode_flag",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": ".test_uninstall_mode_flag()"
     },
@@ -10572,7 +10572,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testlegacyinstallcompletionmain_test_test_mode_flag",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": ".test_test_mode_flag()"
     },
@@ -10584,7 +10584,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testlegacyinstallcompletionmain_test_system_wide_flag",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": ".test_system_wide_flag()"
     },
@@ -10596,7 +10596,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testlegacyinstallcompletionmain_test_returns_success_code",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": ".test_returns_success_code()"
     },
@@ -10610,7 +10610,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testinstallcompletionmain",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "testinstallcompletionmain"
     },
     {
@@ -10622,7 +10622,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testinstallcompletionmain_test_function_exists",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": ".test_function_exists()"
     },
     {
@@ -10634,7 +10634,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testinstallcompletionmain_test_accepts_namespace_argument",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": ".test_accepts_namespace_argument()"
     },
     {
@@ -10646,7 +10646,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testinstallcompletionmain_test_delegates_to_completion_main",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": ".test_delegates_to_completion_main()"
     },
     {
@@ -10708,7 +10708,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testbackwardcompatibility",
       "community": 39,
-      "community_name": "legacy_install_completion_main",
+      "community_name": "TestBackwardCompatibility",
       "norm_label": "testbackwardcompatibility"
     },
     {
@@ -10720,7 +10720,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testbackwardcompatibility_test_legacy_argument_handling",
       "community": 39,
-      "community_name": "legacy_install_completion_main",
+      "community_name": "TestBackwardCompatibility",
       "norm_label": ".test_legacy_argument_handling()"
     },
     {
@@ -10732,7 +10732,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_testbackwardcompatibility_test_optional_arguments",
       "community": 39,
-      "community_name": "legacy_install_completion_main",
+      "community_name": "TestBackwardCompatibility",
       "norm_label": ".test_optional_arguments()"
     },
     {
@@ -10828,7 +10828,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_1",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "tests for interfaces/completion_v2/integration.py module. tests integration..."
     },
@@ -10839,7 +10839,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_18",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "tests for legacy_install_completion_main function."
     },
@@ -10850,7 +10850,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_21",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "test that legacy_install_completion_main function exists."
     },
@@ -10861,7 +10861,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_25",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "test that function accepts argparse.namespace."
     },
@@ -10872,7 +10872,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_39",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "test that function handles legacy argument formats."
     },
@@ -10883,7 +10883,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_60",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "test handling of uninstall mode flag."
     },
@@ -10894,7 +10894,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_77",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "test handling of test mode flag."
     },
@@ -10905,7 +10905,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_94",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "test handling of system-wide installation flag."
     },
@@ -10916,7 +10916,7 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_111",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "test that successful operation returns 0."
     },
@@ -10928,7 +10928,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_129",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "tests for install_completion_main function."
     },
     {
@@ -10939,7 +10939,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_132",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "test that install_completion_main function exists."
     },
     {
@@ -10950,7 +10950,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_136",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "test that function accepts argparse.namespace."
     },
     {
@@ -10961,7 +10961,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_144",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "test that function delegates to completion_main."
     },
     {
@@ -11016,7 +11016,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_181",
       "community": 39,
-      "community_name": "legacy_install_completion_main",
+      "community_name": "TestBackwardCompatibility",
       "norm_label": "tests for backward compatibility with existing cli."
     },
     {
@@ -11027,7 +11027,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_184",
       "community": 39,
-      "community_name": "legacy_install_completion_main",
+      "community_name": "TestBackwardCompatibility",
       "norm_label": "test handling of various legacy argument formats."
     },
     {
@@ -11038,7 +11038,7 @@
       "_origin": "ast",
       "id": "tests_integration_test_completion_integration_rationale_210",
       "community": 39,
-      "community_name": "legacy_install_completion_main",
+      "community_name": "TestBackwardCompatibility",
       "norm_label": "test that optional arguments are handled."
     },
     {
@@ -11290,8 +11290,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "tests_integration_test_integration_testsio2properties",
-      "community": 22,
-      "community_name": "test_integration.py",
+      "community": 148,
+      "community_name": "TestSiO2Properties",
       "norm_label": "testsio2properties"
     },
     {
@@ -11302,8 +11302,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_integration_testsio2properties_test_sio2_dispersion",
-      "community": 22,
-      "community_name": "test_integration.py",
+      "community": 148,
+      "community_name": "TestSiO2Properties",
       "norm_label": ".test_sio2_dispersion()"
     },
     {
@@ -11314,8 +11314,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_integration_testsio2properties_test_sio2_f1_values",
-      "community": 22,
-      "community_name": "test_integration.py",
+      "community": 148,
+      "community_name": "TestSiO2Properties",
       "norm_label": ".test_sio2_f1_values()"
     },
     {
@@ -11326,8 +11326,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_integration_test_integration_testsio2properties_test_sio2_resld_values",
-      "community": 22,
-      "community_name": "test_integration.py",
+      "community": 148,
+      "community_name": "TestSiO2Properties",
       "norm_label": ".test_sio2_resld_values()"
     },
     {
@@ -11775,8 +11775,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "tests_integration_test_integration_rationale_41",
-      "community": 22,
-      "community_name": "test_integration.py",
+      "community": 148,
+      "community_name": "TestSiO2Properties",
       "norm_label": "test sio2 properties matching julia test values."
     },
     {
@@ -11786,8 +11786,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "tests_integration_test_integration_rationale_44",
-      "community": 22,
-      "community_name": "test_integration.py",
+      "community": 148,
+      "community_name": "TestSiO2Properties",
       "norm_label": "test sio2 dispersion values."
     },
     {
@@ -11797,8 +11797,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "tests_integration_test_integration_rationale_79",
-      "community": 22,
-      "community_name": "test_integration.py",
+      "community": 148,
+      "community_name": "TestSiO2Properties",
       "norm_label": "test sio2 resld values."
     },
     {
@@ -22487,7 +22487,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": "test_numerical_stability.py"
     },
@@ -22610,7 +22610,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testextremeconditions",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": "testextremeconditions"
     },
     {
@@ -22622,7 +22622,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testextremeconditions_test_very_low_energy_calculation",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": ".test_very_low_energy_calculation()"
     },
     {
@@ -22634,7 +22634,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testextremeconditions_test_very_high_energy_calculation",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": ".test_very_high_energy_calculation()"
     },
     {
@@ -22646,7 +22646,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testextremeconditions_test_very_low_density_material",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": ".test_very_low_density_material()"
     },
     {
@@ -22658,7 +22658,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testextremeconditions_test_very_high_density_material",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": ".test_very_high_density_material()"
     },
     {
@@ -22670,7 +22670,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testextremeconditions_test_large_energy_array",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": ".test_large_energy_array()"
     },
     {
@@ -22682,7 +22682,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testextremeconditions_test_logarithmic_energy_spacing",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": ".test_logarithmic_energy_spacing()"
     },
     {
@@ -22694,7 +22694,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testboundaryconditions",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": "testboundaryconditions"
     },
@@ -22706,7 +22706,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testboundaryconditions_test_energy_boundary_validation",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": ".test_energy_boundary_validation()"
     },
@@ -22718,7 +22718,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testboundaryconditions_test_density_boundary_validation",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": ".test_density_boundary_validation()"
     },
@@ -22730,7 +22730,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testboundaryconditions_test_numerical_precision_at_boundaries",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": ".test_numerical_precision_at_boundaries()"
     },
@@ -22744,7 +22744,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testphysicalrealism",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": "testphysicalrealism"
     },
     {
@@ -22756,7 +22756,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testphysicalrealism_test_critical_angle_physical_bounds",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": ".test_critical_angle_physical_bounds()"
     },
     {
@@ -22768,7 +22768,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testphysicalrealism_test_critical_angle_monotonicity_away_from_edges",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": ".test_critical_angle_monotonicity_away_from_edges()"
     },
     {
@@ -22780,7 +22780,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testphysicalrealism_test_critical_angle_discontinuity_near_si_k_edge",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": ".test_critical_angle_discontinuity_near_si_k_edge()"
     },
     {
@@ -22792,7 +22792,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testphysicalrealism_test_attenuation_length_positive",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": ".test_attenuation_length_positive()"
     },
     {
@@ -22804,7 +22804,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testphysicalrealism_test_electron_density_consistency",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": ".test_electron_density_consistency()"
     },
     {
@@ -22816,7 +22816,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_testphysicalrealism_test_scattering_factors_consistency",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": ".test_scattering_factors_consistency()"
     },
     {
@@ -22826,7 +22826,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_1",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": "tests for numerical stability improvements. this test module validates the..."
     },
@@ -22937,7 +22937,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_185",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": "test calculations under extreme conditions."
     },
     {
@@ -22948,7 +22948,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_188",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": "test calculation at very low energies (near the lower bound)."
     },
     {
@@ -22959,7 +22959,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_199",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": "test calculation at very high energies (near the upper bound)."
     },
     {
@@ -22970,7 +22970,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_210",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": "test calculation with very low density materials."
     },
     {
@@ -22981,7 +22981,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_220",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": "test calculation with very high density materials."
     },
     {
@@ -22992,7 +22992,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_230",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": "test calculation with large energy arrays."
     },
     {
@@ -23003,7 +23003,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_243",
       "community": 83,
-      "community_name": "TestExtremeConditions",
+      "community_name": "test_numerical_stability.py",
       "norm_label": "test calculation with logarithmic energy spacing."
     },
     {
@@ -23013,7 +23013,7 @@
       "source_location": "L259",
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_259",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": "test calculations at boundary conditions."
     },
@@ -23024,7 +23024,7 @@
       "source_location": "L262",
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_262",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": "test energy boundary validation."
     },
@@ -23035,7 +23035,7 @@
       "source_location": "L279",
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_279",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": "test density boundary validation."
     },
@@ -23046,7 +23046,7 @@
       "source_location": "L293",
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_293",
-      "community": 47,
+      "community": 83,
       "community_name": "test_numerical_stability.py",
       "norm_label": "test numerical precision at energy boundaries."
     },
@@ -23058,7 +23058,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_310",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": "test that results maintain physical realism."
     },
     {
@@ -23069,7 +23069,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_313",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": "test that critical angles are always positive and physically reasonable...."
     },
     {
@@ -23080,7 +23080,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_335",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": "test monotonic decrease in energy regions free of absorption edges. away from..."
     },
     {
@@ -23091,7 +23091,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_353",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": "test that a discontinuity exists across the si k-edge at 1.839 kev. the real..."
     },
     {
@@ -23102,7 +23102,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_382",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": "test that attenuation length is always positive."
     },
     {
@@ -23113,7 +23113,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_395",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": "test that electron density is consistent with formula and density."
     },
     {
@@ -23124,7 +23124,7 @@
       "_origin": "ast",
       "id": "tests_unit_test_numerical_stability_rationale_407",
       "community": 47,
-      "community_name": "test_numerical_stability.py",
+      "community_name": "TestPhysicalRealism",
       "norm_label": "test that scattering factors are physically reasonable."
     },
     {
@@ -27798,8 +27798,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_calculators_xray_result_xrayresult_energy",
-      "community": 148,
-      "community_name": ".Energy",
+      "community": 55,
+      "community_name": "ndarray",
       "norm_label": ".energy()"
     },
     {
@@ -27917,8 +27917,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_calculators_xray_result_xrayresult_imsld",
-      "community": 55,
-      "community_name": "ndarray",
+      "community": 156,
+      "community_name": ".imSLD",
       "norm_label": ".imsld()"
     },
     {
@@ -28039,8 +28039,8 @@
       "source_location": "L270",
       "_origin": "ast",
       "id": "xraylabtool_calculators_xray_result_rationale_270",
-      "community": 148,
-      "community_name": ".Energy",
+      "community": 55,
+      "community_name": "ndarray",
       "norm_label": "deprecated: use 'energy_kev' instead."
     },
     {
@@ -28138,8 +28138,8 @@
       "source_location": "L360",
       "_origin": "ast",
       "id": "xraylabtool_calculators_xray_result_rationale_360",
-      "community": 55,
-      "community_name": "ndarray",
+      "community": 156,
+      "community_name": ".imSLD",
       "norm_label": "deprecated: use 'imaginary_sld_per_ang2' instead."
     },
     {
@@ -30391,7 +30391,7 @@
       "label": "._tune_table_headers()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L421",
+      "source_location": "L425",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_tune_table_headers",
@@ -30403,7 +30403,7 @@
       "label": "._reserve_overlay_scrollbar_space()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L445",
+      "source_location": "L449",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_reserve_overlay_scrollbar_space",
@@ -30426,7 +30426,7 @@
       "label": "._run_single()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L459",
+      "source_location": "L463",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_run_single",
@@ -30438,7 +30438,7 @@
       "label": "._on_single_finished()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L487",
+      "source_location": "L491",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_on_single_finished",
@@ -30450,7 +30450,7 @@
       "label": "._on_single_error()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L501",
+      "source_location": "L505",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_on_single_error",
@@ -30462,7 +30462,7 @@
       "label": "._refresh_single_views()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L509",
+      "source_location": "L513",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_refresh_single_views",
@@ -30474,7 +30474,7 @@
       "label": "._build_multi_tab()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L545",
+      "source_location": "L549",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_build_multi_tab",
@@ -30486,7 +30486,7 @@
       "label": "._set_tab_order()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L757",
+      "source_location": "L763",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_set_tab_order",
@@ -30498,7 +30498,7 @@
       "label": "._add_material()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L787",
+      "source_location": "L793",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_add_material",
@@ -30510,7 +30510,7 @@
       "label": "._add_multi_preset()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L800",
+      "source_location": "L806",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_add_multi_preset",
@@ -30522,7 +30522,7 @@
       "label": "._remove_material()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L807",
+      "source_location": "L813",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_remove_material",
@@ -30534,7 +30534,7 @@
       "label": "._multi_energy_cfg()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L814",
+      "source_location": "L820",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_multi_energy_cfg",
@@ -30546,7 +30546,7 @@
       "label": "._run_multi()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L822",
+      "source_location": "L828",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_run_multi",
@@ -30558,7 +30558,7 @@
       "label": "._on_multi_finished()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L857",
+      "source_location": "L863",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_on_multi_finished",
@@ -30570,7 +30570,7 @@
       "label": "._on_multi_error()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L873",
+      "source_location": "L879",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_on_multi_error",
@@ -30582,7 +30582,7 @@
       "label": "._progress_multi()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L882",
+      "source_location": "L888",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_progress_multi",
@@ -30594,7 +30594,7 @@
       "label": "._refresh_multi_views()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L885",
+      "source_location": "L891",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_refresh_multi_views",
@@ -30606,7 +30606,7 @@
       "label": "._info()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L915",
+      "source_location": "L921",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_info",
@@ -30618,7 +30618,7 @@
       "label": "._error()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L919",
+      "source_location": "L925",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_error",
@@ -30630,7 +30630,7 @@
       "label": ".closeEvent()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L924",
+      "source_location": "L930",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_closeevent",
@@ -30653,7 +30653,7 @@
       "label": "._show_progress()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L932",
+      "source_location": "L938",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_show_progress",
@@ -30665,7 +30665,7 @@
       "label": "._toggle_log_path()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L942",
+      "source_location": "L948",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_toggle_log_path",
@@ -30677,7 +30677,7 @@
       "label": ".resizeEvent()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L956",
+      "source_location": "L962",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_resizeevent",
@@ -30689,7 +30689,7 @@
       "label": "._sanitize_filename()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L965",
+      "source_location": "L971",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_sanitize_filename",
@@ -30701,7 +30701,7 @@
       "label": "._save_single_png()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L969",
+      "source_location": "L975",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_save_single_png",
@@ -30713,7 +30713,7 @@
       "label": "._save_multi_png()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L981",
+      "source_location": "L987",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_save_multi_png",
@@ -30725,7 +30725,7 @@
       "label": "._save_plot()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L990",
+      "source_location": "L996",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_save_plot",
@@ -30737,7 +30737,7 @@
       "label": "._render_plot_to_png()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1012",
+      "source_location": "L1018",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_render_plot_to_png",
@@ -30749,7 +30749,7 @@
       "label": "._export_single_csv()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1036",
+      "source_location": "L1042",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_export_single_csv",
@@ -30761,7 +30761,7 @@
       "label": "._export_multi_csv()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1114",
+      "source_location": "L1120",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_export_multi_csv",
@@ -30773,7 +30773,7 @@
       "label": "._label_for_property()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1189",
+      "source_location": "L1195",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_label_for_property",
@@ -30785,7 +30785,7 @@
       "label": "._track_worker()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1200",
+      "source_location": "L1206",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_track_worker",
@@ -30797,7 +30797,7 @@
       "label": "._cleanup_worker()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1205",
+      "source_location": "L1211",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_cleanup_worker",
@@ -30809,7 +30809,7 @@
       "label": "._apply_single_preset()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1211",
+      "source_location": "L1217",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_apply_single_preset",
@@ -30821,7 +30821,7 @@
       "label": "._apply_energy_preset()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1219",
+      "source_location": "L1225",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_apply_energy_preset",
@@ -30833,7 +30833,7 @@
       "label": "._convert_e2w()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1238",
+      "source_location": "L1244",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_convert_e2w",
@@ -30845,7 +30845,7 @@
       "label": "._convert_w2e()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1251",
+      "source_location": "L1257",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_main_window_mainwindow_convert_w2e",
@@ -30879,9 +30879,9 @@
       "label": "Avoid overlay scrollbars clipping the scroll area viewport. Some Qt styles\u2026",
       "file_type": "rationale",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L446",
+      "source_location": "L450",
       "_origin": "ast",
-      "id": "xraylabtool_gui_main_window_rationale_446",
+      "id": "xraylabtool_gui_main_window_rationale_450",
       "community": 33,
       "community_name": "._build_multi_tab",
       "norm_label": "avoid overlay scrollbars clipping the scroll area viewport. some qt styles..."
@@ -30890,9 +30890,9 @@
       "label": "Drop queued-but-unstarted compute jobs so the app shuts down promptly instead\u2026",
       "file_type": "rationale",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L925",
+      "source_location": "L931",
       "_origin": "ast",
-      "id": "xraylabtool_gui_main_window_rationale_925",
+      "id": "xraylabtool_gui_main_window_rationale_931",
       "community": 23,
       "community_name": "MainWindow",
       "norm_label": "drop queued-but-unstarted compute jobs so the app shuts down promptly instead..."
@@ -30901,9 +30901,9 @@
       "label": "Replace characters unsafe for filenames with underscores.",
       "file_type": "rationale",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L966",
+      "source_location": "L972",
       "_origin": "ast",
-      "id": "xraylabtool_gui_main_window_rationale_966",
+      "id": "xraylabtool_gui_main_window_rationale_972",
       "community": 23,
       "community_name": "MainWindow",
       "norm_label": "replace characters unsafe for filenames with underscores."
@@ -30912,9 +30912,9 @@
       "label": "Export a PyQtGraph plot widget to a PNG file. The plot widgets wrap either a\u2026",
       "file_type": "rationale",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1013",
+      "source_location": "L1019",
       "_origin": "ast",
-      "id": "xraylabtool_gui_main_window_rationale_1013",
+      "id": "xraylabtool_gui_main_window_rationale_1019",
       "community": 23,
       "community_name": "MainWindow",
       "norm_label": "export a pyqtgraph plot widget to a png file. the plot widgets wrap either a..."
@@ -31064,7 +31064,7 @@
       "label": "get_qss()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L73",
+      "source_location": "L94",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_style_get_qss",
@@ -31076,7 +31076,7 @@
       "label": "apply_theme()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L336",
+      "source_location": "L357",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_style_apply_theme",
@@ -31099,7 +31099,7 @@
       "label": "apply_styles()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L342",
+      "source_location": "L363",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_style_apply_styles",
@@ -31111,7 +31111,7 @@
       "label": "apply_pyqtgraph_theme()",
       "file_type": "code",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L347",
+      "source_location": "L368",
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_gui_style_apply_pyqtgraph_theme",
@@ -31145,9 +31145,9 @@
       "label": "Generate QSS string from palette.",
       "file_type": "rationale",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L74",
+      "source_location": "L95",
       "_origin": "ast",
-      "id": "xraylabtool_gui_style_rationale_74",
+      "id": "xraylabtool_gui_style_rationale_95",
       "community": 59,
       "community_name": "ColorPalette",
       "norm_label": "generate qss string from palette."
@@ -31156,9 +31156,9 @@
       "label": "Apply palette and stylesheet to the QApplication.",
       "file_type": "rationale",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L337",
+      "source_location": "L358",
       "_origin": "ast",
-      "id": "xraylabtool_gui_style_rationale_337",
+      "id": "xraylabtool_gui_style_rationale_358",
       "community": 59,
       "community_name": "ColorPalette",
       "norm_label": "apply palette and stylesheet to the qapplication."
@@ -31167,9 +31167,9 @@
       "label": "Entry point: Defaults to Dark Industrial Theme.",
       "file_type": "rationale",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L343",
+      "source_location": "L364",
       "_origin": "ast",
-      "id": "xraylabtool_gui_style_rationale_343",
+      "id": "xraylabtool_gui_style_rationale_364",
       "community": 59,
       "community_name": "ColorPalette",
       "norm_label": "entry point: defaults to dark industrial theme."
@@ -31178,9 +31178,9 @@
       "label": "Apply a PyQtGraph theme aligned with the GUI palette.",
       "file_type": "rationale",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L348",
+      "source_location": "L369",
       "_origin": "ast",
-      "id": "xraylabtool_gui_style_rationale_348",
+      "id": "xraylabtool_gui_style_rationale_369",
       "community": 59,
       "community_name": "ColorPalette",
       "norm_label": "apply a pyqtgraph theme aligned with the gui palette."
@@ -33761,7 +33761,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "completion_v2/cli.py"
     },
     {
@@ -33773,7 +33773,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_create_completion_parser",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "create_completion_parser()"
     },
     {
@@ -33784,7 +33784,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_py_argumentparser",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "argumentparser"
     },
     {
@@ -33796,7 +33796,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_handle_completion_command",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "handle_completion_command()"
     },
     {
@@ -33807,7 +33807,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_py_namespace",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "namespace"
     },
     {
@@ -33819,7 +33819,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_show_completion_info",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "show_completion_info()"
     },
     {
@@ -33831,7 +33831,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_completion_main",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "completion_main()"
     },
     {
@@ -33854,7 +33854,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_install_completion_main",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "install_completion_main()"
     },
     {
@@ -33877,7 +33877,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_rationale_1",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "command-line interface for the new completion system. this module provides cli..."
     },
     {
@@ -33888,7 +33888,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_rationale_16",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "create argument parser for completion commands."
     },
     {
@@ -33899,7 +33899,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_rationale_85",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "handle completion subcommands."
     },
     {
@@ -33910,7 +33910,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_rationale_129",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "show information about the completion system."
     },
     {
@@ -33921,7 +33921,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_rationale_162",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "main entry point for completion commands."
     },
     {
@@ -33932,7 +33932,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_cli_rationale_187",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "legacy install completion main function."
     },
     {
@@ -35359,7 +35359,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "integration.py"
     },
     {
@@ -35370,7 +35370,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_legacy_install_completion_main",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "legacy_install_completion_main()"
     },
@@ -35381,7 +35381,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_py_namespace",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "namespace"
     },
@@ -35394,7 +35394,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_legacy_uninstall_completion_main",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "legacy_uninstall_completion_main()"
     },
     {
@@ -35405,7 +35405,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_py_any",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "any"
     },
     {
@@ -35417,7 +35417,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_test_completion_installation",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "test_completion_installation()"
     },
     {
@@ -35429,7 +35429,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_handle_new_completion_command",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "handle_new_completion_command()"
     },
     {
@@ -35440,7 +35440,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_rationale_1",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "integration layer for the new completion system. this module provides backward..."
     },
     {
@@ -35450,7 +35450,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_rationale_16",
-      "community": 39,
+      "community": 28,
       "community_name": "legacy_install_completion_main",
       "norm_label": "legacy install completion main function with new system backend. this function..."
     },
@@ -35462,7 +35462,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_rationale_80",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "legacy uninstall completion main function with new system backend."
     },
     {
@@ -35473,7 +35473,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_rationale_134",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "test if completion is working in the current environment."
     },
     {
@@ -35484,7 +35484,7 @@
       "_origin": "ast",
       "id": "xraylabtool_interfaces_completion_v2_integration_rationale_194",
       "community": 28,
-      "community_name": "completion_v2/cli.py",
+      "community_name": "legacy_install_completion_main",
       "norm_label": "handle new 'completion' subcommand."
     },
     {
@@ -38217,8 +38217,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "001-adr-jax-vs-numpy.md",
-      "id": "architecture_001_adr_jax_vs_numpy",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy"
     },
     {
       "label": "ADR-001: JAX vs NumPy Computation Backend",
@@ -38228,8 +38228,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "adr-001: jax vs numpy computation backend",
-      "id": "architecture_001_adr_jax_vs_numpy_adr_001_jax_vs_numpy_computation_backend",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy_adr_001_jax_vs_numpy_computation_backend"
     },
     {
       "label": "Context",
@@ -38239,8 +38239,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "context",
-      "id": "architecture_001_adr_jax_vs_numpy_context",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy_context"
     },
     {
       "label": "Decision",
@@ -38250,8 +38250,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "decision",
-      "id": "architecture_001_adr_jax_vs_numpy_decision",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy_decision"
     },
     {
       "label": "Consequences",
@@ -38261,8 +38261,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "consequences",
-      "id": "architecture_001_adr_jax_vs_numpy_consequences",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy_consequences"
     },
     {
       "label": "Positive",
@@ -38272,8 +38272,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "positive",
-      "id": "architecture_001_adr_jax_vs_numpy_positive",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy_positive"
     },
     {
       "label": "Negative",
@@ -38283,8 +38283,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "negative",
-      "id": "architecture_001_adr_jax_vs_numpy_negative",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy_negative"
     },
     {
       "label": "Risks",
@@ -38294,8 +38294,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "risks",
-      "id": "architecture_001_adr_jax_vs_numpy_risks",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy_risks"
     },
     {
       "label": "Appendix: Functions to JIT-Compile (Priority Order)",
@@ -38305,8 +38305,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "appendix: functions to jit-compile (priority order)",
-      "id": "architecture_001_adr_jax_vs_numpy_appendix_functions_to_jit_compile_priority_order",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy_appendix_functions_to_jit_compile_priority_order"
     },
     {
       "label": "Appendix: Functions that MUST NOT be JIT-compiled",
@@ -38316,8 +38316,8 @@
       "_origin": "ast",
       "community": 146,
       "norm_label": "appendix: functions that must not be jit-compiled",
-      "id": "architecture_001_adr_jax_vs_numpy_appendix_functions_that_must_not_be_jit_compiled",
-      "community_name": "ADR-001: JAX vs NumPy Computation Backend"
+      "community_name": "ADR-001: JAX vs NumPy Computation Backend",
+      "id": "architecture_001_adr_jax_vs_numpy_appendix_functions_that_must_not_be_jit_compiled"
     },
     {
       "label": "002-adr-pyqtgraph-vs-matplotlib.md",
@@ -38327,8 +38327,8 @@
       "_origin": "ast",
       "community": 150,
       "norm_label": "002-adr-pyqtgraph-vs-matplotlib.md",
-      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib",
-      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
+      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
+      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib"
     },
     {
       "label": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
@@ -38338,8 +38338,8 @@
       "_origin": "ast",
       "community": 150,
       "norm_label": "adr-002: pyqtgraph vs matplotlib for gui plotting",
-      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_adr_002_pyqtgraph_vs_matplotlib_for_gui_plotting",
-      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
+      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
+      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_adr_002_pyqtgraph_vs_matplotlib_for_gui_plotting"
     },
     {
       "label": "Context",
@@ -38349,8 +38349,8 @@
       "_origin": "ast",
       "community": 150,
       "norm_label": "context",
-      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_context",
-      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
+      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
+      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_context"
     },
     {
       "label": "Decision",
@@ -38360,8 +38360,8 @@
       "_origin": "ast",
       "community": 150,
       "norm_label": "decision",
-      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_decision",
-      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
+      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
+      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_decision"
     },
     {
       "label": "Consequences",
@@ -38371,8 +38371,8 @@
       "_origin": "ast",
       "community": 150,
       "norm_label": "consequences",
-      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_consequences",
-      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
+      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
+      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_consequences"
     },
     {
       "label": "Positive",
@@ -38382,8 +38382,8 @@
       "_origin": "ast",
       "community": 150,
       "norm_label": "positive",
-      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_positive",
-      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
+      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
+      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_positive"
     },
     {
       "label": "Negative",
@@ -38393,8 +38393,8 @@
       "_origin": "ast",
       "community": 150,
       "norm_label": "negative",
-      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_negative",
-      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
+      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
+      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_negative"
     },
     {
       "label": "Migration Details",
@@ -38404,8 +38404,8 @@
       "_origin": "ast",
       "community": 150,
       "norm_label": "migration details",
-      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_migration_details",
-      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
+      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
+      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_migration_details"
     },
     {
       "label": "Appendix: Feature Parity Checklist",
@@ -38415,8 +38415,8 @@
       "_origin": "ast",
       "community": 150,
       "norm_label": "appendix: feature parity checklist",
-      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_appendix_feature_parity_checklist",
-      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
+      "community_name": "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting",
+      "id": "architecture_002_adr_pyqtgraph_vs_matplotlib_appendix_feature_parity_checklist"
     },
     {
       "label": "003-adr-dtype-policy.md",
@@ -38426,8 +38426,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "003-adr-dtype-policy.md",
-      "id": "architecture_003_adr_dtype_policy",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy"
     },
     {
       "label": "ADR-003: float64 Preservation Policy",
@@ -38437,8 +38437,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "adr-003: float64 preservation policy",
-      "id": "architecture_003_adr_dtype_policy_adr_003_float64_preservation_policy",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_adr_003_float64_preservation_policy"
     },
     {
       "label": "Context",
@@ -38448,8 +38448,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "context",
-      "id": "architecture_003_adr_dtype_policy_context",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_context"
     },
     {
       "label": "The float64 Requirement in X-ray Calculations",
@@ -38459,8 +38459,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "the float64 requirement in x-ray calculations",
-      "id": "architecture_003_adr_dtype_policy_the_float64_requirement_in_x_ray_calculations",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_the_float64_requirement_in_x_ray_calculations"
     },
     {
       "label": "JAX float32 Default",
@@ -38470,8 +38470,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "jax float32 default",
-      "id": "architecture_003_adr_dtype_policy_jax_float32_default",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_jax_float32_default"
     },
     {
       "label": "Current Codebase float64 Usage",
@@ -38481,8 +38481,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "current codebase float64 usage",
-      "id": "architecture_003_adr_dtype_policy_current_codebase_float64_usage",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_current_codebase_float64_usage"
     },
     {
       "label": "Decision",
@@ -38492,8 +38492,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "decision",
-      "id": "architecture_003_adr_dtype_policy_decision",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_decision"
     },
     {
       "label": "Consequences",
@@ -38503,8 +38503,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "consequences",
-      "id": "architecture_003_adr_dtype_policy_consequences",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_consequences"
     },
     {
       "label": "Positive",
@@ -38514,8 +38514,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "positive",
-      "id": "architecture_003_adr_dtype_policy_positive",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_positive"
     },
     {
       "label": "Negative",
@@ -38525,8 +38525,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "negative",
-      "id": "architecture_003_adr_dtype_policy_negative",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_negative"
     },
     {
       "label": "Enforcement Strategy",
@@ -38536,8 +38536,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "enforcement strategy",
-      "id": "architecture_003_adr_dtype_policy_enforcement_strategy",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_enforcement_strategy"
     },
     {
       "label": "Appendix: Numerical Precision Requirements by Function",
@@ -38547,8 +38547,8 @@
       "_origin": "ast",
       "community": 117,
       "norm_label": "appendix: numerical precision requirements by function",
-      "id": "architecture_003_adr_dtype_policy_appendix_numerical_precision_requirements_by_function",
-      "community_name": "ADR-003: float64 Preservation Policy"
+      "community_name": "ADR-003: float64 Preservation Policy",
+      "id": "architecture_003_adr_dtype_policy_appendix_numerical_precision_requirements_by_function"
     },
     {
       "label": "004-adr-host-device-transfers.md",
@@ -38558,8 +38558,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "004-adr-host-device-transfers.md",
-      "id": "architecture_004_adr_host_device_transfers",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers"
     },
     {
       "label": "ADR-004: Host-Device Transfer Minimization Strategy",
@@ -38569,8 +38569,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "adr-004: host-device transfer minimization strategy",
-      "id": "architecture_004_adr_host_device_transfers_adr_004_host_device_transfer_minimization_strategy",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_adr_004_host_device_transfer_minimization_strategy"
     },
     {
       "label": "Context",
@@ -38580,8 +38580,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "context",
-      "id": "architecture_004_adr_host_device_transfers_context",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_context"
     },
     {
       "label": "The Transfer Problem",
@@ -38591,8 +38591,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "the transfer problem",
-      "id": "architecture_004_adr_host_device_transfers_the_transfer_problem",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_the_transfer_problem"
     },
     {
       "label": "Where Transfers Happen in the Current Architecture",
@@ -38602,8 +38602,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "where transfers happen in the current architecture",
-      "id": "architecture_004_adr_host_device_transfers_where_transfers_happen_in_the_current_architecture",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_where_transfers_happen_in_the_current_architecture"
     },
     {
       "label": "Array Sizes in This Workload",
@@ -38613,8 +38613,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "array sizes in this workload",
-      "id": "architecture_004_adr_host_device_transfers_array_sizes_in_this_workload",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_array_sizes_in_this_workload"
     },
     {
       "label": "Decision",
@@ -38624,8 +38624,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "decision",
-      "id": "architecture_004_adr_host_device_transfers_decision",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_decision"
     },
     {
       "label": "Transfer Policy",
@@ -38635,8 +38635,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "transfer policy",
-      "id": "architecture_004_adr_host_device_transfers_transfer_policy",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_transfer_policy"
     },
     {
       "label": "Implementation Pattern",
@@ -38646,8 +38646,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "implementation pattern",
-      "id": "architecture_004_adr_host_device_transfers_implementation_pattern",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_implementation_pattern"
     },
     {
       "label": "Batch Processing Optimization",
@@ -38657,8 +38657,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "batch processing optimization",
-      "id": "architecture_004_adr_host_device_transfers_batch_processing_optimization",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_batch_processing_optimization"
     },
     {
       "label": "Consequences",
@@ -38668,8 +38668,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "consequences",
-      "id": "architecture_004_adr_host_device_transfers_consequences",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_consequences"
     },
     {
       "label": "Positive",
@@ -38679,8 +38679,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "positive",
-      "id": "architecture_004_adr_host_device_transfers_positive",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_positive"
     },
     {
       "label": "Negative",
@@ -38690,8 +38690,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "negative",
-      "id": "architecture_004_adr_host_device_transfers_negative",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_negative"
     },
     {
       "label": "Monitoring",
@@ -38701,8 +38701,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "monitoring",
-      "id": "architecture_004_adr_host_device_transfers_monitoring",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_monitoring"
     },
     {
       "label": "Appendix: Transfer Cost Reference (CPU Backend)",
@@ -38712,8 +38712,8 @@
       "_origin": "ast",
       "community": 116,
       "norm_label": "appendix: transfer cost reference (cpu backend)",
-      "id": "architecture_004_adr_host_device_transfers_appendix_transfer_cost_reference_cpu_backend",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "architecture_004_adr_host_device_transfers_appendix_transfer_cost_reference_cpu_backend"
     },
     {
       "label": "audit_remediation_plan.md",
@@ -38723,8 +38723,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "audit_remediation_plan.md",
-      "id": "docs_audit_remediation_plan",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan"
     },
     {
       "label": "xraylabtool \u2014 Unified Audit & Remediation Plan",
@@ -38734,8 +38734,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "xraylabtool \u2014 unified audit & remediation plan",
-      "id": "docs_audit_remediation_plan_xraylabtool_unified_audit_remediation_plan",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_xraylabtool_unified_audit_remediation_plan"
     },
     {
       "label": "Executive Summary",
@@ -38745,8 +38745,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "executive summary",
-      "id": "docs_audit_remediation_plan_executive_summary",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_executive_summary"
     },
     {
       "label": "Cross-Referenced Root Causes",
@@ -38756,8 +38756,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "cross-referenced root causes",
-      "id": "docs_audit_remediation_plan_cross_referenced_root_causes",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_cross_referenced_root_causes"
     },
     {
       "label": "Prioritized Remediation Plan",
@@ -38767,8 +38767,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "prioritized remediation plan",
-      "id": "docs_audit_remediation_plan_prioritized_remediation_plan",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_prioritized_remediation_plan"
     },
     {
       "label": "Tier 1 \u2014 Immediate (Week 1) \u2014 Correctness & Quick Security Wins",
@@ -38778,8 +38778,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "tier 1 \u2014 immediate (week 1) \u2014 correctness & quick security wins",
-      "id": "docs_audit_remediation_plan_tier_1_immediate_week_1_correctness_quick_security_wins",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_tier_1_immediate_week_1_correctness_quick_security_wins"
     },
     {
       "label": "Tier 2 \u2014 Short-term (Weeks 2-3) \u2014 Security Hardening & CI",
@@ -38789,8 +38789,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "tier 2 \u2014 short-term (weeks 2-3) \u2014 security hardening & ci",
-      "id": "docs_audit_remediation_plan_tier_2_short_term_weeks_2_3_security_hardening_ci",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_tier_2_short_term_weeks_2_3_security_hardening_ci"
     },
     {
       "label": "Tier 3 \u2014 Medium-term (Weeks 4-6) \u2014 Architecture & Coverage",
@@ -38800,8 +38800,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "tier 3 \u2014 medium-term (weeks 4-6) \u2014 architecture & coverage",
-      "id": "docs_audit_remediation_plan_tier_3_medium_term_weeks_4_6_architecture_coverage",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_tier_3_medium_term_weeks_4_6_architecture_coverage"
     },
     {
       "label": "Tier 4 \u2014 Long-term (Backlog) \u2014 Polish & Hardening",
@@ -38811,8 +38811,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "tier 4 \u2014 long-term (backlog) \u2014 polish & hardening",
-      "id": "docs_audit_remediation_plan_tier_4_long_term_backlog_polish_hardening",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_tier_4_long_term_backlog_polish_hardening"
     },
     {
       "label": "Findings Cross-Reference Index",
@@ -38822,8 +38822,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "findings cross-reference index",
-      "id": "docs_audit_remediation_plan_findings_cross_reference_index",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_findings_cross_reference_index"
     },
     {
       "label": "What's Already Good",
@@ -38833,8 +38833,8 @@
       "_origin": "ast",
       "community": 136,
       "norm_label": "what's already good",
-      "id": "docs_audit_remediation_plan_what_s_already_good",
-      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan"
+      "community_name": "xraylabtool \u2014 Unified Audit & Remediation Plan",
+      "id": "docs_audit_remediation_plan_what_s_already_good"
     },
     {
       "label": "security_audit_cicd.md",
@@ -38844,8 +38844,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "security_audit_cicd.md",
-      "id": "docs_security_audit_cicd",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd"
     },
     {
       "label": "CI/CD Security Audit Report",
@@ -38855,8 +38855,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "ci/cd security audit report",
-      "id": "docs_security_audit_cicd_ci_cd_security_audit_report",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_ci_cd_security_audit_report"
     },
     {
       "label": "CICD-001",
@@ -38866,8 +38866,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-001",
-      "id": "docs_security_audit_cicd_cicd_001",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_001"
     },
     {
       "label": "CICD-002",
@@ -38877,8 +38877,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-002",
-      "id": "docs_security_audit_cicd_cicd_002",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_002"
     },
     {
       "label": "CICD-003",
@@ -38888,8 +38888,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-003",
-      "id": "docs_security_audit_cicd_cicd_003",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_003"
     },
     {
       "label": "CICD-004",
@@ -38899,8 +38899,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-004",
-      "id": "docs_security_audit_cicd_cicd_004",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_004"
     },
     {
       "label": "CICD-005",
@@ -38910,8 +38910,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-005",
-      "id": "docs_security_audit_cicd_cicd_005",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_005"
     },
     {
       "label": "CICD-006",
@@ -38921,8 +38921,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-006",
-      "id": "docs_security_audit_cicd_cicd_006",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_006"
     },
     {
       "label": "CICD-007",
@@ -38932,8 +38932,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-007",
-      "id": "docs_security_audit_cicd_cicd_007",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_007"
     },
     {
       "label": "CICD-008",
@@ -38943,8 +38943,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-008",
-      "id": "docs_security_audit_cicd_cicd_008",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_008"
     },
     {
       "label": "CICD-009",
@@ -38954,8 +38954,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-009",
-      "id": "docs_security_audit_cicd_cicd_009",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_009"
     },
     {
       "label": "CICD-010",
@@ -38965,8 +38965,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-010",
-      "id": "docs_security_audit_cicd_cicd_010",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_010"
     },
     {
       "label": "CICD-011",
@@ -38976,8 +38976,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "cicd-011",
-      "id": "docs_security_audit_cicd_cicd_011",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_cicd_011"
     },
     {
       "label": "Summary Table",
@@ -38987,8 +38987,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "summary table",
-      "id": "docs_security_audit_cicd_summary_table",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_summary_table"
     },
     {
       "label": "What exists and works well",
@@ -38998,8 +38998,8 @@
       "_origin": "ast",
       "community": 114,
       "norm_label": "what exists and works well",
-      "id": "docs_security_audit_cicd_what_exists_and_works_well",
-      "community_name": "CI/CD Security Audit Report"
+      "community_name": "CI/CD Security Audit Report",
+      "id": "docs_security_audit_cicd_what_exists_and_works_well"
     },
     {
       "label": "test_coverage_audit.md",
@@ -39009,8 +39009,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test_coverage_audit.md",
-      "id": "docs_test_coverage_audit",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit"
     },
     {
       "label": "Test Coverage & Quality Audit \u2014 xraylabtool",
@@ -39020,8 +39020,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test coverage & quality audit \u2014 xraylabtool",
-      "id": "docs_test_coverage_audit_test_coverage_quality_audit_xraylabtool",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_coverage_quality_audit_xraylabtool"
     },
     {
       "label": "Coverage Mapping",
@@ -39031,8 +39031,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "coverage mapping",
-      "id": "docs_test_coverage_audit_coverage_mapping",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_coverage_mapping"
     },
     {
       "label": "Findings",
@@ -39042,8 +39042,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "findings",
-      "id": "docs_test_coverage_audit_findings",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_findings"
     },
     {
       "label": "TEST-001",
@@ -39053,8 +39053,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-001",
-      "id": "docs_test_coverage_audit_test_001",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_001"
     },
     {
       "label": "TEST-002",
@@ -39064,8 +39064,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-002",
-      "id": "docs_test_coverage_audit_test_002",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_002"
     },
     {
       "label": "TEST-003",
@@ -39075,8 +39075,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-003",
-      "id": "docs_test_coverage_audit_test_003",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_003"
     },
     {
       "label": "TEST-004",
@@ -39086,8 +39086,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-004",
-      "id": "docs_test_coverage_audit_test_004",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_004"
     },
     {
       "label": "TEST-005",
@@ -39097,8 +39097,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-005",
-      "id": "docs_test_coverage_audit_test_005",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_005"
     },
     {
       "label": "TEST-006",
@@ -39108,8 +39108,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-006",
-      "id": "docs_test_coverage_audit_test_006",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_006"
     },
     {
       "label": "TEST-007",
@@ -39119,8 +39119,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-007",
-      "id": "docs_test_coverage_audit_test_007",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_007"
     },
     {
       "label": "TEST-008",
@@ -39130,8 +39130,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-008",
-      "id": "docs_test_coverage_audit_test_008",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_008"
     },
     {
       "label": "TEST-009",
@@ -39141,8 +39141,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-009",
-      "id": "docs_test_coverage_audit_test_009",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_009"
     },
     {
       "label": "TEST-010",
@@ -39152,8 +39152,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-010",
-      "id": "docs_test_coverage_audit_test_010",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_010"
     },
     {
       "label": "TEST-011",
@@ -39163,8 +39163,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-011",
-      "id": "docs_test_coverage_audit_test_011",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_011"
     },
     {
       "label": "TEST-012",
@@ -39174,8 +39174,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-012",
-      "id": "docs_test_coverage_audit_test_012",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_012"
     },
     {
       "label": "TEST-013",
@@ -39185,8 +39185,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-013",
-      "id": "docs_test_coverage_audit_test_013",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_013"
     },
     {
       "label": "TEST-014",
@@ -39196,8 +39196,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-014",
-      "id": "docs_test_coverage_audit_test_014",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_014"
     },
     {
       "label": "TEST-015",
@@ -39207,8 +39207,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-015",
-      "id": "docs_test_coverage_audit_test_015",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_015"
     },
     {
       "label": "TEST-016",
@@ -39218,8 +39218,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-016",
-      "id": "docs_test_coverage_audit_test_016",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_016"
     },
     {
       "label": "TEST-017",
@@ -39229,8 +39229,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-017",
-      "id": "docs_test_coverage_audit_test_017",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_017"
     },
     {
       "label": "TEST-018",
@@ -39240,8 +39240,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "test-018",
-      "id": "docs_test_coverage_audit_test_018",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_test_018"
     },
     {
       "label": "Testing Pyramid Assessment",
@@ -39251,8 +39251,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "testing pyramid assessment",
-      "id": "docs_test_coverage_audit_testing_pyramid_assessment",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_testing_pyramid_assessment"
     },
     {
       "label": "Priority Recommendations (ordered)",
@@ -39262,8 +39262,8 @@
       "_origin": "ast",
       "community": 100,
       "norm_label": "priority recommendations (ordered)",
-      "id": "docs_test_coverage_audit_priority_recommendations_ordered",
-      "community_name": "Findings"
+      "community_name": "Findings",
+      "id": "docs_test_coverage_audit_priority_recommendations_ordered"
     },
     {
       "label": "scripts/README.md",
@@ -39273,8 +39273,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "scripts/readme.md",
-      "id": "scripts_readme",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme"
     },
     {
       "label": "Scripts Directory",
@@ -39284,8 +39284,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "scripts directory",
-      "id": "scripts_readme_scripts_directory",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_scripts_directory"
     },
     {
       "label": "Available Scripts",
@@ -39295,8 +39295,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "available scripts",
-      "id": "scripts_readme_available_scripts",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_available_scripts"
     },
     {
       "label": "`test_docs.py` - Documentation Testing",
@@ -39306,8 +39306,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "`test_docs.py` - documentation testing",
-      "id": "scripts_readme_test_docs_py_documentation_testing",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_test_docs_py_documentation_testing"
     },
     {
       "label": "Usage:",
@@ -39317,8 +39317,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "usage:",
-      "id": "scripts_readme_usage",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_usage"
     },
     {
       "label": "Requirements:",
@@ -39328,8 +39328,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "requirements:",
-      "id": "scripts_readme_requirements",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_requirements"
     },
     {
       "label": "Output:",
@@ -39339,8 +39339,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "output:",
-      "id": "scripts_readme_output",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_output"
     },
     {
       "label": "Integration:",
@@ -39350,8 +39350,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "integration:",
-      "id": "scripts_readme_integration",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_integration"
     },
     {
       "label": "Example Output:",
@@ -39361,8 +39361,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "example output:",
-      "id": "scripts_readme_example_output",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_example_output"
     },
     {
       "label": "`run_type_check.py` - Type Checking",
@@ -39372,8 +39372,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "`run_type_check.py` - type checking",
-      "id": "scripts_readme_run_type_check_py_type_checking",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_run_type_check_py_type_checking"
     },
     {
       "label": "Usage:",
@@ -39383,8 +39383,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "usage:",
-      "id": "scripts_readme_usage_103",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_usage_103"
     },
     {
       "label": "`validate_style_guide.py` - Style Guide Validation",
@@ -39394,8 +39394,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "`validate_style_guide.py` - style guide validation",
-      "id": "scripts_readme_validate_style_guide_py_style_guide_validation",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_validate_style_guide_py_style_guide_validation"
     },
     {
       "label": "Usage:",
@@ -39405,8 +39405,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "usage:",
-      "id": "scripts_readme_usage_120",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_usage_120"
     },
     {
       "label": "Maintenance Notes",
@@ -39416,8 +39416,8 @@
       "_origin": "ast",
       "community": 115,
       "norm_label": "maintenance notes",
-      "id": "scripts_readme_maintenance_notes",
-      "community_name": "`test_docs.py` - Documentation Testing"
+      "community_name": "`test_docs.py` - Documentation Testing",
+      "id": "scripts_readme_maintenance_notes"
     },
     {
       "label": "data/README.md",
@@ -39427,8 +39427,8 @@
       "_origin": "ast",
       "community": 168,
       "norm_label": "data/readme.md",
-      "id": "data_readme",
-      "community_name": "Files"
+      "community_name": "Files",
+      "id": "data_readme"
     },
     {
       "label": "Test Data Directory",
@@ -39438,8 +39438,8 @@
       "_origin": "ast",
       "community": 168,
       "norm_label": "test data directory",
-      "id": "data_readme_test_data_directory",
-      "community_name": "Files"
+      "community_name": "Files",
+      "id": "data_readme_test_data_directory"
     },
     {
       "label": "Files",
@@ -39449,8 +39449,8 @@
       "_origin": "ast",
       "community": 168,
       "norm_label": "files",
-      "id": "data_readme_files",
-      "community_name": "Files"
+      "community_name": "Files",
+      "id": "data_readme_files"
     },
     {
       "label": "`sample_materials.json`",
@@ -39460,8 +39460,8 @@
       "_origin": "ast",
       "community": 168,
       "norm_label": "`sample_materials.json`",
-      "id": "data_readme_sample_materials_json",
-      "community_name": "Files"
+      "community_name": "Files",
+      "id": "data_readme_sample_materials_json"
     },
     {
       "label": "`test_energies.json`",
@@ -39471,8 +39471,8 @@
       "_origin": "ast",
       "community": 168,
       "norm_label": "`test_energies.json`",
-      "id": "data_readme_test_energies_json",
-      "community_name": "Files"
+      "community_name": "Files",
+      "id": "data_readme_test_energies_json"
     },
     {
       "label": "`performance_baselines.json`",
@@ -39482,8 +39482,8 @@
       "_origin": "ast",
       "community": 168,
       "norm_label": "`performance_baselines.json`",
-      "id": "data_readme_performance_baselines_json",
-      "community_name": "Files"
+      "community_name": "Files",
+      "id": "data_readme_performance_baselines_json"
     },
     {
       "label": "Usage in Tests",
@@ -39493,8 +39493,8 @@
       "_origin": "ast",
       "community": 168,
       "norm_label": "usage in tests",
-      "id": "data_readme_usage_in_tests",
-      "community_name": "Files"
+      "community_name": "Files",
+      "id": "data_readme_usage_in_tests"
     },
     {
       "label": "Maintenance",
@@ -39504,8 +39504,8 @@
       "_origin": "ast",
       "community": 168,
       "norm_label": "maintenance",
-      "id": "data_readme_maintenance",
-      "community_name": "Files"
+      "community_name": "Files",
+      "id": "data_readme_maintenance"
     },
     {
       "label": "BaseUnitTest",
@@ -39515,8 +39515,8 @@
       "community": 202,
       "norm_label": "baseunittest",
       "_origin": "semantic",
-      "id": "baseunittest",
-      "community_name": "BaseUnitTest"
+      "community_name": "BaseUnitTest",
+      "id": "baseunittest"
     },
     {
       "label": "BaseXRayLabToolTest",
@@ -39526,8 +39526,8 @@
       "community": 203,
       "norm_label": "basexraylabtooltest",
       "_origin": "semantic",
-      "id": "basexraylabtooltest",
-      "community_name": "BaseXRayLabToolTest"
+      "community_name": "BaseXRayLabToolTest",
+      "id": "basexraylabtooltest"
     },
     {
       "label": "BaseIntegrationTest",
@@ -39537,8 +39537,8 @@
       "community": 200,
       "norm_label": "baseintegrationtest",
       "_origin": "semantic",
-      "id": "baseintegrationtest",
-      "community_name": "BaseIntegrationTest"
+      "community_name": "BaseIntegrationTest",
+      "id": "baseintegrationtest"
     },
     {
       "label": "BasePerformanceTest",
@@ -39548,8 +39548,8 @@
       "community": 201,
       "norm_label": "baseperformancetest",
       "_origin": "semantic",
-      "id": "baseperformancetest",
-      "community_name": "BasePerformanceTest"
+      "community_name": "BasePerformanceTest",
+      "id": "baseperformancetest"
     },
     {
       "label": "Calculators Module",
@@ -39563,8 +39563,8 @@
       "community": 41,
       "norm_label": "calculators module",
       "_origin": "semantic",
-      "id": "docs_api_calculators_module",
-      "community_name": "Complex refractive index n=1-delta-i*beta"
+      "community_name": "Complex refractive index n=1-delta-i*beta",
+      "id": "docs_api_calculators_module"
     },
     {
       "label": "calculate_single_material_properties()",
@@ -39578,8 +39578,8 @@
       "community": 151,
       "norm_label": "calculate_single_material_properties()",
       "_origin": "semantic",
-      "id": "docs_api_calculators_calculate_single",
-      "community_name": "calculate_single_material_properties"
+      "community_name": "calculate_single_material_properties",
+      "id": "docs_api_calculators_calculate_single"
     },
     {
       "label": "calculate_xray_properties()",
@@ -39593,8 +39593,8 @@
       "community": 153,
       "norm_label": "calculate_xray_properties()",
       "_origin": "semantic",
-      "id": "docs_api_calculators_calculate_xray",
-      "community_name": "calculate_xray_properties"
+      "community_name": "calculate_xray_properties",
+      "id": "docs_api_calculators_calculate_xray"
     },
     {
       "label": "Complex refractive index n=1-delta-i*beta",
@@ -39608,8 +39608,8 @@
       "community": 41,
       "norm_label": "complex refractive index n=1-delta-i*beta",
       "_origin": "semantic",
-      "id": "docs_api_calculators_complex_refractive_index",
-      "community_name": "Complex refractive index n=1-delta-i*beta"
+      "community_name": "Complex refractive index n=1-delta-i*beta",
+      "id": "docs_api_calculators_complex_refractive_index"
     },
     {
       "label": "Critical angle formula theta_c=sqrt(2*delta)",
@@ -39623,8 +39623,8 @@
       "community": 41,
       "norm_label": "critical angle formula theta_c=sqrt(2*delta)",
       "_origin": "semantic",
-      "id": "docs_api_calculators_critical_angle_formula",
-      "community_name": "Complex refractive index n=1-delta-i*beta"
+      "community_name": "Complex refractive index n=1-delta-i*beta",
+      "id": "docs_api_calculators_critical_angle_formula"
     },
     {
       "label": "Linear absorption coefficient mu=4pi*beta/lambda",
@@ -39638,8 +39638,8 @@
       "community": 41,
       "norm_label": "linear absorption coefficient mu=4pi*beta/lambda",
       "_origin": "semantic",
-      "id": "docs_api_calculators_linear_absorption_formula",
-      "community_name": "Complex refractive index n=1-delta-i*beta"
+      "community_name": "Complex refractive index n=1-delta-i*beta",
+      "id": "docs_api_calculators_linear_absorption_formula"
     },
     {
       "label": "GUI Module",
@@ -39653,8 +39653,8 @@
       "community": 97,
       "norm_label": "gui module",
       "_origin": "semantic",
-      "id": "docs_api_gui_module",
-      "community_name": "GUI Module"
+      "community_name": "GUI Module",
+      "id": "docs_api_gui_module"
     },
     {
       "label": "xraylabtool.gui.widgets",
@@ -39668,8 +39668,8 @@
       "community": 97,
       "norm_label": "xraylabtool.gui.widgets",
       "_origin": "semantic",
-      "id": "docs_api_gui_widgets",
-      "community_name": "GUI Module"
+      "community_name": "GUI Module",
+      "id": "docs_api_gui_widgets"
     },
     {
       "label": "Interfaces Module",
@@ -39683,8 +39683,8 @@
       "community": 32,
       "norm_label": "interfaces module",
       "_origin": "semantic",
-      "id": "docs_api_interfaces_module",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_interfaces_module"
     },
     {
       "label": "xraylabtool.interfaces.completion (legacy)",
@@ -39698,8 +39698,8 @@
       "community": 32,
       "norm_label": "xraylabtool.interfaces.completion (legacy)",
       "_origin": "semantic",
-      "id": "docs_api_interfaces_completion_legacy",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_interfaces_completion_legacy"
     },
     {
       "label": "completion_v2 (venv-centric completion)",
@@ -39713,8 +39713,8 @@
       "community": 32,
       "norm_label": "completion_v2 (venv-centric completion)",
       "_origin": "semantic",
-      "id": "docs_api_interfaces_completion_v2",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_interfaces_completion_v2"
     },
     {
       "label": "completion_v2.installer",
@@ -39728,8 +39728,8 @@
       "community": 32,
       "norm_label": "completion_v2.installer",
       "_origin": "semantic",
-      "id": "docs_api_interfaces_completion_v2_installer",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_interfaces_completion_v2_installer"
     },
     {
       "label": "completion_v2.shells",
@@ -39743,8 +39743,8 @@
       "community": 32,
       "norm_label": "completion_v2.shells",
       "_origin": "semantic",
-      "id": "docs_api_interfaces_completion_v2_shells",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_interfaces_completion_v2_shells"
     },
     {
       "label": "completion_v2.environment",
@@ -39758,8 +39758,8 @@
       "community": 32,
       "norm_label": "completion_v2.environment",
       "_origin": "semantic",
-      "id": "docs_api_interfaces_completion_v2_environment",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_interfaces_completion_v2_environment"
     },
     {
       "label": "completion_v2.cache",
@@ -39773,8 +39773,8 @@
       "community": 32,
       "norm_label": "completion_v2.cache",
       "_origin": "semantic",
-      "id": "docs_api_interfaces_completion_v2_cache",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_interfaces_completion_v2_cache"
     },
     {
       "label": "completion_v2.integration",
@@ -39788,8 +39788,8 @@
       "community": 32,
       "norm_label": "completion_v2.integration",
       "_origin": "semantic",
-      "id": "docs_api_interfaces_completion_v2_integration",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_interfaces_completion_v2_integration"
     },
     {
       "label": "completion_v2.cli",
@@ -39803,8 +39803,8 @@
       "community": 32,
       "norm_label": "completion_v2.cli",
       "_origin": "semantic",
-      "id": "docs_api_interfaces_completion_v2_cli",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_interfaces_completion_v2_cli"
     },
     {
       "label": "Utilities Module",
@@ -39818,8 +39818,8 @@
       "community": 32,
       "norm_label": "utilities module",
       "_origin": "semantic",
-      "id": "docs_api_utils_module",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_module"
     },
     {
       "label": "parse_formula()",
@@ -39833,8 +39833,8 @@
       "community": 32,
       "norm_label": "parse_formula()",
       "_origin": "semantic",
-      "id": "docs_api_utils_parse_formula",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_parse_formula"
     },
     {
       "label": "get_atomic_number()",
@@ -39848,8 +39848,8 @@
       "community": 32,
       "norm_label": "get_atomic_number()",
       "_origin": "semantic",
-      "id": "docs_api_utils_get_atomic_number",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_get_atomic_number"
     },
     {
       "label": "get_atomic_weight()",
@@ -39863,8 +39863,8 @@
       "community": 32,
       "norm_label": "get_atomic_weight()",
       "_origin": "semantic",
-      "id": "docs_api_utils_get_atomic_weight",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_get_atomic_weight"
     },
     {
       "label": "get_atomic_data()",
@@ -39878,8 +39878,8 @@
       "community": 32,
       "norm_label": "get_atomic_data()",
       "_origin": "semantic",
-      "id": "docs_api_utils_get_atomic_data",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_get_atomic_data"
     },
     {
       "label": "load_atomic_data()",
@@ -39893,8 +39893,8 @@
       "community": 32,
       "norm_label": "load_atomic_data()",
       "_origin": "semantic",
-      "id": "docs_api_utils_load_atomic_data",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_load_atomic_data"
     },
     {
       "label": "energy_to_wavelength()",
@@ -39908,8 +39908,8 @@
       "community": 32,
       "norm_label": "energy_to_wavelength()",
       "_origin": "semantic",
-      "id": "docs_api_utils_energy_to_wavelength",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_energy_to_wavelength"
     },
     {
       "label": "wavelength_to_energy()",
@@ -39923,8 +39923,8 @@
       "community": 32,
       "norm_label": "wavelength_to_energy()",
       "_origin": "semantic",
-      "id": "docs_api_utils_wavelength_to_energy",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_wavelength_to_energy"
     },
     {
       "label": "bragg_angle()",
@@ -39938,8 +39938,8 @@
       "community": 32,
       "norm_label": "bragg_angle()",
       "_origin": "semantic",
-      "id": "docs_api_utils_bragg_angle",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_bragg_angle"
     },
     {
       "label": "d_spacing_cubic()",
@@ -39953,8 +39953,8 @@
       "community": 32,
       "norm_label": "d_spacing_cubic()",
       "_origin": "semantic",
-      "id": "docs_api_utils_d_spacing_cubic",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_d_spacing_cubic"
     },
     {
       "label": "d_spacing_tetragonal()",
@@ -39968,8 +39968,8 @@
       "community": 32,
       "norm_label": "d_spacing_tetragonal()",
       "_origin": "semantic",
-      "id": "docs_api_utils_d_spacing_tetragonal",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_d_spacing_tetragonal"
     },
     {
       "label": "d_spacing_orthorhombic()",
@@ -39983,8 +39983,8 @@
       "community": 32,
       "norm_label": "d_spacing_orthorhombic()",
       "_origin": "semantic",
-      "id": "docs_api_utils_d_spacing_orthorhombic",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_d_spacing_orthorhombic"
     },
     {
       "label": "q_from_angle()",
@@ -39998,8 +39998,8 @@
       "community": 32,
       "norm_label": "q_from_angle()",
       "_origin": "semantic",
-      "id": "docs_api_utils_q_from_angle",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_q_from_angle"
     },
     {
       "label": "angle_from_q()",
@@ -40013,8 +40013,8 @@
       "community": 32,
       "norm_label": "angle_from_q()",
       "_origin": "semantic",
-      "id": "docs_api_utils_angle_from_q",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_angle_from_q"
     },
     {
       "label": "smooth_data()",
@@ -40028,8 +40028,8 @@
       "community": 32,
       "norm_label": "smooth_data()",
       "_origin": "semantic",
-      "id": "docs_api_utils_smooth_data",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_smooth_data"
     },
     {
       "label": "find_peaks()",
@@ -40043,8 +40043,8 @@
       "community": 32,
       "norm_label": "find_peaks()",
       "_origin": "semantic",
-      "id": "docs_api_utils_find_peaks",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_find_peaks"
     },
     {
       "label": "background_subtraction()",
@@ -40058,8 +40058,8 @@
       "community": 32,
       "norm_label": "background_subtraction()",
       "_origin": "semantic",
-      "id": "docs_api_utils_background_subtraction",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_background_subtraction"
     },
     {
       "label": "normalize_intensity()",
@@ -40073,8 +40073,8 @@
       "community": 32,
       "norm_label": "normalize_intensity()",
       "_origin": "semantic",
-      "id": "docs_api_utils_normalize_intensity",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_normalize_intensity"
     },
     {
       "label": "progress_bar()",
@@ -40088,8 +40088,8 @@
       "community": 32,
       "norm_label": "progress_bar()",
       "_origin": "semantic",
-      "id": "docs_api_utils_progress_bar",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_progress_bar"
     },
     {
       "label": "save_processed_data()",
@@ -40103,8 +40103,8 @@
       "community": 32,
       "norm_label": "save_processed_data()",
       "_origin": "semantic",
-      "id": "docs_api_utils_save_processed_data",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_save_processed_data"
     },
     {
       "label": "xraylabtool.device",
@@ -40118,8 +40118,8 @@
       "community": 32,
       "norm_label": "xraylabtool.device",
       "_origin": "semantic",
-      "id": "docs_api_utils_device_module",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_device_module"
     },
     {
       "label": "xraylabtool.logging_utils",
@@ -40133,8 +40133,8 @@
       "community": 32,
       "norm_label": "xraylabtool.logging_utils",
       "_origin": "semantic",
-      "id": "docs_api_utils_logging_utils",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_logging_utils"
     },
     {
       "label": "xraylabtool.typing_extensions",
@@ -40148,8 +40148,8 @@
       "community": 32,
       "norm_label": "xraylabtool.typing_extensions",
       "_origin": "semantic",
-      "id": "docs_api_utils_typing_extensions",
-      "community_name": "Utilities Module"
+      "community_name": "Utilities Module",
+      "id": "docs_api_utils_typing_extensions"
     },
     {
       "label": "Analysis API",
@@ -40163,8 +40163,8 @@
       "community": 121,
       "norm_label": "analysis api",
       "_origin": "semantic",
-      "id": "docs_api_analysis_analysis_module",
-      "community_name": "API Reference Index"
+      "community_name": "API Reference Index",
+      "id": "docs_api_analysis_analysis_module"
     },
     {
       "label": "Backend API",
@@ -40178,8 +40178,8 @@
       "community": 121,
       "norm_label": "backend api",
       "_origin": "semantic",
-      "id": "docs_api_backend_backend_module",
-      "community_name": "API Reference Index"
+      "community_name": "API Reference Index",
+      "id": "docs_api_backend_backend_module"
     },
     {
       "label": "Constants API",
@@ -40193,8 +40193,8 @@
       "community": 121,
       "norm_label": "constants api",
       "_origin": "semantic",
-      "id": "docs_api_constants_constants_module",
-      "community_name": "API Reference Index"
+      "community_name": "API Reference Index",
+      "id": "docs_api_constants_constants_module"
     },
     {
       "label": "Data Handling API",
@@ -40208,8 +40208,8 @@
       "community": 121,
       "norm_label": "data handling api",
       "_origin": "semantic",
-      "id": "docs_api_data_handling_data_handling_module",
-      "community_name": "API Reference Index"
+      "community_name": "API Reference Index",
+      "id": "docs_api_data_handling_data_handling_module"
     },
     {
       "label": "API Reference Index",
@@ -40223,8 +40223,8 @@
       "community": 121,
       "norm_label": "api reference index",
       "_origin": "semantic",
-      "id": "docs_api_index_api_reference",
-      "community_name": "API Reference Index"
+      "community_name": "API Reference Index",
+      "id": "docs_api_index_api_reference"
     },
     {
       "label": "IO Operations API",
@@ -40238,8 +40238,8 @@
       "community": 121,
       "norm_label": "io operations api",
       "_origin": "semantic",
-      "id": "docs_api_io_operations_io_module",
-      "community_name": "API Reference Index"
+      "community_name": "API Reference Index",
+      "id": "docs_api_io_operations_io_module"
     },
     {
       "label": "Validation API",
@@ -40253,8 +40253,8 @@
       "community": 121,
       "norm_label": "validation api",
       "_origin": "semantic",
-      "id": "docs_api_validation_validation_module",
-      "community_name": "API Reference Index"
+      "community_name": "API Reference Index",
+      "id": "docs_api_validation_validation_module"
     },
     {
       "label": "ADR-001: JAX vs NumPy Decision",
@@ -40268,8 +40268,8 @@
       "community": 116,
       "norm_label": "adr-001: jax vs numpy decision",
       "_origin": "semantic",
-      "id": "docs_architecture_001_adr_jax_vs_numpy_jax_decision",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "docs_architecture_001_adr_jax_vs_numpy_jax_decision"
     },
     {
       "label": "JIT Compilation Strategy",
@@ -40283,8 +40283,8 @@
       "community": 116,
       "norm_label": "jit compilation strategy",
       "_origin": "semantic",
-      "id": "docs_architecture_001_adr_jax_vs_numpy_jit_compilation",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "docs_architecture_001_adr_jax_vs_numpy_jit_compilation"
     },
     {
       "label": "ADR-002: PyQtGraph vs Matplotlib Decision",
@@ -40298,8 +40298,8 @@
       "community": 116,
       "norm_label": "adr-002: pyqtgraph vs matplotlib decision",
       "_origin": "semantic",
-      "id": "docs_architecture_002_adr_pyqtgraph_vs_matplotlib_viz_decision",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "docs_architecture_002_adr_pyqtgraph_vs_matplotlib_viz_decision"
     },
     {
       "label": "ADR-003: Dtype Policy",
@@ -40313,8 +40313,8 @@
       "community": 116,
       "norm_label": "adr-003: dtype policy",
       "_origin": "semantic",
-      "id": "docs_architecture_003_adr_dtype_policy_dtype_strategy",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "docs_architecture_003_adr_dtype_policy_dtype_strategy"
     },
     {
       "label": "Minimal Host-Device Transfers Pattern",
@@ -40328,8 +40328,8 @@
       "community": 116,
       "norm_label": "minimal host-device transfers pattern",
       "_origin": "semantic",
-      "id": "docs_architecture_004_adr_host_device_transfers_minimal_transfers",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "docs_architecture_004_adr_host_device_transfers_minimal_transfers"
     },
     {
       "label": "Architecture Overview",
@@ -40343,8 +40343,8 @@
       "community": 116,
       "norm_label": "architecture overview",
       "_origin": "semantic",
-      "id": "docs_architecture_index_architecture_overview",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "docs_architecture_index_architecture_overview"
     },
     {
       "label": "JAX Architecture Design",
@@ -40358,8 +40358,8 @@
       "community": 116,
       "norm_label": "jax architecture design",
       "_origin": "semantic",
-      "id": "docs_architecture_jax_architecture_jax_design",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "docs_architecture_jax_architecture_jax_design"
     },
     {
       "label": "Audit Remediation Plan",
@@ -40373,8 +40373,8 @@
       "community": 154,
       "norm_label": "audit remediation plan",
       "_origin": "semantic",
-      "id": "docs_audit_remediation_plan_remediation_plan",
-      "community_name": "Testing Guide"
+      "community_name": "Testing Guide",
+      "id": "docs_audit_remediation_plan_remediation_plan"
     },
     {
       "label": "Changelog",
@@ -40388,8 +40388,8 @@
       "community": 205,
       "norm_label": "changelog",
       "_origin": "semantic",
-      "id": "docs_development_changelog_changelog",
-      "community_name": "Changelog"
+      "community_name": "Changelog",
+      "id": "docs_development_changelog_changelog"
     },
     {
       "label": "Contributing Guide",
@@ -40403,8 +40403,8 @@
       "community": 154,
       "norm_label": "contributing guide",
       "_origin": "semantic",
-      "id": "docs_development_contributing_contributing_guide",
-      "community_name": "Testing Guide"
+      "community_name": "Testing Guide",
+      "id": "docs_development_contributing_contributing_guide"
     },
     {
       "label": "Performance Guide",
@@ -40418,8 +40418,8 @@
       "community": 116,
       "norm_label": "performance guide",
       "_origin": "semantic",
-      "id": "docs_development_performance_performance_guide",
-      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy"
+      "community_name": "ADR-004: Host-Device Transfer Minimization Strategy",
+      "id": "docs_development_performance_performance_guide"
     },
     {
       "label": "Rollback Procedures",
@@ -40433,8 +40433,8 @@
       "community": 206,
       "norm_label": "rollback procedures",
       "_origin": "semantic",
-      "id": "docs_development_rollback_procedures_rollback_procedures",
-      "community_name": "Rollback Procedures"
+      "community_name": "Rollback Procedures",
+      "id": "docs_development_rollback_procedures_rollback_procedures"
     },
     {
       "label": "Testing Guide",
@@ -40448,8 +40448,8 @@
       "community": 154,
       "norm_label": "testing guide",
       "_origin": "semantic",
-      "id": "docs_development_testing_testing_guide",
-      "community_name": "Testing Guide"
+      "community_name": "Testing Guide",
+      "id": "docs_development_testing_testing_guide"
     },
     {
       "label": "Examples Index",
@@ -40463,8 +40463,8 @@
       "community": 118,
       "norm_label": "examples index",
       "_origin": "semantic",
-      "id": "docs_examples_index_examples_index",
-      "community_name": "Documentation Root"
+      "community_name": "Documentation Root",
+      "id": "docs_examples_index_examples_index"
     },
     {
       "label": "CLI Reference",
@@ -40478,8 +40478,8 @@
       "community": 118,
       "norm_label": "cli reference",
       "_origin": "semantic",
-      "id": "docs_guides_cli_reference_cli_reference",
-      "community_name": "Documentation Root"
+      "community_name": "Documentation Root",
+      "id": "docs_guides_cli_reference_cli_reference"
     },
     {
       "label": "Shell Completion Guide",
@@ -40493,8 +40493,8 @@
       "community": 118,
       "norm_label": "shell completion guide",
       "_origin": "semantic",
-      "id": "docs_guides_completion_guide_completion_guide",
-      "community_name": "Documentation Root"
+      "community_name": "Documentation Root",
+      "id": "docs_guides_completion_guide_completion_guide"
     },
     {
       "label": "Getting Started Guide",
@@ -40508,8 +40508,8 @@
       "community": 118,
       "norm_label": "getting started guide",
       "_origin": "semantic",
-      "id": "docs_guides_getting_started_getting_started",
-      "community_name": "Documentation Root"
+      "community_name": "Documentation Root",
+      "id": "docs_guides_getting_started_getting_started"
     },
     {
       "label": "Migration Guide v0.4",
@@ -40523,8 +40523,8 @@
       "community": 118,
       "norm_label": "migration guide v0.4",
       "_origin": "semantic",
-      "id": "docs_guides_migration_guide_v0_4_migration_guide",
-      "community_name": "Documentation Root"
+      "community_name": "Documentation Root",
+      "id": "docs_guides_migration_guide_v0_4_migration_guide"
     },
     {
       "label": "Documentation Root",
@@ -40538,8 +40538,8 @@
       "community": 118,
       "norm_label": "documentation root",
       "_origin": "semantic",
-      "id": "docs_index_docs_root",
-      "community_name": "Documentation Root"
+      "community_name": "Documentation Root",
+      "id": "docs_index_docs_root"
     },
     {
       "label": "Atomic Data Reference",
@@ -40553,8 +40553,8 @@
       "community": 118,
       "norm_label": "atomic data reference",
       "_origin": "semantic",
-      "id": "docs_physics_atomic_data_atomic_data_guide",
-      "community_name": "Documentation Root"
+      "community_name": "Documentation Root",
+      "id": "docs_physics_atomic_data_atomic_data_guide"
     },
     {
       "label": "X-ray Calculations Guide",
@@ -40568,8 +40568,8 @@
       "community": 118,
       "norm_label": "x-ray calculations guide",
       "_origin": "semantic",
-      "id": "docs_physics_calculations_calculations_guide",
-      "community_name": "Documentation Root"
+      "community_name": "Documentation Root",
+      "id": "docs_physics_calculations_calculations_guide"
     },
     {
       "label": "X-ray Optics Guide",
@@ -40583,8 +40583,8 @@
       "community": 118,
       "norm_label": "x-ray optics guide",
       "_origin": "semantic",
-      "id": "docs_physics_xray_optics_xray_optics_guide",
-      "community_name": "Documentation Root"
+      "community_name": "Documentation Root",
+      "id": "docs_physics_xray_optics_xray_optics_guide"
     },
     {
       "label": "Security Audit CI/CD",
@@ -40598,8 +40598,8 @@
       "community": 160,
       "norm_label": "security audit ci/cd",
       "_origin": "semantic",
-      "id": "docs_security_audit_cicd_security_audit",
-      "community_name": "GitHub Token Direct Push Risk (CICD-004)"
+      "community_name": "GitHub Token Direct Push Risk (CICD-004)",
+      "id": "docs_security_audit_cicd_security_audit"
     },
     {
       "label": "Test Coverage Audit",
@@ -40613,8 +40613,8 @@
       "community": 162,
       "norm_label": "test coverage audit",
       "_origin": "semantic",
-      "id": "docs_test_coverage_audit_coverage_audit",
-      "community_name": "Test Coverage Audit"
+      "community_name": "Test Coverage Audit",
+      "id": "docs_test_coverage_audit_coverage_audit"
     },
     {
       "label": "Untested Modules (compound_analysis, array_ops, optimization)",
@@ -40628,8 +40628,8 @@
       "community": 162,
       "norm_label": "untested modules (compound_analysis, array_ops, optimization)",
       "_origin": "semantic",
-      "id": "docs_test_coverage_audit_untested_modules",
-      "community_name": "Test Coverage Audit"
+      "community_name": "Test Coverage Audit",
+      "id": "docs_test_coverage_audit_untested_modules"
     },
     {
       "label": "GitHub Token Direct Push Risk (CICD-004)",
@@ -40643,8 +40643,8 @@
       "community": 160,
       "norm_label": "github token direct push risk (cicd-004)",
       "_origin": "semantic",
-      "id": "docs_security_audit_cicd_github_token_risk",
-      "community_name": "GitHub Token Direct Push Risk (CICD-004)"
+      "community_name": "GitHub Token Direct Push Risk (CICD-004)",
+      "id": "docs_security_audit_cicd_github_token_risk"
     },
     {
       "label": "Scripts README",
@@ -40658,8 +40658,8 @@
       "community": 154,
       "norm_label": "scripts readme",
       "_origin": "semantic",
-      "id": "scripts_readme_scripts_readme",
-      "community_name": "Testing Guide"
+      "community_name": "Testing Guide",
+      "id": "scripts_readme_scripts_readme"
     },
     {
       "label": "Test Data README",
@@ -40673,8 +40673,8 @@
       "community": 204,
       "norm_label": "test data readme",
       "_origin": "semantic",
-      "id": "tests_data_readme_test_data_readme",
-      "community_name": "Test Data README"
+      "community_name": "Test Data README",
+      "id": "tests_data_readme_test_data_readme"
     },
     {
       "label": "pyXRayLabTool Favicon",
@@ -40688,8 +40688,8 @@
       "community": 198,
       "norm_label": "pyxraylabtool favicon",
       "_origin": "semantic",
-      "id": "docs_static_favicon_favicon_svg",
-      "community_name": "pyXRayLabTool Favicon"
+      "community_name": "pyXRayLabTool Favicon",
+      "id": "docs_static_favicon_favicon_svg"
     },
     {
       "label": "GUI Main Window Screenshot",
@@ -40703,8 +40703,8 @@
       "community": 199,
       "norm_label": "gui main window screenshot",
       "_origin": "semantic",
-      "id": "docs_static_gui_main_offscreen_gui_screenshot",
-      "community_name": "GUI Main Window Screenshot"
+      "community_name": "GUI Main Window Screenshot",
+      "id": "docs_static_gui_main_offscreen_gui_screenshot"
     },
     {
       "label": "pyXRayLabTool Logo (Dark)",
@@ -40718,8 +40718,8 @@
       "community": 158,
       "norm_label": "pyxraylabtool logo (dark)",
       "_origin": "semantic",
-      "id": "docs_static_logo_dark_logo_dark",
-      "community_name": "pyXRayLabTool Logo (Main SVG)"
+      "community_name": "pyXRayLabTool Logo (Main SVG)",
+      "id": "docs_static_logo_dark_logo_dark"
     },
     {
       "label": "pyXRayLabTool Logo (Light JPG)",
@@ -40733,8 +40733,8 @@
       "community": 158,
       "norm_label": "pyxraylabtool logo (light jpg)",
       "_origin": "semantic",
-      "id": "docs_static_logo_light_jpg_logo_light",
-      "community_name": "pyXRayLabTool Logo (Main SVG)"
+      "community_name": "pyXRayLabTool Logo (Main SVG)",
+      "id": "docs_static_logo_light_jpg_logo_light"
     },
     {
       "label": "pyXRayLabTool Logo (Main SVG)",
@@ -40748,8 +40748,8 @@
       "community": 158,
       "norm_label": "pyxraylabtool logo (main svg)",
       "_origin": "semantic",
-      "id": "docs_static_logo_svg_logo_main",
-      "community_name": "pyXRayLabTool Logo (Main SVG)"
+      "community_name": "pyXRayLabTool Logo (Main SVG)",
+      "id": "docs_static_logo_svg_logo_main"
     }
   ],
   "links": [
@@ -91000,7 +91000,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/__main__.py",
-      "source_location": "L52",
+      "source_location": "L55",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_main",
@@ -91012,7 +91012,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/__main__.py",
-      "source_location": "L50",
+      "source_location": "L52",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_main",
@@ -91526,7 +91526,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L584",
+      "source_location": "L588",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_multi_tab",
@@ -91598,7 +91598,7 @@
       "context": "return_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L545",
+      "source_location": "L549",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_multi_tab",
@@ -91622,7 +91622,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1012",
+      "source_location": "L1018",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_render_plot_to_png",
@@ -91634,7 +91634,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L990",
+      "source_location": "L996",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_save_plot",
@@ -91646,7 +91646,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L798",
+      "source_location": "L804",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_add_material",
@@ -91658,7 +91658,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L921",
+      "source_location": "L927",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_error",
@@ -91670,7 +91670,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L917",
+      "source_location": "L923",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_info",
@@ -91682,7 +91682,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L870",
+      "source_location": "L876",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_multi_finished",
@@ -91694,7 +91694,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L498",
+      "source_location": "L502",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_single_finished",
@@ -91718,7 +91718,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L959",
+      "source_location": "L965",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_resizeevent",
@@ -91740,7 +91740,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L787",
+      "source_location": "L793",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91751,7 +91751,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L800",
+      "source_location": "L806",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91762,7 +91762,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1219",
+      "source_location": "L1225",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91773,7 +91773,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1211",
+      "source_location": "L1217",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91784,7 +91784,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L545",
+      "source_location": "L549",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91806,7 +91806,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1205",
+      "source_location": "L1211",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91817,7 +91817,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L924",
+      "source_location": "L930",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91828,7 +91828,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1238",
+      "source_location": "L1244",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91839,7 +91839,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1251",
+      "source_location": "L1257",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91850,7 +91850,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L919",
+      "source_location": "L925",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91861,7 +91861,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1114",
+      "source_location": "L1120",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91872,7 +91872,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1036",
+      "source_location": "L1042",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91894,7 +91894,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L915",
+      "source_location": "L921",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91916,7 +91916,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1189",
+      "source_location": "L1195",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91927,7 +91927,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L814",
+      "source_location": "L820",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91938,7 +91938,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L873",
+      "source_location": "L879",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91949,7 +91949,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L857",
+      "source_location": "L863",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91960,7 +91960,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L501",
+      "source_location": "L505",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91971,7 +91971,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L487",
+      "source_location": "L491",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -91993,7 +91993,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L882",
+      "source_location": "L888",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92004,7 +92004,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L885",
+      "source_location": "L891",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92026,7 +92026,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L509",
+      "source_location": "L513",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92037,7 +92037,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L807",
+      "source_location": "L813",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92048,7 +92048,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1012",
+      "source_location": "L1018",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92059,7 +92059,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L445",
+      "source_location": "L449",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92070,7 +92070,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L956",
+      "source_location": "L962",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92081,7 +92081,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L822",
+      "source_location": "L828",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92092,7 +92092,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L459",
+      "source_location": "L463",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92103,7 +92103,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L965",
+      "source_location": "L971",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92114,7 +92114,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L981",
+      "source_location": "L987",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92125,7 +92125,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L990",
+      "source_location": "L996",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92136,7 +92136,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L969",
+      "source_location": "L975",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92147,7 +92147,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L757",
+      "source_location": "L763",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92158,7 +92158,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L932",
+      "source_location": "L938",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92169,7 +92169,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L942",
+      "source_location": "L948",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92180,7 +92180,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1200",
+      "source_location": "L1206",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92191,7 +92191,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L421",
+      "source_location": "L425",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow",
@@ -92296,7 +92296,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L857",
+      "source_location": "L863",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_multi_finished",
@@ -92308,7 +92308,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L487",
+      "source_location": "L491",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_single_finished",
@@ -92320,7 +92320,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L956",
+      "source_location": "L962",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_resizeevent",
@@ -92367,7 +92367,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L396",
+      "source_location": "L398",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_single_tab",
@@ -92379,7 +92379,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L387",
+      "source_location": "L389",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_single_tab",
@@ -92427,7 +92427,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L722",
+      "source_location": "L728",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_multi_tab",
@@ -92439,7 +92439,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L445",
+      "source_location": "L449",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_reserve_overlay_scrollbar_space",
@@ -92452,7 +92452,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L456",
+      "source_location": "L460",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_reserve_overlay_scrollbar_space",
@@ -92462,10 +92462,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L446",
+      "source_location": "L450",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "xraylabtool_gui_main_window_rationale_446",
+      "source": "xraylabtool_gui_main_window_rationale_450",
       "target": "xraylabtool_gui_main_window_mainwindow_reserve_overlay_scrollbar_space",
       "confidence_score": 1.0
     },
@@ -92474,7 +92474,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L713",
+      "source_location": "L719",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_multi_tab",
@@ -92486,7 +92486,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L462",
+      "source_location": "L466",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_single",
@@ -92498,7 +92498,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L473",
+      "source_location": "L477",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_single",
@@ -92510,7 +92510,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L483",
+      "source_location": "L487",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_single",
@@ -92523,7 +92523,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L480",
+      "source_location": "L484",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_single",
@@ -92535,7 +92535,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L480",
+      "source_location": "L484",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_single",
@@ -92546,7 +92546,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L497",
+      "source_location": "L501",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_single_finished",
@@ -92558,7 +92558,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L499",
+      "source_location": "L503",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_single_finished",
@@ -92570,7 +92570,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L507",
+      "source_location": "L511",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_single_error",
@@ -92582,7 +92582,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L516",
+      "source_location": "L520",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_refresh_single_views",
@@ -92595,7 +92595,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L523",
+      "source_location": "L527",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_refresh_single_views",
@@ -92607,7 +92607,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L532",
+      "source_location": "L536",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_refresh_single_views",
@@ -92619,7 +92619,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L673",
+      "source_location": "L679",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_multi_tab",
@@ -92631,7 +92631,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L632",
+      "source_location": "L637",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_multi_tab",
@@ -92643,7 +92643,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L665",
+      "source_location": "L671",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_multi_tab",
@@ -92655,7 +92655,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L666",
+      "source_location": "L672",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_build_multi_tab",
@@ -92666,7 +92666,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L804",
+      "source_location": "L810",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_add_multi_preset",
@@ -92678,7 +92678,7 @@
       "context": "return_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L814",
+      "source_location": "L820",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_multi_energy_cfg",
@@ -92690,7 +92690,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L827",
+      "source_location": "L833",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_multi",
@@ -92702,7 +92702,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L825",
+      "source_location": "L831",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_multi",
@@ -92714,7 +92714,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L836",
+      "source_location": "L842",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_multi",
@@ -92726,7 +92726,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L837",
+      "source_location": "L843",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_multi",
@@ -92738,7 +92738,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L853",
+      "source_location": "L859",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_multi",
@@ -92751,7 +92751,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L845",
+      "source_location": "L851",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_multi",
@@ -92763,7 +92763,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L844",
+      "source_location": "L850",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_run_multi",
@@ -92774,7 +92774,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L869",
+      "source_location": "L875",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_multi_finished",
@@ -92786,7 +92786,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L871",
+      "source_location": "L877",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_multi_finished",
@@ -92798,7 +92798,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L862",
+      "source_location": "L868",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_multi_finished",
@@ -92810,7 +92810,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L880",
+      "source_location": "L886",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_multi_error",
@@ -92822,7 +92822,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L878",
+      "source_location": "L884",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_on_multi_error",
@@ -92834,7 +92834,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L883",
+      "source_location": "L889",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_progress_multi",
@@ -92846,7 +92846,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L892",
+      "source_location": "L898",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_refresh_multi_views",
@@ -92859,7 +92859,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L904",
+      "source_location": "L910",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_refresh_multi_views",
@@ -92870,71 +92870,11 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1243",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "xraylabtool_gui_main_window_mainwindow_convert_e2w",
-      "target": "xraylabtool_gui_main_window_mainwindow_info",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1256",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "xraylabtool_gui_main_window_mainwindow_convert_w2e",
-      "target": "xraylabtool_gui_main_window_mainwindow_info",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1182",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "xraylabtool_gui_main_window_mainwindow_export_multi_csv",
-      "target": "xraylabtool_gui_main_window_mainwindow_info",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1102",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "xraylabtool_gui_main_window_mainwindow_export_single_csv",
-      "target": "xraylabtool_gui_main_window_mainwindow_info",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1010",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "xraylabtool_gui_main_window_mainwindow_save_plot",
-      "target": "xraylabtool_gui_main_window_mainwindow_info",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "xraylabtool/gui/main_window.py",
       "source_location": "L1249",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_convert_e2w",
-      "target": "xraylabtool_gui_main_window_mainwindow_error",
+      "target": "xraylabtool_gui_main_window_mainwindow_info",
       "confidence_score": 1.0
     },
     {
@@ -92946,6 +92886,54 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_convert_w2e",
+      "target": "xraylabtool_gui_main_window_mainwindow_info",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "xraylabtool/gui/main_window.py",
+      "source_location": "L1188",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "xraylabtool_gui_main_window_mainwindow_export_multi_csv",
+      "target": "xraylabtool_gui_main_window_mainwindow_info",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "xraylabtool/gui/main_window.py",
+      "source_location": "L1108",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "xraylabtool_gui_main_window_mainwindow_export_single_csv",
+      "target": "xraylabtool_gui_main_window_mainwindow_info",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "xraylabtool/gui/main_window.py",
+      "source_location": "L1016",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "xraylabtool_gui_main_window_mainwindow_save_plot",
+      "target": "xraylabtool_gui_main_window_mainwindow_info",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "xraylabtool/gui/main_window.py",
+      "source_location": "L1255",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "xraylabtool_gui_main_window_mainwindow_convert_e2w",
       "target": "xraylabtool_gui_main_window_mainwindow_error",
       "confidence_score": 1.0
     },
@@ -92954,7 +92942,19 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1116",
+      "source_location": "L1268",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "xraylabtool_gui_main_window_mainwindow_convert_w2e",
+      "target": "xraylabtool_gui_main_window_mainwindow_error",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "xraylabtool/gui/main_window.py",
+      "source_location": "L1122",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_export_multi_csv",
@@ -92966,7 +92966,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1038",
+      "source_location": "L1044",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_export_single_csv",
@@ -92978,7 +92978,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L983",
+      "source_location": "L989",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_save_multi_png",
@@ -92990,7 +92990,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1006",
+      "source_location": "L1012",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_save_plot",
@@ -93002,7 +93002,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L971",
+      "source_location": "L977",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_save_single_png",
@@ -93014,7 +93014,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L924",
+      "source_location": "L930",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_closeevent",
@@ -93025,10 +93025,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L925",
+      "source_location": "L931",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "xraylabtool_gui_main_window_rationale_925",
+      "source": "xraylabtool_gui_main_window_rationale_931",
       "target": "xraylabtool_gui_main_window_mainwindow_closeevent",
       "confidence_score": 1.0
     },
@@ -93038,7 +93038,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L943",
+      "source_location": "L949",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_toggle_log_path",
@@ -93049,7 +93049,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1043",
+      "source_location": "L1049",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_export_single_csv",
@@ -93061,7 +93061,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L976",
+      "source_location": "L982",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_save_single_png",
@@ -93072,10 +93072,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L966",
+      "source_location": "L972",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "xraylabtool_gui_main_window_rationale_966",
+      "source": "xraylabtool_gui_main_window_rationale_972",
       "target": "xraylabtool_gui_main_window_mainwindow_sanitize_filename",
       "confidence_score": 1.0
     },
@@ -93084,7 +93084,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L979",
+      "source_location": "L985",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_save_single_png",
@@ -93096,7 +93096,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L988",
+      "source_location": "L994",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_save_multi_png",
@@ -93108,7 +93108,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1005",
+      "source_location": "L1011",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_save_plot",
@@ -93119,10 +93119,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1013",
+      "source_location": "L1019",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "xraylabtool_gui_main_window_rationale_1013",
+      "source": "xraylabtool_gui_main_window_rationale_1019",
       "target": "xraylabtool_gui_main_window_mainwindow_render_plot_to_png",
       "confidence_score": 1.0
     },
@@ -93131,7 +93131,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1202",
+      "source_location": "L1208",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_track_worker",
@@ -93144,7 +93144,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1241",
+      "source_location": "L1247",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_convert_e2w",
@@ -93156,7 +93156,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "xraylabtool/gui/main_window.py",
-      "source_location": "L1254",
+      "source_location": "L1260",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_main_window_mainwindow_convert_w2e",
@@ -93364,7 +93364,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L347",
+      "source_location": "L368",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style",
@@ -93375,7 +93375,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L342",
+      "source_location": "L363",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style",
@@ -93386,7 +93386,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L336",
+      "source_location": "L357",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style",
@@ -93408,7 +93408,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L73",
+      "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style",
@@ -93455,7 +93455,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L347",
+      "source_location": "L368",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style_apply_pyqtgraph_theme",
@@ -93467,7 +93467,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L336",
+      "source_location": "L357",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style_apply_theme",
@@ -93490,7 +93490,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L73",
+      "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style_get_qss",
@@ -93596,7 +93596,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L338",
+      "source_location": "L359",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style_apply_theme",
@@ -93620,7 +93620,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L339",
+      "source_location": "L360",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style_apply_theme",
@@ -93631,10 +93631,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L74",
+      "source_location": "L95",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "xraylabtool_gui_style_rationale_74",
+      "source": "xraylabtool_gui_style_rationale_95",
       "target": "xraylabtool_gui_style_get_qss",
       "confidence_score": 1.0
     },
@@ -93643,7 +93643,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L344",
+      "source_location": "L365",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style_apply_styles",
@@ -93655,7 +93655,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L336",
+      "source_location": "L357",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style_apply_theme",
@@ -93666,10 +93666,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L337",
+      "source_location": "L358",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "xraylabtool_gui_style_rationale_337",
+      "source": "xraylabtool_gui_style_rationale_358",
       "target": "xraylabtool_gui_style_apply_theme",
       "confidence_score": 1.0
     },
@@ -93702,7 +93702,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L342",
+      "source_location": "L363",
       "weight": 1.0,
       "_origin": "ast",
       "source": "xraylabtool_gui_style_apply_styles",
@@ -93713,10 +93713,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L343",
+      "source_location": "L364",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "xraylabtool_gui_style_rationale_343",
+      "source": "xraylabtool_gui_style_rationale_364",
       "target": "xraylabtool_gui_style_apply_styles",
       "confidence_score": 1.0
     },
@@ -93724,10 +93724,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "xraylabtool/gui/style.py",
-      "source_location": "L348",
+      "source_location": "L369",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "xraylabtool_gui_style_rationale_348",
+      "source": "xraylabtool_gui_style_rationale_369",
       "target": "xraylabtool_gui_style_apply_pyqtgraph_theme",
       "confidence_score": 1.0
     },
@@ -107987,5 +107987,5 @@
       "source_file": "docs/index.rst"
     }
   ],
-  "built_at_commit": "41a759f2bee750d844a8cacf31e113ec2f742671"
+  "built_at_commit": "87dc3a1e12e7e0a2314c0bf86fb19dc8b4117097"
 }

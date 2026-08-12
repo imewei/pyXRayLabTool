@@ -1,16 +1,16 @@
-# Graph Report - pyXRayLabTool  (2026-08-11)
+# Graph Report - pyXRayLabTool  (2026-08-12)
 
 ## Corpus Check
-- 126 files · ~122,896 words
+- 126 files · ~123,051 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3490 nodes · 5893 edges · 172 communities (136 shown, 36 thin omitted)
+- 3490 nodes · 5893 edges · 173 communities (137 shown, 36 thin omitted)
 - Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 431 edges (avg confidence: 0.6)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `41a759f2`
+- Built from commit: `87dc3a1e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -43,7 +43,7 @@
 - core.py
 - configure_logging
 - BatchConfig
-- completion_v2/cli.py
+- legacy_install_completion_main
 - main_window.py
 - atomic_cache.py
 - test_backend_dispatch.py
@@ -54,7 +54,7 @@
 - TestCICDIntegration
 - TestEnergySweepSi
 - typing_extensions.py
-- legacy_install_completion_main
+- TestBackwardCompatibility
 - XRayResult
 - Complex refractive index n=1-delta-i*beta
 - validate_density
@@ -62,7 +62,7 @@
 - validate_chemical_formula
 - _calc
 - test_concurrent_cache.py
-- test_numerical_stability.py
+- TestPhysicalRealism
 - TestFullPipelineSiO2
 - test_docs.py
 - uninstall_completion_main
@@ -98,7 +98,7 @@
 - TestInputValidationAndErrorHandling
 - test_memory_management.py
 - TestBasicAnalysis
-- TestExtremeConditions
+- test_numerical_stability.py
 - TestValidateCalculationParameters
 - TestEnvironmentDetection
 - ParametrizedTestMixin
@@ -163,12 +163,13 @@
 - BashCompletionGenerator
 - ADR-001: JAX vs NumPy Computation Backend
 - unit/__init__.py
-- .Energy
+- TestSiO2Properties
 - .Attenuation_Length
 - ADR-002: PyQtGraph vs Matplotlib for GUI Plotting
 - MemoryMonitor
 - Testing Guide
 - conf.py
+- .imSLD
 - pyXRayLabTool Logo (Main SVG)
 - GitHub Token Direct Push Risk (CICD-004)
 - Test Coverage Audit
@@ -216,7 +217,7 @@
 - **JAX Architecture Decision Records** — docs_architecture_001_adr_jax_vs_numpy_jax_decision, docs_architecture_003_adr_dtype_policy_dtype_strategy, architecture_004_adr_host_device_transfers_transfer_policy, docs_architecture_jax_architecture_jax_design [INFERRED 0.85]
 - **Physics Documentation Cluster** — docs_physics_atomic_data_atomic_data_guide, docs_physics_calculations_calculations_guide, docs_physics_xray_optics_xray_optics_guide [INFERRED 0.90]
 
-## Communities (172 total, 36 thin omitted)
+## Communities (173 total, 36 thin omitted)
 
 ### Community 0 - "EnergyError"
 Cohesion: 0.04
@@ -307,8 +308,8 @@ Cohesion: 0.13
 Nodes (12): DataFrame, ComparisonResult, MaterialComparator, Any, Material comparison functionality for X-ray properties analysis., Create a pandas DataFrame from comparison results. Args: result:…, Result container for material comparisons., Generate a detailed text report from comparison results. Args: result:… (+4 more)
 
 ### Community 22 - "test_integration.py"
-Cohesion: 0.06
-Nodes (25): generate_test_materials(), Base test classes and utilities for xraylabtool tests. This module provides…, Generate random test materials for stress testing., Centralized test configuration and constants. This module provides centralized…, Integration tests for XRayLabTool Python package. This test module is a…, Test SubRefrac Silicon properties matching Julia test values., Test property consistency across materials., Test that all materials have the same energy array length. (+17 more)
+Cohesion: 0.07
+Nodes (21): generate_test_materials(), Base test classes and utilities for xraylabtool tests. This module provides…, Generate random test materials for stress testing., Centralized test configuration and constants. This module provides centralized…, Integration tests for XRayLabTool Python package. This test module is a…, Test SubRefrac Silicon properties matching Julia test values., Test property consistency across materials., Test that all materials have the same energy array length. (+13 more)
 
 ### Community 23 - "MainWindow"
 Cohesion: 0.09
@@ -330,9 +331,9 @@ Nodes (23): Logger, PathLike, Path, test_configure_logging_writes_file(), test_g
 Cohesion: 0.12
 Nodes (18): skipif, Test memory monitoring during batch processing., Test memory efficiency with large batches., no_progress_config(), fixture, Batch processing partial-failure tests (item 4.3). Verifies that…, The result dict has an entry for every formula submitted., BatchConfig with progress bar disabled to keep test output clean. (+10 more)
 
-### Community 28 - "completion_v2/cli.py"
-Cohesion: 0.08
-Nodes (26): Tests for install_completion_main function., Test that install_completion_main function exists., Test that function accepts argparse.Namespace., Test that function delegates to completion_main., TestInstallCompletionMain, completion_main(), create_completion_parser(), handle_completion_command() (+18 more)
+### Community 28 - "legacy_install_completion_main"
+Cohesion: 0.06
+Nodes (40): patch, Tests for interfaces/completion_v2/integration.py module. Tests integration…, Test that successful operation returns 0., Tests for install_completion_main function., Test that install_completion_main function exists., Test that function accepts argparse.Namespace., Test that function delegates to completion_main., Tests for legacy_install_completion_main function. (+32 more)
 
 ### Community 29 - "main_window.py"
 Cohesion: 0.13
@@ -374,9 +375,9 @@ Nodes (3): 500-point energy sweep for Si. Lock snapshot values at indices 0, 249
 Cohesion: 0.07
 Nodes (33): performance, Tests for enhanced XRayResult dataclass typing and type safety. This module…, Test that XRayResult maintains memory efficiency with type annotations., Test that typing extension validation helpers work correctly., Test type guard functionality for XRayResult arrays., Test that type annotations don't impact XRayResult performance., Test suite for XRayResult dataclass typing enhancements., Helper method to create test XRayResult instances. (+25 more)
 
-### Community 39 - "legacy_install_completion_main"
-Cohesion: 0.10
-Nodes (18): patch, Tests for interfaces/completion_v2/integration.py module. Tests integration…, Test that successful operation returns 0., Tests for legacy_install_completion_main function., Tests for backward compatibility with existing CLI., Test handling of various legacy argument formats., Test that legacy_install_completion_main function exists., Test that optional arguments are handled. (+10 more)
+### Community 39 - "TestBackwardCompatibility"
+Cohesion: 0.33
+Nodes (4): Tests for backward compatibility with existing CLI., Test handling of various legacy argument formats., Test that optional arguments are handled., TestBackwardCompatibility
 
 ### Community 40 - "XRayResult"
 Cohesion: 0.07
@@ -406,9 +407,9 @@ Nodes (15): _calc(), _clear_cache(), fixture, parametrize, Characterization test
 Cohesion: 0.11
 Nodes (15): clear_lru_caches(), _mock_get_element(), fixture, Tests for thread-safety of lru_cache-decorated functions in utils.py., Clearing the cache while threads are accessing it does not cause crashes., Multiple threads calling get_atomic_weight simultaneously return correct values., Clearing get_atomic_weight cache while threads are active does not crash., LRU cache returns the same cached object for repeated calls. (+7 more)
 
-### Community 47 - "test_numerical_stability.py"
-Cohesion: 0.08
-Nodes (14): Tests for numerical stability improvements. This test module validates the…, Test calculations at boundary conditions., Test energy boundary validation., Test density boundary validation., Test numerical precision at energy boundaries., Test that results maintain physical realism., Test that critical angles are always positive and physically reasonable.…, Test monotonic decrease in energy regions free of absorption edges. Away from… (+6 more)
+### Community 47 - "TestPhysicalRealism"
+Cohesion: 0.14
+Nodes (8): Test that results maintain physical realism., Test that critical angles are always positive and physically reasonable.…, Test monotonic decrease in energy regions free of absorption edges. Away from…, Test that a discontinuity exists across the Si K-edge at 1.839 keV. The real…, Test that attenuation length is always positive., Test that electron density is consistent with formula and density., Test that scattering factors are physically reasonable., TestPhysicalRealism
 
 ### Community 49 - "test_docs.py"
 Cohesion: 0.19
@@ -436,7 +437,7 @@ Nodes (11): Tests for validate_energy_range function., Test validation of single
 
 ### Community 55 - "ndarray"
 Cohesion: 0.10
-Nodes (11): Any, ndarray, Deprecated: Use 'wavelength_angstrom' instead., Deprecated: Use 'dispersion_delta' instead., Deprecated: Use 'absorption_beta' instead., Deprecated: Use 'scattering_factor_f1' instead., Deprecated: Use 'scattering_factor_f2' instead., Deprecated: Use 'critical_angle_degrees' instead. (+3 more)
+Nodes (11): Any, ndarray, Deprecated: Use 'energy_kev' instead., Deprecated: Use 'wavelength_angstrom' instead., Deprecated: Use 'dispersion_delta' instead., Deprecated: Use 'absorption_beta' instead., Deprecated: Use 'scattering_factor_f1' instead., Deprecated: Use 'scattering_factor_f2' instead. (+3 more)
 
 ### Community 56 - "BaseXRayLabToolTest"
 Cohesion: 0.12
@@ -522,9 +523,9 @@ Nodes (8): Tests for memory management and batch processing optimizations. This 
 Cohesion: 0.19
 Nodes (9): Tests for basic analysis functions. This module tests the simplified analysis…, Test the basic analysis functionality., Test basic material comparison., Test material comparison with empty results., Test material comparison with different property., Test material comparison with non-existent property., TestBasicAnalysis, compare_materials() (+1 more)
 
-### Community 83 - "TestExtremeConditions"
-Cohesion: 0.14
-Nodes (8): Test calculations under extreme conditions., Test calculation at very low energies (near the lower bound)., Test calculation at very high energies (near the upper bound)., Test calculation with very low density materials., Test calculation with very high density materials., Test calculation with large energy arrays., Test calculation with logarithmic energy spacing., TestExtremeConditions
+### Community 83 - "test_numerical_stability.py"
+Cohesion: 0.08
+Nodes (14): Tests for numerical stability improvements. This test module validates the…, Test calculations under extreme conditions., Test calculation at very low energies (near the lower bound)., Test calculation at very high energies (near the upper bound)., Test calculation with very low density materials., Test calculation with very high density materials., Test calculation with large energy arrays., Test calculation with logarithmic energy spacing. (+6 more)
 
 ### Community 84 - "TestValidateCalculationParameters"
 Cohesion: 0.14
@@ -726,6 +727,10 @@ Nodes (32): ABC, Regression: generated bash for subcommand-bearing commands., Th
 Cohesion: 0.20
 Nodes (9): ADR-001: JAX vs NumPy Computation Backend, Appendix: Functions that MUST NOT be JIT-compiled, Appendix: Functions to JIT-Compile (Priority Order), Consequences, Context, Decision, Negative, Positive (+1 more)
 
+### Community 148 - "TestSiO2Properties"
+Cohesion: 0.29
+Nodes (4): Test SiO2 properties matching Julia test values., Test SiO2 dispersion values., Test SiO2 reSLD values., TestSiO2Properties
+
 ### Community 150 - "ADR-002: PyQtGraph vs Matplotlib for GUI Plotting"
 Cohesion: 0.22
 Nodes (8): ADR-002: PyQtGraph vs Matplotlib for GUI Plotting, Appendix: Feature Parity Checklist, Consequences, Context, Decision, Migration Details, Negative, Positive
@@ -758,7 +763,7 @@ Nodes (7): Files, Maintenance, `performance_baselines.json`, `sample_materials.j
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `CompletionInstaller` connect `CompletionInstaller` to `interfaces/cli.py`, `legacy_install_completion_main`, `EnvironmentDetector`, `TestCompletionIntegrationFlow`, `EnvironmentInfo`, `.uninstall`, `BashCompletionGenerator`, `uninstall_completion_main`, `TestInstallCompletionCommand`, `installer.py`, `completion_v2/cli.py`?**
+- **Why does `CompletionInstaller` connect `CompletionInstaller` to `interfaces/cli.py`, `TestBackwardCompatibility`, `EnvironmentDetector`, `TestCompletionIntegrationFlow`, `EnvironmentInfo`, `.uninstall`, `BashCompletionGenerator`, `uninstall_completion_main`, `TestInstallCompletionCommand`, `installer.py`, `legacy_install_completion_main`?**
   _High betweenness centrality (0.164) - this node is a cross-community bridge._
 - **Why does `calculate_single_material_properties()` connect `calculate_single_material_properties` to `interfaces/cli.py`, `xraylabtool/__init__.py`, `BasePerformanceTest`, `test_cli_edge_cases.py`, `test_integration.py`, `timer`, `core.py`, `main_window.py`, `batch_processing.py`, `XRayResult`, `TestBasicExportFunctionality`, `test_golden_pipeline.py`, `test_memory_management.py`, `TestBasicAnalysis`, `TestCalculationSpeedBenchmarks`, `cache.py`, `TestBenchmarkComparison`, `TestCLIOutputFormatting`, `TestCLICompatibility`?**
   _High betweenness centrality (0.156) - this node is a cross-community bridge._

@@ -46,8 +46,11 @@ def main(argv: list[str] | None = None) -> None:
 
     app = QApplication(sys.argv if argv is None else [sys.argv[0], *argv])
 
-    # Initialize theme manager (handles styling and persistence)
+    # Initialize theme manager (handles styling and persistence) and apply
+    # the persisted/default theme immediately, otherwise the window launches
+    # unstyled until the first toggle click.
     theme_manager = ThemeManager(app)
+    theme_manager.apply(app)
 
     window = MainWindow(theme_manager=theme_manager)
     window.show()
