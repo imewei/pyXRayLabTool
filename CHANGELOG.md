@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- GUI now applies the persisted/default theme immediately on launch instead of staying unstyled until the first theme toggle.
+- Light theme is now a real palette (`LIGHT_INDUSTRIAL`) tuned for WCAG contrast on white, instead of aliasing the dark palette's neon accents.
+- GUI layout: consistent control spacing in the converter/presets/energy-range rows, the converter row no longer stretches full-width, and the multi-material table has a minimum height.
+
 ## [0.4.4] - 2026-06-25
 
 ### Added
