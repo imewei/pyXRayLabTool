@@ -97,8 +97,8 @@ dependencies = [
 
     # JAX ecosystem — CPU-only base (works on all platforms)
     # GPU users: install gpu_cuda12 or gpu_cuda13 extra (see below)
-    "jax>=0.8.0",
-    "jaxlib>=0.8.0",
+    "jax>=0.8.0,<0.11",
+    "jaxlib>=0.8.0,<0.11",
     "interpax>=0.3.0",
     "psutil>=7.1.3",
 

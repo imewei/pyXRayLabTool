@@ -38,12 +38,12 @@ import json
 from pathlib import Path
 
 # Load sample materials
-data_dir = Path(__file__).parent / 'data'
-with open(data_dir / 'sample_materials.json') as f:
+data_dir = Path(__file__).parent / "data"
+with open(data_dir / "sample_materials.json") as f:
     materials = json.load(f)
 
 # Use in tests
-oxide_materials = materials['materials']['common_oxides']
+oxide_materials = materials["materials"]["common_oxides"]
 ```
 
 ## Maintenance

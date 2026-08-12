@@ -736,7 +736,7 @@ ifeq ($(PLATFORM),linux)
 	@echo "Step 2/3: Removing old jax/jaxlib..."
 	@pip uninstall -y jax jaxlib 2>/dev/null || true
 	@echo "Step 3/3: Installing jax[cuda13-local]..."
-	@pip install "jax[cuda13-local]"
+	@pip install "jax[cuda13-local]>=0.8.0,<0.11"
 	@$(MAKE) gpu-check
 	@echo "$(GREEN)✅ GPU acceleration installed (CUDA 13)$(NC)"
 else
@@ -751,7 +751,7 @@ ifeq ($(PLATFORM),linux)
 	@echo "Step 2/3: Removing old jax/jaxlib..."
 	@pip uninstall -y jax jaxlib 2>/dev/null || true
 	@echo "Step 3/3: Installing jax[cuda12-local]..."
-	@pip install "jax[cuda12-local]"
+	@pip install "jax[cuda12-local]>=0.8.0,<0.11"
 	@$(MAKE) gpu-check
 	@echo "$(GREEN)✅ GPU acceleration installed (CUDA 12)$(NC)"
 else
