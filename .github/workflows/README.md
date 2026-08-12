@@ -30,15 +30,21 @@ Comprehensive documentation pipeline:
 - **Quality Checks**: RST syntax and style validation
 - **Link Checking**: External link validation (main branch only)
 
-### 3. Release Automation (`release.yml`)
-**Triggers:** Manual workflow dispatch
+### 3. Publish to PyPI (`publish.yml`)
+**Triggers:** Manual workflow dispatch (takes an existing git tag)
 
-Fully automated release pipeline:
+Builds and publishes an already-tagged release to PyPI:
 
-- **Version Management**: Automated version bumping and validation
-- **Asset Building**: Source and wheel distribution with checksums
-- **GitHub Release**: Automated release creation with detailed notes
+- **Asset Building**: Source and wheel distribution
+- **Verification**: `twine check` on built distributions
 - **PyPI Publishing**: Trusted publishing to PyPI
+
+`release.yml` (the previous fully-automated version/changelog/tag/GitHub-release/PyPI
+pipeline) was removed after repeated failures: a crashing reusable-workflow
+call, a changelog-corrupting step, and a malformed version-format regex.
+Bumping the version, updating `CHANGELOG.md`, tagging, and creating the
+GitHub Release are now done by hand — see "Creating a Release" below; this
+workflow only automates the PyPI half.
 
 ### 4. Dependency Management (`dependencies.yml`)
 **Triggers:** Weekly schedule, manual dispatch
@@ -53,7 +59,7 @@ Proactive dependency lifecycle management:
 
 ### Required Secrets
 - `GITHUB_TOKEN`: Automatically provided (no setup needed)
-- `PYPI_API_TOKEN`: PyPI trusted publishing token for releases
+- PyPI publishing uses [trusted publishing](https://docs.pypi.org/trusted-publishers/) (OIDC) via the `pypi` environment — no stored token needed. The trusted publisher on PyPI must be registered for the exact workflow filename (`publish.yml`).
 
 ### Branch Protection Rules
 Configure branch protection on `main` branch with:
@@ -63,7 +69,12 @@ Configure branch protection on `main` branch with:
 ## Usage Examples
 
 ### Creating a Release
-Navigate to Actions → Release Automation → Run workflow, then select version and type.
+1. Bump the version in `pyproject.toml` and `xraylabtool/__init__.py`, and add a
+   dated entry to `CHANGELOG.md` (and `docs/development/changelog.rst`). Commit.
+2. Wait for CI to pass on that commit.
+3. Tag it (`git tag -a vX.Y.Z -m "Release X.Y.Z"`) and push the tag.
+4. Create the GitHub Release from that tag (e.g. `gh release create vX.Y.Z --title "Release X.Y.Z" --notes-from-tag`, or paste the CHANGELOG entry as the notes).
+5. Navigate to Actions → Publish to PyPI → Run workflow, enter the tag (e.g. `vX.Y.Z`).
 
 ### Manual Dependency Updates
 Navigate to Actions → Dependency Management → Run workflow.
