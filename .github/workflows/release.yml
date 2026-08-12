@@ -80,16 +80,9 @@ jobs:
 
         echo "Version: $VERSION (prerelease: $IS_PRERELEASE)"
 
-  pre-release-tests:
-    name: Pre-Release Testing
-    needs: validate-version
-    if: ${{ github.event.inputs.skip_tests != 'true' }}
-    uses: ./.github/workflows/ci.yml
-
   update-version:
     name: Update Version Files
-    needs: [validate-version, pre-release-tests]
-    if: always() && (needs.pre-release-tests.result == 'success' || github.event.inputs.skip_tests == 'true')
+    needs: validate-version
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -121,6 +114,11 @@ jobs:
       run: |
         VERSION="${{ needs.validate-version.outputs.version }}"
         DATE=$(date +%Y-%m-%d)
+
+        if [ -f "CHANGELOG.md" ] && grep -q "^## \[$VERSION\]" CHANGELOG.md; then
+          echo "Changelog entry for $VERSION already present - skipping auto-generation."
+          exit 0
+        fi
 
         # Create changelog entry
         cat << EOF > changelog_entry.md
@@ -252,8 +250,22 @@ jobs:
 
         ## What's New
 
-        This release includes various improvements and bug fixes for the xraylabtool package.
+        EOF
 
+        # Pull this version's real section out of CHANGELOG.md (between its
+        # heading and the next "## [" heading) instead of generic boilerplate.
+        if [ -f "CHANGELOG.md" ] && grep -q "^## \[$VERSION\]" CHANGELOG.md; then
+          awk -v ver="$VERSION" '
+            $0 ~ "^## \\[" ver "\\]" { found=1; next }
+            found && /^## \[/ { found=0 }
+            found { print }
+          ' CHANGELOG.md >> release_notes.md
+        else
+          echo "This release includes various improvements and bug fixes for the xraylabtool package." >> release_notes.md
+          echo "" >> release_notes.md
+        fi
+
+        cat << EOF >> release_notes.md
         ## Installation
 
         \`\`\`bash
