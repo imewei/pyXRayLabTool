@@ -561,7 +561,7 @@ class StyleGuideValidator:
         # Check for expected module structure
         expected_modules = {
             "calculators/core.py": "Core calculation functionality",
-            "interfaces/cli.py": "CLI implementation",
+            "interfaces/cli/__init__.py": "CLI implementation",
             "validation/exceptions.py": "Custom exception hierarchy",
             "data_handling/atomic_cache.py": "Atomic data caching",
         }
