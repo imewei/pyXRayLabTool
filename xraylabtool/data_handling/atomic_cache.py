@@ -223,6 +223,138 @@ def warm_up_cache(elements: list[str]) -> None:
             get_atomic_data_fast(element)
 
 
+def _collect_similar_compound_elements(formula: str) -> tuple[set[str], list[str]]:
+    """Find similar compounds for `formula` and collect their elements."""
+    from xraylabtool.data_handling.compound_analysis import (
+        find_similar_compounds,
+        get_elements_for_compound,
+    )
+
+    elements: set[str] = set()
+    similar = find_similar_compounds(formula, similarity_threshold=0.3)[:3]
+    for similar_formula in similar:
+        try:
+            elements.update(get_elements_for_compound(similar_formula))
+        except (KeyError, ValueError, ImportError):
+            # Skip invalid compounds during cache warming
+            continue
+    return elements, similar
+
+
+def _collect_family_compound_elements(formula: str) -> tuple[set[str], list[str]]:
+    """Find `formula`'s compound family members and collect their elements."""
+    from xraylabtool.data_handling.compound_analysis import (
+        COMPOUND_FAMILIES,
+        get_compound_family,
+        get_elements_for_compound,
+    )
+
+    elements: set[str] = set()
+    family = get_compound_family(formula)
+    if not family or family not in COMPOUND_FAMILIES:
+        return elements, []
+
+    family_compounds = COMPOUND_FAMILIES[family][:5]
+    for family_formula in family_compounds:
+        try:
+            elements.update(get_elements_for_compound(family_formula))
+        except (KeyError, ValueError, ImportError):
+            # Skip invalid family compounds during cache warming
+            continue
+    return elements, family_compounds
+
+
+def _collect_compound_elements(
+    formula: str, include_similar: bool, include_family: bool
+) -> tuple[set[str], dict[str, Any]]:
+    """Collect all elements to warm for one formula, plus its status/info entry."""
+    from xraylabtool.data_handling.compound_analysis import get_elements_for_compound
+
+    try:
+        formula_elements = get_elements_for_compound(formula)
+        elements = set(formula_elements)
+        info: dict[str, Any] = {
+            "elements": formula_elements,
+            "status": "parsed",
+            "similar_compounds": [],
+            "family_compounds": [],
+        }
+
+        if include_similar:
+            similar_elements, similar = _collect_similar_compound_elements(formula)
+            elements.update(similar_elements)
+            info["similar_compounds"] = similar
+
+        if include_family:
+            family_elements, family_compounds = _collect_family_compound_elements(
+                formula
+            )
+            elements.update(family_elements)
+            info["family_compounds"] = family_compounds
+
+        return elements, info
+    except Exception as e:
+        return set(), {
+            "elements": [],
+            "status": f"error: {e}",
+            "similar_compounds": [],
+            "family_compounds": [],
+        }
+
+
+def _warm_atomic_data(elements: set[str]) -> tuple[int, int]:
+    """Warm the atomic-data cache for `elements`. Returns (success, total)."""
+    success = 0
+    for element in elements:
+        try:
+            get_atomic_data_fast(element)
+            success += 1
+        except (KeyError, ValueError, ImportError):
+            # Skip elements that cannot be loaded during atomic cache warming
+            continue
+    return success, len(elements)
+
+
+def _warm_interpolators(elements: set[str]) -> tuple[int, int]:
+    """Warm the scattering-factor interpolator cache. Returns (success, total)."""
+    from xraylabtool.calculators.core import create_scattering_factor_interpolators
+
+    success = 0
+    for element in elements:
+        try:
+            create_scattering_factor_interpolators(element)
+            success += 1
+        except (KeyError, ValueError, ImportError):
+            # Skip elements that cannot create interpolators during cache warming
+            continue
+    return success, len(elements)
+
+
+def _warm_bulk_combinations(elements: set[str]) -> int:
+    """Warm the bulk-data cache for a few representative element combinations."""
+    if len(elements) <= 1:
+        return 0
+
+    element_list = list(elements)
+    combos = [
+        tuple(element_list[:3]),
+        tuple(element_list[:5]),
+        tuple(sorted(element_list)),
+    ]
+
+    success = 0
+    for combo in combos:
+        if not combo:
+            continue
+        try:
+            get_bulk_atomic_data_fast(combo)
+            success += 1
+        except (KeyError, ValueError, ImportError):
+            # Skip invalid element combinations during bulk cache warming
+            continue
+    return success
+
+
 def warm_cache_for_compounds(
     formulas: list[str],
     include_similar: bool = True,
@@ -255,128 +387,24 @@ def warm_cache_for_compounds(
     """
     import time
 
-    from xraylabtool.data_handling.compound_analysis import (
-        COMPOUND_FAMILIES,
-        find_similar_compounds,
-        get_compound_family,
-        get_elements_for_compound,
-    )
-
     start_time = time.perf_counter() if timing_info else None
 
-    # Collect all elements to warm
-    elements_to_warm = set()
-    compound_info = {}
-
-    # Process each formula
+    elements_to_warm: set[str] = set()
+    compound_info: dict[str, Any] = {}
     for formula in formulas:
-        try:
-            # Get constituent elements
-            elements = get_elements_for_compound(formula)
-            elements_to_warm.update(elements)
+        formula_elements, info = _collect_compound_elements(
+            formula, include_similar, include_family
+        )
+        elements_to_warm.update(formula_elements)
+        compound_info[formula] = info
 
-            compound_info[formula] = {
-                "elements": elements,
-                "status": "parsed",
-                "similar_compounds": [],
-                "family_compounds": [],
-            }
+    atomic_success, atomic_total = _warm_atomic_data(elements_to_warm)
+    interpolator_success, interpolator_total = _warm_interpolators(elements_to_warm)
+    bulk_success = _warm_bulk_combinations(elements_to_warm)
 
-            # Find similar compounds if requested
-            if include_similar:
-                similar = find_similar_compounds(formula, similarity_threshold=0.3)
-                compound_info[formula]["similar_compounds"] = similar[:3]  # Limit to 3
-
-                # Add elements from similar compounds
-                for similar_formula in similar[:3]:
-                    try:
-                        similar_elements = get_elements_for_compound(similar_formula)
-                        elements_to_warm.update(similar_elements)
-                    except (KeyError, ValueError, ImportError):
-                        # Skip invalid compounds during cache warming
-                        continue
-
-            # Find compound family members if requested
-            if include_family:
-                family = get_compound_family(formula)
-                if family and family in COMPOUND_FAMILIES:
-                    family_compounds = COMPOUND_FAMILIES[family][:5]  # Limit to 5
-                    compound_info[formula]["family_compounds"] = family_compounds
-
-                    # Add elements from family compounds
-                    for family_formula in family_compounds:
-                        try:
-                            family_elements = get_elements_for_compound(family_formula)
-                            elements_to_warm.update(family_elements)
-                        except (KeyError, ValueError, ImportError):
-                            # Skip invalid family compounds during cache warming
-                            continue
-
-        except Exception as e:
-            compound_info[formula] = {
-                "elements": [],
-                "status": f"error: {e}",
-                "similar_compounds": [],
-                "family_compounds": [],
-            }
-
-    # Warm atomic data cache
-    atomic_success = 0
-    atomic_total = len(elements_to_warm)
-
-    for element in elements_to_warm:
-        try:
-            get_atomic_data_fast(element)
-            atomic_success += 1
-        except (KeyError, ValueError, ImportError):
-            # Skip elements that cannot be loaded during atomic cache warming
-            continue
-
-    # Warm scattering factor interpolators
-    interpolator_success = 0
-    interpolator_total = len(elements_to_warm)
-
-    for element in elements_to_warm:
-        try:
-            from xraylabtool.calculators.core import (
-                create_scattering_factor_interpolators,
-            )
-
-            create_scattering_factor_interpolators(element)
-            interpolator_success += 1
-        except (KeyError, ValueError, ImportError):
-            # Skip elements that cannot create interpolators during cache warming
-            continue
-
-    # Warm bulk data cache for common combinations
-    bulk_success = 0
-    if len(elements_to_warm) > 1:
-        try:
-            # Create common element combinations
-            element_list = list(elements_to_warm)
-            common_combos = [
-                tuple(element_list[:3]),  # First 3 elements
-                tuple(element_list[:5]),  # First 5 elements
-                tuple(sorted(element_list)),  # All elements sorted
-            ]
-
-            for combo in common_combos:
-                if len(combo) > 0:
-                    try:
-                        get_bulk_atomic_data_fast(combo)
-                        bulk_success += 1
-                    except (KeyError, ValueError, ImportError):
-                        # Skip invalid element combinations during bulk cache warming
-                        continue
-
-        except Exception:
-            pass
-
-    # Calculate timing
     end_time = time.perf_counter() if timing_info else None
     total_time_ms = (end_time - start_time) * 1000.0 if timing_info else 0.0  # type: ignore[operator]
 
-    # Calculate success rates
     atomic_success_rate = atomic_success / atomic_total if atomic_total > 0 else 0.0
     interpolator_success_rate = (
         interpolator_success / interpolator_total if interpolator_total > 0 else 0.0
