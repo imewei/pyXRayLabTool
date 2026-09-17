@@ -51,64 +51,16 @@ class MaterialComparator:
         Returns:
             ComparisonResult with comparison data
         """
-        if len(formulas) != len(densities):
-            raise ValueError("Number of formulas must match number of densities")
+        self._validate_comparison_inputs(formulas, densities, energies)
 
-        if len(formulas) < 2:
-            raise ValueError("At least two materials required for comparison")
-
-        if not energies:
-            raise ValueError("At least one energy value required")
-
-        # Use default properties if none specified
         if properties is None:
             properties = self.default_properties.copy()
 
-        # Calculate X-ray properties for all materials
-        material_data = {}
-        for _i, (formula, density) in enumerate(zip(formulas, densities, strict=False)):
-            try:
-                result_dict = calculate_xray_properties(
-                    formulas=[formula], energies=energies, densities=[density]
-                )
-                # Extract the XRayResult object from the dictionary
-                xray_result = result_dict[formula]
-                material_key = f"{formula} ({density} g/cm³)"
-                material_data[material_key] = xray_result
-            except Exception as e:
-                raise ValueError(f"Failed to calculate properties for {formula}: {e}")
-
-        # Extract comparison data
-        comparison_data = {}  # type: ignore[var-annotated]
-        for prop in properties:
-            comparison_data[prop] = {}
-            for material_key, xray_result in material_data.items():
-                if hasattr(xray_result, prop):
-                    values = getattr(xray_result, prop)
-                    if isinstance(values, np.ndarray):
-                        comparison_data[prop][material_key] = values.tolist()
-                    else:
-                        comparison_data[prop][material_key] = [values] * len(energies)
-
-        # Calculate summary statistics
-        summary_stats = {}
-        for prop in properties:
-            if prop in comparison_data:
-                prop_data = comparison_data[prop]
-                all_values = []
-                for material_values in prop_data.values():
-                    all_values.extend(material_values)
-
-                if all_values:
-                    summary_stats[prop] = {
-                        "mean": float(np.mean(all_values)),
-                        "std": float(np.std(all_values)),
-                        "min": float(np.min(all_values)),
-                        "max": float(np.max(all_values)),
-                        "range": float(np.max(all_values) - np.min(all_values)),
-                    }
-
-        # Generate recommendations
+        material_data = self._calculate_material_data(formulas, densities, energies)
+        comparison_data = self._extract_comparison_data(
+            material_data, properties, energies
+        )
+        summary_stats = self._calculate_summary_stats(comparison_data, properties)
         recommendations = self._generate_recommendations(
             formulas, comparison_data, summary_stats, energies
         )
@@ -124,6 +76,78 @@ class MaterialComparator:
             recommendations=recommendations,
         )
 
+    @staticmethod
+    def _validate_comparison_inputs(
+        formulas: list[str], densities: list[float], energies: list[float]
+    ) -> None:
+        """Validate compare_materials inputs."""
+        if len(formulas) != len(densities):
+            raise ValueError("Number of formulas must match number of densities")
+
+        if len(formulas) < 2:
+            raise ValueError("At least two materials required for comparison")
+
+        if not energies:
+            raise ValueError("At least one energy value required")
+
+    @staticmethod
+    def _calculate_material_data(
+        formulas: list[str], densities: list[float], energies: list[float]
+    ) -> dict[str, Any]:
+        """Calculate X-ray properties for each material, keyed by "formula (density)"."""
+        material_data = {}
+        for formula, density in zip(formulas, densities, strict=False):
+            try:
+                result_dict = calculate_xray_properties(
+                    formulas=[formula], energies=energies, densities=[density]
+                )
+                xray_result = result_dict[formula]
+                material_key = f"{formula} ({density} g/cm³)"
+                material_data[material_key] = xray_result
+            except Exception as e:
+                raise ValueError(f"Failed to calculate properties for {formula}: {e}")
+        return material_data
+
+    @staticmethod
+    def _extract_comparison_data(
+        material_data: dict[str, Any], properties: list[str], energies: list[float]
+    ) -> dict[str, Any]:
+        """Extract requested properties from each material's XRayResult."""
+        comparison_data: dict[str, Any] = {}
+        for prop in properties:
+            comparison_data[prop] = {}
+            for material_key, xray_result in material_data.items():
+                if hasattr(xray_result, prop):
+                    values = getattr(xray_result, prop)
+                    if isinstance(values, np.ndarray):
+                        comparison_data[prop][material_key] = values.tolist()
+                    else:
+                        comparison_data[prop][material_key] = [values] * len(energies)
+        return comparison_data
+
+    @staticmethod
+    def _calculate_summary_stats(
+        comparison_data: dict[str, Any], properties: list[str]
+    ) -> dict[str, dict[str, float]]:
+        """Calculate mean/std/min/max/range across all materials, per property."""
+        summary_stats = {}
+        for prop in properties:
+            if prop not in comparison_data:
+                continue
+            all_values = []
+            for material_values in comparison_data[prop].values():
+                all_values.extend(material_values)
+
+            if all_values:
+                summary_stats[prop] = {
+                    "mean": float(np.mean(all_values)),
+                    "std": float(np.std(all_values)),
+                    "min": float(np.min(all_values)),
+                    "max": float(np.max(all_values)),
+                    "range": float(np.max(all_values) - np.min(all_values)),
+                }
+        return summary_stats
+
     def create_comparison_table(self, result: ComparisonResult) -> pd.DataFrame:
         """
         Create a pandas DataFrame from comparison results.
@@ -138,36 +162,42 @@ class MaterialComparator:
 
         for i, energy in enumerate(result.energies):
             for material in result.materials:
-                row = {"Material": material, "Energy_keV": energy}
+                row: dict[str, Any] = {"Material": material, "Energy_keV": energy}
 
                 for prop in result.properties:
-                    if prop in result.data and material in result.data[prop]:
-                        values = result.data[prop][material]
-                        val = None
-                        if len(values):
-                            val = values[i] if i < len(values) else values[0]
-                        # Coerce length-1 numpy arrays to plain float
-                        try:
-                            if hasattr(val, "__len__") and not isinstance(
-                                val, (str, bytes)
-                            ):
-                                if len(val) == 1:  # type: ignore[arg-type]
-                                    val = val[0]  # type: ignore[index]
-                            if val is not None:
-                                try:
-                                    val = float(val)
-                                except Exception:
-                                    # numpy scalar fallback
-                                    val = float(np.asarray(val).squeeze())
-                        except Exception:
-                            val = None
-                        row[prop] = val
-                    else:
-                        row[prop] = None
+                    row[prop] = self._comparison_table_cell(result, prop, material, i)
 
                 rows.append(row)
 
         return pd.DataFrame(rows)
+
+    @staticmethod
+    def _comparison_table_cell(
+        result: ComparisonResult, prop: str, material: str, energy_index: int
+    ) -> float | None:
+        """Resolve one (property, material, energy) cell to a plain float or None."""
+        if prop not in result.data or material not in result.data[prop]:
+            return None
+
+        values = result.data[prop][material]
+        if not len(values):
+            return None
+        val = values[energy_index] if energy_index < len(values) else values[0]
+
+        try:
+            # Coerce length-1 numpy arrays to plain float
+            if hasattr(val, "__len__") and not isinstance(val, (str, bytes)):
+                if len(val) == 1:
+                    val = val[0]
+            if val is None:
+                return None
+            try:
+                return float(val)
+            except Exception:
+                # numpy scalar fallback
+                return float(np.asarray(val).squeeze())
+        except Exception:
+            return None
 
     def generate_comparison_report(self, result: ComparisonResult) -> str:
         """
@@ -179,80 +209,94 @@ class MaterialComparator:
         Returns:
             Formatted text report
         """
-        lines = []
-        lines.append("X-RAY PROPERTIES COMPARISON REPORT")
-        lines.append("=" * 50)
-        lines.append("")
-
-        # Materials summary
-        lines.append("MATERIALS COMPARED:")
-        for i, material in enumerate(result.materials, 1):
-            lines.append(f"  {i}. {material}")
-        lines.append("")
-
-        # Energy range
-        if len(result.energies) == 1:
-            lines.append(f"ENERGY: {result.energies[0]:.3f} keV")
-        else:
-            lines.append(
-                f"ENERGY RANGE: {min(result.energies):.3f} - {max(result.energies):.3f} keV"
-            )
-            lines.append(f"  ({len(result.energies)} energy points)")
-        lines.append("")
-
-        # Properties summary
-        lines.append("PROPERTIES ANALYZED:")
-        for prop in result.properties:
-            lines.append(f"  • {prop.replace('_', ' ').title()}")
-        lines.append("")
-
-        # Summary statistics
-        if result.summary_stats:
-            lines.append("SUMMARY STATISTICS:")
-            lines.append("-" * 30)
-            for prop, stats in result.summary_stats.items():
-                lines.append(f"\n{prop.replace('_', ' ').title()}:")
-                lines.append(f"  Mean: {stats['mean']:.6g}")
-                lines.append(f"  Std:  {stats['std']:.6g}")
-                lines.append(f"  Min:  {stats['min']:.6g}")
-                lines.append(f"  Max:  {stats['max']:.6g}")
-                lines.append(f"  Range: {stats['range']:.6g}")
-            lines.append("")
-
-        # Material rankings (for single energy)
-        if len(result.energies) == 1:
-            lines.append("MATERIAL RANKINGS:")
-            lines.append("-" * 20)
-
-            for prop in result.properties:
-                if prop in result.data:
-                    prop_data = result.data[prop]
-                    # Sort materials by property value
-                    sorted_materials = sorted(
-                        prop_data.items(),
-                        key=lambda x: x[1][0] if x[1] else 0,
-                        reverse=True,
-                    )
-
-                    lines.append(
-                        f"\n{prop.replace('_', ' ').title()} (highest to lowest):"
-                    )
-                    for i, (material, values) in enumerate(sorted_materials, 1):
-                        value = values[0] if values else 0
-                        lines.append(f"  {i}. {material}: {value:.6g}")
-            lines.append("")
-
-        # Recommendations
-        if result.recommendations:
-            lines.append("RECOMMENDATIONS:")
-            lines.append("-" * 15)
-            for i, rec in enumerate(result.recommendations, 1):
-                lines.append(f"{i}. {rec}")
-            lines.append("")
-
+        lines = ["X-RAY PROPERTIES COMPARISON REPORT", "=" * 50, ""]
+        lines.extend(self._report_materials_section(result))
+        lines.extend(self._report_energy_section(result))
+        lines.extend(self._report_properties_section(result))
+        lines.extend(self._report_stats_section(result))
+        lines.extend(self._report_rankings_section(result))
+        lines.extend(self._report_recommendations_section(result))
         lines.append("Report generated by XRayLabTool")
 
         return "\n".join(lines)
+
+    @staticmethod
+    def _report_materials_section(result: ComparisonResult) -> list[str]:
+        lines = ["MATERIALS COMPARED:"]
+        for i, material in enumerate(result.materials, 1):
+            lines.append(f"  {i}. {material}")
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _report_energy_section(result: ComparisonResult) -> list[str]:
+        if len(result.energies) == 1:
+            lines = [f"ENERGY: {result.energies[0]:.3f} keV"]
+        else:
+            lines = [
+                f"ENERGY RANGE: {min(result.energies):.3f} - "
+                f"{max(result.energies):.3f} keV",
+                f"  ({len(result.energies)} energy points)",
+            ]
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _report_properties_section(result: ComparisonResult) -> list[str]:
+        lines = ["PROPERTIES ANALYZED:"]
+        for prop in result.properties:
+            lines.append(f"  • {prop.replace('_', ' ').title()}")
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _report_stats_section(result: ComparisonResult) -> list[str]:
+        if not result.summary_stats:
+            return []
+        lines = ["SUMMARY STATISTICS:", "-" * 30]
+        for prop, stats in result.summary_stats.items():
+            lines.append(f"\n{prop.replace('_', ' ').title()}:")
+            lines.append(f"  Mean: {stats['mean']:.6g}")
+            lines.append(f"  Std:  {stats['std']:.6g}")
+            lines.append(f"  Min:  {stats['min']:.6g}")
+            lines.append(f"  Max:  {stats['max']:.6g}")
+            lines.append(f"  Range: {stats['range']:.6g}")
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _report_rankings_section(result: ComparisonResult) -> list[str]:
+        # Rankings only make sense at a single energy point.
+        if len(result.energies) != 1:
+            return []
+
+        lines = ["MATERIAL RANKINGS:", "-" * 20]
+        for prop in result.properties:
+            if prop not in result.data:
+                continue
+            prop_data = result.data[prop]
+            sorted_materials = sorted(
+                prop_data.items(),
+                key=lambda x: x[1][0] if x[1] else 0,
+                reverse=True,
+            )
+
+            lines.append(f"\n{prop.replace('_', ' ').title()} (highest to lowest):")
+            for i, (material, values) in enumerate(sorted_materials, 1):
+                value = values[0] if values else 0
+                lines.append(f"  {i}. {material}: {value:.6g}")
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _report_recommendations_section(result: ComparisonResult) -> list[str]:
+        if not result.recommendations:
+            return []
+        lines = ["RECOMMENDATIONS:", "-" * 15]
+        for i, rec in enumerate(result.recommendations, 1):
+            lines.append(f"{i}. {rec}")
+        lines.append("")
+        return lines
 
     def _generate_recommendations(
         self,
