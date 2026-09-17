@@ -427,6 +427,75 @@ def save_processed_data(
     np.savetxt(filename, data, header=header, fmt="%.6f")
 
 
+def _validate_balanced_parentheses(formula: str, original: str) -> None:
+    """Raise FormulaError if `formula`'s parentheses aren't balanced."""
+    from xraylabtool.exceptions import FormulaError
+
+    depth = 0
+    for ch in formula:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        if depth < 0:
+            raise FormulaError("Unmatched closing parenthesis", original)
+    if depth != 0:
+        raise FormulaError("Unmatched opening parenthesis", original)
+
+
+def _expand_parentheses(formula: str) -> str:
+    """Expand every parenthesized group (innermost first) into a flat element string."""
+    while "(" in formula:
+        start = formula.rfind("(")
+        end = formula.find(")", start)
+        inside = formula[start + 1 : end]
+
+        # Multiplier after closing paren (decimal or integer)
+        rest = formula[end + 1 :]
+        mult_match = re.match(r"(\d+\.?\d*)", rest)
+        multiplier = float(mult_match.group(1)) if mult_match else 1.0
+
+        # Parse the content inside parentheses
+        inner_elements: dict[str, float] = {}
+        for sym, cnt in re.findall(r"([A-Z][a-z]*)(\d*\.?\d*)", inside):
+            count = float(cnt) if cnt else 1.0
+            inner_elements[sym] = inner_elements.get(sym, 0.0) + count
+
+        # Build expanded string
+        expanded_parts: list[str] = []
+        for sym, cnt in inner_elements.items():
+            total = cnt * multiplier
+            expanded_parts.append(f"{sym}{total}")
+
+        expanded = "".join(expanded_parts)
+        mult_len = len(mult_match.group(1)) if mult_match else 0
+        formula = formula[:start] + expanded + formula[end + 1 + mult_len :]
+
+    return formula
+
+
+def _aggregate_element_counts(
+    matches: list[tuple[str, str]],
+) -> tuple[list[str], list[float]]:
+    """Sum counts per element symbol, preserving first-seen order."""
+    seen: dict[str, int] = {}
+    element_symbols: list[str] = []
+    element_counts: list[float] = []
+
+    for sym, cnt_str in matches:
+        if not sym:
+            continue
+        count = float(cnt_str) if cnt_str else 1.0
+        if sym in seen:
+            element_counts[seen[sym]] += count
+        else:
+            seen[sym] = len(element_symbols)
+            element_symbols.append(sym)
+            element_counts.append(count)
+
+    return element_symbols, element_counts
+
+
 def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
     """
     Parse a chemical formula string into element symbols and their counts.
@@ -460,45 +529,8 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
         raise FormulaError("Empty formula string", formula_str)
 
     formula = formula_str.replace(" ", "")
-
-    # Validate matched parentheses
-    depth = 0
-    for ch in formula:
-        if ch == "(":
-            depth += 1
-        elif ch == ")":
-            depth -= 1
-        if depth < 0:
-            raise FormulaError("Unmatched closing parenthesis", formula_str)
-    if depth != 0:
-        raise FormulaError("Unmatched opening parenthesis", formula_str)
-
-    # Expand parentheses iteratively (innermost first)
-    while "(" in formula:
-        start = formula.rfind("(")
-        end = formula.find(")", start)
-        inside = formula[start + 1 : end]
-
-        # Multiplier after closing paren (decimal or integer)
-        rest = formula[end + 1 :]
-        mult_match = re.match(r"(\d+\.?\d*)", rest)
-        multiplier = float(mult_match.group(1)) if mult_match else 1.0
-
-        # Parse the content inside parentheses
-        inner_elements: dict[str, float] = {}
-        for sym, cnt in re.findall(r"([A-Z][a-z]*)(\d*\.?\d*)", inside):
-            count = float(cnt) if cnt else 1.0
-            inner_elements[sym] = inner_elements.get(sym, 0.0) + count
-
-        # Build expanded string
-        expanded_parts: list[str] = []
-        for sym, cnt in inner_elements.items():
-            total = cnt * multiplier
-            expanded_parts.append(f"{sym}{total}")
-
-        expanded = "".join(expanded_parts)
-        mult_len = len(mult_match.group(1)) if mult_match else 0
-        formula = formula[:start] + expanded + formula[end + 1 + mult_len :]
+    _validate_balanced_parentheses(formula, formula_str)
+    formula = _expand_parentheses(formula)
 
     # Final parse of the fully-expanded formula
     matches = re.findall(r"([A-Z][a-z]*)(\d*\.?\d*)", formula)
@@ -514,21 +546,7 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
     if not matches or not any(sym for sym, _ in matches):
         raise FormulaError(f"No elements found in formula: {formula_str}", formula_str)
 
-    # Aggregate counts per element while preserving first-seen order
-    seen: dict[str, int] = {}
-    element_symbols: list[str] = []
-    element_counts: list[float] = []
-
-    for sym, cnt_str in matches:
-        if not sym:
-            continue
-        count = float(cnt_str) if cnt_str else 1.0
-        if sym in seen:
-            element_counts[seen[sym]] += count
-        else:
-            seen[sym] = len(element_symbols)
-            element_symbols.append(sym)
-            element_counts.append(count)
+    element_symbols, element_counts = _aggregate_element_counts(matches)
 
     if not element_symbols:
         raise FormulaError(f"No elements found in formula: {formula_str}", formula_str)
