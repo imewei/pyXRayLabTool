@@ -62,6 +62,71 @@ def load_data_file(filename: str) -> np.ndarray:
         ) from e
 
 
+def _save_dict_as_csv(results: dict[str, Any], filename: str) -> None:
+    """Write a dict of scalars or equal-length lists/arrays to CSV."""
+    with open(filename, "w", newline="") as f:
+        if not results:
+            return
+        fieldnames = results.keys()
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        # Handle case where values are lists/arrays
+        first_key = next(iter(results))
+        if isinstance(results[first_key], (list, np.ndarray)):
+            # Multiple rows case (optimized: vectorized operations)
+            n_rows = len(results[first_key])
+
+            # Pre-convert arrays to lists for efficient indexing
+            array_data = {}
+            for k, v in results.items():
+                if isinstance(v, np.ndarray):
+                    array_data[k] = v.tolist()
+                else:
+                    array_data[k] = list(v) if hasattr(v, "__iter__") else [v] * n_rows
+
+            # Vectorized row generation
+            rows = [{k: array_data[k][i] for k in array_data} for i in range(n_rows)]
+            writer.writerows(rows)
+        else:
+            # Single row case
+            writer.writerow(results)
+
+
+def _save_results_as_csv(results: Any, filename: str) -> None:
+    """Dispatch CSV export by result type: DataFrame-like, dict, or ndarray."""
+    if hasattr(results, "to_csv"):
+        results.to_csv(filename, index=False)
+    elif isinstance(results, dict):
+        _save_dict_as_csv(results, filename)
+    elif isinstance(results, np.ndarray):
+        np.savetxt(filename, results, delimiter=",", fmt="%.6g")
+    else:
+        raise ValueError(f"Unsupported data type for CSV export: {type(results)}")
+
+
+def _json_numpy_default(obj: Any) -> Any:
+    """`json.dump(default=...)` hook: convert numpy scalars/arrays to JSON-safe types."""
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    return str(obj)
+
+
+def _save_results_as_json(results: Any, filename: str) -> None:
+    """Dispatch JSON export: DataFrame-like `.to_json`, else `json.dump`."""
+    if hasattr(results, "to_json"):
+        results.to_json(filename, orient="records", indent=2)
+    else:
+        import json
+
+        with open(filename, "w") as f:
+            json.dump(results, f, indent=2, default=_json_numpy_default)
+
+
 def save_calculation_results(
     results: Any, filename: str, format_type: str = "csv"
 ) -> None:
@@ -77,65 +142,9 @@ def save_calculation_results(
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if format_type.lower() == "csv":
-        if hasattr(results, "to_csv"):
-            results.to_csv(filename, index=False)
-        # Handle different data types efficiently
-        elif isinstance(results, dict):
-            # Convert dict to CSV using csv module
-            with open(filename, "w", newline="") as f:
-                if results:
-                    fieldnames = results.keys()
-                    writer = csv.DictWriter(f, fieldnames=fieldnames)
-                    writer.writeheader()
-
-                    # Handle case where values are lists/arrays
-                    first_key = next(iter(results))
-                    if isinstance(results[first_key], (list, np.ndarray)):
-                        # Multiple rows case (optimized: vectorized operations)
-                        n_rows = len(results[first_key])
-
-                        # Pre-convert arrays to lists for efficient indexing
-                        array_data = {}
-                        for k, v in results.items():
-                            if isinstance(v, np.ndarray):
-                                array_data[k] = v.tolist()
-                            else:
-                                array_data[k] = (
-                                    list(v) if hasattr(v, "__iter__") else [v] * n_rows
-                                )
-
-                        # Vectorized row generation
-                        rows = [
-                            {k: array_data[k][i] for k in array_data}
-                            for i in range(n_rows)
-                        ]
-                        writer.writerows(rows)
-                    else:
-                        # Single row case
-                        writer.writerow(results)
-        elif isinstance(results, np.ndarray):
-            # Save numpy array directly
-            np.savetxt(filename, results, delimiter=",", fmt="%.6g")
-        else:
-            raise ValueError(f"Unsupported data type for CSV export: {type(results)}")
+        _save_results_as_csv(results, filename)
     elif format_type.lower() == "json":
-        if hasattr(results, "to_json"):
-            results.to_json(filename, orient="records", indent=2)
-        else:
-            import json
-
-            # Convert numpy arrays to lists for JSON serialization
-            def convert_numpy(obj: Any) -> Any:
-                if isinstance(obj, np.ndarray):
-                    return obj.tolist()
-                elif isinstance(obj, np.integer):
-                    return int(obj)
-                elif isinstance(obj, np.floating):
-                    return float(obj)
-                return str(obj)
-
-            with open(filename, "w") as f:
-                json.dump(results, f, indent=2, default=convert_numpy)
+        _save_results_as_json(results, filename)
     else:
         raise ValueError(f"Unsupported format type: {format_type}")
 
