@@ -38,6 +38,7 @@ class TestCodeQuality(BaseUnitTest):
             "_migration",
             "deprecated",
             "/gui/",
+            "\\gui\\",
         ]
         filtered_violations = [
             v
