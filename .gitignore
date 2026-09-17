@@ -145,13 +145,10 @@ coverage-claude.json
 # ----------------------------------------------------------------------------
 # Graphify (Knowledge Graph & Semantic Cache)
 # ----------------------------------------------------------------------------
-graphify-out/cache/
-graphify-out/.graphify_python
-graphify-out/.graphify_*.json
-graphify-out/.graphify_*.txt
-graphify-out/.obsidian/
-graphify-out/_COMMUNITY_*.md
-graphify-out/20*/
+graphify-out/*
+!graphify-out/graph.html
+!graphify-out/graph.json
+!graphify-out/GRAPH_REPORT.md
 
 # Scientific/Data
 .ipynb_checkpoints
