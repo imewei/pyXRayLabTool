@@ -267,6 +267,107 @@ _{command_name}() {{
 compdef _{command_name} {command_name}
 """
 
+    def _zsh_command_with_subcommands(
+        self, cmd_name: str, cmd_info: dict[str, Any]
+    ) -> str:
+        """Build the Zsh case-statement block for a command with subcommands."""
+        # Handle nested subcommands (like completion)
+        cmd_args = f"""                {cmd_name})
+                    _arguments \\"""
+
+        # Add main command options
+        main_options = cmd_info.get("options", [])
+        for option in main_options:
+            if option.startswith("--"):
+                opt_name = option.replace("--", "").replace("-", " ")
+                cmd_args += f"""
+                        '{option}[{opt_name.title()}]' \\"""
+            elif option.startswith("-"):
+                opt_name = option.replace("-", "")
+                cmd_args += f"""
+                        '{option}[{opt_name.upper()}]' \\"""
+
+        cmd_args += """
+                        '1: :->subcommand' \\
+                        '*:: :->subargs'
+
+                    case $state in
+                        subcommand)
+                            local subcommands
+                            subcommands=("""
+
+        # Add subcommand definitions
+        subcommands = cmd_info.get("subcommands", {})
+        for subcmd_name, subcmd_info in subcommands.items():
+            subcmd_desc = subcmd_info.get("description", f"{subcmd_name} subcommand")
+            cmd_args += f"""
+                                "{subcmd_name}:{subcmd_desc}\""""
+
+        cmd_args += """
+                            )
+                            _describe 'subcommands' subcommands
+                            ;;
+                        subargs)
+                            case $words[1] in"""
+
+        # Add subcommand argument handling
+        for subcmd_name, subcmd_info in subcommands.items():
+            subcmd_options = subcmd_info.get("options", [])
+            cmd_args += f"""
+                                {subcmd_name})
+                                    _arguments \\"""
+
+            for option in subcmd_options:
+                if option.startswith("--"):
+                    opt_name = option.replace("--", "").replace("-", " ")
+                    cmd_args += f"""
+                                        '{option}[{opt_name.title()}]' \\"""
+                elif option.startswith("-"):
+                    opt_name = option.replace("-", "")
+                    cmd_args += f"""
+                                        '{option}[{opt_name.upper()}]' \\"""
+
+            cmd_args = cmd_args.rstrip(" \\")
+            cmd_args += """
+                                    ;;"""
+
+        cmd_args += """
+                            esac
+                            ;;
+                    esac
+                    ;;"""
+        return cmd_args
+
+    def _zsh_command_without_subcommands(
+        self, cmd_name: str, cmd_info: dict[str, Any], global_options: list[str]
+    ) -> str:
+        """Build the Zsh case-statement block for a command with no subcommands."""
+        options = cmd_info.get("options", [])
+        cmd_args = f"""                {cmd_name})
+                    _arguments \\"""
+
+        for option in options:
+            if option.startswith("--"):
+                opt_name = option.replace("--", "").replace("-", " ")
+                cmd_args += f"""
+                        '{option}[{opt_name.title()}]' \\"""
+            elif option.startswith("-"):
+                opt_name = option.replace("-", "")
+                cmd_args += f"""
+                        '{option}[{opt_name.upper()}]' \\"""
+
+        # Add global options
+        for option in global_options:
+            if option.startswith("--"):
+                opt_name = option.replace("--", "").replace("-", " ")
+                cmd_args += f"""
+                        '{option}[{opt_name.title()}]' \\"""
+
+        cmd_args = cmd_args.rstrip(" \\")
+        cmd_args += """
+                    ;;"""
+        return cmd_args
+
     def _generate_command_definitions(
         self, commands: dict[str, dict[str, Any]], global_options: list[str]
     ) -> str:
@@ -278,101 +379,12 @@ compdef _{command_name} {command_name}
             description = cmd_info.get("description", f"Run {cmd_name} command")
             definitions.append(f'                "{cmd_name}:{description}"')
 
-            # Check if this command has subcommands
             if "subcommands" in cmd_info:
-                # Handle nested subcommands (like completion)
-                cmd_args = f"""                {cmd_name})
-                    _arguments \\"""
-
-                # Add main command options
-                main_options = cmd_info.get("options", [])
-                for option in main_options:
-                    if option.startswith("--"):
-                        opt_name = option.replace("--", "").replace("-", " ")
-                        cmd_args += f"""
-                        '{option}[{opt_name.title()}]' \\"""
-                    elif option.startswith("-"):
-                        opt_name = option.replace("-", "")
-                        cmd_args += f"""
-                        '{option}[{opt_name.upper()}]' \\"""
-
-                cmd_args += """
-                        '1: :->subcommand' \\
-                        '*:: :->subargs'
-
-                    case $state in
-                        subcommand)
-                            local subcommands
-                            subcommands=("""
-
-                # Add subcommand definitions
-                subcommands = cmd_info.get("subcommands", {})
-                for subcmd_name, subcmd_info in subcommands.items():
-                    subcmd_desc = subcmd_info.get(
-                        "description", f"{subcmd_name} subcommand"
-                    )
-                    cmd_args += f"""
-                                "{subcmd_name}:{subcmd_desc}\""""
-
-                cmd_args += """
-                            )
-                            _describe 'subcommands' subcommands
-                            ;;
-                        subargs)
-                            case $words[1] in"""
-
-                # Add subcommand argument handling
-                for subcmd_name, subcmd_info in subcommands.items():
-                    subcmd_options = subcmd_info.get("options", [])
-                    cmd_args += f"""
-                                {subcmd_name})
-                                    _arguments \\"""
-
-                    for option in subcmd_options:
-                        if option.startswith("--"):
-                            opt_name = option.replace("--", "").replace("-", " ")
-                            cmd_args += f"""
-                                        '{option}[{opt_name.title()}]' \\"""
-                        elif option.startswith("-"):
-                            opt_name = option.replace("-", "")
-                            cmd_args += f"""
-                                        '{option}[{opt_name.upper()}]' \\"""
-
-                    cmd_args = cmd_args.rstrip(" \\")
-                    cmd_args += """
-                                    ;;"""
-
-                cmd_args += """
-                            esac
-                            ;;
-                    esac
-                    ;;"""
+                cmd_args = self._zsh_command_with_subcommands(cmd_name, cmd_info)
             else:
-                # Handle regular commands
-                options = cmd_info.get("options", [])
-                cmd_args = f"""                {cmd_name})
-                    _arguments \\"""
-
-                for option in options:
-                    if option.startswith("--"):
-                        opt_name = option.replace("--", "").replace("-", " ")
-                        cmd_args += f"""
-                        '{option}[{opt_name.title()}]' \\"""
-                    elif option.startswith("-"):
-                        opt_name = option.replace("-", "")
-                        cmd_args += f"""
-                        '{option}[{opt_name.upper()}]' \\"""
-
-                # Add global options
-                for option in global_options:
-                    if option.startswith("--"):
-                        opt_name = option.replace("--", "").replace("-", " ")
-                        cmd_args += f"""
-                        '{option}[{opt_name.title()}]' \\"""
-
-                cmd_args = cmd_args.rstrip(" \\")
-                cmd_args += """
-                    ;;"""
+                cmd_args = self._zsh_command_without_subcommands(
+                    cmd_name, cmd_info, global_options
+                )
 
             command_args.append(cmd_args)
 
@@ -422,13 +434,9 @@ class FishCompletionGenerator(CompletionGenerator):
 {command_completions}
 """
 
-    def _generate_command_completions(
-        self, commands: dict[str, dict[str, Any]], global_options: list[str]
-    ) -> str:
-        """Generate Fish command completions."""
+    def _fish_global_option_completions(self, global_options: list[str]) -> list[str]:
+        """Build Fish completion lines for the top-level global options."""
         completions = []
-
-        # Global options
         for option in global_options:
             if option.startswith("--"):
                 opt_name = option.replace("--", "").replace("-", " ")
@@ -440,8 +448,89 @@ class FishCompletionGenerator(CompletionGenerator):
                 completions.append(
                     f"complete -c {self.command_name} -s {option[1]} -d 'Short option'"
                 )
+        return completions
 
-        # Command completions
+    def _fish_subcommand_completions(
+        self, cmd_name: str, cmd_info: dict[str, Any]
+    ) -> list[str]:
+        """Build Fish completion lines for a command that has subcommands."""
+        completions = []
+        subcommands = cmd_info.get("subcommands", {})
+
+        # Add main command options
+        main_options = cmd_info.get("options", [])
+        for option in main_options:
+            if option.startswith("--"):
+                opt_name = option.replace("--", "").replace("-", " ")
+                completions.append(
+                    f"complete -c {self.command_name} -f -n"
+                    f" '__fish_seen_subcommand_from {cmd_name}' -l {option[2:]} -d"
+                    f" '{opt_name.title()}'"
+                )
+            elif option.startswith("-") and len(option) == 2:
+                completions.append(
+                    f"complete -c {self.command_name} -f -n"
+                    f" '__fish_seen_subcommand_from {cmd_name}' -s {option[1]} -d"
+                    " 'Short option'"
+                )
+
+        # Add subcommand completions
+        for subcmd_name, subcmd_info in subcommands.items():
+            subcmd_desc = subcmd_info.get("description", f"{subcmd_name} subcommand")
+            completions.append(
+                f"complete -c {self.command_name} -f -n"
+                f" '__fish_seen_subcommand_from {cmd_name}' -a"
+                f" '{subcmd_name}' -d '{subcmd_desc}'"
+            )
+
+            # Add subcommand options
+            subcmd_options = subcmd_info.get("options", [])
+            for option in subcmd_options:
+                if option.startswith("--"):
+                    opt_name = option.replace("--", "").replace("-", " ")
+                    completions.append(
+                        f"complete -c {self.command_name} -f -n"
+                        f" '__fish_seen_subcommand_from {cmd_name}' -n"
+                        f" 'test (count (commandline -opc)) -ge 3; and contains -- {subcmd_name} (commandline -opc)' -l {option[2:]} -d"
+                        f" '{opt_name.title()}'"
+                    )
+                elif option.startswith("-") and len(option) == 2:
+                    completions.append(
+                        f"complete -c {self.command_name} -f -n"
+                        f" '__fish_seen_subcommand_from {cmd_name}' -n"
+                        f" 'test (count (commandline -opc)) -ge 3; and contains -- {subcmd_name} (commandline -opc)' -s {option[1]} -d"
+                        " 'Short option'"
+                    )
+        return completions
+
+    def _fish_regular_command_completions(
+        self, cmd_name: str, cmd_info: dict[str, Any]
+    ) -> list[str]:
+        """Build Fish completion lines for a command with no subcommands."""
+        completions = []
+        options = cmd_info.get("options", [])
+        for option in options:
+            if option.startswith("--"):
+                opt_name = option.replace("--", "").replace("-", " ")
+                completions.append(
+                    f"complete -c {self.command_name} -f -n"
+                    f" '__fish_seen_subcommand_from {cmd_name}' -l {option[2:]} -d"
+                    f" '{opt_name.title()}'"
+                )
+            elif option.startswith("-") and len(option) == 2:
+                completions.append(
+                    f"complete -c {self.command_name} -f -n"
+                    f" '__fish_seen_subcommand_from {cmd_name}' -s {option[1]} -d"
+                    " 'Short option'"
+                )
+        return completions
+
+    def _generate_command_completions(
+        self, commands: dict[str, dict[str, Any]], global_options: list[str]
+    ) -> str:
+        """Generate Fish command completions."""
+        completions = self._fish_global_option_completions(global_options)
+
         for cmd_name, cmd_info in commands.items():
             description = cmd_info.get("description", f"Run {cmd_name} command")
             completions.append(
@@ -450,72 +539,13 @@ class FishCompletionGenerator(CompletionGenerator):
             )
 
             if "subcommands" in cmd_info:
-                # Handle commands with subcommands (like completion)
-                subcommands = cmd_info.get("subcommands", {})
-
-                # Add main command options
-                main_options = cmd_info.get("options", [])
-                for option in main_options:
-                    if option.startswith("--"):
-                        opt_name = option.replace("--", "").replace("-", " ")
-                        completions.append(
-                            f"complete -c {self.command_name} -f -n"
-                            f" '__fish_seen_subcommand_from {cmd_name}' -l {option[2:]} -d"
-                            f" '{opt_name.title()}'"
-                        )
-                    elif option.startswith("-") and len(option) == 2:
-                        completions.append(
-                            f"complete -c {self.command_name} -f -n"
-                            f" '__fish_seen_subcommand_from {cmd_name}' -s {option[1]} -d"
-                            " 'Short option'"
-                        )
-
-                # Add subcommand completions
-                for subcmd_name, subcmd_info in subcommands.items():
-                    subcmd_desc = subcmd_info.get(
-                        "description", f"{subcmd_name} subcommand"
-                    )
-                    completions.append(
-                        f"complete -c {self.command_name} -f -n"
-                        f" '__fish_seen_subcommand_from {cmd_name}' -a"
-                        f" '{subcmd_name}' -d '{subcmd_desc}'"
-                    )
-
-                    # Add subcommand options
-                    subcmd_options = subcmd_info.get("options", [])
-                    for option in subcmd_options:
-                        if option.startswith("--"):
-                            opt_name = option.replace("--", "").replace("-", " ")
-                            completions.append(
-                                f"complete -c {self.command_name} -f -n"
-                                f" '__fish_seen_subcommand_from {cmd_name}' -n"
-                                f" 'test (count (commandline -opc)) -ge 3; and contains -- {subcmd_name} (commandline -opc)' -l {option[2:]} -d"
-                                f" '{opt_name.title()}'"
-                            )
-                        elif option.startswith("-") and len(option) == 2:
-                            completions.append(
-                                f"complete -c {self.command_name} -f -n"
-                                f" '__fish_seen_subcommand_from {cmd_name}' -n"
-                                f" 'test (count (commandline -opc)) -ge 3; and contains -- {subcmd_name} (commandline -opc)' -s {option[1]} -d"
-                                " 'Short option'"
-                            )
+                completions.extend(
+                    self._fish_subcommand_completions(cmd_name, cmd_info)
+                )
             else:
-                # Handle regular commands
-                options = cmd_info.get("options", [])
-                for option in options:
-                    if option.startswith("--"):
-                        opt_name = option.replace("--", "").replace("-", " ")
-                        completions.append(
-                            f"complete -c {self.command_name} -f -n"
-                            f" '__fish_seen_subcommand_from {cmd_name}' -l {option[2:]} -d"
-                            f" '{opt_name.title()}'"
-                        )
-                    elif option.startswith("-") and len(option) == 2:
-                        completions.append(
-                            f"complete -c {self.command_name} -f -n"
-                            f" '__fish_seen_subcommand_from {cmd_name}' -s {option[1]} -d"
-                            " 'Short option'"
-                        )
+                completions.extend(
+                    self._fish_regular_command_completions(cmd_name, cmd_info)
+                )
 
         return "\n".join(completions)
 
