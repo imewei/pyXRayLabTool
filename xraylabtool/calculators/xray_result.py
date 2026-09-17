@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 import warnings
 
 import numpy as np
@@ -149,45 +149,30 @@ class XRayResult:
     real_sld_per_ang2: OpticalConstantArray = field()  # Real SLD (Å⁻²)
     imaginary_sld_per_ang2: OpticalConstantArray = field()  # Imaginary SLD (Å⁻²)
 
+    #: Array fields normalized to float64 ndarray in __post_init__.
+    _ARRAY_FIELDS: ClassVar[tuple[str, ...]] = (
+        "energy_kev",
+        "wavelength_angstrom",
+        "dispersion_delta",
+        "absorption_beta",
+        "scattering_factor_f1",
+        "scattering_factor_f2",
+        "critical_angle_degrees",
+        "attenuation_length_cm",
+        "real_sld_per_ang2",
+        "imaginary_sld_per_ang2",
+    )
+
     def __post_init__(self) -> None:
         """Post-initialization to handle any setup after object creation."""
-        # Only convert if not already a numpy array (e.g. when constructed from
-        # raw Python lists or scalars, not from the internal calculation path
-        # which already produces float64 contiguous arrays).
-        if not isinstance(self.energy_kev, np.ndarray):
-            self.energy_kev = np.asarray(self.energy_kev, dtype=np.float64)
-        if not isinstance(self.wavelength_angstrom, np.ndarray):
-            self.wavelength_angstrom = np.asarray(
-                self.wavelength_angstrom, dtype=np.float64
-            )
-        if not isinstance(self.dispersion_delta, np.ndarray):
-            self.dispersion_delta = np.asarray(self.dispersion_delta, dtype=np.float64)
-        if not isinstance(self.absorption_beta, np.ndarray):
-            self.absorption_beta = np.asarray(self.absorption_beta, dtype=np.float64)
-        if not isinstance(self.scattering_factor_f1, np.ndarray):
-            self.scattering_factor_f1 = np.asarray(
-                self.scattering_factor_f1, dtype=np.float64
-            )
-        if not isinstance(self.scattering_factor_f2, np.ndarray):
-            self.scattering_factor_f2 = np.asarray(
-                self.scattering_factor_f2, dtype=np.float64
-            )
-        if not isinstance(self.critical_angle_degrees, np.ndarray):
-            self.critical_angle_degrees = np.asarray(
-                self.critical_angle_degrees, dtype=np.float64
-            )
-        if not isinstance(self.attenuation_length_cm, np.ndarray):
-            self.attenuation_length_cm = np.asarray(
-                self.attenuation_length_cm, dtype=np.float64
-            )
-        if not isinstance(self.real_sld_per_ang2, np.ndarray):
-            self.real_sld_per_ang2 = np.asarray(
-                self.real_sld_per_ang2, dtype=np.float64
-            )
-        if not isinstance(self.imaginary_sld_per_ang2, np.ndarray):
-            self.imaginary_sld_per_ang2 = np.asarray(
-                self.imaginary_sld_per_ang2, dtype=np.float64
-            )
+        # Only convert if not already a numpy array: these fields are typed as
+        # ndarray for the internal calculation path (which already produces
+        # float64 contiguous arrays), but the dataclass is public API and
+        # external callers may construct it from raw Python lists or scalars.
+        for name in self._ARRAY_FIELDS:
+            value = getattr(self, name)
+            if not isinstance(value, np.ndarray):
+                setattr(self, name, np.asarray(value, dtype=np.float64))
 
     # Convenience properties used in docs/notebooks
     @property

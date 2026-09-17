@@ -59,7 +59,7 @@ class BatchConfig:
                 max_recommended = available_memory_gb * 0.5
                 if self.memory_limit_gb > max_recommended:
                     self.memory_limit_gb = max(1.0, max_recommended)
-            except Exception:
+            except psutil.Error:
                 pass  # If memory detection fails, use original limit
 
 
@@ -81,7 +81,7 @@ class MemoryMonitor:
         try:
             memory_info = self.process.memory_info()
             return bool(memory_info.rss < self.limit_bytes)
-        except Exception:
+        except psutil.Error:
             return True  # If we can't check, assume it's fine
 
     def get_memory_usage_mb(self) -> float:
@@ -94,7 +94,7 @@ class MemoryMonitor:
         try:
             memory_info = self.process.memory_info()
             return float(memory_info.rss / (1024 * 1024))
-        except Exception:
+        except psutil.Error:
             return 0.0
 
     def force_gc(self) -> None:

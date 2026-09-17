@@ -11,7 +11,7 @@ public API functions that wire everything together.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np  # Keep for validation and array operations
 
@@ -98,6 +98,7 @@ from xraylabtool.calculators.scattering_data import (
 )
 from xraylabtool.calculators.xray_result import XRayResult as XRayResult
 from xraylabtool.exceptions import EnergyError, FormulaError
+from xraylabtool.logging_utils import get_logger
 
 if TYPE_CHECKING:
     from xraylabtool.typing_extensions import (
@@ -106,6 +107,8 @@ if TYPE_CHECKING:
         FloatLike,
         InterpolatorProtocol,
     )
+
+_logger = get_logger(__name__)
 
 
 # =====================================================================================
@@ -201,11 +204,38 @@ def _prepare_element_data(
     return element_data
 
 
+class _MaterialPropertiesDict(TypedDict):
+    """Per-key typed result of a single-material calculation.
+
+    Replaces the previous ``dict[str, str | float | np.ndarray]`` return type:
+    that union forced every reader (notably ``XRayResult`` construction) to
+    either cast each value or accept a real type mismatch, since mypy can't
+    tell which keys hold scalars vs. arrays. TypedDict gives each key its
+    precise type instead.
+    """
+
+    formula: str
+    molecular_weight: float
+    number_of_electrons: float
+    mass_density: float
+    electron_density: float
+    energy: np.ndarray
+    wavelength: np.ndarray
+    dispersion: np.ndarray
+    absorption: np.ndarray
+    f1_total: np.ndarray
+    f2_total: np.ndarray
+    critical_angle: np.ndarray
+    attenuation_length: np.ndarray
+    re_sld: np.ndarray
+    im_sld: np.ndarray
+
+
 def _calculate_single_material_xray_properties(
     formula_str: str,
     energy_kev: FloatLike | ArrayLike,
     mass_density: FloatLike,
-) -> dict[str, str | float | np.ndarray]:
+) -> _MaterialPropertiesDict:
     """
     Calculate X-ray optical properties for a single chemical formula.
 
@@ -325,7 +355,9 @@ def calculate_multiple_xray_properties(
             results[formula] = result_dict
         except Exception as e:
             # Log warning but continue processing other formulas
-            print(f"Warning: Failed to process formula {formula}: {e}")
+            _logger.warning(
+                "Failed to process formula", extra={"formula": formula, "error": str(e)}
+            )
             continue
 
     return results
@@ -396,11 +428,11 @@ def calculate_single_material_properties(
 
     # Create and return XRayResult dataclass using new field names.
     return XRayResult(
-        formula=str(properties["formula"]),
-        molecular_weight_g_mol=float(properties["molecular_weight"]),
-        total_electrons=float(properties["number_of_electrons"]),
-        density_g_cm3=float(properties["mass_density"]),
-        electron_density_per_ang3=float(properties["electron_density"]),
+        formula=properties["formula"],
+        molecular_weight_g_mol=properties["molecular_weight"],
+        total_electrons=properties["number_of_electrons"],
+        density_g_cm3=properties["mass_density"],
+        electron_density_per_ang3=properties["electron_density"],
         energy_kev=properties["energy"],
         wavelength_angstrom=properties["wavelength"],
         dispersion_delta=properties["dispersion"],
@@ -540,7 +572,10 @@ def _process_formulas_parallel(
             formula_result, xray_result = process_func(pair)
             results[formula_result] = xray_result
         except Exception as e:
-            print(f"Warning: Failed to process formula '{pair[0]}': {e}")
+            _logger.warning(
+                "Failed to process formula",
+                extra={"formula": pair[0], "error": str(e)},
+            )
             continue
     return results
 
