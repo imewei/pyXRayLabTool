@@ -276,7 +276,7 @@ Value Completion
 
 .. code-block:: bash
 
-   xraylabtool convert --energy <TAB>
+   xraylabtool convert energy 8.0 --to <TAB>
    # Suggests common energies: 8.048, 10.0, 12.4
 
    xraylabtool calc <TAB>
