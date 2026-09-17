@@ -309,7 +309,9 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
 
     # Lazy import for completion_installer module
     elif name == "completion_installer":
-        from xraylabtool.interfaces import completion as completion_installer
+        from xraylabtool.interfaces.completion_v2 import (
+            installer as completion_installer,
+        )
 
         globals().update({"completion_installer": completion_installer})
         return globals()[name]

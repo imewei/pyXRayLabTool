@@ -650,7 +650,9 @@ class TestInstallCompletionCommand:
         # Test that the function exists and can be called
         # We can't test actual installation without affecting system
         try:
-            from xraylabtool.interfaces.completion import CompletionInstaller
+            from xraylabtool.interfaces.completion_v2.installer import (
+                CompletionInstaller,
+            )
 
             installer = CompletionInstaller()
             assert installer is not None
@@ -711,18 +713,16 @@ class TestInstallCompletionCommand:
     def test_completion_installer_module_import(self):
         """Test that completion installer module can be imported."""
         try:
-            from xraylabtool.interfaces.completion import (
-                BASH_COMPLETION_SCRIPT,
+            from xraylabtool.interfaces.completion_v2.installer import (
                 CompletionInstaller,
+            )
+            from xraylabtool.interfaces.completion_v2.integration import (
                 install_completion_main,
             )
 
             # Check that key components exist
             assert CompletionInstaller is not None
             assert install_completion_main is not None
-            assert isinstance(BASH_COMPLETION_SCRIPT, str)
-            assert len(BASH_COMPLETION_SCRIPT) > 0
-            assert "xraylabtool" in BASH_COMPLETION_SCRIPT
 
         except ImportError:
             pytest.skip("completion_installer module not available")
@@ -730,7 +730,9 @@ class TestInstallCompletionCommand:
     def test_uninstall_completion_help(self):
         """Test uninstall-completion command shows help correctly."""
         try:
-            from xraylabtool.interfaces.completion import CompletionInstaller
+            from xraylabtool.interfaces.completion_v2.installer import (
+                CompletionInstaller,
+            )
 
             installer = CompletionInstaller()
             assert installer is not None
@@ -760,7 +762,9 @@ class TestInstallCompletionCommand:
         args = MockArgs()
 
         try:
-            from xraylabtool.interfaces.completion import uninstall_completion_main
+            from xraylabtool.interfaces.completion_v2.integration import (
+                uninstall_completion_main,
+            )
 
             with patch(
                 "xraylabtool.interfaces.completion_v2.integration.CompletionInstaller"
@@ -786,7 +790,9 @@ class TestInstallCompletionCommand:
     def test_completion_installer_methods(self, mock_exists, mock_subprocess):
         """Test CompletionInstaller methods with mocked dependencies."""
         try:
-            from xraylabtool.interfaces.completion import CompletionInstaller
+            from xraylabtool.interfaces.completion_v2.installer import (
+                CompletionInstaller,
+            )
 
             # Mock that bash completion directories exist
             mock_exists.return_value = True
@@ -805,50 +811,6 @@ class TestInstallCompletionCommand:
             user_dir = installer.get_user_bash_completion_dir()
             assert isinstance(user_dir, Path)
             assert ".bash_completion.d" in str(user_dir)
-
-        except ImportError:
-            pytest.skip("completion_installer module not available")
-
-    def test_bash_completion_script_content(self):
-        """Test that bash completion script contains expected content."""
-        try:
-            from xraylabtool.interfaces.completion import BASH_COMPLETION_SCRIPT
-
-            # Check for key completion functions
-            assert "_xraylabtool_complete" in BASH_COMPLETION_SCRIPT
-            assert (
-                "complete -F _xraylabtool_complete xraylabtool"
-                in BASH_COMPLETION_SCRIPT
-            )
-
-            # Check for all commands including new structure
-            expected_commands = [
-                "calc",
-                "batch",
-                "compare",
-                "convert",
-                "formula",
-                "atomic",
-                "bragg",
-                "list",
-                "completion",
-            ]
-
-            for command in expected_commands:
-                assert command in BASH_COMPLETION_SCRIPT
-
-            # Check for completion functions for main commands
-            # Note: New completion system uses a single function
-            expected_functions = [
-                "_xraylabtool_complete",
-            ]
-
-            for func in expected_functions:
-                assert func in BASH_COMPLETION_SCRIPT
-
-            # Check for chemical formulas and elements
-            assert "SiO2" in BASH_COMPLETION_SCRIPT
-            assert "Si" in BASH_COMPLETION_SCRIPT
 
         except ImportError:
             pytest.skip("completion_installer module not available")

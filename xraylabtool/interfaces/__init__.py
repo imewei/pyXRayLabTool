@@ -16,10 +16,8 @@ from xraylabtool.interfaces.cli import (
     main,
     parse_energy_string,
 )
-from xraylabtool.interfaces.completion import (
-    CompletionInstaller,
-    install_completion_main,
-)
+from xraylabtool.interfaces.completion_v2.installer import CompletionInstaller
+from xraylabtool.interfaces.completion_v2.integration import install_completion_main
 
 __all__ = [
     # Completion system

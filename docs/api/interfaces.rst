@@ -147,14 +147,6 @@ All commands support multiple output formats:
 - **csv**: Comma-separated values for spreadsheet import
 - **json**: JSON format for programmatic processing
 
-Shell Completion (Legacy Bridge)
---------------------------------
-
-.. automodule:: xraylabtool.interfaces.completion
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Shell Completion v2
 -------------------
 
