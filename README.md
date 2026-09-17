@@ -13,14 +13,12 @@ Ultra-fast Python package and CLI for calculating X-ray optical properties of ma
 ### Using uv (Recommended)
 
 ```bash
-# Core package
+# Core package (NumPy + JAX CPU backends, CLI, GUI)
 uv pip install xraylabtool
 
-# With JAX backend for GPU acceleration
-uv pip install "xraylabtool[jax]"
-
-# With matplotlib for publication plots
-uv pip install "xraylabtool[plots]"
+# NVIDIA GPU acceleration (pick the CUDA major matching your driver)
+uv pip install "xraylabtool[gpu_cuda13]"
+uv pip install "xraylabtool[gpu_cuda12]"
 ```
 
 ### Using pip
@@ -99,14 +97,14 @@ All properties are returned as NumPy arrays in the `XRayResult` dataclass, suppo
 
 ## Backend Selection
 
+JAX is selected automatically when JAX and an NVIDIA GPU are available; otherwise NumPy.
+Override at runtime:
+
 ```python
-import xraylabtool as xlt
+from xraylabtool.backend import set_backend
 
-# Switch to JAX for JIT-compiled GPU acceleration
-xlt.set_backend("jax")
-
-# Switch back to NumPy (default)
-xlt.set_backend("numpy")
+set_backend("jax")    # JIT-compiled kernels; GPU needs the gpu_cuda12/13 extra
+set_backend("numpy")  # default on CPU-only machines
 ```
 
 ## Scientific Background

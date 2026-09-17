@@ -94,7 +94,7 @@ This automatically installs:
 
    # Test basic functionality
    python -c "import xraylabtool as xrt; \
-       result = xrt.calculate_single_material_properties('Si', 2.33, 8000); \
+       result = xrt.calculate_single_material_properties('Si', 8.0, 2.33); \
        print(f'Critical angle: {result.critical_angle_degrees:.3f}°')"
 
    # Check JAX installation
@@ -135,8 +135,8 @@ The Good News
    # This code from v0.3.0 works identically in v0.4.0
    result = xrt.calculate_single_material_properties(
        formula="Si",
+       energy=8.0,
        density=2.33,
-       energy=8000
    )
 
    print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
@@ -154,7 +154,7 @@ JAX Arrays vs NumPy Arrays
    import xraylabtool as xrt
    import numpy as np
 
-   result = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
 
    # v0.3.0: result.critical_angle_degrees was numpy.ndarray
    # v0.4.0: result.critical_angle_degrees is jax.Array
@@ -177,23 +177,25 @@ Performance Change: JIT Warm-Up
 
 .. code-block:: python
 
-   import xraylabtool as xrt
    import time
+
+   import numpy as np
+   import xraylabtool as xrt
 
    # First calculation includes JIT compilation (~50-100 ms)
    start = time.time()
-   result1 = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result1 = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
    print(f"First call: {(time.time() - start) * 1000:.1f} ms")  # ~50 ms
 
    # Subsequent calls use compiled code (~0.02 ms)
    start = time.time()
-   result2 = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result2 = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
    print(f"Second call: {(time.time() - start) * 1000:.3f} ms")  # ~0.02 ms
 
    # Batch processing is very fast
    start = time.time()
-   for energy in range(5000, 15000, 100):
-       result = xrt.calculate_single_material_properties("Si", 2.33, energy)
+   for energy in np.linspace(5.0, 15.0, 100):
+       result = xrt.calculate_single_material_properties("Si", energy, 2.33)
    elapsed = (time.time() - start) * 1000
    print(f"100 calculations: {elapsed:.1f} ms ({elapsed/100:.3f} ms each)")
 
@@ -209,7 +211,7 @@ Performance Change: JIT Warm-Up
 .. code-block:: python
 
    # "Warm up" the JIT compiler once at startup:
-   xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   xrt.calculate_single_material_properties("Si", 8.0, 2.33)
 
    # Now all subsequent calculations are fast
    for material in my_materials:
@@ -232,7 +234,7 @@ Type Hints and Type Checkers
    from jax import Array
 
    # v0.4.0: results contain jax.Array
-   result = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
 
    # Type-aware assignment
    angle: Union[np.ndarray, Array] = result.critical_angle_degrees
@@ -280,7 +282,7 @@ Performance improvements are automatic. No tuning required.
    # Same code, 7-100x faster
    import xraylabtool as xrt
 
-   result = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
 
 
 GPU Acceleration (Optional)
@@ -333,7 +335,7 @@ JAX will automatically detect and use available GPUs:
    print(f"Using devices: {jax.devices()}")
 
    # Calculations automatically use GPU
-   result = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
    # No code changes needed!
 
 Verify GPU Usage
@@ -382,7 +384,7 @@ Issue: First calculation is slow
 
    # Warm up JIT compiler once at startup
    import xraylabtool as xrt
-   result = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
 
    # Now all subsequent calls are very fast (~0.02 ms)
 
@@ -456,7 +458,7 @@ Issue: Results different from v0.3.0
    import xraylabtool as xrt
    import numpy as np
 
-   result = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
 
    # Check if results are close to expected values
    # Report to GitHub if significantly different
@@ -510,7 +512,7 @@ For code with strict type checking:
        return float(result[0])
 
    # Use with v0.4.0
-   result = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
    angle = process_results(result.critical_angle_degrees)
 
 Mixing NumPy and JAX
@@ -525,7 +527,7 @@ For hybrid NumPy/JAX code:
    import xraylabtool as xrt
 
    # Get JAX results
-   result = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
 
    # Convert to NumPy if needed for NumPy-only code
    angle_np = np.asarray(result.critical_angle_degrees)
@@ -543,7 +545,7 @@ JAX arrays are lazily evaluated by default. For large batches:
    import xraylabtool as xrt
 
    # JAX arrays are lazy - computation not done until needed
-   result = xrt.calculate_single_material_properties("Si", 2.33, 8000)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
 
    # Force evaluation if needed (rarely necessary)
    angle_ready = result.critical_angle_degrees.block_until_ready()

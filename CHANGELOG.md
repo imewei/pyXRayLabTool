@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- Correct energy units (keV), argument order `(formula, energy_keV, density)`, CLI flags, install extras, and removed references to non-existent functions/constants across guides, API reference, notebooks, and developer docs.
+
 ## [0.4.5] - 2026-08-12
 
 ### Fixed

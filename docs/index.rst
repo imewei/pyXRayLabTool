@@ -72,9 +72,9 @@ Installation
 
 .. code-block:: bash
 
-   pip install xraylabtool          # Core (NumPy backend)
-   pip install xraylabtool[jax]     # With JAX backend
-   pip install xraylabtool[plots]   # With matplotlib
+   pip install xraylabtool                 # Core (NumPy + JAX CPU, CLI, GUI)
+   pip install "xraylabtool[gpu_cuda13]"   # NVIDIA GPU, CUDA 13 driver
+   pip install "xraylabtool[gpu_cuda12]"   # NVIDIA GPU, CUDA 12 driver
 
 Basic Usage
 ~~~~~~~~~~~
@@ -86,24 +86,20 @@ Basic Usage
    import xraylabtool as xrt
 
    # Calculate X-ray properties for silicon at 8 keV
-   result = xrt.calculate_single_material_properties(
-       formula="Si",
-       density=2.33,
-       energy=8000
-   )
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)  # formula, keV, g/cm³
 
-   print(f"Critical angle: {result.critical_angle_degrees:.3f}°")
-   print(f"Attenuation length: {result.attenuation_length_cm:.2f} cm")
+   print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
+   print(f"Attenuation length: {result.attenuation_length_cm[0] * 1e4:.1f} µm")
 
 **Command Line:**
 
 .. code-block:: bash
 
    # Single material calculation
-   xraylabtool calc Si --density 2.33 --energy 8000
+   xraylabtool calc Si -e 8.0 -d 2.33
 
    # Batch processing
-   xraylabtool batch materials.csv --output results.csv
+   xraylabtool batch materials.csv -o results.csv
 
 Navigation
 ----------

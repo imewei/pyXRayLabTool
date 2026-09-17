@@ -32,14 +32,12 @@ Install XRayLabTool using pip:
 
 .. code-block:: bash
 
-   # Core package (NumPy backend)
+   # Core package (NumPy + JAX CPU backends, CLI, GUI, matplotlib)
    pip install xraylabtool
 
-   # With JAX backend for GPU acceleration
-   pip install xraylabtool[jax]
-
-   # With matplotlib for publication-quality plots
-   pip install xraylabtool[plots]
+   # NVIDIA GPU acceleration: pick the CUDA major matching your driver
+   pip install "xraylabtool[gpu_cuda13]"
+   pip install "xraylabtool[gpu_cuda12]"
 
 Development Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,7 +108,7 @@ Let's calculate X-ray properties for silicon at 8 keV:
 
 .. code-block:: bash
 
-   xraylabtool calc Si --density 2.33 --energy 8000
+   xraylabtool calc Si -e 8.0 -d 2.33
 
 **Using Python:**
 
@@ -118,21 +116,21 @@ Let's calculate X-ray properties for silicon at 8 keV:
 
    import xraylabtool as xrt
 
-   result = xrt.calculate_single_material_properties(
-       formula="Si",
-       density=2.33,  # g/cm³
-       energy=8000    # eV
-   )
+   # Positional order is (formula, energy_keV, density)
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)
 
    print(f"Formula: {result.formula}")
-   print(f"Critical angle: {result.critical_angle_degrees:.3f}°")
-   print(f"Attenuation length: {result.attenuation_length_cm:.2f} cm")
+   print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
+   print(f"Attenuation length: {result.attenuation_length_cm[0] * 1e4:.1f} µm")
 
 Expected output::
 
    Formula: Si
-   Critical angle: 0.158°
-   Attenuation length: 9.84 cm
+   Critical angle: 0.225°
+   Attenuation length: 69.7 µm
+
+All per-energy fields on :class:`~xraylabtool.XRayResult` are NumPy arrays, even for a single
+energy, so index ``[0]`` for a scalar.
 
 Understanding the Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -153,84 +151,55 @@ Calculate properties across an energy range:
 
 .. code-block:: bash
 
-   xraylabtool calc Si --density 2.33 --energy 5000,8000,10000
+   xraylabtool calc Si -e 5.0,8.0,10.0 -d 2.33
 
 **Python:**
 
 .. code-block:: python
 
-   import numpy as np
+   result = xrt.calculate_single_material_properties("Si", [5.0, 8.0, 10.0], 2.33)
 
-   energies = [5000, 8000, 10000]  # eV
-   results = []
-
-   for energy in energies:
-       result = xrt.calculate_single_material_properties("Si", 2.33, energy)
-       results.append(result)
-
-   for result in results:
-       print(f"{result.energy_ev} eV: θc = {result.critical_angle_degrees:.3f}°")
+   for e, theta_c in zip(result.energy_kev, result.critical_angle_degrees):
+       print(f"{e:.1f} keV: θc = {theta_c:.3f}°")
 
 Different Materials
 ~~~~~~~~~~~~~~~~~~~
 
-Try other materials:
+Compare several materials in one call:
 
 .. code-block:: python
 
-   # Silicon dioxide (quartz)
-   sio2 = xrt.calculate_single_material_properties("SiO2", 2.20, 8000)
+   formulas = ["Si", "SiO2", "Al", "Cu"]
+   densities = [2.33, 2.20, 2.70, 8.96]
 
-   # Aluminum
-   al = xrt.calculate_single_material_properties("Al", 2.70, 8000)
+   results = xrt.calculate_xray_properties(formulas, 8.0, densities)
 
-   # Copper
-   cu = xrt.calculate_single_material_properties("Cu", 8.96, 8000)
-
-   materials = [("Si", sio2), ("SiO2", sio2), ("Al", al), ("Cu", cu)]
-   for name, result in materials:
-       print(f"{name}: Critical angle = {result.critical_angle_degrees:.3f}°")
+   for formula, r in results.items():
+       print(f"{formula:5}: θc = {r.critical_angle_degrees[0]:.3f}°, "
+             f"attenuation length = {r.attenuation_length_cm[0] * 1e4:.1f} µm")
 
 Batch Processing
 ----------------
 
-For multiple materials, use batch processing:
-
-Create a CSV file ``materials.csv``:
+For many materials, use the ``batch`` command. Create ``materials.csv`` with lowercase
+``formula,density,energy`` columns (energy in keV; comma-separate several energies in one cell):
 
 .. code-block:: text
 
-   Formula,Density,Energy
-   Si,2.33,8000
-   SiO2,2.20,8000
-   Al,2.70,8000
-   Cu,8.96,8000
+   formula,density,energy
+   Si,2.33,8.0
+   SiO2,2.20,8.0
+   Al,2.70,"5.0,8.0,10.0"
+   Cu,8.96,8.0
 
 Process the batch:
 
 .. code-block:: bash
 
-   xraylabtool batch materials.csv --output results.csv
+   xraylabtool batch materials.csv -o results.csv
 
-Or in Python:
-
-.. code-block:: python
-
-   # Define materials
-   materials = [
-       {"formula": "Si", "density": 2.33},
-       {"formula": "SiO2", "density": 2.20},
-       {"formula": "Al", "density": 2.70},
-       {"formula": "Cu", "density": 8.96}
-   ]
-
-   # Calculate for all materials at 8 keV
-   results = xrt.calculate_xray_properties(materials, energy=8000)
-
-   # Display results
-      print(f"{result.formula}: "
-             f"θc = {result.critical_angle_degrees:.3f}°, "
-             f"μ⁻¹ = {result.attenuation_length_cm:.2f} cm")
+Or in Python, :func:`~xraylabtool.calculate_xray_properties` (above) handles material lists
+directly.
 
 Graphical User Interface (GUI)
 ------------------------------
@@ -261,18 +230,18 @@ For X-ray mirror applications:
 .. code-block:: python
 
    # Compare substrate materials
-   substrates = ["Si", "SiO2", "Zerodur"]  # Zerodur is a glass-ceramic
-   densities = [2.33, 2.20, 2.53]
-   energy = 8000  # eV
+   substrates = ["Si", "SiO2", "SiC"]
+   densities = [2.33, 2.20, 3.21]
+   energy = 8.0  # keV
 
    print("Mirror substrate comparison at 8 keV:")
    print("Material | Critical Angle | Attenuation Length")
    print("---------|----------------|-------------------")
 
    for formula, density in zip(substrates, densities):
-       result = xrt.calculate_single_material_properties(formula, density, energy)
-       print(f"{formula:8} | {result.critical_angle_degrees:13.3f}° | "
-             f"{result.attenuation_length_cm:15.2f} cm")
+       result = xrt.calculate_single_material_properties(formula, energy, density)
+       print(f"{formula:8} | {result.critical_angle_degrees[0]:13.3f}° | "
+             f"{result.attenuation_length_cm[0] * 1e4:15.1f} µm")
 
 Beamline Planning
 ~~~~~~~~~~~~~~~~~
@@ -282,17 +251,11 @@ For synchrotron beamline design:
 .. code-block:: python
 
    # Energy scan for beamline components
-   energies = np.logspace(3, 4.5, 50)  # 1 keV to ~32 keV
-   material = "Si"
-   density = 2.33
+   energies = np.logspace(0, np.log10(30), 50)  # 1 keV to 30 keV
 
-   critical_angles = []
-   attenuation_lengths = []
-
-   for energy in energies:
-       result = xrt.calculate_single_material_properties(material, density, energy)
-       critical_angles.append(result.critical_angle_mrad)
-       attenuation_lengths.append(result.attenuation_length_cm)
+   result = xrt.calculate_single_material_properties("Si", energies, 2.33)
+   critical_angles = np.radians(result.critical_angle_degrees) * 1e3  # mrad
+   attenuation_lengths = result.attenuation_length_cm
 
    # Plot or analyze the energy dependence
    import matplotlib.pyplot as plt
@@ -300,12 +263,12 @@ For synchrotron beamline design:
    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 
    ax1.loglog(energies, critical_angles)
-   ax1.set_xlabel('Energy (eV)')
+   ax1.set_xlabel('Energy (keV)')
    ax1.set_ylabel('Critical Angle (mrad)')
    ax1.set_title('Critical Angle vs Energy')
 
    ax2.loglog(energies, attenuation_lengths)
-   ax2.set_xlabel('Energy (eV)')
+   ax2.set_xlabel('Energy (keV)')
    ax2.set_ylabel('Attenuation Length (cm)')
    ax2.set_title('Attenuation Length vs Energy')
 
@@ -413,12 +376,10 @@ For better performance:
 
 .. code-block:: python
 
-   # Good - batch processing
-   results = xrt.calculate_xray_properties(materials, energies)
+   # Good - one call, energy array, all materials
+   results = xrt.calculate_xray_properties(formulas, energies, densities)
 
-   # Less efficient - individual calculations
-   for material in materials:
+   # Less efficient - one call per (material, energy) pair
+   for formula, density in zip(formulas, densities):
        for energy in energies:
-           result = xrt.calculate_single_material_properties(
-               material['formula'], material['density'], energy
-           )
+           result = xrt.calculate_single_material_properties(formula, energy, density)
