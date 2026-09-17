@@ -15,7 +15,7 @@ Core Calculations
    :exclude-members: Formula, MW, Number_Of_Electrons, Density, Electron_Density, Energy, Wavelength, Dispersion, Absorption, f1, f2, Critical_Angle, Attenuation_Length, reSLD, imSLD
    :no-index:
 
-   **Field Descriptions:**
+   **XRayResult fields** (all per-energy fields are NumPy arrays aligned with ``energy_kev``):
 
    .. list-table::
       :header-rows: 1
@@ -27,36 +27,51 @@ Core Calculations
       * - ``formula``
         - -
         - Chemical formula of the material
+      * - ``molecular_weight_g_mol``
+        - g/mol
+        - Molecular weight
+      * - ``total_electrons``
+        - -
+        - Electrons per formula unit
       * - ``density_g_cm3``
         - g/cm³
         - Material density
-      * - ``energy_ev``
-        - eV
-        - X-ray photon energy
+      * - ``electron_density_per_ang3``
+        - Å⁻³
+        - Electron number density
+      * - ``energy_kev``
+        - keV
+        - X-ray photon energies
       * - ``wavelength_angstrom``
         - Å
-        - X-ray wavelength
-      * - ``delta``
+        - X-ray wavelengths
+      * - ``dispersion_delta``
         - -
-        - Real part of refractive index decrement
-      * - ``beta``
+        - Real part of refractive index decrement (δ)
+      * - ``absorption_beta``
         - -
-        - Imaginary part of refractive index decrement
+        - Imaginary part of refractive index decrement (β)
+      * - ``scattering_factor_f1``
+        - electrons
+        - Real atomic scattering factor summed over formula
+      * - ``scattering_factor_f2``
+        - electrons
+        - Imaginary atomic scattering factor summed over formula
+      * - ``critical_angle_degrees``
+        - degrees
+        - Critical angle for total external reflection
       * - ``attenuation_length_cm``
         - cm
         - 1/e attenuation length
-      * - ``critical_angle_mrad``
-        - mrad
-        - Critical angle for total external reflection
-      * - ``critical_angle_degrees``
-        - degrees
-        - Critical angle in degrees
-      * - ``linear_absorption_coefficient``
-        - cm⁻¹
-        - Linear absorption coefficient (μ)
-      * - ``mass_absorption_coefficient``
-        - cm²/g
-        - Mass absorption coefficient (μ/ρ)
+      * - ``real_sld_per_ang2``
+        - Å⁻²
+        - Real scattering length density
+      * - ``imaginary_sld_per_ang2``
+        - Å⁻²
+        - Imaginary scattering length density
+
+   Legacy CamelCase accessors (``Formula``, ``MW``, ``Energy``, ``Dispersion``, ...) still
+   resolve with a ``DeprecationWarning``.
 
 Derived Quantities
 ------------------
@@ -134,14 +149,10 @@ Usage Examples
 
    from xraylabtool.calculators.core import calculate_single_material_properties
 
-   result = calculate_single_material_properties(
-       formula="Si",
-       density=2.33,
-       energy=8000
-   )
+   result = calculate_single_material_properties("Si", 8.0, 2.33)  # formula, keV, g/cm³
 
-   print(f"Critical angle: {result.critical_angle_degrees:.3f}°")
-   print(f"Attenuation length: {result.attenuation_length_cm:.2f} cm")
+   print(f"Critical angle: {result.critical_angle_degrees[0]:.3f}°")
+   print(f"Attenuation length: {result.attenuation_length_cm[0]:.4f} cm")
 
 **Energy Array Calculation:**
 
@@ -150,14 +161,11 @@ Usage Examples
    import numpy as np
    from xraylabtool.calculators.core import calculate_single_material_properties
 
-   energies = np.logspace(3, 5, 100)  # 1 keV to 100 keV
+   energies = np.logspace(0, np.log10(30), 100)  # 1 keV to 30 keV
 
-   results = []
-   for energy in energies:
-       result = calculate_single_material_properties(
-           formula="Si", density=2.33, energy=energy
-       )
-       results.append(result)
+   # One call; every per-energy field comes back as an array of length 100
+   result = calculate_single_material_properties("Si", energies, 2.33)
+   print(result.critical_angle_degrees.shape)  # (100,)
 
 **Multiple Materials:**
 
@@ -165,10 +173,6 @@ Usage Examples
 
    from xraylabtool.calculators.core import calculate_xray_properties
 
-   materials = [
-       {"formula": "Si", "density": 2.33},
-       {"formula": "SiO2", "density": 2.20},
-       {"formula": "Al", "density": 2.70}
-   ]
-
-   results = calculate_xray_properties(materials, energy=8000)
+   results = calculate_xray_properties(
+       ["Si", "SiO2", "Al"], 8.0, [2.33, 2.20, 2.70]
+   )  # dict[str, XRayResult] keyed by formula

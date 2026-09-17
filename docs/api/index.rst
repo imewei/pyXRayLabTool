@@ -61,23 +61,15 @@ Quick Reference
 
    import xraylabtool as xrt
 
-   result = xrt.calculate_single_material_properties(
-       formula="Si",
-       density=2.33,
-       energy=8000
-   )
+   result = xrt.calculate_single_material_properties("Si", 8.0, 2.33)  # formula, keV, g/cm³
 
 **Batch Calculation:**
 
 .. code-block:: python
 
-   materials = [
-       {"formula": "Si", "density": 2.33},
-       {"formula": "Al", "density": 2.70}
-   ]
-   energies = [5000, 8000, 10000]
-
-   results = xrt.calculate_xray_properties(materials, energies)
+   results = xrt.calculate_xray_properties(
+       ["Si", "Al"], [5.0, 8.0, 10.0], [2.33, 2.70]
+   )  # dict[formula, XRayResult]
 
 **Formula Parsing:**
 
@@ -94,8 +86,8 @@ Quick Reference
 
    from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
 
-   wavelength = energy_to_wavelength(8000)  # eV to Angstrom
-   energy = wavelength_to_energy(1.55)      # Angstrom to eV
+   wavelength = energy_to_wavelength(8.0)  # keV -> Å (1.5498)
+   energy = wavelength_to_energy(1.55)     # Å -> keV (7.999)
 
 Exception Hierarchy
 -------------------

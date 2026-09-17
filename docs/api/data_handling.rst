@@ -13,40 +13,48 @@ Atomic Data Cache
    :undoc-members:
    :show-inheritance:
 
-Performance Features
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The atomic data cache provides several performance optimizations:
-
-1. **Preloaded Common Elements**: 92 elements are preloaded at startup
-2. **LRU Caching**: Least Recently Used cache for computed scattering factors
-3. **Vectorized Operations**: NumPy-based calculations for energy arrays
-4. **Memory Management**: Efficient data structures and automatic cleanup
-
 Usage Example
 ~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   from xraylabtool.data_handling.atomic_cache import get_atomic_scattering_factors
+   from xraylabtool.data_handling.atomic_cache import (
+       get_atomic_data_fast,
+       get_cache_stats,
+       is_element_preloaded,
+       warm_up_cache,
+   )
 
-   # Get scattering factors for silicon at 8 keV
-   f1, f2 = get_atomic_scattering_factors("Si", 8000)
+   si = get_atomic_data_fast("Si")          # read-only mapping
+   print(si["atomic_number"], si["atomic_weight"])
 
-   print(f"f1 (real): {f1}")
-   print(f"f2 (imaginary): {f2}")
+   print(is_element_preloaded("Si"))        # True; all 92 elements load at import
+   warm_up_cache(["Si", "O", "Al"])          # build interpolators ahead of first use
+   print(get_cache_stats())
+   # {'preloaded_elements': 92, 'runtime_cached_elements': 0, 'total_cached_elements': 92}
 
-Cache Statistics
-~~~~~~~~~~~~~~~~
+Compound Analysis
+-----------------
+
+.. automodule:: xraylabtool.data_handling.compound_analysis
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Drives formula-aware cache warming: groups compounds into families (silicates, oxides, ...)
+and recommends which elements to preload for a set of recently used formulas.
 
 .. code-block:: python
 
-   from xraylabtool.data_handling.atomic_cache import get_cache_info
+   from xraylabtool.data_handling.atomic_cache import warm_cache_for_compounds
+   from xraylabtool.data_handling.compound_analysis import (
+       get_compound_family,
+       get_recommended_elements_for_warming,
+   )
 
-   stats = get_cache_info()
-   print(f"Cache hits: {stats['hits']}")
-   print(f"Cache misses: {stats['misses']}")
-   print(f"Cache size: {stats['current_size']}")
+   get_compound_family("SiO2")                                # 'silicates'
+   get_recommended_elements_for_warming(["SiO2", "Al2O3"])    # ['O', 'Si', 'Al', 'N', ...]
+   warm_cache_for_compounds(["SiO2", "Al2O3"], include_similar=True)
 
 Batch Processing
 ----------------
@@ -56,77 +64,29 @@ Batch Processing
    :undoc-members:
    :show-inheritance:
 
-Batch Processing Features
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- **Memory Management**: Automatic chunking for large datasets
-- **Progress Tracking**: Built-in progress bars with tqdm
-- **Error Handling**: Reliable error recovery and reporting
-- **Parallel Processing**: Multi-core support for independent calculations
-
 Usage Example
 ~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   from xraylabtool.data_handling.batch_processing import process_batch
+   from xraylabtool.data_handling.batch_processing import (
+       BatchConfig,
+       calculate_batch_properties,
+       load_batch_input,
+       save_batch_results,
+   )
 
-   materials = [
-       {"formula": "Si", "density": 2.33},
-       {"formula": "Al", "density": 2.70},
-       {"formula": "Cu", "density": 8.96}
-   ]
+   formulas, densities, _ = load_batch_input("materials.csv")  # formula,density columns
+   config = BatchConfig(max_workers=4, chunk_size=100, enable_progress=True)
 
-   energies = [5000, 8000, 10000, 12000]
+   results = calculate_batch_properties(formulas, [5.0, 8.0, 10.0], densities, config=config)
+   # dict keyed "formula@density", value XRayResult (or None on failure)
 
-   results = process_batch(materials, energies, show_progress=True)
+   save_batch_results(results, "results.csv")
 
-Performance Benchmarks
------------------------
-
-Typical performance characteristics:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 40 30 30
-
-   * - Operation
-     - Cold Cache
-     - Warm Cache
-   * - Single element lookup
-     - ~0.5 ms
-     - ~0.05 ms
-   * - Complex formula (SiO₂)
-     - ~1.2 ms
-     - ~0.1 ms
-   * - Batch 1000 materials
-     - ~50 ms
-     - ~8 ms
-   * - Energy array (100 points)
-     - ~15 ms
-     - ~1.5 ms
-
-Memory Usage
-~~~~~~~~~~~~
-
-The atomic cache uses approximately:
-
-- **Startup**: ~10 MB for preloaded elements
-- **Per element**: ~50 KB for full energy range
-- **Peak usage**: Scales with number of unique elements used
-
-Cache Management
-----------------
-
-.. code-block:: python
-
-   from xraylabtool.data_handling.atomic_cache import clear_cache, preload_elements
-
-   # Clear all cached data
-   clear_cache()
-
-   # Preload specific elements for better performance
-   preload_elements(["Si", "O", "Al", "Fe"])
+Chunks of 8 or more materials run in a ``ProcessPoolExecutor``; smaller chunks use a
+``ThreadPoolExecutor``. ``BatchConfig.memory_limit_gb`` triggers garbage collection between
+chunks.
 
 Data Sources
 ------------
@@ -137,4 +97,4 @@ Atomic scattering factor data is sourced from:
 2. **NIST Database**: National Institute of Standards and Technology
 3. **Henke Tables**: Widely used X-ray optical constants
 
-The data files are in Henke format (.nff files) and cover the energy range from ~10 eV to ~100 keV with high precision interpolation between tabulated values.
+The data files are in Henke format (.nff files); XRayLabTool exposes the 0.03–30 keV range with PCHIP interpolation between tabulated values.

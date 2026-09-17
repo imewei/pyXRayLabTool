@@ -11,117 +11,106 @@ The constants module provides physical constants and conversion factors used thr
 Usage Examples
 --------------
 
+Prefer the helpers in :mod:`xraylabtool.utils` (``energy_to_wavelength``,
+``wavelength_to_energy``) over recomputing from raw constants. The constants are exposed for
+custom derivations:
+
 **Energy-Wavelength Conversion:**
 
 .. code-block:: python
 
-   from xraylabtool.constants import HC_EV_ANGSTROM
+   from xraylabtool.constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM
 
-   def energy_to_wavelength(energy_ev):
-       return HC_EV_ANGSTROM / energy_ev
+   def energy_to_wavelength_angstrom(energy_kev):
+       # ENERGY_TO_WAVELENGTH_FACTOR = h*c/e / 1000, in m·keV
+       return ENERGY_TO_WAVELENGTH_FACTOR / energy_kev * METER_TO_ANGSTROM
 
-   wavelength = energy_to_wavelength(8000)  # 1.55 Å
+   energy_to_wavelength_angstrom(8.0)  # 1.5498 Å
 
-**Critical Angle Calculation:**
+**Critical Angle in Degrees:**
 
 .. code-block:: python
 
-   from xraylabtool.constants import MRAD_TO_DEGREE
    import numpy as np
+   from xraylabtool.constants import RADIANS_TO_DEGREES
 
    def critical_angle_degrees(delta):
-       theta_mrad = 1000 * np.sqrt(2 * delta)  # Convert to mrad
-       return theta_mrad * MRAD_TO_DEGREE
+       return np.sqrt(2 * delta) * RADIANS_TO_DEGREES
 
 **Unit Conversions:**
 
 .. code-block:: python
 
-   from xraylabtool.constants import G_CM3_TO_KG_M3, ANGSTROM_TO_METER
+   from xraylabtool.constants import ANGSTROM_TO_METER, CM_TO_METER, EV_TO_KEV
 
-   # Convert density
-   density_si = 2.33 * G_CM3_TO_KG_M3  # g/cm³ to kg/m³
+   wavelength_m = 1.55 * ANGSTROM_TO_METER  # Å -> m
+   length_m = 9.84 * CM_TO_METER            # cm -> m
+   energy_kev = 8048 * EV_TO_KEV            # eV -> keV
 
-   # Convert wavelength
-   wavelength_m = 1.55 * ANGSTROM_TO_METER  # Å to m
-
-**Material Properties:**
+**Scattering Length Density Prefactor:**
 
 .. code-block:: python
 
-   from xraylabtool.constants import COMMON_MATERIAL_DENSITIES, SILICON_DENSITY
+   from xraylabtool.constants import AVOGADRO, THOMPSON
 
-   # Get standard material densities
-   materials = ['Si', 'Al', 'Cu', 'Fe']
-   for material in materials:
-       if material in COMMON_MATERIAL_DENSITIES:
-           density = COMMON_MATERIAL_DENSITIES[material]
-           print(f"{material}: {density} g/cm³")
-
-**Energy Range Validation:**
-
-.. code-block:: python
-
-   from xraylabtool.constants import MIN_ENERGY_EV, MAX_ENERGY_EV
-
-   def validate_energy(energy):
-       if energy < MIN_ENERGY_EV:
-           raise ValueError(f"Energy {energy} eV below minimum {MIN_ENERGY_EV} eV")
-       if energy > MAX_ENERGY_EV:
-           raise ValueError(f"Energy {energy} eV above maximum {MAX_ENERGY_EV} eV")
-       return True
+   # THOMPSON is the classical electron radius r_e in metres; the δ/β kernels use
+   # SCATTERING_FACTOR = THOMPSON * AVOGADRO * 1e6 / (2π)  (g/cm³ -> kg/m³ folded in).
 
 Constants Reference Table
 -------------------------
 
-.. list-table:: Key Physical Constants
+.. list-table:: Physical Constants (module attribute, value)
    :header-rows: 1
-   :widths: 30 30 25 15
+   :widths: 35 25 25 15
 
    * - Constant
-     - Symbol
+     - Attribute
      - Value
      - Unit
    * - Planck constant
-     - h
-     - 4.136e-15
-     - eV·s
+     - ``PLANCK``
+     - 6.626068e-34
+     - J·s
    * - Speed of light
-     - c
-     - 2.998e8
+     - ``SPEED_OF_LIGHT``
+     - 2.99792458e8
      - m/s
+   * - Elementary charge
+     - ``ELEMENT_CHARGE``
+     - 1.60217646e-19
+     - C
+   * - Avogadro constant
+     - ``AVOGADRO``
+     - 6.02214199e23
+     - mol⁻¹
    * - Classical electron radius
-     - r₀
-     - 2.818e-15
+     - ``THOMPSON``
+     - 2.8179403227e-15
      - m
-   * - Electron rest energy
-     - mₑc²
-     - 510,999
-     - eV
-   * - hc product
-     - hc
-     - 12,398.4
-     - eV·Å
+   * - hc/e ÷ 1000
+     - ``ENERGY_TO_WAVELENGTH_FACTOR``
+     - 1.23984e-9
+     - m·keV
 
 .. list-table:: Conversion Factors
    :header-rows: 1
    :widths: 40 35 25
 
    * - Conversion
+     - Attribute
      - Factor
-     - Usage
-   * - Å → m
-     - 1.0e-10
-     - Length units
-   * - eV → J
-     - 1.602e-19
-     - Energy units
-   * - mrad → deg
-     - 0.0573
-     - Angular units
-   * - g/cm³ → kg/m³
-     - 1000
-     - Density units
+   * - Å → m / m → Å
+     - ``ANGSTROM_TO_METER`` / ``METER_TO_ANGSTROM``
+     - 1e-10 / 1e10
+   * - cm → m / m → cm
+     - ``CM_TO_METER`` / ``METER_TO_CM``
+     - 1e-2 / 1e2
+   * - keV → eV / eV → keV
+     - ``KEV_TO_EV`` / ``EV_TO_KEV``
+     - 1e3 / 1e-3
+   * - rad → deg / deg → rad
+     - ``RADIANS_TO_DEGREES`` / ``DEGREES_TO_RADIANS``
+     - 57.2958 / 0.0174533
 
 CODATA Standards
 ----------------

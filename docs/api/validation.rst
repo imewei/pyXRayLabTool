@@ -29,7 +29,7 @@ Base Exception
    .. code-block:: python
 
       try:
-          result = calculate_single_material_properties("InvalidFormula", 1.0, 8000)
+          result = calculate_single_material_properties("InvalidFormula", 8.0, 1.0)
       except XRayLabToolError as e:
           print(f"XRayLabTool error: {e}")
 
@@ -236,18 +236,18 @@ Validation Functions
 Error Context and Suggestions
 -----------------------------
 
-XRayLabTool exceptions provide detailed context and suggestions for resolution:
+XRayLabTool exceptions carry the offending input as an attribute alongside the message:
 
 .. code-block:: python
 
    try:
-       result = calculate_single_material_properties("Si123", 2.33, 8000)
+       result = calculate_single_material_properties("si02", 8.0, 2.33)
    except FormulaError as e:
        print(f"Error: {e}")
-       print(f"Suggestion: {e.suggestion}")
+       print(f"Formula: {e.formula}")
        # Output:
-       # Error: Invalid formula 'Si123': numbers should follow elements
-       # Suggestion: Use format like 'SiO2' or 'Al2O3'
+       # Error: Invalid characters in formula: 'si02': 'si02'
+       # Formula: si02
 
 Internal Validation Utilities
 -----------------------------
@@ -266,9 +266,9 @@ Best Practices
 
    from xraylabtool.validation.validators import validate_chemical_formula, validate_energy_range
 
-   def safe_calculation(formula, density, energy):
+   def safe_calculation(formula, energy_kev, density):
        validate_chemical_formula(formula)
-       validate_energy_range(energy)
+       validate_energy_range(energy_kev)
        # Proceed with calculation...
 
 **2. Handle Specific Exceptions:**
@@ -278,7 +278,7 @@ Best Practices
    from xraylabtool.exceptions import FormulaError, EnergyError
 
    try:
-       result = calculate_single_material_properties(formula, density, energy)
+       result = calculate_single_material_properties(formula, energy_kev, density)
    except FormulaError:
        print("Please check your chemical formula")
    except EnergyError:
