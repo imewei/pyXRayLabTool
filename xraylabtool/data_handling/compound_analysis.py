@@ -9,6 +9,7 @@ materials science applications.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -266,6 +267,31 @@ def find_similar_compounds(
     return similar_compounds
 
 
+# Ordered (predicate, family) rules for classifying a compound by its element
+# set when the formula isn't in COMPOUND_FAMILIES. First match wins, so more
+# specific rules (e.g. carbonates) must precede more general ones (e.g. oxides).
+_ELEMENT_FAMILY_RULES: list[tuple[Callable[[set[str]], bool], str]] = [
+    (lambda els: "Si" in els and "O" in els, "silicates"),
+    (lambda els: "C" in els and "O" in els and len(els) <= 3, "carbonates"),
+    (lambda els: "O" in els and len(els) == 2, "oxides"),
+    (lambda els: "N" in els and "O" not in els, "nitrides"),
+    (lambda els: "C" in els and "O" not in els, "carbides"),
+    (lambda els: "S" in els and "O" not in els, "sulfides"),
+    (lambda els: any(hal in els for hal in ("F", "Cl", "Br", "I")), "halides"),
+    (lambda els: "P" in els and "O" in els, "phosphates"),
+    (lambda els: "S" in els and "O" in els, "sulfates"),
+]
+
+
+def _classify_family_by_elements(elements: list[str]) -> str | None:
+    """Classify a compound family from its (unique) element list."""
+    element_set = set(elements)
+    for predicate, family in _ELEMENT_FAMILY_RULES:
+        if predicate(element_set):
+            return family
+    return None
+
+
 def get_compound_family(formula: str) -> str | None:
     """
     Determine which compound family a formula belongs to.
@@ -280,29 +306,8 @@ def get_compound_family(formula: str) -> str | None:
         if formula in compounds:
             return family
 
-    # Classify based on elements present
     elements = get_elements_for_compound(formula)
-
-    if "Si" in elements and "O" in elements:
-        return "silicates"
-    elif "C" in elements and "O" in elements and len(elements) <= 3:
-        return "carbonates"
-    elif "O" in elements and len(elements) == 2:
-        return "oxides"
-    elif "N" in elements and "O" not in elements:
-        return "nitrides"
-    elif "C" in elements and "O" not in elements:
-        return "carbides"
-    elif "S" in elements and "O" not in elements:
-        return "sulfides"
-    elif any(hal in elements for hal in ["F", "Cl", "Br", "I"]):
-        return "halides"
-    elif "P" in elements and "O" in elements:
-        return "phosphates"
-    elif "S" in elements and "O" in elements:
-        return "sulfates"
-
-    return None
+    return _classify_family_by_elements(elements)
 
 
 def get_recommended_elements_for_warming(
