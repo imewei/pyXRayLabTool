@@ -208,7 +208,7 @@ Automatic batching - future optimization:
    # Vectorized version
    calculate_batch = jax.vmap(calculate_one)
 
-   energies = jnp.array([1000, 5000, 8000, 10000])
+   energies = jnp.array([1.0, 5.0, 8.0, 10.0])  # keV
    results = calculate_batch(energies)  # Compiled as single operation
 
 **Current approach (v0.4.0):**
@@ -273,11 +273,11 @@ Compilation in XRayLabTool
 .. code-block:: python
 
    # First call triggers compilation
-   result = calculate_single_material_properties("Si", 2.33, 8000)
+   result = calculate_single_material_properties("Si", 8.0, 2.33)
    # ~50 ms (includes JIT compilation for shape/type)
 
    # Subsequent calls use cached compilation
-   result = calculate_single_material_properties("Si", 2.33, 8000)
+   result = calculate_single_material_properties("Si", 8.0, 2.33)
    # ~0.02 ms (no recompilation)
 
 
@@ -343,7 +343,7 @@ GPU Acceleration
    print(jax.devices())  # Shows available hardware
 
    # No code changes needed
-   result = calculate_single_material_properties("Si", 2.33, 8000)
+   result = calculate_single_material_properties("Si", 8.0, 2.33)
    # Automatically runs on GPU if available
 
 **Device hints (advanced):**
@@ -513,16 +513,16 @@ Unit Testing Considerations
 
    def test_calculation_matches_reference():
        """JAX results match expected output."""
-       result = calculate_single_material_properties("Si", 2.33, 8000)
+       result = calculate_single_material_properties("Si", 8.0, 2.33)
        angle = float(result.critical_angle_degrees[0])
-       assert abs(angle - 0.158) < 0.001  # Allow small tolerance
+       assert abs(angle - 0.2248) < 0.001  # Allow small tolerance
 
    def test_jit_consistency():
        """JIT and eager evaluation match."""
        # Compile once
        compute_jit = jax.jit(core_compute)
 
-       x = jnp.array([1000, 5000, 8000])
+       x = jnp.array([1.0, 5.0, 8.0])
        result_eager = core_compute(x)  # Eager (no JIT)
        result_jit = compute_jit(x)     # Compiled
 
@@ -587,13 +587,13 @@ Potential JAX Features for v0.5+
 
    from jax import grad
 
-   def objective(angle):
-       """Minimize deviation from target angle."""
-       result = calculate_single_material_properties("Si", 2.33, angle)
+   def objective(energy_kev):
+       """Minimize deviation from target critical angle."""
+       result = calculate_single_material_properties("Si", energy_kev, 2.33)
        return (result.critical_angle_degrees[0] - target) ** 2
 
    gradient = grad(objective)
-   optimal_angle = optimize(objective, gradient, initial_guess)
+   optimal_energy = optimize(objective, gradient, initial_guess)
 
 **2. vmap for Automatic Batching**
 

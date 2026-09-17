@@ -18,8 +18,8 @@ Quick Rollback
    # 3. Verify
    python -c "import xraylabtool; print(xraylabtool.__version__)"
    python -c "import xraylabtool as xrt; \
-       r = xrt.calculate_single_material_properties('Si', 2.33, 8000); \
-       print(f'Critical angle: {r.critical_angle_degrees}')"
+       r = xrt.calculate_single_material_properties('Si', 8.0, 2.33); \
+       print(f'Critical angle: {r.critical_angle_degrees[0]:.4f}')"
 
 All data and CSV files are compatible between versions. No data migration
 is needed in either direction.

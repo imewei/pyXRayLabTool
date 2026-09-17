@@ -1,191 +1,131 @@
 Performance and Optimization
 ============================
 
-**Key Features:** Atomic data cache (10-50x speedup), vectorized calculations, batch processing
+Where the time goes
+-------------------
 
-**Typical Performance:**
-- Single calculation: < 0.1 ms
-- Batch 1000 materials: < 10 ms
-- Energy array (100 points): < 1 ms
+- **Atomic data**: all 92 elements are preloaded into an in-process cache at import;
+  scattering-factor interpolators are built lazily per element and memoized
+  (:mod:`xraylabtool.calculators.cache`).
+- **Per-call work**: formula parsing, interpolation of f1/f2 at the requested energies, and
+  the vectorised δ/β/derived-quantity kernels (:mod:`xraylabtool.calculators.kernels`).
+  Cost scales with the number of energy points, not the number of calls, so pass an energy
+  array instead of looping.
+- **Backend**: :mod:`xraylabtool.backend` selects JAX automatically when JAX and an NVIDIA
+  GPU are present, otherwise NumPy. On CPU-only machines NumPy is faster for typical
+  workloads because it avoids XLA dispatch overhead.
 
-Performance Benchmarks
-----------------------
+Measure before tuning:
 
-**Single Material Performance:**
-- Simple element (Si): 0.5 ms → 0.05 ms (warm cache, 10x speedup)
-- Complex formula: 2.1 ms → 0.15 ms (warm cache, 14x speedup)
+.. code-block:: python
 
-**Batch Processing Scaling:**
-- 1,000 materials: 1.5s sequential → 0.05s batch (30x speedup)
-- 100,000 materials: 150s sequential → 2.5s batch (60x speedup)
+   import time
+   import numpy as np
+   import xraylabtool as xrt
 
-**Memory Usage:**
-- Atomic data cache: 10-50 MB
-- Batch 1000 materials: 2-5 MB
-- Energy array (1000 points): 8-15 MB
+   energies = np.logspace(0, np.log10(30), 500)
+   xrt.calculate_single_material_properties("SiO2", energies, 2.2)  # warm-up
+
+   start = time.perf_counter()
+   xrt.calculate_single_material_properties("SiO2", energies, 2.2)
+   print(f"{(time.perf_counter() - start) * 1e3:.2f} ms for {energies.size} energies")
 
 Optimization Strategies
 -----------------------
 
-**Caching:**
+**Energy arrays, not loops**
 
 .. code-block:: python
 
-   from xraylabtool.data_handling.atomic_cache import preload_elements
-   import xraylabtool as xrt
+   # Good: one call, vectorised over 100 energies
+   result = xrt.calculate_single_material_properties("Si", np.linspace(5, 15, 100), 2.33)
 
-   # Preload common elements
-   preload_elements(["Si", "O", "Al", "Fe", "C", "N"])
+   # Slow: 100 calls, each re-parsing the formula and re-interpolating
+   for e in np.linspace(5, 15, 100):
+       xrt.calculate_single_material_properties("Si", e, 2.33)
 
-   # Configure caching
-   xrt.configure_cache(disk_cache=True, max_memory_mb=100)
+**Many materials**
 
-**Batch Processing:**
+:func:`xraylabtool.calculate_xray_properties` processes materials sequentially and returns
+``dict[formula, XRayResult]``:
 
 .. code-block:: python
 
-   # Efficient batch processing
-   results = xrt.calculate_xray_properties(materials, energies)
+   results = xrt.calculate_xray_properties(["Si", "SiO2", "Al2O3"], 8.0, [2.33, 2.2, 3.95])
 
-   # For large datasets, use chunks
-   results = xrt.calculate_xray_properties(
-       materials, energies, chunk_size=1000
+For large CSV-driven jobs use
+:func:`xraylabtool.data_handling.batch_processing.calculate_batch_properties`, which chunks
+the input (``BatchConfig.chunk_size``, default 100), runs chunks of 8 or more materials in a
+``ProcessPoolExecutor`` and smaller chunks in a ``ThreadPoolExecutor``, and watches memory
+against ``BatchConfig.memory_limit_gb``:
+
+.. code-block:: python
+
+   from xraylabtool.data_handling.batch_processing import (
+       BatchConfig,
+       calculate_batch_properties,
+       load_batch_input,
+       save_batch_results,
    )
 
-**Energy Arrays:**
+   formulas, densities, _ = load_batch_input("materials.csv")  # formula,density columns
+   config = BatchConfig(max_workers=8, chunk_size=200, enable_progress=True)
+   results = calculate_batch_properties(formulas, [5.0, 8.0, 10.0], densities, config=config)
+   save_batch_results(results, "results.csv")
+
+The same path is available from the shell: ``xraylabtool batch materials.csv -o results.csv --workers 8``.
+
+**Cache warming**
+
+The element cache is already full after import. What is built lazily is the per-element
+interpolator; warm it for the elements you are about to use:
 
 .. code-block:: python
 
-   import numpy as np
+   from xraylabtool.data_handling.atomic_cache import (
+       get_cache_stats,
+       warm_cache_for_compounds,
+       warm_up_cache,
+   )
 
-   # Use logarithmic spacing
-   energies = np.logspace(3, 5, 100)  # 1-100 keV
+   warm_up_cache(["Si", "O", "Al", "Fe"])
+   warm_cache_for_compounds(["SiO2", "Al2O3"])  # adds related elements by compound family
+   print(get_cache_stats())  # {'preloaded_elements': 92, ...}
 
-   # Adaptive spacing near edges
-   edge_region = np.linspace(7900, 8100, 200)
-   far_region = np.logspace(3, 5, 50)
-   energies = np.concatenate([far_region[far_region < 7900],
-                             edge_region, far_region[far_region > 8100]])
-
-Performance Monitoring
-----------------------
+**JAX backend**
 
 .. code-block:: python
 
-   import xraylabtool as xrt
-   import time
+   from xraylabtool.backend import set_backend
 
-   # Built-in profiling
-   xrt.enable_profiling()
-   results = xrt.calculate_xray_properties(materials, energies)
-   stats = xrt.get_performance_stats()
-   print(f"Time: {stats['total_time']:.3f}s, Cache: {stats['cache_hit_rate']:.1%}")
+   set_backend("jax")    # JIT-compiled kernels; first call pays compilation
+   set_backend("numpy")  # default on CPU-only machines
 
-   # Custom benchmarking
-   start = time.time()
-   result = xrt.calculate_xray_properties(materials, energies)
-   print(f"Calculation time: {time.time() - start:.3f}s")
+See :doc:`../architecture/jax_architecture` for when JAX wins and when it does not.
 
-Platform Optimizations
-----------------------
+Energy grids
+------------
 
-.. code-block:: bash
-
-   # Check NumPy configuration
-   python -c "import numpy; numpy.show_config()"
-   conda install numpy  # Intel MKL optimized
+Fewer, well-placed points beat dense uniform grids:
 
 .. code-block:: python
 
-   import os
-   # Control threading
-   os.environ['OMP_NUM_THREADS'] = '4'
-   os.environ['MKL_NUM_THREADS'] = '4'
+   # Logarithmic spacing over the tabulated range (keV)
+   energies = np.logspace(np.log10(0.03), np.log10(30), 100)
 
-Best Practices
---------------
-
-**Do:**
-- Use batch processing for multiple materials
-- Preload common elements at startup
-- Use NumPy arrays for energy ranges
-- Profile code to identify bottlenecks
-
-**Don't:**
-- Process materials individually in loops
-- Use Python lists for large energy arrays
-- Clear caches unnecessarily
-- Use excessive energy points
-
-Tuning Examples
----------------
-
-**Energy Scan Optimization:**
-
-.. code-block:: python
-
-   # Bad: too many points
-   energies_bad = np.linspace(1000, 30000, 10000)
-
-   # Good: logarithmic spacing
-   energies_good = np.logspace(3, 4.5, 100)
-
-   # Best: adaptive spacing
-   low_e = np.logspace(3, 3.85, 30)
-   si_edge = np.linspace(1830, 1860, 50)
-   high_e = np.logspace(3.9, 4.5, 30)
-   energies_adaptive = np.concatenate([low_e, si_edge, high_e])
-
-**Large Dataset Processing:**
-
-.. code-block:: python
-
-   def process_huge_dataset(filename, output_filename):
-       import csv
-       with open(filename, 'r') as infile, open(output_filename, 'w') as outfile:
-           reader, writer = csv.DictReader(infile), csv.writer(outfile)
-           batch, batch_size = [], 1000
-
-           for row in reader:
-               batch.append({'formula': row['formula'], 'density': float(row['density'])})
-               if len(batch) >= batch_size:
-                   results = xrt.calculate_xray_properties(batch, [8000])
-                   for result in results:
-                       writer.writerow([result.formula, result.density_g_cm3, ...])
-                   batch = []
+   # Dense only around an absorption edge (Si K edge at 1.839 keV)
+   low = np.logspace(np.log10(0.03), np.log10(1.8), 30)
+   edge = np.linspace(1.80, 1.88, 50)
+   high = np.logspace(np.log10(1.9), np.log10(30), 30)
+   energies = np.concatenate([low, edge, high])
 
 Troubleshooting
 ---------------
 
-**Slow Calculations:**
-- Check cache hit rate (should be >90%)
-- Verify optimized NumPy/BLAS installation
-- Use chunked processing for large datasets
-
-**High Memory Usage:**
-- Process data in chunks
-- Clear caches: ``xrt.clear_cache()``
-- Use generators for large datasets
-
-**Cache Misses:**
-- Preload frequently used elements
-- Use consistent energy grids
-- Warm up cache before timing
-
-Enhanced Performance Mode
--------------------------
-
-**New Optimizations:** 20-40x speedup for single calculations, 2-3x faster data loading
-
-.. code-block:: python
-
-   # Enable optimizations
-   import os
-   os.environ['XRAYLABTOOL_ENABLE_OPTIMIZATIONS'] = '1'
-
-**Performance Improvements:**
-- Single calculation: 2.1ms → 0.05ms (42x speedup)
-- Data loading: 18-21ms → 6-7ms (2.9x speedup)
-- Arrays: 1.4x speedup for 50-500 point arrays
-
-**Future Plans:** GPU acceleration, JIT compilation, distributed processing
+- **First call slow**: interpolator construction (and JIT compilation on the JAX backend).
+  Warm the cache or run one throw-away call before timing.
+- **Slow per-call on CPU with JAX**: switch to ``set_backend("numpy")``; JAX only pays off on
+  GPU or for very large energy arrays.
+- **Memory growth in batch jobs**: lower ``BatchConfig.chunk_size`` or ``memory_limit_gb``.
+- **Reset interpolators** (rarely needed):
+  :func:`xraylabtool.calculators.cache.clear_scattering_factor_cache`.

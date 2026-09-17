@@ -433,10 +433,10 @@ Unit Tests
 
    def test_physical_bounds():
        """Test that results are physically reasonable."""
-       result = calculate_properties("Si", 2.33, 8000)
-       assert 0 < result.delta < 1e-3  # Reasonable range for δ
-       assert 0 < result.beta < result.delta  # Usually β << δ
-       assert 0 < result.critical_angle_degrees < 1  # Typical range
+       result = calculate_single_material_properties("Si", 8.0, 2.33)
+       assert 0 < result.dispersion_delta[0] < 1e-3  # Reasonable range for δ
+       assert 0 < result.absorption_beta[0] < result.dispersion_delta[0]  # Usually β << δ
+       assert 0 < result.critical_angle_degrees[0] < 1  # Typical range
 
 Integration Tests
 ~~~~~~~~~~~~~~~~~
@@ -448,8 +448,8 @@ Integration Tests
    def test_literature_values():
        """Compare with published reference values."""
        # Silicon at 8 keV
-       result = calculate_properties("Si", 2.33, 8000)
-       assert abs(result.critical_angle_degrees - 0.158) < 0.001
+       result = calculate_single_material_properties("Si", 8.0, 2.33)
+       assert abs(result.critical_angle_degrees[0] - 0.2248) < 0.001
 
 **Consistency across energy ranges:**
 
@@ -457,8 +457,8 @@ Integration Tests
 
    def test_energy_continuity():
        """Test smooth behavior across energy ranges."""
-       energies = np.linspace(7900, 8100, 201)
-       results = calculate_properties_array("Si", 2.33, energies)
+       energies = np.linspace(7.9, 8.1, 201)  # keV
+       result = calculate_single_material_properties("Si", energies, 2.33)
        # Check for smooth derivatives, no discontinuities
 
 Error Handling
@@ -469,12 +469,12 @@ Graceful Degradation
 
 .. code-block:: python
 
-   def robust_calculation(formula, density, energy):
+   def robust_calculation(formula, energy_kev, density):
        try:
-           return calculate_properties(formula, density, energy)
+           return calculate_single_material_properties(formula, energy_kev, density)
        except AtomicDataError:
            # Fall back to approximate methods
-           return approximate_calculation(formula, density, energy)
+           return approximate_calculation(formula, energy_kev, density)
        except Exception as e:
            logger.error(f"Calculation failed: {e}")
            return None
@@ -484,14 +484,14 @@ User Feedback
 
 .. code-block:: python
 
-   def calculate_with_warnings(formula, density, energy):
+   def calculate_with_warnings(formula, energy_kev, density):
        warnings = []
 
-       if energy < 100:
+       if energy_kev < 0.1:
            warnings.append("Low energy: results may be unreliable")
        if density > 20:
            warnings.append("High density: check units")
 
-       result = calculate_properties(formula, density, energy)
+       result = calculate_single_material_properties(formula, energy_kev, density)
        result.warnings = warnings
        return result

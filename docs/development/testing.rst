@@ -88,30 +88,30 @@ Unit Test Example
 
    import pytest
    from xraylabtool.calculators.core import calculate_single_material_properties
-   from xraylabtool.exceptions import FormulaError, EnergyError
+   from xraylabtool.exceptions import EnergyError, UnknownElementError
 
    class TestSingleMaterialCalculations:
        """Test single material property calculations."""
 
        def test_silicon_properties(self):
            """Test silicon properties at 8 keV."""
-           result = calculate_single_material_properties("Si", 2.33, 8000)
+           result = calculate_single_material_properties("Si", 8.0, 2.33)
 
            assert result.formula == "Si"
            assert result.density_g_cm3 == 2.33
-           assert result.energy_ev == 8000
-           assert abs(result.critical_angle_degrees - 0.158) < 0.001
+           assert result.energy_kev[0] == 8.0
+           assert abs(result.critical_angle_degrees[0] - 0.2248) < 0.001
 
        def test_invalid_formula(self):
            """Test error handling for invalid formulas."""
-           with pytest.raises(FormulaError, match="Unknown element"):
-               calculate_single_material_properties("XYZ", 1.0, 8000)
+           with pytest.raises(UnknownElementError, match="Unknown element"):
+               calculate_single_material_properties("XYZ", 8.0, 1.0)
 
-       @pytest.mark.parametrize("energy", [0, -1000])
+       @pytest.mark.parametrize("energy", [0, -1.0])
        def test_invalid_energy(self, energy):
            """Test error handling for invalid energies."""
            with pytest.raises(EnergyError):
-               calculate_single_material_properties("Si", 2.33, energy)
+               calculate_single_material_properties("Si", energy, 2.33)
 
 Integration Test Example
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,15 +125,15 @@ Integration Test Example
        """Test the calc CLI command."""
        result = subprocess.run([
            "xraylabtool", "calc", "Si",
-           "--density", "2.33",
-           "--energy", "8000",
-           "--output", "json"
+           "-e", "8.0",
+           "-d", "2.33",
+           "--format", "json"
        ], capture_output=True, text=True)
 
        assert result.returncode == 0
        data = json.loads(result.stdout)
-       assert data[0]["formula"] == "Si"
-       assert abs(data[0]["critical_angle_degrees"] - 0.158) < 0.001
+       assert data["formula"] == "Si"
+       assert abs(data["critical_angle_degrees"][0] - 0.2248) < 0.001
 
 Performance Test Example
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,16 +145,15 @@ Performance Test Example
 
    def test_batch_processing_performance():
        """Test that batch processing meets performance requirements."""
-       materials = [{"formula": "Si", "density": 2.33}] * 1000
-       energies = [8000]
+       formulas = ["Si", "SiO2", "Al2O3"] * 100
+       densities = [2.33, 2.20, 3.95] * 100
 
        start_time = time.time()
-       results = calculate_xray_properties(materials, energies)
+       results = calculate_xray_properties(formulas, 8.0, densities)
        end_time = time.time()
 
-       # Should process 1000 materials in under 50ms
-       assert (end_time - start_time) < 0.05
-       assert len(results) == 1000
+       assert (end_time - start_time) < 5.0
+       assert set(results) == {"Si", "SiO2", "Al2O3"}  # keyed by formula
 
 Test Configuration
 ------------------
@@ -181,7 +180,7 @@ The ``conftest.py`` file contains shared test configuration:
    @pytest.fixture
    def energy_range():
        """Common energy range for testing."""
-       return np.logspace(3, 5, 10)  # 1 keV to 100 keV
+       return np.logspace(0, np.log10(30), 10)  # 1 keV to 30 keV
 
 Test Utilities
 ~~~~~~~~~~~~~~
@@ -193,13 +192,13 @@ The ``fixtures/`` directory contains helper functions:
    def assert_result_valid(result):
        """Assert that an XRayResult is valid."""
        assert result.formula is not None
-       assert result.energy_ev > 0
-       assert result.critical_angle_degrees > 0
-       assert result.attenuation_length_cm > 0
+       assert (result.energy_kev > 0).all()
+       assert (result.critical_angle_degrees > 0).all()
+       assert (result.attenuation_length_cm > 0).all()
 
-   def create_test_material(formula="Si", density=2.33, energy=8000):
+   def create_test_material(formula="Si", energy_kev=8.0, density=2.33):
        """Create a test material for consistent testing."""
-       return calculate_single_material_properties(formula, density, energy)
+       return calculate_single_material_properties(formula, energy_kev, density)
 
 Performance Testing
 -------------------
@@ -209,8 +208,8 @@ Performance Requirements
 
 Tests ensure performance standards:
 
-- **Single calculations**: < 0.1 ms
-- **Batch processing**: > 100,000 calculations/second
+- **Single calculations**: a few ms with a warm atomic-data cache
+- **Batch processing**: parallel above 20 materials (``ThreadPoolExecutor``)
 - **Memory usage**: Reasonable scaling with dataset size
 
 Benchmarking Code
@@ -227,11 +226,11 @@ Benchmarking Code
 
        start_time = time.time()
        for _ in range(n_iterations):
-           calculate_single_material_properties("Si", 2.33, 8000)
+           calculate_single_material_properties("Si", 8.0, 2.33)
        end_time = time.time()
 
        avg_time = (end_time - start_time) / n_iterations
-       assert avg_time < 0.0001  # < 0.1 ms requirement
+       assert avg_time < 0.01  # a few ms with a warm cache
 
 Test Coverage
 -------------

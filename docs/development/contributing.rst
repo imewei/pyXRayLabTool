@@ -64,7 +64,7 @@ Code Standards
        if not formula.strip():
            raise FormulaError("Formula cannot be empty")
        if energy <= 0:
-           raise EnergyError(f"Energy must be positive, got {energy} eV")
+           raise EnergyError(f"Energy must be positive, got {energy} keV")
 
 Testing Guidelines
 ------------------
@@ -76,16 +76,16 @@ Testing Guidelines
    # Unit test example
    import pytest
    from xraylabtool.calculators.core import calculate_single_material_properties
-   from xraylabtool.exceptions import FormulaError
+   from xraylabtool.exceptions import UnknownElementError
 
    def test_silicon_properties():
-       result = calculate_single_material_properties("Si", 2.33, 8000)
+       result = calculate_single_material_properties("Si", 8.0, 2.33)  # formula, keV, g/cm³
        assert result.formula == "Si"
-       assert abs(result.critical_angle_degrees - 0.158) < 0.001
+       assert abs(result.critical_angle_degrees[0] - 0.2248) < 0.001
 
    def test_invalid_formula():
-       with pytest.raises(FormulaError):
-           calculate_single_material_properties("XYZ", 1.0, 8000)
+       with pytest.raises(UnknownElementError):
+           calculate_single_material_properties("XYZ", 8.0, 1.0)
 
 .. code-block:: bash
 
@@ -129,9 +129,9 @@ Performance Requirements
    import time
    start_time = time.time()
    for _ in range(1000):
-       calculate_single_material_properties("Si", 2.33, 8000)
+       calculate_single_material_properties("Si", 8.0, 2.33)
    avg_time = (time.time() - start_time) / 1000
-   assert avg_time < 0.0001
+   assert avg_time < 0.01
 
 Review Process
 --------------

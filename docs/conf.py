@@ -77,6 +77,7 @@ except (ImportError, PermissionError, OSError):
 templates_path = ["_templates"]
 exclude_patterns = [
     "_build",
+    ".claude",
     "Thumbs.db",
     ".DS_Store",
     "**.ipynb_checkpoints",
