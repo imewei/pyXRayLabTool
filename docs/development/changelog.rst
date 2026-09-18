@@ -16,6 +16,31 @@ Version Categories
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
 
+v0.4.6 (2026-09-17)
+--------------------
+
+**Changed**
+
+- ``xraylabtool.interfaces.cli`` is now a package (``parser``, ``formatting``, ``utils``, one module per command under ``commands/``); ``main()`` and prior public names are re-exported, so the console-script entry point and existing imports are unaffected
+- ``xraylabtool.gui.main_window`` is now a package of per-tab mixins (``single_tab``, ``multi_tab``, ``shared``, ``toast``) combined into ``MainWindow``
+- Batch calculation error-path warnings now go through the structured logger instead of ``print()``
+- ``psutil`` failures in batch processing are caught as ``psutil.Error`` instead of a bare ``Exception``
+- Internal refactors (no behavior change): ``parse_formula``, ``save_calculation_results``, ``warm_cache_for_compounds``, ``get_compound_family``, ``MaterialComparator``, ``cmd_compare``, and the Zsh/Fish completion generators split into smaller helpers
+
+**Removed**
+
+- Legacy ``xraylabtool.interfaces.completion`` bridge module; import from ``xraylabtool.interfaces.completion_v2`` instead
+- Automated ``release.yml`` workflow; releases are now bumped/tagged by hand and published via ``publish.yml`` (see ``.github/workflows/README.md``)
+
+**Fixed**
+
+- CI dependency audit no longer fails on the unpatched ``nltk`` CVE (PYSEC-2026-3740) pulled in by ``safety`` itself
+
+**Documentation**
+
+- Correct energy units (keV), argument order ``(formula, energy_keV, density)``, CLI flags, install extras, and removed references to non-existent functions/constants across guides, API reference, notebooks, and developer docs
+- CLI reference rewritten from actual ``--help`` output
+
 v0.4.5 (2026-08-12)
 --------------------
 
