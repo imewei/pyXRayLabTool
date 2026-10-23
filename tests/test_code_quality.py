@@ -248,15 +248,18 @@ class TestDocumentationPatterns(BaseUnitTest):
     @pytest.mark.unit
     def test_documented_import_examples(self):
         """Test that documented import examples work."""
-        if not self.claude_md_path.exists():
-            pytest.skip("CLAUDE.md not found")
+        doc_paths = [self.project_root / "README.md", self.claude_md_path]
+        existing = [path for path in doc_paths if path.exists()]
+        if not existing:
+            pytest.skip("README.md and CLAUDE.md not found")
 
-        with open(self.claude_md_path) as f:
-            content = f.read()
+        content = "\n".join(path.read_text() for path in existing)
 
-        # Extract import examples from CLAUDE.md
-        import_examples = re.findall(r"import\s+xraylabtool.*", content)
-        import_examples.extend(re.findall(r"from\s+xraylabtool.*", content))
+        # Only lines that start with an import statement are code examples;
+        # unanchored matches pick up prose such as "so `import xraylabtool` stays fast".
+        import_examples = re.findall(
+            r"^[ \t]*((?:import|from)[ \t]+xraylabtool.*)$", content, re.MULTILINE
+        )
 
         working_imports = 0
         total_imports = len(import_examples)
