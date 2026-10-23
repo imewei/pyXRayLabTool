@@ -61,7 +61,7 @@ env:
   MALLOC_MMAP_THRESHOLD_: 100000
 
   # Tool versions (synced with local environment Apr 2026)
-  RUFF_VERSION: "0.15.9"
+  RUFF_VERSION: "0.17.2"
   MYPY_VERSION: "1.20.0"
   PYTEST_VERSION: "9.0.2"
 
