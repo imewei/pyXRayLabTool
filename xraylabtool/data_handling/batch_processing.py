@@ -172,7 +172,10 @@ def process_batch_chunk(
     # task (~0.5 ms for numpy arrays).  Only worth it when per-material
     # calc time * batch size exceeds the overhead.
     process_pool_threshold = 8  # switch at 8+ items
-    executor_cls: type[concurrent.futures.Executor] = (
+    executor_cls: (
+        type[concurrent.futures.ProcessPoolExecutor]
+        | type[concurrent.futures.ThreadPoolExecutor]
+    ) = (
         concurrent.futures.ProcessPoolExecutor
         if len(chunk) >= process_pool_threshold
         else concurrent.futures.ThreadPoolExecutor

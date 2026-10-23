@@ -340,7 +340,7 @@ def _configure_jax_float64() -> None:
     from xraylabtool.backend.array_ops import JaxBackend, _backend
 
     if isinstance(_backend, JaxBackend):
-        import jax  # type: ignore[import-not-found]
+        import jax
 
         jax.config.update("jax_enable_x64", True)
 

@@ -157,7 +157,7 @@ def _convert_energy_input(energy_kev: Any) -> EnergyArray:
             energy_kev = ops.asarray([float(energy_kev)], dtype=ops.float64)
         else:
             try:
-                energy_kev = ops.asarray([float(energy_kev)], dtype=ops.float64)
+                energy_kev = ops.asarray([float(energy_kev)], dtype=ops.float64)  # type: ignore[arg-type]
             except (ValueError, TypeError) as e:
                 raise ValueError(f"Cannot convert energy to float: {energy_kev}") from e
     else:
@@ -485,7 +485,7 @@ def _validate_and_process_energies(energies: Any) -> EnergyArray:
             energies_array = np.array([float(energies)], dtype=np.float64)
         else:
             try:
-                energies_array = np.array([float(energies)], dtype=np.float64)
+                energies_array = np.array([float(energies)], dtype=np.float64)  # type: ignore[arg-type]
             except (ValueError, TypeError) as e:
                 raise ValueError(f"Cannot convert energy to float: {energies!r}") from e
     else:

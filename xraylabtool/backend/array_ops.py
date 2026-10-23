@@ -101,10 +101,10 @@ class NumpyBackend:
 
 class JaxBackend:
     def __init__(self) -> None:
-        import jax  # type: ignore[import-not-found]
+        import jax
 
         jax.config.update("jax_enable_x64", True)
-        import jax.numpy as jnp  # type: ignore[import-not-found]
+        import jax.numpy as jnp
 
         self._jnp = jnp
 
@@ -200,7 +200,7 @@ def _auto_select_backend() -> ArrayBackend:
 
     # GPU detected and JAX installed — pay the import cost
     try:
-        import jax  # type: ignore[import-not-found]
+        import jax
 
         if jax.default_backend() == "gpu":
             return JaxBackend()

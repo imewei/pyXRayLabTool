@@ -397,11 +397,19 @@ module = [
     "scipy.*",
     "mendeleev.*",
     "tqdm.*",
+    "jax.*",
+    "jaxlib.*",
+    "interpax.*",
     "pytest_benchmark.*",
     "memory_profiler.*",
     "line_profiler.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# mendeleev defines `element` in a submodule without listing it in __all__
+module = "mendeleev"
+implicit_reexport = true
 
 [[tool.mypy.overrides]]
 # Enhanced strict mode for core modules (gradual rollout)
@@ -462,6 +470,7 @@ ignore = [
     "E501",  # line too long (handled by black)
     "B008",  # do not perform function calls in argument defaults
     "PLR0913",  # too many arguments
+    "PLR0917",  # too many positional arguments (public API signatures are positional by design)
     "PLR2004",  # magic value used in comparison
     "S101",  # assert statements (used in tests)
     "S603",  # subprocess call (we use subprocess safely)

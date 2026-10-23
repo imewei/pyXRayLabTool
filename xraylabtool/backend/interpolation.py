@@ -11,7 +11,7 @@ class InterpolationFactory:
     @staticmethod
     def create_pchip(x: Any, y: Any, extrapolate: bool = False) -> Any:
         if ops.is_jax():
-            import interpax  # type: ignore[import-not-found]
+            import interpax
 
             return interpax.PchipInterpolator(x, y)
         else:

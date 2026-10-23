@@ -209,7 +209,9 @@ class SharedHelpersMixin:
         )
         if view is not None:
             try:
-                from pyqtgraph.exporters import ImageExporter
+                from pyqtgraph.exporters import (  # type: ignore[import-untyped]
+                    ImageExporter,
+                )
 
                 exporter = ImageExporter(view.scene())
                 exporter.parameters()["width"] = 1200

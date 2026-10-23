@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import shutil
 import subprocess
+from typing import Any
 
 _logger = logging.getLogger(__name__)
 
@@ -177,9 +178,9 @@ def get_recommended_package() -> str | None:
     return None
 
 
-def get_device_info() -> dict:
+def get_device_info() -> dict[str, Any]:
     """Get comprehensive device information as a dictionary."""
-    info: dict = {
+    info: dict[str, Any] = {
         "jax_version": None,
         "jax_backend": None,
         "devices": [],

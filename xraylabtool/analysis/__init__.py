@@ -65,7 +65,7 @@ def compare_materials(
     if not results:
         return {}
 
-    values = []
+    values: list[float] = []
     for result in results:
         prop_value = getattr(result, property_name, None)
         if prop_value is not None:
@@ -77,13 +77,13 @@ def compare_materials(
     if not values:
         return {}
 
-    values = np.array(values)
+    arr = np.array(values)
     return {
-        "mean": float(np.mean(values)),
-        "std": float(np.std(values)),
-        "min": float(np.min(values)),
-        "max": float(np.max(values)),
-        "count": len(values),
+        "mean": float(np.mean(arr)),
+        "std": float(np.std(arr)),
+        "min": float(np.min(arr)),
+        "max": float(np.max(arr)),
+        "count": len(arr),
     }
 
 

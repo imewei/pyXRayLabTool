@@ -658,7 +658,7 @@ def get_atomic_weight(element_symbol: str) -> float:
             raise AtomicDataError(
                 f"Atomic weight not available for element '{element_symbol}'"
             )
-        atomic_weight = elem.atomic_weight
+        atomic_weight: Any = elem.atomic_weight
         # Handle Column type from mendeleev by converting to string first
         try:
             # Try direct conversion for normal types

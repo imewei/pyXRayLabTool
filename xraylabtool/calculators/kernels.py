@@ -81,7 +81,7 @@ def _get_scattering_kernel() -> Any:
 
     if isinstance(_backend, JaxBackend):
         if "scatter" not in _jit_cache:
-            import jax  # type: ignore[import-not-found]
+            import jax
 
             _jit_cache["scatter"] = jax.jit(
                 _scattering_math_kernel_raw, static_argnums=(4,)
@@ -96,7 +96,7 @@ def _get_derived_kernel() -> Any:
 
     if isinstance(_backend, JaxBackend):
         if "derived" not in _jit_cache:
-            import jax  # type: ignore[import-not-found]
+            import jax
 
             _jit_cache["derived"] = jax.jit(
                 _derived_quantities_kernel_raw, static_argnums=(3,)
@@ -176,7 +176,7 @@ def calculate_scattering_factors(
 
     # Dispatch to JIT-compiled math kernel
     kernel = _get_scattering_kernel()
-    return kernel(f1_matrix, f2_matrix, counts, wave_sq, common_factor)
+    return kernel(f1_matrix, f2_matrix, counts, wave_sq, common_factor)  # type: ignore[no-any-return]
 
 
 def calculate_derived_quantities(
