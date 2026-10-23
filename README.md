@@ -103,7 +103,7 @@ Override at runtime:
 ```python
 from xraylabtool.backend import set_backend
 
-set_backend("jax")    # JIT-compiled kernels; GPU needs the gpu_cuda12/13 extra
+set_backend("jax")  # JIT-compiled kernels; GPU needs the gpu_cuda12/13 extra
 set_backend("numpy")  # default on CPU-only machines
 ```
 

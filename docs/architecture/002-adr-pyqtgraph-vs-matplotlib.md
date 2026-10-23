@@ -73,6 +73,7 @@ Migration strategy:
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
+
 class PlotCanvas(QWidget):
     def __init__(self):
         self.figure = Figure(figsize=(6, 4))
@@ -81,7 +82,7 @@ class PlotCanvas(QWidget):
     def plot_single(self, result, property_name, ylabel):
         self.figure.clear()
         ax = self.figure.add_subplot(111)
-        ax.plot(x, y, label=label, marker='o', linewidth=1.5)
+        ax.plot(x, y, label=label, marker="o", linewidth=1.5)
         ax.set_xlabel("Energy (keV)")
         self.canvas.draw_idle()
 ```
@@ -91,6 +92,7 @@ class PlotCanvas(QWidget):
 # plot_canvas.py
 import pyqtgraph as pg
 
+
 class PlotCanvas(QWidget):
     def __init__(self):
         self.plot_widget = pg.PlotWidget()
@@ -99,9 +101,10 @@ class PlotCanvas(QWidget):
 
     def plot_single(self, result, property_name, ylabel):
         self.plot_widget.clear()
-        self.plot_widget.plot(x, y, name=label,
-            pen=pg.mkPen(width=1.5), symbol='o', symbolSize=6)
-        self.plot_widget.setLabel('bottom', "Energy (keV)")
+        self.plot_widget.plot(
+            x, y, name=label, pen=pg.mkPen(width=1.5), symbol="o", symbolSize=6
+        )
+        self.plot_widget.setLabel("bottom", "Energy (keV)")
 ```
 
 **Log scale handling:**
@@ -110,7 +113,7 @@ class PlotCanvas(QWidget):
 self.plot_widget.setLogMode(x=self.log_x, y=self.log_y)
 # Custom tick formatting for nice log labels
 if self.log_x:
-    self.plot_widget.getAxis('bottom').setStyle(tickTextOffset=4)
+    self.plot_widget.getAxis("bottom").setStyle(tickTextOffset=4)
 ```
 
 ---

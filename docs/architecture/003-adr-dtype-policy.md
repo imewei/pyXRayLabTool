@@ -27,13 +27,13 @@ The computation involves products of physical constants spanning 30+ orders of m
 
 ```python
 # From constants.py
-THOMPSON = 2.8179403227e-15    # meters
-AVOGADRO = 6.02214199e23       # mol^-1
+THOMPSON = 2.8179403227e-15  # meters
+AVOGADRO = 6.02214199e23  # mol^-1
 SCATTERING_FACTOR = THOMPSON * AVOGADRO * 1e6 / (2 * pi)  # ~2.7e14
 
 # From core.py calculate_scattering_factors():
 common_factor = SCATTERING_FACTOR * mass_density / molecular_weight
-wave_sq = wavelength ** 2    # ~(1e-10)^2 = 1e-20
+wave_sq = wavelength**2  # ~(1e-10)^2 = 1e-20
 dispersion = wave_sq * common_factor * f1_total
 # = 1e-20 * 2.7e14 * density/MW * f1 -> ~1e-6
 ```
@@ -97,7 +97,9 @@ Implementation:
 ```python
 # xraylabtool/__init__.py (FIRST LINES, before any other imports)
 import os
+
 os.environ.setdefault("JAX_ENABLE_X64", "1")
+
 
 # Verify enforcement at import time
 def _verify_float64():
@@ -105,6 +107,7 @@ def _verify_float64():
     try:
         import jax
         import jax.numpy as jnp
+
         if not jax.config.jax_enable_x64:
             raise RuntimeError(
                 "JAX float64 mode is required for X-ray calculations. "
@@ -117,6 +120,7 @@ def _verify_float64():
             raise RuntimeError("JAX float64 mode enabled but arrays are float32")
     except ImportError:
         pass  # JAX not installed, numpy backend handles this
+
 
 _verify_float64()
 ```

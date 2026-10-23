@@ -14,9 +14,9 @@
 JAX arrays live on a "device" (CPU via XLA, GPU, or TPU). NumPy arrays live on the "host" (regular Python memory). Every conversion between JAX and NumPy arrays triggers a data transfer:
 
 ```python
-jax_array = jnp.array(numpy_array)    # Host -> Device transfer
-numpy_array = np.array(jax_array)      # Device -> Host transfer
-numpy_array = jax_array.to_py()        # Device -> Host transfer (explicit)
+jax_array = jnp.array(numpy_array)  # Host -> Device transfer
+numpy_array = np.array(jax_array)  # Device -> Host transfer
+numpy_array = jax_array.to_py()  # Device -> Host transfer (explicit)
 ```
 
 On CPU-only systems (the primary deployment for pyXRayLabTool), the "device" is the same physical memory, so the transfer cost is a memcpy (~1us for small arrays, ~100us for large ones). On GPU, transfers go over PCIe and cost 10-100x more.
@@ -113,7 +113,7 @@ def calculate_single_material_properties(formula, energy_keV, density):
         formula=formula_str,
         molecular_weight_g_mol=molecular_weight,
         # ... scalar fields ...
-        energy_kev=np.asarray(energy_kev),          # JAX -> numpy
+        energy_kev=np.asarray(energy_kev),  # JAX -> numpy
         wavelength_angstrom=np.asarray(wavelength * METER_TO_ANGSTROM),
         dispersion_delta=np.asarray(dispersion),
         absorption_beta=np.asarray(absorption),
@@ -128,14 +128,14 @@ For multi-material calculations, the transfer savings compound:
 ```python
 # BEFORE (naive): N materials x 2 transfers each = 2N transfers
 for formula, density in materials:
-    energy_jax = jnp.asarray(energy_np)        # Transfer 1
-    result = compute(energy_jax, ...)           # Device computation
-    result_np = np.asarray(result)              # Transfer 2
+    energy_jax = jnp.asarray(energy_np)  # Transfer 1
+    result = compute(energy_jax, ...)  # Device computation
+    result_np = np.asarray(result)  # Transfer 2
 
 # AFTER (optimized): 1 transfer in + 1 transfer out = 2 transfers total
-energy_jax = jnp.asarray(energy_np)            # Transfer 1 (shared across materials)
+energy_jax = jnp.asarray(energy_np)  # Transfer 1 (shared across materials)
 all_results_jax = jax.vmap(compute)(energy_jax, material_params)  # Single vmap call
-all_results_np = jax.tree.map(np.asarray, all_results_jax)        # Transfer 2 (bulk)
+all_results_np = jax.tree.map(np.asarray, all_results_jax)  # Transfer 2 (bulk)
 ```
 
 ## Consequences
