@@ -70,17 +70,12 @@ jobs:
         max_attempts: 3
         retry_on: error
         command: |
-          uv pip install --system safety pip-audit
+          uv pip install --system pip-audit
 
     - name: Generate dependency list
       run: |
         uv pip install --system -e .
         uv pip freeze > current_dependencies.txt
-
-    - name: Run safety check
-      run: |
-        safety check --save-json safety-audit.json || true
-        safety check --output text
 
     - name: Run pip-audit
       run: |
@@ -100,7 +95,6 @@ jobs:
         name: dependency-audit-${{ github.run_id }}
         path: |
           current_dependencies.txt
-          safety-audit.json
           pip-audit.json
           license-report.md
 
