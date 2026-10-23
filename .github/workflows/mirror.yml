@@ -60,11 +60,17 @@ jobs:
           #    Use set-url-or-add so re-runs on a warm checkout do not fail.
           git remote add target "$TARGET_URL" 2>/dev/null || git remote set-url target "$TARGET_URL"
 
-          # 3. Push standard git objects, branches, and tags. The refspec maps
-          #    GitHub's remote-tracking branches onto GitLab heads; --prune keeps
-          #    the mirror from accumulating deleted branches.
+          # 3. Push branches and tags. The refspec maps GitHub's remote-tracking
+          #    branches onto GitLab heads; --prune keeps the mirror from
+          #    accumulating deleted branches.
           echo "Pushing code repositories..."
-          git push --prune target "+refs/remotes/origin/*:refs/heads/*" --tags
+          git push --prune target "+refs/remotes/origin/*:refs/heads/*"
+
+          # Tags are forced too: GitHub is the source of truth, and a re-tagged
+          # release (e.g. v0.4.6 moved to the release commit) is otherwise
+          # rejected with "tag already exists". Separate from the branch push so
+          # --prune never deletes tags on GitLab.
+          git push --force target --tags
 
           # 4. Push all tracked LFS objects to the remote.
           echo "Pushing LFS assets..."
