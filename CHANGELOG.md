@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `repomix-output.xml` (a 9.6 MB snapshot of the repository from 2026-09-17, now out of date), `scripts/create_favicon.py` (unreferenced one-off generator) and the root-level `.graphify_uncached.txt` (a graphify temp file that was committed by mistake and contained another machine's absolute paths).
 - The 2026-04 audit reports `docs/audit_remediation_plan.md`, `docs/security_audit_cicd.md` and `docs/test_coverage_audit.md`, which were not part of the documentation build, and their entries in `docs/conf.py` `exclude_patterns`.
 - Dead ruff `per-file-ignores` for files that no longer exist (`xraylabtool/core/*.py`, `**/interfaces/completion.py`).
+- `docs/_static/logo-light.jpg`, a copy of the logo that nothing referenced (the docs theme uses `logo-light.svg` and `logo-dark.svg`).
 
 ### Fixed
 - OSTI GitLab mirror: tags are force-pushed in a separate command, so a re-tagged release (such as `v0.4.6`) no longer fails the job with "tag already exists".
