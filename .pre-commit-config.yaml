@@ -1,8 +1,11 @@
-# Pre-commit configuration for XRayLabTool (2026)
-# Optimized for fast execution with latest tool versions; Python >=3.13, uv preferred for environment setup.
+# Pre-commit configuration for XRayLabTool (Python >=3.12)
+#
+# Install:  pre-commit install        Run everything:  pre-commit run --all-files
+# The ruff rev must equal RUFF_VERSION in .github/workflows/{ci,security}.yml and the
+# ruff pin in uv.lock, otherwise local and CI formatting can disagree.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -12,33 +15,42 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
         args: ['--maxkb=1000']
-        exclude: ^graphify-out/
       - id: debug-statements
 
-  # Use Ruff for fast linting and formatting (replaces multiple tools)
+  # Ruff handles linting, import sorting and formatting
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.17.2
     hooks:
-      - id: ruff
+      - id: ruff-check
         name: ruff lint
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
         name: ruff format
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.24.3
+    rev: v8.30.1
     hooks:
       - id: gitleaks
 
+  - repo: local
+    hooks:
+      # The version is recorded in several files (pyproject, __init__, uv.lock, docs,
+      # changelogs); fail the commit if a bump missed one.
+      - id: check-version
+        name: version numbers agree
+        entry: python scripts/check_version.py
+        language: python
+        pass_filenames: false
+        files: ^(pyproject\.toml|uv\.lock|README\.md|CHANGELOG\.md|xraylabtool/__init__\.py|docs/(conf\.py|index\.rst|development/changelog\.rst)|scripts/check_version\.py)$
 
-
-# Configuration
 default_language_version:
   python: python3
 
 default_stages: [pre-commit]
 fail_fast: false
 
+# graphify-out/ is machine-generated (graph.html/json, GRAPH_REPORT.md) and rewritten
+# by `graphify update .`; hooks must not reformat it.
 exclude: |
   (?x)^(
     \.git/|
@@ -54,5 +66,7 @@ exclude: |
     \.ruff_cache/|
     build/|
     dist/|
+    docs/_build/|
+    graphify-out/|
     .*\.egg-info/
   )
