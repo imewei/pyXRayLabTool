@@ -16,6 +16,20 @@ Version Categories
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
 
+v0.4.8 (2026-10-24)
+--------------------
+
+**Added**
+
+- Short console-script aliases ``xlt`` (for ``xraylabtool``) and ``xlt-gui`` (for ``xraylabtool-gui``); shell completion registers ``xlt`` alongside ``xtool`` for bash, zsh, fish, and PowerShell.
+- ``conda-recipe/meta.yaml``: noarch conda recipe. The package is published on the ``imewei`` channel (``conda install -c imewei -c conda-forge xraylabtool``) with the core runtime dependencies and CPU-only JAX; the CUDA extras are pip/uv only.
+- ``tests/unit/test_completion_aliases.py``: checks that every shell completion generator registers both CLI aliases.
+
+**Changed**
+
+- The README and the index, getting-started and completion guides document the conda installation.
+- ``check-yaml`` excludes the Jinja-templated ``conda-recipe/meta.yaml``.
+
 v0.4.7 (2026-10-23)
 --------------------
 
