@@ -124,6 +124,53 @@ python scripts/validate_style_guide.py --verbose # Detailed output
 python scripts/validate_style_guide.py --fix     # Apply fixes
 ```
 
+### `check_version.py` - Version Consistency
+
+Reads every file that records the package version as text (it does not import the
+package) and exits non-zero if any disagree: `pyproject.toml`,
+`xraylabtool/__init__.py`, `uv.lock`, `docs/conf.py` fallbacks, the BibTeX entries in
+`README.md` and `docs/index.rst`, and the newest section of both changelogs.
+
+```bash
+python scripts/check_version.py                  # sources agree with each other
+python scripts/check_version.py --expect 0.4.7   # ... and equal this release
+python scripts/check_version.py --installed      # ... and the installed metadata
+python scripts/check_version.py --print          # print the pyproject version
+```
+
+Wired into `make version-check` and the `check-version` pre-commit hook.
+
+### `test_install.py` - Install Smoke Test
+
+Installs xraylabtool into a throw-away virtual environment and runs one SiO2
+calculation, so a broken wheel (missing `.nff` data, bad entry points) fails here
+rather than for users.
+
+```bash
+python scripts/test_install.py wheel [PATH]      # newest dist/*.whl by default
+python scripts/test_install.py testpypi [--version X.Y.Z]
+python scripts/test_install.py pypi [--version X.Y.Z]
+```
+
+Used by `make test-install-local`, `test-install-testpypi` and `test-install-pypi`.
+
+### `gpu_check.py` - GPU Diagnostics
+
+Reports the JAX backend, visible devices and a small SVD sanity check, and fails on
+conflicting `jax-cuda12-plugin` / `jax-cuda13-plugin` installs. `--diagnose` adds the
+system CUDA version, GPU model and installed JAX/CUDA packages.
+
+Used by `make gpu-check` and `make gpu-diagnose`.
+
+### `gui_headless_smoke.py` - GUI Smoke Check
+
+Exercises the single- and multi-material GUI flows offscreen and writes PNG/CSV
+exports to temporary files.
+
+```bash
+QT_QPA_PLATFORM=offscreen python -m scripts.gui_headless_smoke
+```
+
 ## Maintenance Notes
 
 This directory has been cleaned up to contain only essential scripts actively used in the development workflow. All scripts maintain compatibility with the Makefile targets and CI/CD pipelines.

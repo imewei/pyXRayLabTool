@@ -1,8 +1,39 @@
-# Makefile for XRayLabTool Python package
-# Provides convenient commands for testing, development, and CI
-# Supports both Python API and CLI functionality
+# Makefile for XRayLabTool
+# Development, test, docs, build and release commands. Run `make help` for the list.
+#
+# Commands run against ./.venv when it exists (created by `make install` / `uv sync`),
+# so no activation is needed. Override any tool, e.g. `make test PYTHON=python3.13`.
 
-.PHONY: help install dev-setup version-check test test-fast test-unit test-integration test-performance test-memory test-stability test-benchmarks test-regression test-optimization test-coverage test-parallel test-smoke test-edge test-ci test-nightly test-all test-all-log cli-test cli-examples cli-help cli-demo lint format check-format type-check docs docs-log docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf docs-test docs-test-all docs-doctest clean clean-all dev validate verify verify-fast ci-test release-check perf-baseline perf-compare perf-report test-install-local test-install-testpypi test-install-pypi build upload-test upload status info quick-test install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose
+# Pytest runner and optional xdist parallelization
+PYTHON ?= $(if $(wildcard .venv/bin/python),$(CURDIR)/.venv/bin/python,python)
+ifneq ($(wildcard .venv/bin),)
+export PATH := $(CURDIR)/.venv/bin:$(PATH)
+endif
+PYTEST ?= $(PYTHON) -m pytest
+RUFF ?= $(PYTHON) -m ruff
+MYPY ?= $(PYTHON) -m mypy
+SPHINXBUILD ?= $(PYTHON) -m sphinx
+PYTEST_PARALLEL ?= -n auto
+PYTEST_PARALLEL_ENABLED ?= 1
+
+# Coverage floor for `make claude`; measured 28.7% on 2026-10-23 (CI floor: COV_THRESHOLD in ci.yml).
+COV_MIN ?= 27
+
+.PHONY: help install dev-setup version-check \
+	test test-fast test-unit test-integration test-characterization test-gui \
+	test-performance test-memory test-stability test-benchmarks test-regression \
+	test-optimization test-coverage test-parallel test-smoke test-edge test-ci \
+	test-nightly test-all test-all-log \
+	cli-test cli-examples cli-help cli-demo \
+	lint format check-format type-check type-check-all type-check-strict \
+	type-check-cache-info claude \
+	docs docs-log docs-serve docs-autobuild docs-clean docs-linkcheck docs-pdf \
+	docs-test docs-test-all docs-doctest \
+	clean clean-all dev verify verify-fast validate ci-test release-check \
+	perf-baseline perf-compare perf-report \
+	test-install-local test-install-testpypi test-install-pypi \
+	build upload-test upload status info quick-test \
+	install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose
 
 # Colors for output
 RED=\033[0;31m
@@ -10,12 +41,6 @@ GREEN=\033[0;32m
 YELLOW=\033[0;33m
 BLUE=\033[0;34m
 NC=\033[0m # No Color
-
-# Pytest runner and optional xdist parallelization
-PYTHON ?= python
-PYTEST ?= pytest
-PYTEST_PARALLEL ?= -n auto
-PYTEST_PARALLEL_ENABLED ?= 1
 
 # When running in parallel, disable pytest-benchmark to avoid it erroring under xdist.
 PYTEST_BENCHMARK_DISABLE := $(shell $(PYTHON) -c "import pytest_benchmark" >/dev/null 2>&1 && printf '%s' "--benchmark-disable")
@@ -26,11 +51,21 @@ PYTEST_XDIST_ARGS := $(shell \
 		$(PYTHON) -c "import xdist" >/dev/null 2>&1 && printf '%s %s' "$(PYTEST_PARALLEL)" "$(PYTEST_BENCHMARK_DISABLE)"; \
 	fi)
 
+# pyproject's addopts always collects coverage; the category targets switch it off.
+NO_COV := --no-cov
+
 # GUI/Qt tests segfault when split across xdist workers (native Qt state + worker
 # threads from the threaded smoke test corrupt the process running another GUI
 # test). Like CI, exclude them from the parallel run and execute them serially.
-GUI_SERIAL_TESTS := tests/test_gui_smoke.py tests/unit/test_gui_widgets.py
-GUI_IGNORE := --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py
+GUI_TESTS := tests/test_gui_smoke.py tests/test_gui_progress.py tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py
+GUI_IGNORE := $(addprefix --ignore=,$(GUI_TESTS))
+
+# Extra coverage options for the serial GUI run, which closes the combined report.
+PYTEST_COV_ARGS ?=
+
+# Performance/memory/stability tests are deselected unless --run-performance is given.
+# They measure wall time and RSS, so they always run serially.
+PERF := --run-performance $(NO_COV) --benchmark-disable
 
 # Default target
 help:
@@ -49,24 +84,26 @@ help:
 	@echo "  gpu-diagnose            Diagnose common GPU issues"
 	@echo ""
 	@echo "$(YELLOW)🧪 Testing:$(NC)"
-	@echo "  test             Run all tests with coverage"
-	@echo "  test-fast        Run tests without coverage (faster)"
-	@echo "  test-unit        Run unit tests only"
-	@echo "  test-integration Run integration tests only"
-	@echo "  test-performance Run performance tests only"
+	@echo "  test             Run all tests with coverage (GUI tests run serially)"
+	@echo "  test-fast        Run all tests without coverage (faster)"
+	@echo "  test-unit        Run tests/unit"
+	@echo "  test-integration Run tests/integration"
+	@echo "  test-characterization  Run golden-output regression tests"
+	@echo "  test-gui         Run the PySide6 GUI tests serially"
+	@echo "  test-performance Run tests/performance (needs --run-performance, serial)"
 	@echo "  test-memory      Run memory management tests only"
 	@echo "  test-stability   Run numerical stability tests only"
-	@echo "  test-benchmarks  Run performance benchmarks only"
-	@echo "  test-regression  Run regression tests only"
+	@echo "  test-benchmarks  Run pytest-benchmark benchmarks only"
+	@echo "  test-regression  Run regression-named tests (-k regression)"
 	@echo "  test-optimization Run optimization validation tests only"
-	@echo "  test-coverage    Run tests and generate HTML coverage report"
+	@echo "  test-coverage    Run tests and generate HTML/XML coverage reports"
 	@echo "  test-parallel    Run tests in parallel for faster execution"
-	@echo "  test-all         Run comprehensive test suite (unit + integration + perf + CLI)"
-	@echo "  test-all-log     Run comprehensive test suite with output logged to test_results.log"
-	@echo "  test-smoke       Run basic smoke tests (quick validation)"
+	@echo "  test-all         Run tests, performance tests and CLI checks"
+	@echo "  test-all-log     Same as test-all, output logged to test_results.log"
+	@echo "  test-smoke       Run the CI smoke subset (quick validation)"
 	@echo "  test-edge        Run edge case tests"
-	@echo "  test-ci          Run CI-focused test suite"
-	@echo "  test-nightly     Run nightly/extended test suite"
+	@echo "  test-ci          Run the non-GUI suite the way CI does"
+	@echo "  test-nightly     Run the extended suite (performance + slow tests)"
 	@echo "  cli-test         Test CLI functionality"
 	@echo ""
 	@echo "$(YELLOW)🔧 Code Quality:$(NC)"
@@ -77,7 +114,7 @@ help:
 	@echo "  type-check-all   Run comprehensive type checking on all modules"
 	@echo "  type-check-strict Run strict type checking with enhanced rules"
 	@echo "  type-check-cache-info Show MyPy cache information and performance"
-	@echo "  claude           🤖 Comprehensive Claude Code quality analysis (pre-commit ready)"
+	@echo "  claude           Format, lint, mypy --strict, tests with coverage floor, perf checks"
 	@echo ""
 	@echo "$(YELLOW)📚 Documentation:$(NC)"
 	@echo "  docs             Build Sphinx documentation"
@@ -95,28 +132,32 @@ help:
 	@echo "  cli-help         Show CLI help and available commands"
 	@echo "  cli-examples     Run CLI examples to verify functionality"
 	@echo "  cli-demo         Interactive CLI demonstration"
+	@echo "  quick-test       Smoke-test the Python API and CLI"
 	@echo ""
 	@echo "$(YELLOW)🏗️  Building & Release:$(NC)"
-	@echo "  build               Build distribution packages"
+	@echo "  build               Build sdist + wheel with uv and run twine check"
 	@echo "  test-install-local  Test local wheel installation in clean environment"
 	@echo "  test-install-testpypi  Test TestPyPI installation"
 	@echo "  test-install-pypi   Test PyPI installation"
 	@echo "  upload-test         Upload to TestPyPI"
-	@echo "  upload              Upload to PyPI"
-	@echo "  version-check       Check version consistency"
+	@echo "  upload              Upload to PyPI (releases normally go through the publish workflow)"
+	@echo "  version-check       Check that every file recording the version agrees"
+	@echo "  perf-baseline       Save a pytest-benchmark baseline"
+	@echo "  perf-compare        Compare benchmarks against the saved baseline"
+	@echo "  perf-report         Write benchmark_report.json"
 	@echo ""
 	@echo "$(YELLOW)🧹 Cleanup:$(NC)"
-	@echo "  clean            Clean build artifacts and cache (preserves virtual environments)"
-	@echo "  clean-all        Deep clean including virtual environments and all unrelated files"
+	@echo "  clean            Clean build artifacts and caches (preserves virtual environments)"
+	@echo "  clean-all        Deep clean including virtual environments (.venv, venv, env, ENV)"
 	@echo ""
 	@echo "$(YELLOW)🚀 Development Workflows:$(NC)"
-	@echo "  dev              Quick development cycle (format, lint, test-fast)"
-	@echo "  claude           Comprehensive Claude Code quality analysis (recommended pre-commit)"
-	@echo "  verify           Full local CI verification (lint + type + smoke tests) - use before push"
-	@echo "  verify-fast      Quick verification (lint + type only, no tests)"
-	@echo "  validate         Full validation (format, lint, type-strict, coverage, benchmarks)"
+	@echo "  dev              Quick development cycle (check-format, lint, type-check, test-fast)"
+	@echo "  verify           Local CI mirror (format + lint + mypy + unit + characterization) - run before push"
+	@echo "  verify-fast      Quick verification (format + lint + mypy only, no tests)"
+	@echo "  validate         Full validation (format, lint, strict types, coverage, benchmarks, docs)"
 	@echo "  ci-test          Simulate CI environment"
 	@echo "  release-check    Pre-release validation checklist"
+	@echo "  status / info    Project status / package information"
 
 # Installation & Setup
 install:
@@ -133,6 +174,7 @@ install:
 dev-setup: install
 	@echo "$(GREEN)🚀 Development environment set up successfully!$(NC)"
 	@echo "$(BLUE)📋 Quick commands:$(NC)"
+	@echo "  make verify          # Mirror CI locally before pushing"
 	@echo "  make claude          # 🤖 Comprehensive code quality analysis"
 	@echo "  make cli-help        # Show CLI help"
 	@echo "  make test-fast       # Run tests quickly"
@@ -141,75 +183,81 @@ dev-setup: install
 
 version-check:
 	@echo "$(YELLOW)Checking version consistency...$(NC)"
-	@python -c "import xraylabtool; print(f'Package version: {xraylabtool.__version__}')"
-	@grep -n "version =" pyproject.toml || echo "Version not found in pyproject.toml"
-	@grep -n "release =" docs/conf.py || echo "Release not found in docs/conf.py"
+	@$(PYTHON) scripts/check_version.py --installed
 	@echo "$(GREEN)✅ Version check complete$(NC)"
 
 # Testing targets
 test:
 	@echo "$(YELLOW)Running tests with coverage...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) $(GUI_IGNORE) tests/ -v --cov=xraylabtool --cov-report=term-missing
+	$(PYTEST) $(PYTEST_XDIST_ARGS) $(GUI_IGNORE) tests/
 	@echo "$(YELLOW)Running GUI tests serially...$(NC)"
-	$(PYTEST) $(GUI_SERIAL_TESTS) -v --cov=xraylabtool --cov-append --cov-report=term-missing
+	$(PYTEST) $(GUI_TESTS) --cov-append $(PYTEST_COV_ARGS)
 	@echo "$(GREEN)✅ Tests completed$(NC)"
 
 test-fast:
 	@echo "$(YELLOW)Running fast tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) $(GUI_IGNORE) tests/ -v
+	$(PYTEST) $(PYTEST_XDIST_ARGS) $(NO_COV) $(GUI_IGNORE) tests/
 	@echo "$(YELLOW)Running GUI tests serially...$(NC)"
-	$(PYTEST) $(GUI_SERIAL_TESTS) -v
+	$(PYTEST) $(NO_COV) $(GUI_TESTS)
 	@echo "$(GREEN)✅ Fast tests completed$(NC)"
 
 # Core test categories
 test-unit:
 	@echo "$(YELLOW)Running unit tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "unit" -v
+	$(PYTEST) $(PYTEST_XDIST_ARGS) $(NO_COV) $(GUI_IGNORE) tests/unit/
 	@echo "$(GREEN)✅ Unit tests completed$(NC)"
 
 test-integration:
 	@echo "$(YELLOW)Running integration tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "integration" -v
+	$(PYTEST) $(PYTEST_XDIST_ARGS) $(NO_COV) tests/integration/
 	@echo "$(GREEN)✅ Integration tests completed$(NC)"
+
+test-characterization:
+	@echo "$(YELLOW)Running characterization (golden-output) tests...$(NC)"
+	$(PYTEST) $(PYTEST_XDIST_ARGS) $(NO_COV) tests/characterization/
+	@echo "$(GREEN)✅ Characterization tests completed$(NC)"
+
+test-gui:
+	@echo "$(YELLOW)Running GUI tests serially...$(NC)"
+	$(PYTEST) $(NO_COV) $(GUI_TESTS) --timeout=30
+	@echo "$(GREEN)✅ GUI tests completed$(NC)"
 
 # Performance and optimization tests
 test-performance:
 	@echo "$(YELLOW)Running performance tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "performance" -v --tb=short
+	$(PYTEST) $(PERF) tests/performance/ --tb=short
 	@echo "$(GREEN)✅ Performance tests completed$(NC)"
 
 test-memory:
 	@echo "$(YELLOW)Running memory management tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "memory" -v --tb=short
+	$(PYTEST) $(PERF) tests/ -m "memory" --tb=short
 	@echo "$(GREEN)✅ Memory tests completed$(NC)"
 
 test-stability:
 	@echo "$(YELLOW)Running numerical stability tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "stability" -v --tb=short
+	$(PYTEST) $(PERF) tests/ -m "stability" --tb=short
 	@echo "$(GREEN)✅ Stability tests completed$(NC)"
 
 test-benchmarks:
 	@echo "$(YELLOW)Running performance benchmarks...$(NC)"
-	# Keep benchmarks serial (xdist can skew benchmark results)
-	$(PYTEST) tests/ -m "benchmark" --benchmark-only -v
+	$(PYTEST) --run-performance $(NO_COV) tests/ -m "benchmark" --benchmark-only
 	@echo "$(GREEN)✅ Benchmarks completed$(NC)"
 
 test-regression:
 	@echo "$(YELLOW)Running regression tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "regression" -v --tb=short
+	$(PYTEST) $(PERF) tests/ -k "regression" --tb=short
 	@echo "$(GREEN)✅ Regression tests completed$(NC)"
 
 test-optimization:
 	@echo "$(YELLOW)Running optimization validation tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "optimization" -v --tb=short
+	$(PYTEST) $(PERF) tests/performance/test_optimization_validation.py --tb=short
 	@echo "$(GREEN)✅ Optimization tests completed$(NC)"
 
 # Test execution modes
 test-coverage:
 	@echo "$(YELLOW)Running tests with detailed coverage...$(NC)"
-	# Keep coverage serial for stability (xdist coverage combining can vary by environment)
-	$(PYTEST) tests/ --cov=xraylabtool --cov-report=html --cov-report=xml --cov-report=term-missing
-	@echo "$(GREEN)✅ Coverage report generated in htmlcov/$(NC)"
+	$(MAKE) test PYTEST_COV_ARGS="--cov-report=html --cov-report=xml"
+	@echo "$(GREEN)✅ Coverage report generated in htmlcov/ and coverage.xml$(NC)"
 
 test-parallel:
 	@echo "$(YELLOW)Running tests in parallel...$(NC)"
@@ -218,25 +266,25 @@ test-parallel:
 
 test-smoke:
 	@echo "$(YELLOW)Running smoke tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "smoke" -v --tb=line
+	$(PYTEST) $(NO_COV) tests/unit/test_core.py tests/integration/test_integration.py::TestBasicSetupAndInitialization --tb=line
 	@echo "$(GREEN)✅ Smoke tests completed$(NC)"
 
 test-edge:
 	@echo "$(YELLOW)Running edge case tests...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "edge_case" -v --tb=short
+	$(PYTEST) $(PYTEST_XDIST_ARGS) $(NO_COV) $(GUI_IGNORE) tests/ -k "edge" --tb=short
 	@echo "$(GREEN)✅ Edge case tests completed$(NC)"
 
 test-ci:
 	@echo "$(YELLOW)Running CI test suite...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "ci or (unit and not slow)" -v --tb=short --maxfail=5
+	$(PYTEST) $(PYTEST_XDIST_ARGS) $(NO_COV) $(GUI_IGNORE) tests/unit/ tests/integration/ tests/characterization/ --tb=short --maxfail=5
 	@echo "$(GREEN)✅ CI tests completed$(NC)"
 
 test-nightly:
 	@echo "$(YELLOW)Running nightly test suite...$(NC)"
-	$(PYTEST) $(PYTEST_XDIST_ARGS) tests/ -m "nightly or (performance and memory and stability)" -v --tb=short
+	$(PYTEST) --run-performance $(NO_COV) tests/ -m "performance or slow" --tb=short
 	@echo "$(GREEN)✅ Nightly tests completed$(NC)"
 
-test-all: test-unit test-integration test-performance test-stability cli-test test-coverage
+test-all: test test-performance cli-test
 	@echo "$(GREEN)✅ Comprehensive test suite completed$(NC)"
 
 test-all-log:
@@ -256,8 +304,9 @@ cli-test:
 	xraylabtool --version
 	@echo "$(BLUE)🔍 Testing basic commands...$(NC)"
 	xraylabtool --help > /dev/null
-	xraylabtool list constants | head -5
-	xraylabtool list fields | head -5
+	xraylabtool list constants > /dev/null
+	xraylabtool list fields > /dev/null
+	xraylabtool calc SiO2 -e 10.0 -d 2.2 > /dev/null
 	@echo "$(GREEN)✅ CLI tests passed$(NC)"
 
 cli-examples:
@@ -304,38 +353,38 @@ cli-demo:
 # Code Quality
 lint:
 	@echo "$(YELLOW)Running linting checks...$(NC)"
-	ruff check xraylabtool tests
+	$(RUFF) check xraylabtool tests
 	@echo "$(GREEN)✅ Linting completed$(NC)"
 
 format:
 	@echo "$(YELLOW)Formatting code with ruff...$(NC)"
-	ruff format xraylabtool tests
-	ruff check --fix xraylabtool tests
+	$(RUFF) format xraylabtool tests
+	$(RUFF) check --fix xraylabtool tests
 	@echo "$(GREEN)✅ Code formatting completed$(NC)"
 
 check-format:
 	@echo "$(YELLOW)Checking code formatting...$(NC)"
-	ruff format --check xraylabtool tests
+	$(RUFF) format --check xraylabtool tests
 	@echo "$(GREEN)✅ Format check passed$(NC)"
 
 type-check:
 	@echo "$(YELLOW)Running enhanced type checks...$(NC)"
-	@command -v mypy >/dev/null 2>&1 && python scripts/run_type_check.py --target core || echo "$(BLUE)mypy not available, skipping type checks$(NC)"
+	@$(PYTHON) scripts/run_type_check.py --target core
 	@echo "$(GREEN)✅ Enhanced type checking completed$(NC)"
 
 type-check-all:
 	@echo "$(YELLOW)Running comprehensive type checks...$(NC)"
-	@command -v mypy >/dev/null 2>&1 && python scripts/run_type_check.py --target all || echo "$(BLUE)mypy not available, skipping type checks$(NC)"
+	@$(PYTHON) scripts/run_type_check.py --target all
 	@echo "$(GREEN)✅ Comprehensive type checking completed$(NC)"
 
 type-check-strict:
 	@echo "$(YELLOW)Running strict type checks...$(NC)"
-	@command -v mypy >/dev/null 2>&1 && python scripts/run_type_check.py --target core --strict || echo "$(BLUE)mypy not available, skipping type checks$(NC)"
+	@$(PYTHON) scripts/run_type_check.py --target core --strict
 	@echo "$(GREEN)✅ Strict type checking completed$(NC)"
 
 type-check-cache-info:
 	@echo "$(YELLOW)Checking type cache information...$(NC)"
-	@python scripts/run_type_check.py --target core --cache-info
+	@$(PYTHON) scripts/run_type_check.py --target core --cache-info
 	@echo "$(GREEN)✅ Cache information displayed$(NC)"
 
 claude:
@@ -344,26 +393,26 @@ claude:
 	@echo ""
 	@echo "$(YELLOW)Phase 1: Code Formatting & Style$(NC)"
 	@echo "$(BLUE)→ Running Ruff formatter...$(NC)"
-	@ruff format xraylabtool/ tests/
+	@$(RUFF) format xraylabtool/ tests/
 	@echo "$(BLUE)→ Running Ruff import sorting + linting with auto-fixes...$(NC)"
-	@ruff check xraylabtool/ tests/ --fix --show-fixes || true
+	@$(RUFF) check xraylabtool/ tests/ --fix --show-fixes
 	@echo "$(GREEN)✅ Phase 1 Complete: Formatting & linting$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Phase 2: Type Safety Validation$(NC)"
 	@echo "$(BLUE)→ Running MyPy strict type checking...$(NC)"
-	@command -v mypy >/dev/null 2>&1 && (mypy xraylabtool/ --strict --show-error-codes && echo "$(GREEN)✅ MyPy validation passed$(NC)") || echo "$(BLUE)MyPy not available, skipping type checks$(NC)"
+	@$(MYPY) xraylabtool/ --strict --show-error-codes
 	@echo "$(GREEN)✅ Phase 2 Complete: Type safety$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Phase 3: Test Coverage Validation$(NC)"
 	@echo "$(BLUE)→ Running comprehensive test suite...$(NC)"
-	@pytest tests/ --cov=xraylabtool --cov-report=term-missing --cov-report=json:coverage-claude.json --cov-fail-under=42 -q
-	@echo "$(GREEN)✅ Phase 3 Complete: Test coverage (≥42%)$(NC)"
+	@$(MAKE) --no-print-directory test PYTEST_COV_ARGS="--cov-fail-under=$(COV_MIN) --cov-report=json:coverage-claude.json -q"
+	@echo "$(GREEN)✅ Phase 3 Complete: Test coverage (≥$(COV_MIN)%)$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Phase 4: Performance Regression Tests$(NC)"
 	@echo "$(BLUE)→ Running optimization validation...$(NC)"
-	@pytest tests/performance/test_optimization_validation.py -v --tb=short -x
+	@$(PYTEST) $(PERF) tests/performance/test_optimization_validation.py --tb=short -x
 	@echo "$(BLUE)→ Running numerical stability checks...$(NC)"
-	@pytest tests/unit/test_numerical_stability.py::TestNumericalStabilityChecks -v --tb=short
+	@$(PYTEST) $(NO_COV) tests/unit/test_numerical_stability.py::TestNumericalStabilityChecks --tb=short
 	@echo "$(GREEN)✅ Phase 4 Complete: Performance validation$(NC)"
 	@echo ""
 	@echo "$(GREEN)🎉 Claude Code Quality Analysis Complete!$(NC)"
@@ -376,9 +425,9 @@ claude:
 # Documentation
 docs:
 	@echo "$(YELLOW)Building Sphinx documentation...$(NC)"
-	sphinx-build -b html docs docs/_build/html
+	$(SPHINXBUILD) -b html docs docs/_build/html
 	@echo "$(GREEN)✅ Documentation built successfully in docs/_build/html/$(NC)"
-	@echo "$(BLUE)📖 View at: file://$(shell pwd)/docs/_build/html/index.html$(NC)"
+	@echo "$(BLUE)📖 View at: file://$(CURDIR)/docs/_build/html/index.html$(NC)"
 
 docs-log:
 	@echo "$(YELLOW)Building Sphinx documentation with logging...$(NC)"
@@ -386,11 +435,11 @@ docs-log:
 	@echo "$(BLUE)🕒 Build started at: $$(date)$(NC)" | tee docs_build.log
 	@echo "$(BLUE)📁 Working directory: $$(pwd)$(NC)" | tee -a docs_build.log
 	@echo "" >> docs_build.log
-	@if sphinx-build -b html docs docs/_build/html 2>&1 | tee -a docs_build.log; then \
+	@if $(SPHINXBUILD) -b html docs docs/_build/html 2>&1 | tee -a docs_build.log; then \
 		echo "" >> docs_build.log; \
 		echo "$(BLUE)🕒 Build completed successfully at: $$(date)$(NC)" | tee -a docs_build.log; \
 		echo "$(GREEN)✅ Documentation built successfully with full log in docs_build.log$(NC)"; \
-		echo "$(BLUE)📖 View at: file://$(shell pwd)/docs/_build/html/index.html$(NC)"; \
+		echo "$(BLUE)📖 View at: file://$(CURDIR)/docs/_build/html/index.html$(NC)"; \
 	else \
 		echo "" >> docs_build.log; \
 		echo "$(RED)❌ Build failed at: $$(date)$(NC)" | tee -a docs_build.log; \
@@ -402,7 +451,7 @@ docs-serve: docs
 	@echo "$(YELLOW)Serving documentation locally...$(NC)"
 	@echo "$(BLUE)Documentation server starting at http://localhost:8000$(NC)"
 	@echo "$(BLUE)Press Ctrl+C to stop the server$(NC)"
-	cd docs/_build/html && python -m http.server 8000
+	cd docs/_build/html && $(PYTHON) -m http.server 8000
 
 docs-clean:
 	@echo "$(YELLOW)Cleaning documentation build files...$(NC)"
@@ -412,88 +461,58 @@ docs-clean:
 
 docs-linkcheck:
 	@echo "$(YELLOW)Checking documentation links...$(NC)"
-	sphinx-build -b linkcheck docs docs/_build/linkcheck
+	$(SPHINXBUILD) -b linkcheck docs docs/_build/linkcheck
 	@echo "$(GREEN)✅ Link check completed$(NC)"
 
 docs-pdf:
 	@echo "$(YELLOW)Building PDF documentation...$(NC)"
-	sphinx-build -b latex docs docs/_build/latex
+	$(SPHINXBUILD) -b latex docs docs/_build/latex
 	cd docs/_build/latex && pdflatex XRayLabTool.tex || echo "$(BLUE)LaTeX not available, PDF build skipped$(NC)"
 	@echo "$(GREEN)✅ PDF documentation build attempted$(NC)"
 
 docs-test:
 	@echo "$(YELLOW)Testing documentation build with warnings as errors...$(NC)"
-	sphinx-build -W -b html docs docs/_build/test
+	$(SPHINXBUILD) -W -b html docs docs/_build/test
 	@echo "$(GREEN)✅ Documentation test build completed$(NC)"
 
 docs-doctest:
 	@echo "$(YELLOW)Testing code examples in docstrings and documentation...$(NC)"
-	sphinx-build -b doctest docs docs/_build/doctest
+	$(SPHINXBUILD) -b doctest docs docs/_build/doctest
 	@echo "$(GREEN)✅ Documentation code examples tested$(NC)"
 
 docs-test-all:
 	@echo "$(YELLOW)Running comprehensive documentation testing...$(NC)"
-	@command -v python scripts/test_docs.py >/dev/null 2>&1 && \
-		python scripts/test_docs.py || \
-		(echo "$(BLUE)Documentation testing script not found. Running basic tests...$(NC)" && \
-		 $(MAKE) docs-test && $(MAKE) docs-doctest && $(MAKE) docs-linkcheck)
+	$(PYTHON) scripts/test_docs.py
 	@echo "$(GREEN)✅ Comprehensive documentation testing completed$(NC)"
 
 docs-autobuild:
 	@echo "$(YELLOW)Starting live documentation server with auto-rebuild...$(NC)"
-	@command -v sphinx-autobuild >/dev/null 2>&1 && \
-		(echo "$(BLUE)Live server at http://localhost:8000 (auto-reloads on changes)$(NC)" && \
-		 sphinx-autobuild docs docs/_build/html --host 0.0.0.0 --port 8000) || \
-		(echo "$(BLUE)sphinx-autobuild not available. Install with: pip install sphinx-autobuild$(NC)" && \
-		 echo "$(BLUE)Using regular build and serve instead...$(NC)" && make docs-serve)
+	@if $(PYTHON) -c "import sphinx_autobuild" >/dev/null 2>&1; then \
+		echo "$(BLUE)Live server at http://localhost:8000 (auto-reloads on changes)$(NC)"; \
+		$(PYTHON) -m sphinx_autobuild docs docs/_build/html --host 0.0.0.0 --port 8000; \
+	else \
+		echo "$(BLUE)sphinx-autobuild not available. Install with: uv pip install sphinx-autobuild$(NC)"; \
+		echo "$(BLUE)Using regular build and serve instead...$(NC)"; \
+		$(MAKE) docs-serve; \
+	fi
 
 # Cleanup
 clean:
 	@echo "$(YELLOW)Cleaning build artifacts and cache files...$(NC)"
-	@echo "$(BLUE)Note: Virtual environments (venv/, env/, .env/) are preserved$(NC)"
-	rm -rf build/
-	rm -rf dist/
-	rm -rf *.egg-info/
-	rm -rf htmlcov/
-	rm -rf .coverage
-	rm -rf coverage.xml
-	rm -rf .pytest_cache/
-	rm -rf benchmark.json
-	rm -rf .benchmarks
-	rm -rf bandit-report.json
-	rm -rf bandit_report.json
-	rm -rf coverage.json
-	rm -rf consistency_report.json
-	rm -rf CLAUDE_QUALITY_SUMMARY.json
-	rm -rf coverage-claude.json
-	rm -rf bandit-claude-report.json
-	rm -rf bottleneck_analysis_report.json
-	rm -rf CODE_QUALITY_REPORT.md
-	rm -rf docs_build.log
-	rm -rf test_results.log
-	rm -rf baseline_ci_report.json
-	rm -rf performance_baseline_summary.json
-	rm -rf performance_history.json
-	rm -rf test_persistence.json
-	rm -rf reports/
-	rm -rf .tox/
-	rm -rf .mypy_cache/
-	rm -rf .ruff_cache/
-	rm -rf .xraylabtool_cache/
-	find . -type d -name __pycache__ -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
+	@echo "$(BLUE)Note: Virtual environments (.venv/, venv/, env/) are preserved$(NC)"
+	rm -rf build/ dist/ *.egg-info/
+	rm -rf htmlcov/ .coverage .coverage.* coverage.xml coverage.json coverage-claude.json
+	rm -rf .pytest_cache/ .benchmarks/ benchmark_report.json pytest-results.xml
+	rm -rf .mypy_cache/ .ruff_cache/
+	rm -rf docs_build.log test_results.log
+	find . \( -path ./.venv -o -path ./.git \) -prune -o -type d -name __pycache__ -exec rm -rf {} +
 	@echo "$(GREEN)✅ Cleanup completed (virtual environments preserved)$(NC)"
 
 clean-all: clean docs-clean
 	@echo "$(YELLOW)Deep cleaning ALL artifacts including virtual environments...$(NC)"
-	@echo "$(RED)WARNING: This will delete virtual environments (venv/, env/, .env/)$(NC)"
-	rm -rf venv/ env/ .env/
-	rm -rf node_modules/
-	rm -rf .DS_Store
-	find . -name ".DS_Store" -delete 2>/dev/null || true
-	@echo "$(GREEN)✅ Deep cleanup completed (all files removed)$(NC)"
-
-# Basic cleanup - enhanced cleanup features removed for simplicity
+	@echo "$(RED)WARNING: This will delete virtual environments (.venv/, venv/, env/, ENV/)$(NC)"
+	rm -rf .venv/ venv/ env/ ENV/
+	@echo "$(GREEN)✅ Deep cleanup completed (run 'make install' to rebuild .venv)$(NC)"
 
 # Development Workflows
 dev: check-format lint type-check test-fast
@@ -507,18 +526,18 @@ verify:
 	@echo "$(BLUE)  FULL LOCAL CI VERIFICATION$(NC)"
 	@echo "$(BLUE)======================================$(NC)"
 	@echo ""
-	@echo "Step 1/4: Linting"
-	@$(PYTHON) -m ruff check xraylabtool/ tests/ || (echo "$(RED)Lint check failed!$(NC)" && exit 1)
+	@echo "Step 1/4: Format + lint"
+	@$(RUFF) format --check xraylabtool/ tests/ || (echo "$(RED)Format check failed! Run 'make format'$(NC)" && exit 1)
+	@$(RUFF) check xraylabtool/ tests/ || (echo "$(RED)Lint check failed!$(NC)" && exit 1)
 	@echo ""
-	@echo "Step 2/4: Type checking (advisory)"
-	@$(PYTHON) -m mypy xraylabtool/ --no-error-summary 2>&1 | tail -1 || true
-	@echo "$(YELLOW)Note: Type checking is advisory. See 'make type-check' for full report.$(NC)"
+	@echo "Step 2/4: Type checking"
+	@$(MYPY) xraylabtool/ --no-error-summary || (echo "$(RED)Type check failed!$(NC)" && exit 1)
 	@echo ""
 	@echo "Step 3/4: Unit tests"
-	@$(PYTEST) tests/unit/ --ignore=tests/unit/test_gui_widgets.py $(PYTEST_XDIST_ARGS) -q --tb=line || (echo "$(RED)Unit tests failed!$(NC)" && exit 1)
+	@$(PYTEST) tests/unit/ $(GUI_IGNORE) $(PYTEST_XDIST_ARGS) $(NO_COV) -q --tb=line || (echo "$(RED)Unit tests failed!$(NC)" && exit 1)
 	@echo ""
 	@echo "Step 4/4: Characterization tests"
-	@$(PYTEST) tests/characterization/ $(PYTEST_XDIST_ARGS) -q --tb=line || (echo "$(RED)Characterization tests failed!$(NC)" && exit 1)
+	@$(PYTEST) tests/characterization/ $(PYTEST_XDIST_ARGS) $(NO_COV) -q --tb=line || (echo "$(RED)Characterization tests failed!$(NC)" && exit 1)
 	@echo ""
 	@echo "$(GREEN)======================================$(NC)"
 	@echo "$(GREEN)  ALL CHECKS PASSED - SAFE TO PUSH$(NC)"
@@ -529,12 +548,12 @@ verify-fast:
 	@echo "$(BLUE)  QUICK LOCAL CI VERIFICATION$(NC)"
 	@echo "$(BLUE)======================================$(NC)"
 	@echo ""
-	@echo "Step 1/2: Linting"
-	@$(PYTHON) -m ruff check xraylabtool/ tests/ || (echo "$(RED)Lint check failed!$(NC)" && exit 1)
+	@echo "Step 1/2: Format + lint"
+	@$(RUFF) format --check xraylabtool/ tests/ || (echo "$(RED)Format check failed! Run 'make format'$(NC)" && exit 1)
+	@$(RUFF) check xraylabtool/ tests/ || (echo "$(RED)Lint check failed!$(NC)" && exit 1)
 	@echo ""
-	@echo "Step 2/2: Type checking (advisory)"
-	@$(PYTHON) -m mypy xraylabtool/ --no-error-summary 2>&1 | tail -1 || true
-	@echo "$(YELLOW)Note: Type checking is advisory. See 'make type-check' for full report.$(NC)"
+	@echo "Step 2/2: Type checking"
+	@$(MYPY) xraylabtool/ --no-error-summary || (echo "$(RED)Type check failed!$(NC)" && exit 1)
 	@echo ""
 	@echo "$(GREEN)======================================$(NC)"
 	@echo "$(GREEN)  QUICK CHECKS PASSED$(NC)"
@@ -547,112 +566,80 @@ validate: format lint type-check-strict test-coverage test-benchmarks cli-test d
 ci-test: clean install version-check lint type-check test-coverage test-benchmarks cli-test docs-test
 	@echo "$(GREEN)✅ CI simulation completed successfully$(NC)"
 
-release-check: clean dev-setup version-check validate docs docs-linkcheck build
+release-check: clean dev-setup version-check validate docs-doctest docs docs-linkcheck build test-install-local
 	@echo "$(YELLOW)Pre-release validation checklist:$(NC)"
 	@echo "$(BLUE)✓ Code formatted and linted$(NC)"
 	@echo "$(BLUE)✓ All tests passing with coverage$(NC)"
 	@echo "$(BLUE)✓ CLI functionality verified$(NC)"
-	@echo "$(BLUE)✓ Documentation built and links checked$(NC)"
-	@echo "$(BLUE)✓ Package built successfully$(NC)"
+	@echo "$(BLUE)✓ Documentation built, doctested and links checked$(NC)"
+	@echo "$(BLUE)✓ Package built, twine-checked and installed into a clean venv$(NC)"
 	@echo "$(BLUE)✓ Version consistency verified$(NC)"
 	@echo "$(GREEN)✅ Ready for release!$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Next steps:$(NC)"
-	@echo "  1. Update CHANGELOG.md with release notes"
-	@echo "  2. Tag release: git tag v$$(python -c 'import xraylabtool; print(xraylabtool.__version__)')"
+	@echo "  1. Commit the version bump and changelog, push, and wait for CI"
+	@echo "  2. Tag release: git tag -a v$$($(PYTHON) scripts/check_version.py --print) -m 'Release v$$($(PYTHON) scripts/check_version.py --print)'"
 	@echo "  3. Push tag: git push origin --tags"
-	@echo "  4. Upload to PyPI: make upload"
+	@echo "  4. Create the GitHub Release, then run the 'Publish to PyPI' workflow"
 
 # Performance Monitoring
 perf-baseline:
 	@echo "$(YELLOW)Creating performance baseline...$(NC)"
-	pytest tests/integration/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-save=baseline
+	$(PYTEST) --run-performance $(NO_COV) tests/integration/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-save=baseline
 	@echo "$(GREEN)✅ Baseline saved$(NC)"
 
 perf-compare:
 	@echo "$(YELLOW)Comparing against performance baseline...$(NC)"
-	pytest tests/integration/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-compare=baseline
+	$(PYTEST) --run-performance $(NO_COV) tests/integration/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-compare=baseline
 	@echo "$(GREEN)✅ Performance comparison completed$(NC)"
 
 perf-report:
 	@echo "$(YELLOW)Generating performance report...$(NC)"
-	pytest tests/integration/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-json=benchmark_report.json
+	$(PYTEST) --run-performance $(NO_COV) tests/integration/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-json=benchmark_report.json
 	@echo "$(GREEN)✅ Performance report saved to benchmark_report.json$(NC)"
 
-# Installation Testing
+# Installation Testing (scripts/test_install.py: fresh venv, one SiO2 calculation)
 test-install-local: build
 	@echo "$(YELLOW)Testing local wheel installation in clean environment...$(NC)"
-	@python -c "
-	import sys, subprocess, tempfile, shutil;
-	from pathlib import Path;
-	wheel_files = list(Path('dist').glob('*.whl'));
-	if not wheel_files: print('No wheel files found'); sys.exit(1);
-	wheel = wheel_files[0];
-	with tempfile.TemporaryDirectory() as tmpdir:
-		venv_path = Path(tmpdir) / 'test_venv';
-		subprocess.run([sys.executable, '-m', 'venv', str(venv_path)], check=True);
-		python_exe = venv_path / 'bin' / 'python' if sys.platform != 'win32' else venv_path / 'Scripts' / 'python.exe';
-		subprocess.run([str(python_exe), '-m', 'pip', 'install', str(wheel.absolute())], check=True);
-		result = subprocess.run([str(python_exe), '-c', 'import xraylabtool as xlt; result = xlt.calculate_single_material_properties(\"SiO2\", 10.0, 2.2); print(f\"✓ Local install test: {result.critical_angle_degrees[0]:.3f}°\")'], capture_output=True, text=True, check=True);
-		print(result.stdout.strip());
-	"
+	@$(PYTHON) scripts/test_install.py wheel
 	@echo "$(GREEN)✅ Local installation test passed$(NC)"
 
 test-install-testpypi:
 	@echo "$(YELLOW)Testing TestPyPI installation in clean environment...$(NC)"
-	@python -c "
-	import sys, subprocess, tempfile;
-	from pathlib import Path;
-	with tempfile.TemporaryDirectory() as tmpdir:
-		venv_path = Path(tmpdir) / 'test_venv';
-		subprocess.run([sys.executable, '-m', 'venv', str(venv_path)], check=True);
-		python_exe = venv_path / 'bin' / 'python' if sys.platform != 'win32' else venv_path / 'Scripts' / 'python.exe';
-		subprocess.run([str(python_exe), '-m', 'pip', 'install', '--index-url', 'https://test.pypi.org/simple/', '--extra-index-url', 'https://pypi.org/simple/', 'xraylabtool'], check=True);
-		result = subprocess.run([str(python_exe), '-c', 'import xraylabtool as xlt; result = xlt.calculate_single_material_properties(\"SiO2\", 10.0, 2.2); print(f\"✓ TestPyPI install test: {result.critical_angle_degrees[0]:.3f}°\")'], capture_output=True, text=True, check=True);
-		print(result.stdout.strip());
-	"
+	@$(PYTHON) scripts/test_install.py testpypi
 	@echo "$(GREEN)✅ TestPyPI installation test passed$(NC)"
 
 test-install-pypi:
 	@echo "$(YELLOW)Testing PyPI installation in clean environment...$(NC)"
-	@python -c "
-	import sys, subprocess, tempfile;
-	from pathlib import Path;
-	with tempfile.TemporaryDirectory() as tmpdir:
-		venv_path = Path(tmpdir) / 'test_venv';
-		subprocess.run([sys.executable, '-m', 'venv', str(venv_path)], check=True);
-		python_exe = venv_path / 'bin' / 'python' if sys.platform != 'win32' else venv_path / 'Scripts' / 'python.exe';
-		subprocess.run([str(python_exe), '-m', 'pip', 'install', 'xraylabtool'], check=True);
-		result = subprocess.run([str(python_exe), '-c', 'import xraylabtool as xlt; result = xlt.calculate_single_material_properties(\"SiO2\", 10.0, 2.2); print(f\"✓ PyPI install test: {result.critical_angle_degrees[0]:.3f}°\")'], capture_output=True, text=True, check=True);
-		print(result.stdout.strip());
-	"
+	@$(PYTHON) scripts/test_install.py pypi
 	@echo "$(GREEN)✅ PyPI installation test passed$(NC)"
 
 # Package Building & Release
 build: clean
 	@echo "$(YELLOW)Building distribution packages...$(NC)"
-	uv run python -m build
+	uv build
+	$(PYTHON) -m twine check dist/*
 	@echo "$(GREEN)✅ Packages built in dist/$(NC)"
 	@ls -la dist/
 
 upload-test: build
 	@echo "$(YELLOW)Uploading to TestPyPI...$(NC)"
-	python -m twine upload --repository testpypi dist/*
+	$(PYTHON) -m twine upload --repository testpypi dist/*
 	@echo "$(GREEN)✅ Uploaded to TestPyPI$(NC)"
-	@echo "$(BLUE)Test installation: pip install -i https://test.pypi.org/simple/ xraylabtool$(NC)"
+	@echo "$(BLUE)Test installation: make test-install-testpypi$(NC)"
 
 upload: build
 	@echo "$(YELLOW)Uploading to PyPI...$(NC)"
 	@echo "$(RED)WARNING: This will upload to production PyPI!$(NC)"
-	@read -p "Are you sure? (y/N) " confirm && [ "$$confirm" = "y" ] || exit 1
-	python -m twine upload dist/*
+	@printf "Are you sure? (y/N) "; read confirm; [ "$$confirm" = "y" ] || exit 1
+	$(PYTHON) -m twine upload dist/*
 	@echo "$(GREEN)✅ Uploaded to PyPI$(NC)"
 
 # Utility Targets
 status:
 	@echo "$(BLUE)XRayLabTool Project Status:$(NC)"
-	@echo "$(YELLOW)Version:$(NC) $$(python -c 'import xraylabtool; print(xraylabtool.__version__)')"
-	@echo "$(YELLOW)Python:$(NC) $$(python --version)"
+	@echo "$(YELLOW)Version:$(NC) $$($(PYTHON) -c 'import xraylabtool; print(xraylabtool.__version__)')"
+	@echo "$(YELLOW)Python:$(NC) $$($(PYTHON) --version)"
 	@echo "$(YELLOW)Location:$(NC) $$(pwd)"
 	@echo "$(YELLOW)Git branch:$(NC) $$(git branch --show-current 2>/dev/null || echo 'Not a git repository')"
 	@echo "$(YELLOW)Git status:$(NC)"
@@ -660,27 +647,22 @@ status:
 
 info:
 	@echo "$(BLUE)XRayLabTool Package Information:$(NC)"
-	@python -c "
-	import xraylabtool as xlt;
-	import sys;
-	print(f'Package: XRayLabTool v{xlt.__version__}');
-	print(f'Python: {sys.version}');
-	result = xlt.calculate_single_material_properties('SiO2', 10.0, 2.2);
-	print(f'API Test: ✓ Critical angle = {result.critical_angle_degrees[0]:.3f}°');
-	"
+	@$(PYTHON) -c "import sys, xraylabtool as xlt; r = xlt.calculate_single_material_properties('SiO2', 10.0, 2.2); print(f'Package: XRayLabTool v{xlt.__version__}'); print(f'Python: {sys.version}'); print(f'API Test: ✓ Critical angle = {r.critical_angle_degrees[0]:.3f}°')"
 	@echo "$(YELLOW)CLI Test:$(NC)"
 	@xraylabtool --version
 
 quick-test:
 	@echo "$(YELLOW)Quick functionality test...$(NC)"
-	@python -c "import xraylabtool as xlt; result = xlt.calculate_single_material_properties('SiO2', 10.0, 2.2); print(f'✓ Python API: {result.critical_angle_degrees[0]:.3f}°')"
+	@$(PYTHON) -c "import xraylabtool as xlt; result = xlt.calculate_single_material_properties('SiO2', 10.0, 2.2); print(f'✓ Python API: {result.critical_angle_degrees[0]:.3f}°')"
 	@xraylabtool calc SiO2 -e 10.0 -d 2.2 --fields critical_angle_degrees | grep -E "Critical|SiO2" | head -2
 	@echo "$(GREEN)✅ Quick test passed$(NC)"
 
 # GPU Acceleration Targets
 # ========================
-# System CUDA detection and JAX GPU installation.
-# See: GPU Acceleration Setup.txt for full documentation.
+# System CUDA detection and JAX GPU installation. The gpu_cuda12 / gpu_cuda13 extras
+# are declared conflicting in pyproject.toml, so `uv sync --extra ...` swaps one for the
+# other and removes the plugin that is no longer selected.
+# The extras are dropped again by a plain `uv sync`; re-run the target after one.
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo "Windows")
 ifeq ($(UNAME_S),Linux)
@@ -705,6 +687,9 @@ ifeq ($(PLATFORM),linux)
 	GPU_NAME=$$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1); \
 	echo "System CUDA: $$CUDA_FULL"; \
 	echo "GPU: $$GPU_NAME (SM $$SM_DISPLAY)"; \
+	case "$$SM_VERSION" in \
+		""|*[!0-9]*) echo "$(RED)Error: nvidia-smi could not report the GPU compute capability$(NC)"; exit 1;; \
+	esac; \
 	if [ "$$CUDA_VERSION" = "13" ]; then \
 		if [ "$$SM_VERSION" -ge 75 ]; then \
 			$(MAKE) install-jax-gpu-cuda13; \
@@ -726,86 +711,54 @@ ifeq ($(PLATFORM),linux)
 else
 	@echo "$(RED)Error: GPU acceleration requires Linux$(NC)"
 	@echo "  Current platform: $(PLATFORM)"
+	@exit 1
 endif
 
 install-jax-gpu-cuda13:
 	@echo "$(YELLOW)Installing JAX with system CUDA 13...$(NC)"
 ifeq ($(PLATFORM),linux)
-	@echo "Step 1/3: Removing incompatible CUDA plugins..."
-	@pip uninstall -y jax-cuda12-plugin jax-cuda12-pjrt jax-cuda13-plugin jax-cuda13-pjrt 2>/dev/null || true
-	@echo "Step 2/3: Removing old jax/jaxlib..."
-	@pip uninstall -y jax jaxlib 2>/dev/null || true
-	@echo "Step 3/3: Installing jax[cuda13-local]..."
-	@pip install "jax[cuda13-local]>=0.8.0"
+	@if command -v uv >/dev/null 2>&1; then \
+		uv sync --extra gpu_cuda13; \
+	else \
+		$(PYTHON) -m pip uninstall -y jax-cuda12-plugin jax-cuda12-pjrt 2>/dev/null || true; \
+		$(PYTHON) -m pip install -e ".[gpu_cuda13]"; \
+	fi
 	@$(MAKE) gpu-check
 	@echo "$(GREEN)✅ GPU acceleration installed (CUDA 13)$(NC)"
 else
 	@echo "$(RED)Error: CUDA 13 GPU acceleration requires Linux$(NC)"
+	@exit 1
 endif
 
 install-jax-gpu-cuda12:
 	@echo "$(YELLOW)Installing JAX with system CUDA 12...$(NC)"
 ifeq ($(PLATFORM),linux)
-	@echo "Step 1/3: Removing incompatible CUDA plugins..."
-	@pip uninstall -y jax-cuda12-plugin jax-cuda12-pjrt jax-cuda13-plugin jax-cuda13-pjrt 2>/dev/null || true
-	@echo "Step 2/3: Removing old jax/jaxlib..."
-	@pip uninstall -y jax jaxlib 2>/dev/null || true
-	@echo "Step 3/3: Installing jax[cuda12-local]..."
-	@pip install "jax[cuda12-local]>=0.8.0"
+	@if command -v uv >/dev/null 2>&1; then \
+		uv sync --extra gpu_cuda12; \
+	else \
+		$(PYTHON) -m pip uninstall -y jax-cuda13-plugin jax-cuda13-pjrt 2>/dev/null || true; \
+		$(PYTHON) -m pip install -e ".[gpu_cuda12]"; \
+	fi
 	@$(MAKE) gpu-check
 	@echo "$(GREEN)✅ GPU acceleration installed (CUDA 12)$(NC)"
 else
 	@echo "$(RED)Error: CUDA 12 GPU acceleration requires Linux$(NC)"
+	@exit 1
 endif
 
 gpu-check:
 	@echo "$(YELLOW)GPU Verification$(NC)"
-	@$(PYTHON) -c "\
-	import jax; \
-	v = jax.__version__; \
-	b = jax.default_backend(); \
-	d = jax.devices(); \
-	gpu = sum(1 for x in d if 'cuda' in str(x).lower()); \
-	print(f'JAX {v}  backend={b}  devices={gpu} GPU'); \
-	print('$(YELLOW)Note: Running on CPU (no GPU detected)$(NC)') if b != 'gpu' else None; \
-	import jax.numpy as jnp; \
-	s = jnp.linalg.svd(jnp.eye(3))[1]; \
-	print(f'SVD check: {s}'); \
-	print('All checks passed')"
+	@$(PYTHON) scripts/gpu_check.py
 
 gpu-diagnose:
 	@echo "$(YELLOW)GPU Diagnostics$(NC)"
 	@echo ""
-	@echo "1. Installed JAX/CUDA packages:"
-	@$(PYTHON) -m pip list 2>/dev/null | grep -iE "^(jax|cuda)" || echo "  (none found)"
-	@echo ""
-	@echo "2. Plugin conflict check:"
-	@HAS12=$$($(PYTHON) -m pip list 2>/dev/null | grep -c "jax-cuda12-plugin"); \
-	HAS13=$$($(PYTHON) -m pip list 2>/dev/null | grep -c "jax-cuda13-plugin"); \
-	if [ "$$HAS12" -gt 0 ] && [ "$$HAS13" -gt 0 ]; then \
-		echo "  $(RED)CONFLICT: Both cuda12 and cuda13 plugins installed!$(NC)"; \
-		echo "  Fix: make install-jax-gpu (will clean and reinstall)"; \
-	elif [ "$$HAS12" -gt 0 ] || [ "$$HAS13" -gt 0 ]; then \
-		echo "  $(GREEN)OK: Single plugin set installed$(NC)"; \
-	else \
-		echo "  No CUDA plugins installed (CPU-only mode)"; \
-	fi
-	@echo ""
-	@echo "3. Version match check:"
-	@$(PYTHON) -c "\
-	import importlib.metadata as md; \
-	jaxlib_v = md.version('jaxlib'); \
-	print(f'  jaxlib: {jaxlib_v}'); \
-	for pkg in ['jax-cuda12-plugin','jax-cuda13-plugin','jax-cuda12-pjrt','jax-cuda13-pjrt']: \
-	    try: \
-	        v = md.version(pkg); \
-	        match = 'OK' if v == jaxlib_v else 'MISMATCH'; \
-	        print(f'  {pkg}: {v} [{match}]'); \
-	    except md.PackageNotFoundError: pass" 2>/dev/null || echo "  (could not check)"
-	@echo ""
-	@echo "4. System CUDA:"
+	@echo "1. System CUDA:"
 	@nvcc --version 2>/dev/null | grep "release" || echo "  nvcc not found"
 	@echo ""
-	@echo "5. GPU hardware:"
+	@echo "2. GPU hardware:"
 	@nvidia-smi --query-gpu=name,compute_cap,driver_version --format=csv,noheader 2>/dev/null \
 		|| echo "  nvidia-smi not found (no NVIDIA GPU or driver not installed)"
+	@echo ""
+	@echo "3. Installed JAX/CUDA packages and plugin conflicts:"
+	@$(PYTHON) scripts/gpu_check.py --diagnose

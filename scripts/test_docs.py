@@ -83,7 +83,7 @@ def test_doctests(verbose: bool = False) -> tuple[int, int]:
                 "sphinx",
                 "-b",
                 "doctest",
-                "docs/source",
+                "docs",
                 "docs/_build/doctest",
             ],
             capture_output=True,
@@ -115,7 +115,7 @@ def test_rst_code_examples(verbose: bool = False) -> tuple[int, int]:
     total_failures = 0
     total_tests = 0
 
-    rst_files = glob.glob("docs/source/**/*.rst", recursive=True)
+    rst_files = glob.glob("docs/**/*.rst", recursive=True)
 
     for rst_file in rst_files:
         total_tests += 1
@@ -253,7 +253,7 @@ def test_links(verbose: bool = False) -> tuple[int, int]:
                 "sphinx",
                 "-b",
                 "linkcheck",
-                "docs/source",
+                "docs",
                 "docs/_build/linkcheck",
             ],
             capture_output=True,
@@ -300,7 +300,7 @@ def check_documentation_coverage(verbose: bool = False) -> dict[str, int]:
                 "sphinx",
                 "-b",
                 "coverage",
-                "docs/source",
+                "docs",
                 "docs/_build/coverage",
             ],
             capture_output=True,
@@ -396,7 +396,7 @@ def check_accessibility(verbose: bool = False) -> tuple[int, int]:
                 "sphinx",
                 "-b",
                 "html",
-                "docs/source",
+                "docs",
                 "docs/_build/html",
             ],
             capture_output=True,
@@ -493,9 +493,9 @@ def run_style_checks(verbose: bool = False) -> tuple[int, int]:
         result = subprocess.run(
             [
                 "doc8",
-                "docs/source",
+                "docs",
                 "--ignore-path",
-                "docs/source/_build",
+                "docs/_build",
                 "--max-line-length",
                 "100",
             ],
