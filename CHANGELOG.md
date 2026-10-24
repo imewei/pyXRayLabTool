@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - `safety` dev dependency, its `[tool.safety]` table and its steps in the `security.yml` and `dependencies.yml` workflows. `pip-audit` is now the only dependency vulnerability gate. The lock also drops the 11 packages only `safety` required (`nltk`, `authlib`, `marshmallow`, `tenacity`, ...).
+- `repomix-output.xml` (a 9.6 MB snapshot of the repository from 2026-09-17, now out of date), `scripts/create_favicon.py` (unreferenced one-off generator) and the root-level `.graphify_uncached.txt` (a graphify temp file that was committed by mistake and contained another machine's absolute paths).
+- The 2026-04 audit reports `docs/audit_remediation_plan.md`, `docs/security_audit_cicd.md` and `docs/test_coverage_audit.md`, which were not part of the documentation build, and their entries in `docs/conf.py` `exclude_patterns`.
+- Dead ruff `per-file-ignores` for files that no longer exist (`xraylabtool/core/*.py`, `**/interfaces/completion.py`).
 
 ### Fixed
 - OSTI GitLab mirror: tags are force-pushed in a separate command, so a re-tagged release (such as `v0.4.6`) no longer fails the job with "tag already exists".
@@ -41,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `validate_chemical_formula` rejected Ac, Fr, Pa, Ra, Th and U although scattering data exists for them.
 - `scattering_data.load_data_file` failed on pandas 3 (`delim_whitespace` was removed).
 - GUI: both calculation-error slots raised `KeyError` while logging (reserved `message` field), so the error dialog never appeared; `CalculationWorker` crashed on `functools.partial`/builtin callables and mistook a local variable named `progress_cb` for a parameter.
+- The `perf-baseline`, `perf-compare` and `perf-report` Makefile targets pointed at `tests/test_integration.py`, which moved to `tests/integration/test_integration.py`, so they collected nothing.
 
 ### Security
 - `filelock` 3.32.7 to 4.2.4 (CVE-2026-112940, fixed in 4.2.1; build/dev tooling only). The update was blocked by `safety`, which required `filelock<4`.
@@ -48,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - API reference now covers the CLI `parser`, `formatting` and `utils` modules and the GUI main-window tab, widget, style and table-formatter modules; the backend classes, `get_backend`, `set_backend` and `InterpolationFactory` have docstrings.
 - Testing guide: replaced the unsupported ">95% coverage" targets with the actual CI gate (22%) and the Codecov project/patch behavior, and corrected the CI triggers and Python matrix. Contributing guide: `make verify` and where the ruff version is pinned. Getting started: supported JAX versions.
-- Status notes on the 2026-04-07 audit reports (`safety` has since been removed); Python code blocks in Markdown formatted with ruff 0.17.2.
+- Python code blocks in Markdown formatted with ruff 0.17.2.
 
 ## [0.4.6] - 2026-09-17
 
