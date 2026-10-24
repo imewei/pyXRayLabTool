@@ -391,13 +391,15 @@ exclude = [
 [tool.ruff.lint.per-file-ignores]
 # Every code below fires on the files its pattern matches (checked by running ruff
 # with the code selected); codes covered by the global `ignore` are not repeated.
+# S-series ignores are needed by the CI security job (`ruff check --select S`), which the
+# default `select` below does not run, so check them with `--select S` before pruning.
 # NOTE: in ruff globs `*` also matches across directories.
 "tests/*" = ["ARG", "PLC0415", "S311", "RUF002", "RUF003", "RUF012", "S110", "N806", "B007", "B905", "S607", "F401", "PLW0603", "PLW2901", "SIM102", "S102", "SIM117", "E402"]
-"xraylabtool/interfaces/cli/**.py" = ["PLC0415", "PLR0911", "ARG001"]  # CLI lazy imports, complexity, unused handler args
+"xraylabtool/interfaces/cli/**.py" = ["PLC0415", "PLR0911", "ARG001", "S101"]  # CLI lazy imports, complexity, unused handler args, assert guarding parsed data
 "xraylabtool/analysis/*.py" = ["SIM102", "B904"]  # Analysis module patterns
 "__init__.py" = ["F401", "PLR0911", "PLC0415"]  # Re-exports, complexity and lazy imports in __init__.py
 # Completion system: shell-script generators and rc-file integration
-"**/interfaces/completion_v2/*.py" = ["PLR0911", "SIM112", "S604", "ARG001", "ARG002", "SIM118", "S112", "PLW2901", "RUF001", "PLC0415", "S110", "S607"]
+"**/interfaces/completion_v2/*.py" = ["PLR0911", "SIM112", "S603", "S604", "ARG001", "ARG002", "SIM118", "S112", "PLW2901", "RUF001", "PLC0415", "S110", "S607"]
 # Scientific computing files with performance-critical lazy imports
 "**/utils.py" = ["PLC0415", "ARG001"]  # Lazy imports and unused args in utility functions
 "**/typing_extensions.py" = ["PLC0415"]  # Lazy imports for compatibility
@@ -409,7 +411,7 @@ exclude = [
 "xraylabtool/calculators/cache.py" = ["PLC0415"]  # Deferred imports to break circular dependency
 "xraylabtool/calculators/kernels.py" = ["PLC0415"]  # Deferred imports for JIT and constants
 "xraylabtool/calculators/scattering_data.py" = ["PLC0415"]  # Deferred imports for cache and pandas
-"xraylabtool/device.py" = ["PLC0415", "SIM105"]  # Lazy imports for optional JAX; try/except for optional packages
+"xraylabtool/device.py" = ["PLC0415", "SIM105", "S603"]  # Lazy imports for optional JAX; try/except for optional packages; fixed-argv nvcc/nvidia-smi calls
 "scripts/run_type_check.py" = ["PLR0912", "PLR0915"]  # Allow complex functions in type checking script
 "scripts/test_docs.py" = ["PLR0912", "PLR0915", "S112", "S607"]  # Allow complex functions and subprocess calls in documentation testing script
 "scripts/validate_style_guide.py" = ["PLW2901", "SIM102", "S607", "PLR0912", "PLR0915", "PLC0415"]  # Allow style validation patterns
