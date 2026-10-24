@@ -47,7 +47,7 @@ def get_cached_elements() -> list[str]:
 @cache
 def get_bulk_atomic_data(
     elements_tuple: tuple[str, ...],
-) -> dict[str, types.MappingProxyType[str, float]]:
+) -> types.MappingProxyType[str, types.MappingProxyType[str, float]]:
     """
     Bulk load atomic data for multiple elements with high-performance caching.
 
@@ -143,7 +143,10 @@ def clear_scattering_factor_cache() -> None:
     _atomic_data_cache.clear()
     _CACHE_WARMED = False
 
-    # Clear LRU caches
+    # Clear LRU caches, including the shared loader that get_bulk_atomic_data wraps
+    from xraylabtool.data_handling.atomic_cache import get_bulk_atomic_data_fast
+
+    get_bulk_atomic_data_fast.cache_clear()
     get_bulk_atomic_data.cache_clear()
     create_scattering_factor_interpolators.cache_clear()
 

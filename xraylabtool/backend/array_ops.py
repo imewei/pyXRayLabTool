@@ -279,6 +279,14 @@ def set_backend(name: str) -> None:
     else:
         raise ValueError(f"Unknown backend: {name!r}")
     ops._invalidate_cache()
+    # Cached interpolators are backend-specific (scipy vs interpax); drop them so
+    # the next calculation rebuilds them for the new backend.
+    try:
+        from xraylabtool.calculators.cache import clear_scattering_factor_cache
+
+        clear_scattering_factor_cache()
+    except ImportError:
+        pass
     # Clear JIT cache so kernels recompile for the new backend
     try:
         from xraylabtool.calculators.core import _jit_cache

@@ -190,7 +190,7 @@ def get_atomic_data_fast(element: str) -> types.MappingProxyType[str, float]:
 @lru_cache(maxsize=256)
 def get_bulk_atomic_data_fast(
     elements_tuple: tuple[str, ...],
-) -> dict[str, types.MappingProxyType[str, float]]:
+) -> types.MappingProxyType[str, types.MappingProxyType[str, float]]:
     """
     High-performance bulk atomic data loader with caching.
 
@@ -201,12 +201,14 @@ def get_bulk_atomic_data_fast(
         elements_tuple: Tuple of element symbols
 
     Returns:
-        Dictionary mapping element symbols to their atomic data (as immutable views)
+        Read-only mapping of element symbols to their atomic data (immutable views).
+        The mapping is shared by every caller through the LRU cache, so it must not
+        be mutable.
     """
     result = {}
     for element in elements_tuple:
         result[element] = get_atomic_data_fast(element)
-    return result
+    return types.MappingProxyType(result)
 
 
 def warm_up_cache(elements: list[str]) -> None:
