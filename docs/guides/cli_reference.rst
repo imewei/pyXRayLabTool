@@ -7,9 +7,9 @@ authoritative list on your installed version.
 
 **Usage:** ``xraylabtool [GLOBAL OPTIONS] COMMAND [OPTIONS]``
 
-**Alias:** ``xtool`` is a short alias for ``xraylabtool`` and accepts the same commands and options
+**Alias:** ``xtool`` and ``xlt`` are short aliases for ``xraylabtool`` and accepts the same commands and options
 (e.g. ``xtool calc Si -e 8.0 -d 2.33``). The desktop GUI is launched with
-``xraylabtool-gui`` or its alias ``xtool-gui``.
+``xraylabtool-gui`` or its aliases ``xtool-gui`` and ``xlt-gui``.
 
 **Commands:** calc, batch, compare, convert, formula, atomic, bragg, list, completion,
 install-completion, uninstall-completion

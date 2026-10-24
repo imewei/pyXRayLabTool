@@ -187,6 +187,8 @@ xraylabtool-gui = "xraylabtool.gui.__main__:main"
 # Short aliases
 xtool = "xraylabtool.interfaces.cli:main"
 xtool-gui = "xraylabtool.gui.__main__:main"
+xlt = "xraylabtool.interfaces.cli:main"
+xlt-gui = "xraylabtool.gui.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

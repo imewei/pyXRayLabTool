@@ -15,10 +15,10 @@ class CompletionGenerator(ABC):
         self, command_name: str = "xraylabtool", aliases: list[str] | None = None
     ):
         self.command_name = command_name
-        # CLI command aliases that share the same completion (e.g. the ``xtool``
-        # short alias). ``xtool-gui`` is intentionally excluded: it launches the
-        # GUI and takes no CLI subcommands.
-        self.aliases = ["xtool"] if aliases is None else aliases
+        # CLI command aliases that share the same completion (the ``xtool`` and ``xlt``
+        # short aliases). The ``-gui`` aliases are intentionally excluded: they launch the
+        # GUI and take no CLI subcommands.
+        self.aliases = ["xtool", "xlt"] if aliases is None else aliases
 
     @abstractmethod
     def generate(
