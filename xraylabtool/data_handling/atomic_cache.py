@@ -381,9 +381,10 @@ def warm_cache_for_compounds(
         Dictionary with warming results and statistics
 
     Examples:
+        >>> from xraylabtool.data_handling.atomic_cache import warm_cache_for_compounds
         >>> result = warm_cache_for_compounds(["SiO2", "Al2O3"])
-        >>> result["elements_warmed"]
-        ['Si', 'O', 'Al']
+        >>> {"Si", "O", "Al"} <= set(result["elements_warmed"])  # plus related elements
+        True
         >>> result["success_rate"] > 0.9
         True
     """

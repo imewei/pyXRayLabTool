@@ -551,7 +551,7 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
         >>> parse_formula("SiO2")
         (['Si', 'O'], [1.0, 2.0])
         >>> parse_formula("Ca5(PO4)3OH")
-        (['Ca', 'P', 'O', 'H'], [5.0, 3.0, 12.0, 1.0])
+        (['Ca', 'P', 'O', 'H'], [5.0, 3.0, 13.0, 1.0])
     """
     from xraylabtool.exceptions import FormulaError
 

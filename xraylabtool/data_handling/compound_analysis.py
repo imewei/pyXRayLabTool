@@ -147,6 +147,7 @@ def parse_chemical_formula(formula: str) -> dict[str, int]:
         Dictionary mapping element symbols to their integer counts
 
     Examples:
+        >>> from xraylabtool.data_handling.compound_analysis import parse_chemical_formula
         >>> parse_chemical_formula("SiO2")
         {'Si': 1, 'O': 2}
         >>> parse_chemical_formula("Ca5(PO4)3OH")
@@ -169,6 +170,7 @@ def get_elements_for_compound(formula: str) -> list[str]:
         List of unique element symbols in the compound
 
     Examples:
+        >>> from xraylabtool.data_handling.compound_analysis import get_elements_for_compound
         >>> get_elements_for_compound("SiO2")
         ['Si', 'O']
         >>> get_elements_for_compound("CaAl2Si2O8")
