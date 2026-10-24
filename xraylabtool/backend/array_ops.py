@@ -12,6 +12,14 @@ Array = Any
 
 @runtime_checkable
 class ArrayBackend(Protocol):
+    """Array operations the calculators need, independent of the array library.
+
+    Structural interface (``typing.Protocol``) implemented by
+    :class:`NumpyBackend` and :class:`JaxBackend`: array constructors,
+    element-wise math, reductions and finiteness predicates. Calculator code
+    reaches the active backend through the module-level ``ops`` proxy.
+    """
+
     @property
     def float64(self) -> Any: ...
 
@@ -37,6 +45,12 @@ class ArrayBackend(Protocol):
 
 
 class NumpyBackend:
+    """NumPy implementation of :class:`ArrayBackend` (CPU, the default).
+
+    Selected automatically unless JAX is installed and an NVIDIA GPU is
+    detected; ``set_backend("numpy")`` selects it explicitly.
+    """
+
     @property
     def float64(self) -> Any:
         return np.float64
@@ -100,6 +114,20 @@ class NumpyBackend:
 
 
 class JaxBackend:
+    """JAX implementation of :class:`ArrayBackend`.
+
+    Enables 64-bit precision (``jax_enable_x64``) on construction so results
+    agree with :class:`NumpyBackend` to float64 round-off, and lets the
+    calculators use jit-compiled kernels. Selected automatically only when
+    JAX is installed and a GPU device is active; ``set_backend("jax")``
+    selects it on CPU as well.
+
+    Raises
+    ------
+    ImportError
+        If ``jax`` is not installed.
+    """
+
     def __init__(self) -> None:
         import jax
 
@@ -214,10 +242,35 @@ _backend: ArrayBackend = _auto_select_backend()
 
 
 def get_backend() -> ArrayBackend:
+    """Return the active array backend.
+
+    Returns
+    -------
+    ArrayBackend
+        The :class:`NumpyBackend` or :class:`JaxBackend` instance currently
+        used by ``ops``.
+    """
     return _backend
 
 
 def set_backend(name: str) -> None:
+    """Select the array backend used by all calculations.
+
+    Invalidates the cached ``ops`` method lookups and clears the jit-kernel
+    cache so kernels are rebuilt for the new backend.
+
+    Parameters
+    ----------
+    name : str
+        ``"numpy"`` or ``"jax"``.
+
+    Raises
+    ------
+    ValueError
+        If ``name`` is not a known backend.
+    ImportError
+        If ``"jax"`` is requested and JAX is not installed.
+    """
     global _backend
     if name == "jax":
         _backend = JaxBackend()

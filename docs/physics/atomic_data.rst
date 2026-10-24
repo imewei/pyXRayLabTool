@@ -101,7 +101,7 @@ CXRO Database
 - Updated experimental data
 - Extended energy ranges for some elements
 - Web interface and downloadable files
-- Source: http://henke.lbl.gov/optical_constants/
+- Source: https://henke.lbl.gov/optical_constants/
 
 **Advantages:**
 - Regular updates with new measurements

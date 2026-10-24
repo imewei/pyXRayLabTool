@@ -4,6 +4,8 @@
 **Reviewers:** security (SRE), architecture (Architect), testing (Quality), secops (CI/CD)
 **Scope:** xraylabtool/ (~20,000 LOC, 52 files) + tests/ + .github/workflows/
 
+> **Status note (2026-10):** this report describes the repository as of the audit date. `safety` has since been removed from the dev dependencies and CI; `pip-audit` is now the only dependency vulnerability gate.
+
 ---
 
 ## Executive Summary

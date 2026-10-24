@@ -289,6 +289,5 @@ Further Reading
 - Willmott: "An Introduction to Synchrotron Radiation"
 
 **Online Resources:**
-- CXRO X-ray database: http://henke.lbl.gov/optical_constants/
-- NIST XCOM database: https://physics.nist.gov/xcom
-- ILL X-ray absorption database: https://www.ill.eu/xop
+- CXRO X-ray database: https://henke.lbl.gov/optical_constants/
+- NIST XCOM database: https://www.nist.gov/pml/xcom-photon-cross-sections-database

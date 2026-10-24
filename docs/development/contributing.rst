@@ -30,8 +30,21 @@ Development Workflow
    uv run ruff check .
    uv run mypy xraylabtool
    uv run pytest tests/ -v --cov=xraylabtool
+   make verify    # lint, type check, unit and characterization tests in one step
    git add . && git commit -m "feat: descriptive message"
    git push origin feature/my-new-feature
+
+``make verify`` runs ruff, mypy (advisory), the unit tests and the
+characterization tests, which is what to check before pushing. ``make verify-fast``
+runs only the lint and type checks (no tests).
+
+**Tool versions.** ruff is pinned to the version locked in ``uv.lock`` in three
+other places: the ``rev`` in ``.pre-commit-config.yaml``, ``RUFF_VERSION`` in
+``.github/workflows/ci.yml`` and the ``ruff==`` install in
+``.github/workflows/security.yml``. When bumping ruff, update all of them
+together, or a rule that is stable in one version can fail in another.
+Dependency vulnerabilities are checked with ``pip-audit`` (``security.yml`` and
+``dependencies.yml``).
 
 Code Standards
 --------------

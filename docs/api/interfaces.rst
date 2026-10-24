@@ -13,6 +13,30 @@ Command Line Interface
    :undoc-members:
    :show-inheritance:
 
+Argument Parser
+~~~~~~~~~~~~~~~
+
+.. automodule:: xraylabtool.interfaces.cli.parser
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Output Formatting
+~~~~~~~~~~~~~~~~~
+
+.. automodule:: xraylabtool.interfaces.cli.formatting
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+CLI Utilities
+~~~~~~~~~~~~~
+
+.. automodule:: xraylabtool.interfaces.cli.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 CLI Commands Overview
 ~~~~~~~~~~~~~~~~~~~~~
 

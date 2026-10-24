@@ -17,7 +17,7 @@ XRayLabTool follows a comprehensive testing strategy:
 
 **Testing Principles:**
 - Quick feedback: Most tests run in milliseconds
-- Code coverage: >95% code coverage target
+- Measured coverage: reported to Codecov on every CI run (see :ref:`Test Coverage <testing-coverage>`)
 - Reliable: Tests pass consistently across platforms
 - Clear failures: Descriptive error messages
 
@@ -232,15 +232,27 @@ Benchmarking Code
        avg_time = (end_time - start_time) / n_iterations
        assert avg_time < 0.01  # a few ms with a warm cache
 
+.. _testing-coverage:
+
 Test Coverage
 -------------
 
 Coverage Requirements
 ~~~~~~~~~~~~~~~~~~~~~
 
-- **Minimum coverage**: 95%
-- **Critical modules**: 100% coverage required
-- **Exception paths**: All error conditions tested
+- **CI gate**: the full test suite must reach at least 22% (``--cov-fail-under``
+  in ``.github/workflows/ci.yml``). The floor is deliberately low because CI
+  attributes far less coverage to the largest module (the CLI) than a local run does.
+- **Measured coverage**: about 62% of lines on Codecov as of 2026-10-23. Local
+  runs report a different figure, because coverage config omits ``__init__.py``
+  files and some specialized modules.
+- **Patch coverage**: Codecov's ``codecov/patch`` check compares the coverage of
+  the lines a commit changes against the project's coverage. Every touched
+  executable line counts, including a line where only a trailing comment was
+  removed, so changes to code that CI cannot reach need a test (for example,
+  the JAX backend, which CI exercises only through ``set_backend("jax")`` in
+  ``tests/unit/test_jax_backend_parity.py``).
+- **Exception paths**: error conditions should have tests.
 
 Generating Coverage Reports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -259,20 +271,24 @@ Generating Coverage Reports
 Continuous Integration
 ----------------------
 
-All tests run automatically on:
+Tests run automatically on:
 
-- **Push to main branch**
-- **Pull requests**
-- **Scheduled nightly builds**
+- **Pushes and pull requests** to ``main`` and ``develop`` (changes that only
+  touch Markdown or ``docs/`` skip the test workflow)
+- **Manual dispatch** of the Continuous Integration workflow
+
+Security Scanning also runs on pushes and pull requests, and weekly on Mondays
+at 06:00 UTC. Dependency Management (dependency audit and update check) runs
+weekly on Mondays at 09:00 UTC and on manual dispatch.
 
 Test Matrix
 ~~~~~~~~~~~
 
 Tests run across multiple configurations:
 
-- **Python versions**: 3.12, 3.13
+- **Python versions**: 3.12, 3.13 and 3.14
 - **Operating systems**: Ubuntu, macOS, Windows
-- **Toolchain**: ruff (lint + format), mypy (type checking), pytest (testing)
+- **Toolchain**: ruff (lint + format), mypy (type checking, advisory in CI), pytest (testing), pip-audit (dependency vulnerabilities)
 - **CI**: GitHub Actions with SHA-pinned action versions
 
 Contributing Tests
@@ -282,7 +298,7 @@ When contributing code:
 
 1. **Write tests first** (TDD approach)
 2. **Ensure all tests pass** before submitting
-3. **Maintain coverage** above 95%
+3. **Cover the lines you change**: Codecov's patch check expects changed lines to be covered at least as well as the project
 4. **Add performance tests** for new features
 5. **Include integration tests** for CLI changes
 

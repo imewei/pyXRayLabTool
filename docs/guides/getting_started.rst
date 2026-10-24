@@ -39,6 +39,12 @@ Install XRayLabTool using pip:
    pip install "xraylabtool[gpu_cuda13]"
    pip install "xraylabtool[gpu_cuda12]"
 
+``jax`` and ``jaxlib`` are required at ``>=0.8.0`` with no upper bound; the
+project is verified against 0.12.0.1 (the JAX and NumPy backends agree to
+about 2.5e-16 relative error). The GPU extras add the matching
+``jax-cuda*-plugin`` and ``jax-cuda*-pjrt`` packages, which must be the same
+version as ``jaxlib``.
+
 Development Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

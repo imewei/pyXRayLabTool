@@ -3,6 +3,8 @@
 **Date:** 2026-04-07
 **Scope:** `.github/workflows/`, `pyproject.toml`, `Makefile`, `.pre-commit-config.yaml`
 
+> **Status note (2026-10):** this report describes the repository as of the audit date. `safety` has since been removed from the dev dependencies and CI; `pip-audit` is now the only dependency vulnerability gate.
+
 ---
 
 ## CICD-001

@@ -322,7 +322,7 @@ Install GPU Support (NVIDIA)
 
    pip install jax[cuda11_cudnn]
 
-**For other GPUs or TPUs**, see `JAX GPU installation guide <https://github.com/google/jax#gpu-support>`_.
+**For other GPUs or TPUs**, see `JAX GPU installation guide <https://docs.jax.dev/en/latest/installation.html>`_.
 
 JAX will automatically detect and use available GPUs:
 
@@ -571,8 +571,8 @@ Resources
 ---------
 
 - `JAX Documentation <https://jax.readthedocs.io/>`_ - Official JAX docs
-- `JAX Performance Tips <https://jax.readthedocs.io/en/latest/performance_characteristics.html>`_ - JIT compilation details
-- `PyQtGraph <http://www.pyqtgraph.org/>`_ - Interactive plotting
+- `JAX Performance Tips <https://docs.jax.dev/en/latest/gpu_performance_tips.html>`_ - JIT compilation details
+- `PyQtGraph <https://www.pyqtgraph.org/>`_ - Interactive plotting
 - `XRayLabTool Issues <https://github.com/imewei/pyXRayLabTool/issues>`_ - Report problems
 
 

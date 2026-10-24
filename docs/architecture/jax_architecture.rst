@@ -622,8 +622,8 @@ Further Reading
 
 - `JAX Quickstart <https://jax.readthedocs.io/en/latest/quickstart.html>`_
 - `JAX Documentation <https://jax.readthedocs.io/>`_
-- `JIT Mechanics <https://jax.readthedocs.io/en/latest/jit_compilation.html>`_
-- `Performance Tips <https://jax.readthedocs.io/en/latest/performance_characteristics.html>`_
+- `JIT Mechanics <https://docs.jax.dev/en/latest/jit-compilation.html>`_
+- `Performance Tips <https://docs.jax.dev/en/latest/gpu_performance_tips.html>`_
 
 
 Conclusion

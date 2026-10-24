@@ -16,6 +16,40 @@ Version Categories
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
 
+Unreleased
+----------
+
+**Added**
+
+- Python 3.12 in the CI test matrix (Ubuntu, macOS, Windows); the 3.12 suite passes (740 tests) against the locked dependencies.
+- ``tests/unit/test_jax_backend_parity.py``: JAX-vs-NumPy parity tests (SiO2, H2O, Fe2O3; ``rtol=1e-12``), an ``InterpolationFactory.create_pchip`` check against ``interpax``, and tests for the ``float()`` fallback in the two scalar-energy converters.
+
+**Changed**
+
+- ``jax``/``jaxlib`` no longer have an upper bound (``>=0.8.0``); the ``<0.11`` ceiling added in 0.4.5 is removed from ``pyproject.toml`` and from the ``cuda12-local``/``cuda13-local`` Makefile targets. The suite and a JAX-vs-NumPy comparison pass on 0.12.0.1 (maximum relative difference 2.5e-16), and ``uv.lock`` moves ``jax``/``jaxlib`` from 0.10.2 to 0.12.0.1, matching the locked CUDA plugin packages.
+- ruff is pinned to 0.17.2 in ``.pre-commit-config.yaml``, ``ci.yml`` and ``security.yml``, matching ``uv.lock``. ``PLR0917`` (stable in ruff 0.17) is ignored alongside ``PLR0913`` instead of making public signatures keyword-only.
+- Refreshed ``uv.lock`` dependency versions (including ``typer`` 0.27.3).
+
+**Removed**
+
+- ``safety`` dev dependency, its ``[tool.safety]`` table and its steps in the ``security.yml`` and ``dependencies.yml`` workflows. ``pip-audit`` is now the only dependency vulnerability gate. The lock also drops the 11 packages only ``safety`` required (``nltk``, ``authlib``, ``marshmallow``, ``tenacity``, ...).
+
+**Fixed**
+
+- OSTI GitLab mirror: tags are force-pushed in a separate command, so a re-tagged release (such as ``v0.4.6``) no longer fails the job with "tag already exists".
+- ``mypy xraylabtool/`` reports no errors on mypy 2.4.0 and on the CI-pinned 1.20.0 (23 errors fixed: generic ``dict`` annotations, batch executor typing, a list rebound to an ndarray in ``analysis``, stale ``type: ignore`` comments).
+- ``test_documented_import_examples`` executed prose from ``CLAUDE.md`` ("so ``import xraylabtool`` stays fast; ...") and always failed; it now matches only import statements and also scans ``README.md``.
+
+**Security**
+
+- ``filelock`` 3.32.7 to 4.2.4 (CVE-2026-112940, fixed in 4.2.1; build/dev tooling only). The update was blocked by ``safety``, which required ``filelock<4``.
+
+**Documentation**
+
+- API reference now covers the CLI ``parser``, ``formatting`` and ``utils`` modules and the GUI main-window tab, widget, style and table-formatter modules; the backend classes, ``get_backend``, ``set_backend`` and ``InterpolationFactory`` have docstrings.
+- Testing guide: replaced the unsupported ">95% coverage" targets with the actual CI gate (22%) and the Codecov project/patch behavior, and corrected the CI triggers and Python matrix. Contributing guide: ``make verify`` and where the ruff version is pinned. Getting started: supported JAX versions.
+- Status notes on the 2026-04-07 audit reports (``safety`` has since been removed); Python code blocks in Markdown formatted with ruff 0.17.2.
+
 v0.4.6 (2026-09-17)
 --------------------
 
