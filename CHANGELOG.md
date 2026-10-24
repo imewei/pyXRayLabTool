@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-10-23
+
 ### Added
 - `tests/unit/test_deep_debug_regressions.py`: regression tests for each defect fixed from the deep-debugging review (lazy imports, energy contract, anomalous dispersion, cache immutability, data integrity for all `.nff` files, exports, backend state, batch ordering/timeouts/fallback, parser, validators, repeated materials, pandas loader, GUI error slots and worker, utility validation).
 - Python 3.12 in the CI test matrix (Ubuntu, macOS, Windows); the 3.12 suite passes (740 tests) against the locked dependencies.
 - `tests/unit/test_jax_backend_parity.py`: JAX-vs-NumPy parity tests (SiO2, H2O, Fe2O3; `rtol=1e-12`), an `InterpolationFactory.create_pchip` check against `interpax`, and tests for the `float()` fallback in the two scalar-energy converters.
+- `scripts/check_version.py` (checks that the nine files recording the version agree; `--expect`, `--installed`, `--print`), `scripts/test_install.py` (installs a wheel or a PyPI/TestPyPI release into a fresh venv and runs one calculation) and `scripts/gpu_check.py` (JAX backend, devices and CUDA plugin conflicts); the `check-version` pre-commit hook; `make test-characterization` and `make test-gui`.
 
 ### Changed
 - `jax`/`jaxlib` no longer have an upper bound (`>=0.8.0`); the `<0.11` ceiling added in 0.4.5 is removed from `pyproject.toml` and from the `cuda12-local`/`cuda13-local` Makefile targets. The suite and a JAX-vs-NumPy comparison pass on 0.12.0.1 (maximum relative difference 2.5e-16), and `uv.lock` moves `jax`/`jaxlib` from 0.10.2 to 0.12.0.1, matching the locked CUDA plugin packages.
@@ -19,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Machine-readable output (`format_xray_result` CSV/JSON, `xraylabtool.io`) now keeps full precision; `precision` applies to table output only.
 - `export_to_csv` raises `ValueError` for results with different numbers of energies, and a scalar field (for example `density_g_cm3`) has one column named after the field instead of one per energy.
 - `energy_to_wavelength`, `wavelength_to_energy` and the `d_spacing_*` functions raise `ValueError` for non-positive energies, wavelengths and lattice parameters and for Miller indices (0, 0, 0) instead of returning negative or infinite values; `parse_energy_string` raises `ValueError` for unknown spacing (only `linear`, `lin` and `log`) and for extra `:` fields.
+- `pyproject.toml` matches the code: unused dependency groups are gone (API server, scikit-learn/statsmodels, profilers, Jupyter, seaborn/plotly, openpyxl/jinja2, pbr, codecov and others; `uv.lock` has 185 packages), `PySide6`/`pyqtgraph`/`matplotlib` and `psutil` are documented as intentional core dependencies, `setuptools>=77.0` is the only build requirement, and the ruff/mypy/pre-commit floors equal the CI pins. Only the 9 markers that tests use are registered (`--strict-markers` stays on), `testpaths` is `tests`, `mypy` checks the package only and replaces the deprecated `strict_concatenate` with `extra_checks`, and the ruff `per-file-ignores` list only codes that fire on the files they match.
+- `.gitignore` rebuilt in sections with anchored directory rules so a source package named `cache/` or `lib/` cannot be ignored by accident. `graphify-out/` tracks `GRAPH_REPORT.md`, `graph.html` and `graph.json`; the other graphify files (manifest, cost, root/interpreter paths) are untracked.
+- `.pre-commit-config.yaml`: `pre-commit-hooks` v6.0.0, `gitleaks` v8.30.1, the `ruff-check` hook id, generated `graphify-out/` and `docs/_build/` excluded, and the version-consistency hook.
+- Makefile: runs against `./.venv` without activation; category test targets pass `--no-cov` and `--run-performance` where the conftest gate requires it; GUI tests (all four files CI ignores) run serially after the parallel run; `build` uses `uv build` plus `twine check`; `version-check`, `test-install-*` and `gpu-*` call the new scripts; the GPU install targets use `uv sync --extra gpu_cuda12|gpu_cuda13`; `verify` also checks formatting and fails on type errors; `release-check` adds the doctest build and a clean-venv wheel install. `make claude` enforces a 27% coverage floor (measured 28.7%) instead of 42%.
 
 ### Removed
 - `safety` dev dependency, its `[tool.safety]` table and its steps in the `security.yml` and `dependencies.yml` workflows. `pip-audit` is now the only dependency vulnerability gate. The lock also drops the 11 packages only `safety` required (`nltk`, `authlib`, `marshmallow`, `tenacity`, ...).
@@ -46,6 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scattering_data.load_data_file` failed on pandas 3 (`delim_whitespace` was removed).
 - GUI: both calculation-error slots raised `KeyError` while logging (reserved `message` field), so the error dialog never appeared; `CalculationWorker` crashed on `functools.partial`/builtin callables and mistook a local variable named `progress_cb` for a parameter.
 - The `perf-baseline`, `perf-compare` and `perf-report` Makefile targets pointed at `tests/test_integration.py`, which moved to `tests/integration/test_integration.py`, so they collected nothing.
+- Makefile targets that could not work: `info` and `test-install-*` held multi-line `python -c` strings that the shell split; `gpu-diagnose` ran a `for` loop after a semicolon (a syntax error hidden by `2>/dev/null`); `install-jax-gpu` read an `nvidia-smi` error message as the compute capability; `type-check*` and `claude` printed "mypy not available" when mypy failed; `claude` ignored ruff failures and its performance phase collected nothing without `--run-performance`; `test-memory`, `test-edge`, `test-ci`, `test-nightly` and `test-smoke` selected markers that no longer exist; `upload` used `read -p` under `sh`; `clean` descended into `.venv`.
+- `mypy xraylabtool/ --strict` reports no errors (`MaterialComparator.__init__` annotated; untyped `jax.config.update` covered by `untyped_calls_exclude`).
+- Four stale performance tests: `MemoryMonitor` only catches `psutil.Error`, batch results keep repeated formulas under `formula@density` keys, and `get_bulk_atomic_data` returns a read-only mapping.
+- Ruff reported RUF001/RUF003/PLC2401 on `docs/conf.py` and the example notebooks when run on the whole repository (as pre-commit does); `docs/**` now ignores those typography rules.
+- `scripts/test_docs.py` (`make docs-test-all`) ran Sphinx on the nonexistent `docs/source` and so failed every build step; it now uses `docs/`. The old Makefile guard (`command -v python scripts/test_docs.py`) was always false, which hid this by running the plain `docs-test`/`docs-doctest`/`docs-linkcheck` fallback instead.
 
 ### Security
 - `filelock` 3.32.7 to 4.2.4 (CVE-2026-112940, fixed in 4.2.1; build/dev tooling only). The update was blocked by `safety`, which required `filelock<4`.
