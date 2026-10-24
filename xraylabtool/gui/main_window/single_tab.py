@@ -312,7 +312,7 @@ class SingleTabMixin:
         self.single_form.compute_button.setText("Compute")
         self.single_save_png.setEnabled(True)
         self.single_export_csv.setEnabled(True)
-        logger.error("single_compute_failed", extra={"message": message})
+        logger.error("single_compute_failed", extra={"error_detail": message})
         self._error(message)
 
     def _refresh_single_views(self: MainWindowProtocol) -> None:

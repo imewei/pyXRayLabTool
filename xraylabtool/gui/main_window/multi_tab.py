@@ -354,7 +354,7 @@ class MultiTabMixin:
         self.multi_save_png.setEnabled(True)
         self.multi_export_csv.setEnabled(True)
         self._show_progress(False, 0)
-        logger.error("multi_compute_failed", extra={"message": message})
+        logger.error("multi_compute_failed", extra={"error_detail": message})
         self._error(message)
 
     def _progress_multi(self: MainWindowProtocol, value: int) -> None:

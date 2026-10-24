@@ -74,7 +74,11 @@ def compute_multiple(  # type: ignore[no-untyped-def]
         # different densities) so neither result is silently overwritten.
         key = formula
         if key in results:
-            key = f"{formula} ({density:g} g/cm³)"
+            base = f"{formula} ({density:g} g/cm³)"
+            key, n = base, 2
+            while key in results:
+                key = f"{base} #{n}"
+                n += 1
         results[key] = calculate_single_material_properties(formula, energies, density)
         if progress_cb:
             pct = int(((idx + 1) / total) * 100)

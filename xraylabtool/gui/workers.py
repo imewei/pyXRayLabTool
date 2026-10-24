@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import inspect
 import traceback
 from typing import Any
 
@@ -23,10 +24,21 @@ class CalculationWorker(QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
+    def _accepts_progress_cb(self) -> bool:
+        """True if the task declares a ``progress_cb`` parameter.
+
+        Uses the signature, not ``__code__``: partials, builtins and callable objects
+        have no code object, and ``co_varnames`` also lists local variables.
+        """
+        try:
+            return "progress_cb" in inspect.signature(self.fn).parameters
+        except (TypeError, ValueError):  # no introspectable signature
+            return False
+
     def run(self) -> None:
         try:
             # Inject progress callback if the target function accepts it
-            if "progress_cb" in self.fn.__code__.co_varnames:
+            if self._accepts_progress_cb():
                 self.kwargs.setdefault("progress_cb", self.signals.progress.emit)
             result = self.fn(*self.args, **self.kwargs)
         except Exception as exc:
