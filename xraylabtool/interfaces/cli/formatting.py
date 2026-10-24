@@ -56,9 +56,7 @@ def _format_as_csv(result: Any, fields: list[str], precision: int) -> str:
     ]
 
     # Vectorize array operations
-    data_arrays = {
-        field: np.round(getattr(result, field), precision) for field in array_fields
-    }
+    data_arrays = {field: np.asarray(getattr(result, field)) for field in array_fields}
     scalar_data = {field: getattr(result, field) for field in scalar_fields}
 
     # Create rows efficiently using vectorized data

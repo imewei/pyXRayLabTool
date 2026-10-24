@@ -6,6 +6,7 @@ including atomic scattering factor data and calculation results.
 """
 
 import csv
+import dataclasses
 from pathlib import Path
 from typing import Any
 
@@ -63,40 +64,46 @@ def load_data_file(filename: str) -> np.ndarray:
 
 
 def _save_dict_as_csv(results: dict[str, Any], filename: str) -> None:
-    """Write a dict of scalars or equal-length lists/arrays to CSV."""
-    with open(filename, "w", newline="") as f:
-        if not results:
+    """Write a dict of scalars and equal-length lists/arrays to CSV.
+
+    Strings are scalars. Scalars are repeated on every row, so the output does not
+    depend on key order. Array lengths are checked before the file is opened.
+    """
+    if not results:
+        with open(filename, "w", newline=""):
             return
-        fieldnames = results.keys()
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+    def _is_sequence(value: Any) -> bool:
+        return not isinstance(value, str | bytes) and np.ndim(value) > 0
+
+    lengths = {len(v) for v in results.values() if _is_sequence(v)}
+    if len(lengths) > 1:
+        raise ValueError(
+            f"Cannot write CSV: array values have different lengths {sorted(lengths)}"
+        )
+    n_rows = lengths.pop() if lengths else 1
+    columns = {
+        k: (np.asarray(v).tolist() if _is_sequence(v) else [v] * n_rows)
+        for k, v in results.items()
+    }
+    with open(filename, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(results))
         writer.writeheader()
-
-        # Handle case where values are lists/arrays
-        first_key = next(iter(results))
-        if isinstance(results[first_key], (list, np.ndarray)):
-            # Multiple rows case (optimized: vectorized operations)
-            n_rows = len(results[first_key])
-
-            # Pre-convert arrays to lists for efficient indexing
-            array_data = {}
-            for k, v in results.items():
-                if isinstance(v, np.ndarray):
-                    array_data[k] = v.tolist()
-                else:
-                    array_data[k] = list(v) if hasattr(v, "__iter__") else [v] * n_rows
-
-            # Vectorized row generation
-            rows = [{k: array_data[k][i] for k in array_data} for i in range(n_rows)]
-            writer.writerows(rows)
-        else:
-            # Single row case
-            writer.writerow(results)
+        writer.writerows({k: columns[k][i] for k in columns} for i in range(n_rows))
 
 
 def _save_results_as_csv(results: Any, filename: str) -> None:
     """Dispatch CSV export by result type: DataFrame-like, dict, or ndarray."""
+    from xraylabtool.calculators.core import XRayResult
+
     if hasattr(results, "to_csv"):
         results.to_csv(filename, index=False)
+    elif (
+        isinstance(results, dict)
+        and results
+        and all(isinstance(v, XRayResult) for v in results.values())
+    ):
+        export_to_csv(list(results.values()), filename)
     elif isinstance(results, dict):
         _save_dict_as_csv(results, filename)
     elif isinstance(results, np.ndarray):
@@ -113,6 +120,8 @@ def _json_numpy_default(obj: Any) -> Any:
         return int(obj)
     elif isinstance(obj, np.floating):
         return float(obj)
+    elif dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return {f.name: getattr(obj, f.name) for f in dataclasses.fields(obj)}
     return str(obj)
 
 
@@ -167,23 +176,38 @@ def export_to_csv(
                 "dispersion_delta",
                 "absorption_beta",
             ]
+        n_energies = len(data[0].energy_kev)
+        mismatched = sorted({len(r.energy_kev) for r in data} - {n_energies})
+        if mismatched:
+            raise ValueError(
+                "Cannot export results with different numbers of energies to one wide "
+                f"CSV (got {n_energies} and {mismatched}); export them separately"
+            )
+
+        def _is_array(value: Any) -> bool:
+            return hasattr(value, "__iter__") and not isinstance(value, str)
+
+        array_fields = {f for f in fields[1:] if _is_array(getattr(data[0], f, []))}
+        header = ["formula"]
+        for field in fields[1:]:
+            if field in array_fields:
+                header.extend(f"{field}_energy_{i}" for i in range(n_energies))
+            else:
+                header.append(field)
+        rows = []
+        for result in data:
+            row: list[Any] = [result.formula]
+            for field in fields[1:]:
+                values = getattr(result, field, [])
+                if field in array_fields:
+                    row.extend(values)
+                else:
+                    row.append(values)
+            rows.append(row)
         with open(filename, "w", newline="") as csvfile:
             writer = csv.writer(csvfile)
-            n_energies = len(data[0].energy_kev)
-            header_parts = []
-            for field in fields[1:]:
-                header_parts.extend([f"{field}_energy_{i}" for i in range(n_energies)])
-            header = ["formula", *header_parts]
             writer.writerow(header)
-            for result in data:
-                row = [result.formula]
-                for field in fields[1:]:
-                    values = getattr(result, field, [])
-                    if hasattr(values, "__iter__") and not isinstance(values, str):
-                        row.extend(values)
-                    else:
-                        row.append(values)
-                writer.writerow(row)
+            writer.writerows(rows)
         return
 
     save_calculation_results(data, filename, format_type="csv")

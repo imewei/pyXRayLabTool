@@ -37,7 +37,7 @@ def format_xray_result(
         return _format_as_table(result, fields, precision)
 
 
-def _format_as_json(result: Any, fields: list[str] | None, precision: int) -> str:
+def _format_as_json(result: Any, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
     """Format result as JSON string."""
     data = {}
 
@@ -54,17 +54,16 @@ def _format_as_json(result: Any, fields: list[str] | None, precision: int) -> st
         if hasattr(result, field):
             value = getattr(result, field)
             if isinstance(value, np.ndarray):
-                # Convert numpy arrays to lists with proper precision
-                data[field] = np.round(value, precision).tolist()
+                data[field] = value.tolist()
             elif isinstance(value, float | np.floating):
-                data[field] = round(float(value), precision)
+                data[field] = float(value)
             else:
                 data[field] = value
 
     return json.dumps(data, indent=2)
 
 
-def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str:
+def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
     """Format result as CSV string."""
     if fields is None:
         fields = [
@@ -79,9 +78,9 @@ def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str
         if hasattr(result, field):
             value = getattr(result, field)
             if isinstance(value, np.ndarray):
-                data[field] = np.round(value, precision)
+                data[field] = value
             elif isinstance(value, float | np.floating):
-                data[field] = [round(float(value), precision)]
+                data[field] = [float(value)]
             else:
                 data[field] = (
                     [value] if not isinstance(value, list | np.ndarray) else value
