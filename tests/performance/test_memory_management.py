@@ -88,7 +88,7 @@ class TestMemoryMonitor:
 
         # Mock psutil to raise an exception
         with patch.object(
-            monitor.process, "memory_info", side_effect=Exception("Mock error")
+            monitor.process, "memory_info", side_effect=psutil.Error("Mock error")
         ):
             # Should not raise exception, should return 0.0
             usage = monitor.get_memory_usage_mb()
@@ -408,10 +408,11 @@ class TestMemoryLeakPrevention:
         )
 
         # Verify results are correct
-        assert len(results) == len(set(formulas))  # Unique formulas
-        for formula, result in results.items():
+        # Repeated formulas are kept under "formula@density[#n]" keys, never overwritten
+        assert len(results) == len(formulas)
+        for key, result in results.items():
             assert result is not None
-            assert result.formula == formula
+            assert result.formula == key.split("@")[0]
 
     def test_large_array_memory_management(self):
         """Test memory management with large arrays."""

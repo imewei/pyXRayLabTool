@@ -10,6 +10,7 @@ This module tests all performance optimization features including:
 - Deprecation warning performance
 """
 
+from collections.abc import Mapping
 import time
 import warnings
 
@@ -43,7 +44,8 @@ class TestBulkAtomicDataOptimization(BasePerformanceTest):
         data = get_bulk_atomic_data(elements)
 
         # Verify structure
-        assert isinstance(data, dict)
+        # Read-only mapping: callers cannot mutate the cached atomic data
+        assert isinstance(data, Mapping)
         assert len(data) == 3
 
         for element in elements:
