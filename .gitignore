@@ -1,172 +1,300 @@
-# ==============================================================================
-# Python Core & Compiled
-# ==============================================================================
+# ============================================================================
+# XRayLabTool .gitignore
+#
+# Two rules of thumb when editing this file (borrowed from rheox's .gitignore):
+#   * ANCHOR directory rules with a leading slash unless you genuinely mean
+#     "at any depth". A bare `cache/` or `lib/` swallows xraylabtool/**/cache/
+#     or xraylabtool/**/lib/ too, which is how a source package can vanish from
+#     a commit without anyone noticing.
+#   * Say WHY next to anything non-obvious, and delete a rule when nothing
+#     produces its target any more: a rule with no object is a trap for whoever
+#     adds a path by that name.
+#
+# Check a path with:  git check-ignore -v <path>
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Python bytecode & compiled artifacts
+# ----------------------------------------------------------------------------
 __pycache__/
-*.py[cod]
+*.py[codz]
 *$py.class
 *.so
-*.manifest
-*.spec
+*.dylib
+*.dll
 
-# ==============================================================================
-# Dependency & Environment Management (uv, venv, pyenv)
-# ==============================================================================
+# ----------------------------------------------------------------------------
+# Environments & secrets
+# ----------------------------------------------------------------------------
+# `.env` not `.env*`: the latter also swallows a committed `.env.example`.
 .env
-.venv
-env/
+.env.local
+.env.*.local
+.envrc
+.venv/
 venv/
-ENV/
+# Anchored: a bare `env/` would also match any source directory of that name.
+# `make clean-all` removes exactly these root-level names.
+/env/
+/ENV/
 env.bak/
 venv.bak/
-activate_venv.sh
+.conda/
+.uv-cache/
+# uv writes this on `uv python pin`; CI selects the interpreter from its matrix.
 .python-version
-__pypackages__/
-.pdm.toml
-.installed.cfg
 
-# ==============================================================================
-# Distribution & Packaging
-# ==============================================================================
+# Never commit certificate or key material, or credential dumps that a
+# misnamed data file might contain (gitleaks in pre-commit is the backstop).
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*
+*credentials.json
+*credentials.yaml
+*credentials.yml
+
+# ----------------------------------------------------------------------------
+# Dependency management
+# ----------------------------------------------------------------------------
+# uv.lock IS tracked: it is the single source of truth for dependencies.
+# Lockfiles of other tools would only drift from it.
+Pipfile.lock
+poetry.lock
+pdm.lock
+.pdm.toml
+.pdm-python
+.pdm-build/
+.pixi/
+pixi.lock
+__pypackages__/
+
+# ----------------------------------------------------------------------------
+# Build, distribution & packaging
+# ----------------------------------------------------------------------------
 .Python
 build/
-develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
-parts/
+develop-eggs/
 sdist/
-var/
 wheels/
 share/python-wheels/
 *.egg-info/
+.installed.cfg
 *.egg
+*.whl
 MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+.pypirc
+*.manifest
+*.spec
+# No lib/, lib64/, var/ or parts/ rules: this project builds with setuptools via
+# pyproject.toml (no distutils install tree, no buildout), and the bare forms
+# would match any xraylabtool/**/lib/ package added later.
 
-# ==============================================================================
-# Testing, Coverage & Static Analysis
-# ==============================================================================
-.cache
-.pytest_cache/
+# ----------------------------------------------------------------------------
+# Testing, coverage & quality reports
+# ----------------------------------------------------------------------------
+htmlcov/
 .tox/
 .nox/
 .coverage
 .coverage.*
-.hypothesis/
-.benchmarks/
-.ruff_cache/
-.mypy_cache/
-.pyre/
-.pytype/
-.dmypy.json
-dmypy.json
-htmlcov/
-coverage.json
-coverage.xml
 nosetests.xml
+coverage.xml
+coverage.json
 *.cover
 *.py,cover
+*.py.cover
+.hypothesis/
+.pytest_cache/
 cover/
+.benchmarks/
+# Written by `make claude` / `make perf-report`.
+coverage-claude.json
+benchmark_report.json
+# CI outputs that are only uploaded as artifacts, but appear locally when a
+# workflow step is reproduced by hand.
+pytest-results.xml
+test-results.xml
+pip-audit.json
+license-report.md
+current_dependencies.txt
+bandit*re*.json
 
-# Quality Reports
-bandit_report.json
-bandit-report.json
-bandit-claude-report.json
-baseline_ci_report.json
-performance_baseline_summary.json
-performance_history.json
-bottleneck_analysis_report.json
-consistency_report.json
+# ----------------------------------------------------------------------------
+# Type checkers, linters & tool caches
+# ----------------------------------------------------------------------------
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+.pylint_cache/
+# Anchored: unanchored, `.cache` matches files and directories at any depth.
+/.cache/
 
-# ==============================================================================
-# Documentation (Sphinx, MkDocs)
-# ==============================================================================
+# ----------------------------------------------------------------------------
+# Scientific data & run outputs
+# ----------------------------------------------------------------------------
+# Arrays and datasets are regenerable or too large to version. The bundled
+# CXRO tables are plain-text .nff files and are not affected. If a fixture ever
+# needs committing, add a targeted negation next to this block.
+*.h5
+*.hdf5
+*.mat
+*.npy
+*.npz
+# Root-level scratch only: the bare names would match tests/data/results/ etc.
+/figures/
+/plots/
+/output/
+/outputs/
+/results/
+/reports/
+jax_cache/
+
+# ----------------------------------------------------------------------------
+# Jupyter / IPython
+# ----------------------------------------------------------------------------
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+.jupyter/
+
+# ----------------------------------------------------------------------------
+# AI assistants & agent state
+# ----------------------------------------------------------------------------
+# Everything here is local tooling state. .claude/ has no repo-specific agents,
+# skills or hooks, so it is ignored whole (rheox tracks selected subfolders).
+.mcp.json
+.agent/
+.agents/
+.antigravitycli/
+.claude/
+.claude-progress.md
+.claude-scratch
+.claude-flow
+.code/
+.codex/
+.cursor/
+.cursorignore
+.cursorindexingignore
+.gemini/
+.remember/
+.serena/
+.specify/
+.ultra-think/
+.ultracode/
+.firecrawl/
+.impeccable/
+.windsurf/
+.clinerules/
+agent-os/
+# Spec Kit output at the repo root; anchored so docs/**/specs/ stays trackable.
+/specs/
+# Scratch output of the three-brain skill (reviewer reports).
+three-brain-out/
+.worktrees/
+
+# ----------------------------------------------------------------------------
+# AI documentation & logs
+# ----------------------------------------------------------------------------
+# CLAUDE.md and AGENTS.md are deliberately LOCAL-ONLY in this repo (CI skips the
+# one test that reads them). rheox tracks both as project deliverables; to adopt
+# that here, delete the two lines below and `git add` the files.
+CLAUDE*.md
+AGENTS.md
+GEMINI.md
+GROK.md
+HERMES.md
+OPENROUTER.md
+WARP.md
+codex.md
+CONTEXT.md
+PROGRESS.md
+RELEASE_GUIDE.md
+.research-log.jsonl
+CLAUDE_QUALITY_SUMMARY.json
+CODE_QUALITY_REPORT.md
+
+# ----------------------------------------------------------------------------
+# Documentation (Sphinx)
+# ----------------------------------------------------------------------------
 docs/_build/
 docs/build/
+docs/api/generated/
+.doctrees/
+*.doctree
 /site
 
-# ==============================================================================
-# Editor, IDE & OS Generated Files
-# ==============================================================================
-# IDEs
-.vscode/
+# ----------------------------------------------------------------------------
+# Graphify (knowledge graph & semantic cache)
+# ----------------------------------------------------------------------------
+# EXACTLY three files are tracked: GRAPH_REPORT.md, graph.html, graph.json.
+# Everything else graphify writes here (cache/, manifest.json, cost.json,
+# .graphify_root, .graphify_python, label signatures, dated snapshots) is
+# regenerable from `graphify update .` and does not belong in a commit. The
+# last two carry machine-specific absolute paths.
+#
+# `graphify-out/*` rather than a deny-list, so new sidecar files graphify adds
+# later are excluded by default. The negations work because the directory
+# ITSELF is not excluded, only its contents, so git still descends.
+graphify-out/*
+!graphify-out/GRAPH_REPORT.md
+!graphify-out/graph.html
+!graphify-out/graph.json
+
+# ----------------------------------------------------------------------------
+# IDEs & editors
+# ----------------------------------------------------------------------------
 .idea/
+.vscode/
+*.code-workspace
 *.sublime-project
 *.sublime-workspace
 .spyderproject
 .spyproject
 .ropeproject
-
-# OS junk
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Temporary/Backup files
 *.swp
 *.swo
 *~
+\#*\#
+.\#*
+tempCodeRunnerFile.py
+
+# ----------------------------------------------------------------------------
+# Operating system
+# ----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.directory
+
+# ----------------------------------------------------------------------------
+# Logs, temporary files & profiling
+# ----------------------------------------------------------------------------
+*.log
 *.tmp
 *.temp
 *.bak
-
-# ==============================================================================
-# AI Agent & Research Artifacts
-# ==============================================================================
-.agents/
-.claude/
-.claude-flow
-.agent/
-.codex/
-.gemini/
-.specify/
-specs/
-agent-os/
-.research-log.jsonl
-.claude-progress.md
-docs/.claude-progress.md
-CLAUDE*.md
-CLAUDE.md
-AGENTS.md
-GEMINI.md
-CLAUDE_QUALITY_SUMMARY.json
-CODE_QUALITY_REPORT.md
-coverage-claude.json
-
-# ==============================================================================
-# Knowledge Graph & Scientific Artifacts
-# ==============================================================================
-# ----------------------------------------------------------------------------
-# Graphify (Knowledge Graph & Semantic Cache)
-# ----------------------------------------------------------------------------
-graphify-out/*
-!graphify-out/graph.html
-!graphify-out/graph.json
-!graphify-out/GRAPH_REPORT.md
-
-# Scientific/Data
-.ipynb_checkpoints
-profile_default/
-ipython_config.py
-benchmark-results.json
-jax_cache/
-
-# ==============================================================================
-# Project Specific & Misc
-# ==============================================================================
-RELEASE_GUIDE.md
-WARP.md
-.cleanup_backup/
-.cleanup_reports/
-.remember/
-.worktrees/
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+*.backup
+*.orig
+/tmp/
+*.prof
+*.lprof
+.prof/
+node_modules/
