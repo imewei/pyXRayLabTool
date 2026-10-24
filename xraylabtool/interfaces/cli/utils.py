@@ -26,13 +26,21 @@ def parse_energy_string(energy_str: str) -> np.ndarray:
     elif "-" in energy_str and ":" in energy_str:
         # Range format: start-end:count or start-end:count:spacing
         parts = energy_str.split(":")
+        if len(parts) > 3:
+            raise ValueError(
+                f"Invalid energy range {energy_str!r}: expected start-end:count[:spacing]"
+            )
         range_part = parts[0]
         count = int(parts[1])
-        spacing = parts[2] if len(parts) > 2 else "linear"
+        spacing = (parts[2] if len(parts) > 2 else "linear").lower()
+        if spacing not in {"linear", "lin", "log"}:
+            raise ValueError(
+                f"Unknown energy spacing {parts[2]!r}: use 'linear' or 'log'"
+            )
 
         start, end = map(float, range_part.split("-"))
 
-        if spacing.lower() == "log":
+        if spacing == "log":
             return np.logspace(np.log10(start), np.log10(end), count)
         else:
             return np.linspace(start, end, count)

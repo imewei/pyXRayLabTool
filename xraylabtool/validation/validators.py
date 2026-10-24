@@ -301,4 +301,10 @@ def _get_valid_element_symbols() -> set[str]:
         "Po",
         "At",
         "Rn",
+        "Fr",
+        "Ra",
+        "Ac",
+        "Th",
+        "Pa",
+        "U",
     }

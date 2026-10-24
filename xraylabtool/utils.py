@@ -92,6 +92,9 @@ def wavelength_to_energy(wavelength: FloatLike, units: str = "angstrom") -> floa
     Returns:
         Energy in keV
     """
+    if not np.all(np.asarray(wavelength) > 0):
+        raise ValueError("Wavelength must be positive")
+
     # Convert wavelength to meters
     if units == "angstrom":
         wavelength_m = wavelength * 1e-10
@@ -129,6 +132,9 @@ def energy_to_wavelength(energy: FloatLike, units: str = "angstrom") -> float:
     planck_const = get_planck_constant()
     speed_light = get_speed_of_light()
     electron_charge = get_electron_charge()
+
+    if not np.all(np.asarray(energy) > 0):
+        raise ValueError("Energy must be positive")
 
     # Convert energy to Joules
     energy_j = energy * electron_charge * 1000
@@ -177,6 +183,15 @@ def bragg_angle(d_spacing: FloatLike, wavelength: FloatLike, order: int = 1) -> 
     return float(theta_deg)
 
 
+def _check_lattice(h: Any, k: Any, miller_l: Any, *lengths: Any) -> None:
+    """Reject Miller indices (0, 0, 0) and non-positive lattice parameters."""
+    zero = (np.asarray(h) == 0) & (np.asarray(k) == 0) & (np.asarray(miller_l) == 0)
+    if np.any(zero):
+        raise ValueError("Miller indices (0, 0, 0) have no defined d-spacing")
+    if not all(np.all(np.asarray(x) > 0) for x in lengths):
+        raise ValueError("Lattice parameters must be positive")
+
+
 def d_spacing_cubic(h: int, k: int, miller_l: int, a: FloatLike) -> float:
     """
     Calculate d-spacing for cubic crystal system.
@@ -188,6 +203,7 @@ def d_spacing_cubic(h: int, k: int, miller_l: int, a: FloatLike) -> float:
     Returns:
         d-spacing in Angstroms
     """
+    _check_lattice(h, k, miller_l, a)
     return float(a / np.sqrt(h**2 + k**2 + miller_l**2))
 
 
@@ -205,6 +221,7 @@ def d_spacing_tetragonal(
     Returns:
         d-spacing in Angstroms
     """
+    _check_lattice(h, k, miller_l, a, c)
     return float(1 / np.sqrt((h**2 + k**2) / a**2 + miller_l**2 / c**2))
 
 
@@ -221,6 +238,7 @@ def d_spacing_orthorhombic(
     Returns:
         d-spacing in Angstroms
     """
+    _check_lattice(h, k, miller_l, a, b, c)
     return float(1 / np.sqrt(h**2 / a**2 + k**2 / b**2 + miller_l**2 / c**2))
 
 
@@ -443,12 +461,23 @@ def _validate_balanced_parentheses(formula: str, original: str) -> None:
         raise FormulaError("Unmatched opening parenthesis", original)
 
 
-def _expand_parentheses(formula: str) -> str:
+def _expand_parentheses(formula: str, original: str | None = None) -> str:
     """Expand every parenthesized group (innermost first) into a flat element string."""
+    from xraylabtool.exceptions import FormulaError
+
     while "(" in formula:
         start = formula.rfind("(")
         end = formula.find(")", start)
         inside = formula[start + 1 : end]
+        # Validate the group before rebuilding it: expansion keeps only the tokens
+        # that match, so anything else (signs, empty groups) would vanish silently.
+        if not inside:
+            raise FormulaError("Empty parentheses in formula", original or formula)
+        leftover = re.sub(r"([A-Z][a-z]*)(\d*\.?\d*)", "", inside)
+        if leftover:
+            raise FormulaError(
+                f"Invalid characters in formula: {leftover!r}", original or formula
+            )
 
         # Multiplier after closing paren (decimal or integer)
         rest = formula[end + 1 :]
@@ -465,7 +494,8 @@ def _expand_parentheses(formula: str) -> str:
         expanded_parts: list[str] = []
         for sym, cnt in inner_elements.items():
             total = cnt * multiplier
-            expanded_parts.append(f"{sym}{total}")
+            # Positional notation: str(1e-05) would be unparseable by the element regex
+            expanded_parts.append(f"{sym}{np.format_float_positional(total, trim='-')}")
 
         expanded = "".join(expanded_parts)
         mult_len = len(mult_match.group(1)) if mult_match else 0
@@ -530,7 +560,7 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
 
     formula = formula_str.replace(" ", "")
     _validate_balanced_parentheses(formula, formula_str)
-    formula = _expand_parentheses(formula)
+    formula = _expand_parentheses(formula, formula_str)
 
     # Final parse of the fully-expanded formula
     matches = re.findall(r"([A-Z][a-z]*)(\d*\.?\d*)", formula)
