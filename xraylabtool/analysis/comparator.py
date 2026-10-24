@@ -24,7 +24,7 @@ class ComparisonResult:
 class MaterialComparator:
     """Compare X-ray properties between multiple materials."""
 
-    def __init__(self):  # type: ignore[no-untyped-def]
+    def __init__(self) -> None:
         self.default_properties = [
             "critical_angle_degrees",
             "attenuation_length_cm",
