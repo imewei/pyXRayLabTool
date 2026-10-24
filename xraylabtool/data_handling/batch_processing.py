@@ -20,6 +20,8 @@ import psutil
 
 from xraylabtool.calculators.core import (
     XRayResult,
+    _coerce_energy_array,
+    _require_finite_energies,
     calculate_single_material_properties,
 )
 
@@ -151,11 +153,76 @@ def process_single_calculation(
         return (formula, None)
 
 
+# A chunk is abandoned (its unfinished items reported as failed) when no calculation
+# completes for this many seconds. Module-level so tests can shorten it.
+_STALL_TIMEOUT_S = 300.0
+
+
+def _run_chunk_in_executor(
+    executor: concurrent.futures.Executor,
+    chunk: list[tuple[str, np.ndarray, float]],
+    memory_monitor: MemoryMonitor,
+) -> list[tuple[str, XRayResult | None]]:
+    """Run ``chunk`` on ``executor`` and return results in input order.
+
+    Completion order is nondeterministic; results are placed back by submission
+    index so output (and ``#n`` key suffixes assigned downstream) is reproducible.
+    If no calculation finishes within ``_STALL_TIMEOUT_S`` the unfinished items are
+    reported as failed instead of blocking the batch forever.
+    """
+    futures = {
+        executor.submit(process_single_calculation, formula, energies, density): i
+        for i, (formula, energies, density) in enumerate(chunk)
+    }
+    ordered: list[tuple[str, XRayResult | None] | None] = [None] * len(chunk)
+    pending = set(futures)
+    stalled = False
+    try:
+        while pending:
+            done, pending = concurrent.futures.wait(
+                pending,
+                timeout=_STALL_TIMEOUT_S,
+                return_when=concurrent.futures.FIRST_COMPLETED,
+            )
+            if not done:
+                stalled = True
+                for future in pending:
+                    future.cancel()
+                    formula = chunk[futures[future]][0]
+                    warnings.warn(
+                        f"Timeout processing formula '{formula}'", stacklevel=2
+                    )
+                    ordered[futures[future]] = (formula, None)
+                break
+            for future in done:
+                index = futures[future]
+                formula = chunk[index][0]
+                try:
+                    ordered[index] = future.result()
+                    # Memory management
+                    if not memory_monitor.check_memory():
+                        memory_monitor.force_gc()
+                except Exception as e:
+                    # Use structured error handling following existing exception patterns
+                    warnings.warn(
+                        f"Error processing formula '{formula}': {e}", stacklevel=2
+                    )
+                    ordered[index] = (formula, None)
+    finally:
+        # Do not wait for a stalled worker: it cannot be interrupted, and waiting
+        # would reintroduce the hang the timeout is meant to prevent.
+        executor.shutdown(wait=not stalled, cancel_futures=True)
+
+    return [item for item in ordered if item is not None]
+
+
 def process_batch_chunk(
     chunk: list[tuple[str, np.ndarray, float]], config: BatchConfig
 ) -> list[tuple[str, XRayResult | None]]:
     """
     Process a chunk of calculations in parallel.
+
+    Results are returned in the same order as ``chunk``.
 
     Args:
         chunk: List of (formula, energies, density) tuples
@@ -164,7 +231,6 @@ def process_batch_chunk(
     Returns:
         List of (formula, result) tuples
     """
-    results = []
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
 
     # Choose executor based on batch size: ProcessPoolExecutor gives true
@@ -172,46 +238,24 @@ def process_batch_chunk(
     # task (~0.5 ms for numpy arrays).  Only worth it when per-material
     # calc time * batch size exceeds the overhead.
     process_pool_threshold = 8  # switch at 8+ items
-    executor_cls: (
-        type[concurrent.futures.ProcessPoolExecutor]
-        | type[concurrent.futures.ThreadPoolExecutor]
-    ) = (
-        concurrent.futures.ProcessPoolExecutor
-        if len(chunk) >= process_pool_threshold
-        else concurrent.futures.ThreadPoolExecutor
+    if len(chunk) >= process_pool_threshold:
+        try:
+            return _run_chunk_in_executor(
+                concurrent.futures.ProcessPoolExecutor(max_workers=config.max_workers),
+                chunk,
+                memory_monitor,
+            )
+        except (OSError, concurrent.futures.process.BrokenProcessPool) as exc:
+            # e.g. PermissionError when semaphores/shared memory are unavailable
+            warnings.warn(
+                f"Could not use a process pool ({exc}); falling back to threads",
+                stacklevel=2,
+            )
+    return _run_chunk_in_executor(
+        concurrent.futures.ThreadPoolExecutor(max_workers=config.max_workers),
+        chunk,
+        memory_monitor,
     )
-    with executor_cls(max_workers=config.max_workers) as executor:
-        # Submit all calculations in the chunk
-        future_to_formula = {
-            executor.submit(
-                process_single_calculation, formula, energies, density
-            ): formula
-            for formula, energies, density in chunk
-        }
-
-        # Collect results as they complete
-        for future in concurrent.futures.as_completed(future_to_formula):
-            formula = future_to_formula[future]
-            try:
-                # 5 minute timeout per calculation
-                result = future.result(timeout=300)
-                results.append(result)
-
-                # Memory management
-                if not memory_monitor.check_memory():
-                    memory_monitor.force_gc()
-
-            except concurrent.futures.TimeoutError:
-                error_msg = f"Timeout processing formula '{formula}'"
-                warnings.warn(error_msg, stacklevel=2)
-                results.append((formula, None))
-            except Exception as e:
-                # Use structured error handling following existing exception patterns
-                error_msg = f"Error processing formula '{formula}': {e}"
-                warnings.warn(error_msg, stacklevel=2)
-                results.append((formula, None))
-
-    return results
 
 
 def _validate_batch_inputs(formulas: list[str], densities: list[float]) -> None:
@@ -226,19 +270,13 @@ def _prepare_energies_array(
     energies: float | list[float] | np.ndarray,
 ) -> np.ndarray:
     """Convert energies to numpy array and validate."""
-    if np.isscalar(energies):
-        # Handle scalar values including complex numbers
-        if isinstance(energies, complex):
-            energies_array = np.array([float(energies.real)], dtype=np.float64)
-        else:
-            energies_array = np.array([float(energies)], dtype=np.float64)
-    else:
-        energies_array = np.array(energies, dtype=np.float64)
+    energies_array = _coerce_energy_array(energies)
 
     if np.any(energies_array <= 0):
         raise ValueError("All energies must be positive")
     if np.any(energies_array < 0.03) or np.any(energies_array > 30):
         raise ValueError("Energy values must be in range 0.03-30 keV")
+    _require_finite_energies(energies_array)
 
     return energies_array
 
