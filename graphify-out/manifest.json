@@ -1,9 +1,9 @@
 {
   "docs/conf.py": {
-    "mtime": 1789693219.595864,
-    "seen": 1792805320.3766887,
-    "ast_hash": "bec5a08a5fac25dd68893e68ee8e949c",
-    "semantic_hash": "bec5a08a5fac25dd68893e68ee8e949c"
+    "mtime": 1792809366.618804,
+    "seen": 1792809405.3086479,
+    "ast_hash": "e6aa3d5e0ff8761181f5543c93481a3a",
+    "semantic_hash": ""
   },
   "xraylabtool/exceptions.py": {
     "mtime": 1782430970.6371455,
@@ -36,8 +36,8 @@
     "semantic_hash": "9214a8c93cdc639afb6553314b8bcbd4"
   },
   "xraylabtool/utils.py": {
-    "mtime": 1792802616.3982928,
-    "seen": 1792805320.3769917,
+    "mtime": 1792808169.458479,
+    "seen": 1792809405.3088076,
     "ast_hash": "313c9b511a4d5bccf2b724646ac8a0cd",
     "semantic_hash": "313c9b511a4d5bccf2b724646ac8a0cd"
   },
@@ -48,14 +48,14 @@
     "semantic_hash": "6eb0c3f54837bb269bda57ad1e5b85fc"
   },
   "xraylabtool/gui/workers.py": {
-    "mtime": 1792802616.3992927,
-    "seen": 1792805320.3769393,
+    "mtime": 1792808172.4634786,
+    "seen": 1792809405.308781,
     "ast_hash": "1ca11794430ca688622afd066af7540d",
     "semantic_hash": "1ca11794430ca688622afd066af7540d"
   },
   "xraylabtool/gui/services.py": {
-    "mtime": 1792802616.3982928,
-    "seen": 1792805320.3769166,
+    "mtime": 1792808172.4634786,
+    "seen": 1792809405.3087704,
     "ast_hash": "396c977ab992cd6149e579de1ce8dec7",
     "semantic_hash": "396c977ab992cd6149e579de1ce8dec7"
   },
@@ -132,8 +132,8 @@
     "semantic_hash": "8bb9c17decea341e344a27132c20585a"
   },
   "xraylabtool/backend/array_ops.py": {
-    "mtime": 1792802440.7565825,
-    "seen": 1792805320.3768628,
+    "mtime": 1792808166.492479,
+    "seen": 1792809405.308742,
     "ast_hash": "fd5ebe2c5e913ae05973053b49ebb27a",
     "semantic_hash": "fd5ebe2c5e913ae05973053b49ebb27a"
   },
@@ -150,8 +150,8 @@
     "semantic_hash": "e48035189033b16642db5381e58053ba"
   },
   "xraylabtool/data_handling/batch_processing.py": {
-    "mtime": 1792802558.2075796,
-    "seen": 1792805320.3768883,
+    "mtime": 1792808167.983479,
+    "seen": 1792809405.3087559,
     "ast_hash": "3de2c1be6e2541413c00d1328afc41b7",
     "semantic_hash": "3de2c1be6e2541413c00d1328afc41b7"
   },
@@ -168,8 +168,8 @@
     "semantic_hash": "db511acc792b05c248ccae13f0660401"
   },
   "xraylabtool/data_handling/atomic_cache.py": {
-    "mtime": 1792802429.2539096,
-    "seen": 1792805320.3768868,
+    "mtime": 1792808166.492479,
+    "seen": 1792809405.308755,
     "ast_hash": "05ded8d8f423be1694baa391066e742f",
     "semantic_hash": "05ded8d8f423be1694baa391066e742f"
   },
@@ -228,8 +228,8 @@
     "semantic_hash": "32a9483cfb82a7d5dc93aad9e7a413d5"
   },
   "xraylabtool/calculators/kernels.py": {
-    "mtime": 1792802440.7565825,
-    "seen": 1792805320.376876,
+    "mtime": 1792808165.0244794,
+    "seen": 1792809405.308749,
     "ast_hash": "357f86657cf26bde0e7606ea82a06404",
     "semantic_hash": "357f86657cf26bde0e7606ea82a06404"
   },
@@ -240,26 +240,26 @@
     "semantic_hash": "3189a8ea46a62f821b62a880f641a674"
   },
   "xraylabtool/calculators/scattering_data.py": {
-    "mtime": 1792802616.3982928,
-    "seen": 1792805320.376878,
+    "mtime": 1792808173.7984784,
+    "seen": 1792809405.3087504,
     "ast_hash": "7bfcab73b4d70f1d3236157ebef50631",
     "semantic_hash": "7bfcab73b4d70f1d3236157ebef50631"
   },
   "xraylabtool/calculators/core.py": {
-    "mtime": 1792802646.884665,
-    "seen": 1792805320.3768728,
+    "mtime": 1792808165.0244794,
+    "seen": 1792809405.3087468,
     "ast_hash": "fdd47ddabaded5bf980ff527483187f4",
     "semantic_hash": "fdd47ddabaded5bf980ff527483187f4"
   },
   "xraylabtool/calculators/cache.py": {
-    "mtime": 1792802444.728471,
-    "seen": 1792805320.37687,
+    "mtime": 1792808166.492479,
+    "seen": 1792809405.3087454,
     "ast_hash": "63a9f5f876fc22af17bb8de331f26b31",
     "semantic_hash": "63a9f5f876fc22af17bb8de331f26b31"
   },
   "xraylabtool/io/file_operations.py": {
-    "mtime": 1792802503.1219153,
-    "seen": 1792805320.3769855,
+    "mtime": 1792808170.9804788,
+    "seen": 1792809405.3088045,
     "ast_hash": "9fbc58aa8eb831bff77e961e5efea21f",
     "semantic_hash": "9fbc58aa8eb831bff77e961e5efea21f"
   },
@@ -270,8 +270,8 @@
     "semantic_hash": "004fc87f680e0fa2cc45e1ee2a94a01d"
   },
   "xraylabtool/io/data_export.py": {
-    "mtime": 1792802520.9984686,
-    "seen": 1792805320.3769841,
+    "mtime": 1792808170.9804788,
+    "seen": 1792809405.3088038,
     "ast_hash": "052c0dbe67e41d65d322d1518caf0b96",
     "semantic_hash": "052c0dbe67e41d65d322d1518caf0b96"
   },
@@ -282,8 +282,8 @@
     "semantic_hash": "5361be70e6291232207be847799c654c"
   },
   "xraylabtool/validation/validators.py": {
-    "mtime": 1792802616.3982928,
-    "seen": 1792805320.376996,
+    "mtime": 1792808169.458479,
+    "seen": 1792809405.3088098,
     "ast_hash": "84d1da2c35dac739fa65cb8950538e3f",
     "semantic_hash": "84d1da2c35dac739fa65cb8950538e3f"
   },
@@ -438,8 +438,8 @@
     "semantic_hash": "cb9765689f506769f815bbbd9f423f87"
   },
   "tests/unit/test_numerical_stability.py": {
-    "mtime": 1792802451.2322903,
-    "seen": 1792805320.376847,
+    "mtime": 1792808165.0244794,
+    "seen": 1792809405.3087325,
     "ast_hash": "fb21bd95b7bbab521fbdac0530770694",
     "semantic_hash": "fb21bd95b7bbab521fbdac0530770694"
   },
@@ -623,12 +623,6 @@
     "ast_hash": "d071ed594c85d2ccb7fcbd2c3150a5e4",
     "semantic_hash": "d071ed594c85d2ccb7fcbd2c3150a5e4"
   },
-  "scripts/create_favicon.py": {
-    "mtime": 1777045627.4453712,
-    "seen": 1792800449.4600499,
-    "ast_hash": "c50f21fc0de0b980a62459c4386440d9",
-    "semantic_hash": "c50f21fc0de0b980a62459c4386440d9"
-  },
   "scripts/test_docs.py": {
     "mtime": 1765776832.5970201,
     "seen": 1792800449.4600534,
@@ -653,24 +647,6 @@
     "ast_hash": "f1af46a96df0fc785447edf3d8f8e62b",
     "semantic_hash": "f1af46a96df0fc785447edf3d8f8e62b"
   },
-  "docs/test_coverage_audit.md": {
-    "mtime": 1777873210.6347055,
-    "seen": 1792800449.4602096,
-    "ast_hash": "36b23b0d39ccd829caba9e3653936483",
-    "semantic_hash": "36b23b0d39ccd829caba9e3653936483"
-  },
-  "docs/audit_remediation_plan.md": {
-    "mtime": 1792800803.3126993,
-    "seen": 1792805320.3770185,
-    "ast_hash": "42be8850ecb731c69f85ca0115775a68",
-    "semantic_hash": "42be8850ecb731c69f85ca0115775a68"
-  },
-  "docs/security_audit_cicd.md": {
-    "mtime": 1792800803.3136992,
-    "seen": 1792805320.3770423,
-    "ast_hash": "cbd81f7179eef098f85b03e23d59b693",
-    "semantic_hash": "cbd81f7179eef098f85b03e23d59b693"
-  },
   "docs/index.rst": {
     "mtime": 1789693219.6038642,
     "seen": 1792805320.3770356,
@@ -690,10 +666,10 @@
     "semantic_hash": "f2e61d039f93e68b6c31b8fb8ad463e6"
   },
   "docs/development/changelog.rst": {
-    "mtime": 1792803107.661954,
-    "seen": 1792805320.3770206,
-    "ast_hash": "31c882b7466c39f992181e921ba1c178",
-    "semantic_hash": "31c882b7466c39f992181e921ba1c178"
+    "mtime": 1792809381.2067282,
+    "seen": 1792809405.3088295,
+    "ast_hash": "abb90d29bdb0c1126a36cf63728fe525",
+    "semantic_hash": ""
   },
   "docs/development/contributing.rst": {
     "mtime": 1792800803.3126993,
@@ -864,10 +840,10 @@
     "semantic_hash": "cdea95a5a682d85cb5d3265ca8b8a35b"
   },
   "scripts/README.md": {
-    "mtime": 1777045627.4453712,
-    "seen": 1792800449.4602103,
-    "ast_hash": "4964e799b55e054dd595883c2ab1d37f",
-    "semantic_hash": "4964e799b55e054dd595883c2ab1d37f"
+    "mtime": 1792809019.900933,
+    "seen": 1792809405.3088436,
+    "ast_hash": "0eb91e6ea42cc0b2ac4da34b3285cb72",
+    "semantic_hash": ""
   },
   "docs/_static/logo.svg": {
     "mtime": 1758586796.4636269,
@@ -948,8 +924,8 @@
     "semantic_hash": "92d61b802027fcb2fbce51ec5f081634"
   },
   "xraylabtool/gui/main_window/multi_tab.py": {
-    "mtime": 1792802616.3982928,
-    "seen": 1792805320.3769083,
+    "mtime": 1792808172.4634786,
+    "seen": 1792809405.3087664,
     "ast_hash": "ce44811a14d6fb7ae6ba2cb2985c98dd",
     "semantic_hash": "ce44811a14d6fb7ae6ba2cb2985c98dd"
   },
@@ -960,8 +936,8 @@
     "semantic_hash": "c122c996a5a93a653c91858aeba7a54c"
   },
   "xraylabtool/gui/main_window/single_tab.py": {
-    "mtime": 1792802616.3982928,
-    "seen": 1792805320.376913,
+    "mtime": 1792808172.4634786,
+    "seen": 1792809405.3087683,
     "ast_hash": "2dceb990afe17a395765f006e5cb072a",
     "semantic_hash": "2dceb990afe17a395765f006e5cb072a"
   },
@@ -1038,8 +1014,8 @@
     "semantic_hash": "4a2f9278b5fc46ea4aad46d615ed6855"
   },
   "xraylabtool/interfaces/cli/formatting.py": {
-    "mtime": 1792802540.8419878,
-    "seen": 1792805320.3769653,
+    "mtime": 1792808170.9804788,
+    "seen": 1792809405.3087938,
     "ast_hash": "01144cffbda43d9173d35be14c68f3ce",
     "semantic_hash": "01144cffbda43d9173d35be14c68f3ce"
   },
@@ -1050,8 +1026,8 @@
     "semantic_hash": "a635341f49a6bcbbb21f363c527b3ea3"
   },
   "xraylabtool/interfaces/cli/utils.py": {
-    "mtime": 1792802616.3982928,
-    "seen": 1792805320.3769684,
+    "mtime": 1792808169.458479,
+    "seen": 1792809405.3087957,
     "ast_hash": "6ff43ad0d3b71c89d9f7deef175af59a",
     "semantic_hash": "6ff43ad0d3b71c89d9f7deef175af59a"
   },
