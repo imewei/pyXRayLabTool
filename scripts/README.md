@@ -77,8 +77,8 @@ This script integrates with:
 📖 TESTING RST CODE EXAMPLES
 ====================================================================
 
-ℹ️ Testing docs/source/examples.rst...
-✅ docs/source/examples.rst: 12 examples tested
+ℹ️ Testing docs/examples/index.rst...
+✅ docs/examples/index.rst: 12 examples tested
 
 📊 FINAL SUMMARY
 ====================================================================
