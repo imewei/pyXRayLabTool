@@ -27,6 +27,15 @@ uv pip install "xraylabtool[gpu_cuda12]"
 pip install xraylabtool
 ```
 
+### Using conda
+
+```bash
+# Core package (CPU only) from the imewei channel; dependencies come from conda-forge
+conda install -c imewei -c conda-forge xraylabtool
+```
+
+The conda package does not include the CUDA GPU extras; use pip or uv for GPU support.
+
 ### Development
 
 ```bash

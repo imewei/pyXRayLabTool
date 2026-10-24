@@ -45,6 +45,21 @@ about 2.5e-16 relative error). The GPU extras add the matching
 ``jax-cuda*-plugin`` and ``jax-cuda*-pjrt`` packages, which must be the same
 version as ``jaxlib``.
 
+Install from conda
+~~~~~~~~~~~~~~~~~~
+
+The package is also published on the ``imewei`` channel at
+https://anaconda.org/imewei/xraylabtool. Keep ``conda-forge`` in the command,
+because the dependencies are resolved from it:
+
+.. code-block:: bash
+
+   conda install -c imewei -c conda-forge xraylabtool
+
+The conda package is ``noarch`` and CPU only. It does not provide the
+``gpu_cuda12`` / ``gpu_cuda13`` extras; use pip or uv for GPU support. ``mamba``
+accepts the same arguments.
+
 Development Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

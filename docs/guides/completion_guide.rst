@@ -140,7 +140,7 @@ Conda/Mamba Environments
    conda activate xraywork
 
    # Install XRayLabTool and completion
-   pip install xraylabtool
+   conda install -c imewei -c conda-forge xraylabtool
    xraylabtool completion install
 
    # Completion is now active

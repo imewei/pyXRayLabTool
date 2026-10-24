@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Short console-script aliases `xlt` (for `xraylabtool`) and `xlt-gui` (for `xraylabtool-gui`); shell completion registers `xlt` alongside `xtool` for bash, zsh, fish, and PowerShell.
+- `conda-recipe/meta.yaml`: noarch conda recipe. The package is published on the `imewei` channel (`conda install -c imewei -c conda-forge xraylabtool`) with the core runtime dependencies and CPU-only JAX; the CUDA extras are pip/uv only.
+
 ## [0.4.7] - 2026-10-23
 
 ### Added

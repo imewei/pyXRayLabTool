@@ -76,6 +76,9 @@ Installation
    pip install "xraylabtool[gpu_cuda13]"   # NVIDIA GPU, CUDA 13 driver
    pip install "xraylabtool[gpu_cuda12]"   # NVIDIA GPU, CUDA 12 driver
 
+   # Or with conda (CPU only; dependencies come from conda-forge)
+   conda install -c imewei -c conda-forge xraylabtool
+
 Basic Usage
 ~~~~~~~~~~~
 
