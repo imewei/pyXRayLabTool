@@ -566,17 +566,17 @@ release-check: clean dev-setup version-check validate docs docs-linkcheck build
 # Performance Monitoring
 perf-baseline:
 	@echo "$(YELLOW)Creating performance baseline...$(NC)"
-	pytest tests/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-save=baseline
+	pytest tests/integration/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-save=baseline
 	@echo "$(GREEN)✅ Baseline saved$(NC)"
 
 perf-compare:
 	@echo "$(YELLOW)Comparing against performance baseline...$(NC)"
-	pytest tests/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-compare=baseline
+	pytest tests/integration/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-compare=baseline
 	@echo "$(GREEN)✅ Performance comparison completed$(NC)"
 
 perf-report:
 	@echo "$(YELLOW)Generating performance report...$(NC)"
-	pytest tests/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-json=benchmark_report.json
+	pytest tests/integration/test_integration.py::TestPerformanceBenchmarks --benchmark-only --benchmark-json=benchmark_report.json
 	@echo "$(GREEN)✅ Performance report saved to benchmark_report.json$(NC)"
 
 # Installation Testing
