@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `tests/unit/test_deep_debug_regressions.py`: regression tests for each defect fixed from the deep-debugging review (lazy imports, energy contract, anomalous dispersion, cache immutability, data integrity for all `.nff` files, exports, backend state, batch ordering/timeouts/fallback, parser, validators, repeated materials, pandas loader, GUI error slots and worker, utility validation).
 - Python 3.12 in the CI test matrix (Ubuntu, macOS, Windows); the 3.12 suite passes (740 tests) against the locked dependencies.
 - `tests/unit/test_jax_backend_parity.py`: JAX-vs-NumPy parity tests (SiO2, H2O, Fe2O3; `rtol=1e-12`), an `InterpolationFactory.create_pchip` check against `interpax`, and tests for the `float()` fallback in the two scalar-energy converters.
 
@@ -15,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `jax`/`jaxlib` no longer have an upper bound (`>=0.8.0`); the `<0.11` ceiling added in 0.4.5 is removed from `pyproject.toml` and from the `cuda12-local`/`cuda13-local` Makefile targets. The suite and a JAX-vs-NumPy comparison pass on 0.12.0.1 (maximum relative difference 2.5e-16), and `uv.lock` moves `jax`/`jaxlib` from 0.10.2 to 0.12.0.1, matching the locked CUDA plugin packages.
 - ruff is pinned to 0.17.2 in `.pre-commit-config.yaml`, `ci.yml` and `security.yml`, matching `uv.lock`. `PLR0917` (stable in ruff 0.17) is ignored alongside `PLR0913` instead of making public signatures keyword-only.
 - Refreshed `uv.lock` dependency versions (including `typer` 0.27.3).
+- Machine-readable output (`format_xray_result` CSV/JSON, `xraylabtool.io`) now keeps full precision; `precision` applies to table output only.
+- `export_to_csv` raises `ValueError` for results with different numbers of energies, and a scalar field (for example `density_g_cm3`) has one column named after the field instead of one per energy.
+- `energy_to_wavelength`, `wavelength_to_energy` and the `d_spacing_*` functions raise `ValueError` for non-positive energies, wavelengths and lattice parameters and for Miller indices (0, 0, 0) instead of returning negative or infinite values; `parse_energy_string` raises `ValueError` for unknown spacing (only `linear`, `lin` and `log`) and for extra `:` fields.
 
 ### Removed
 - `safety` dev dependency, its `[tool.safety]` table and its steps in the `security.yml` and `dependencies.yml` workflows. `pip-audit` is now the only dependency vulnerability gate. The lock also drops the 11 packages only `safety` required (`nltk`, `authlib`, `marshmallow`, `tenacity`, ...).
@@ -23,6 +27,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OSTI GitLab mirror: tags are force-pushed in a separate command, so a re-tagged release (such as `v0.4.6`) no longer fails the job with "tag already exists".
 - `mypy xraylabtool/` reports no errors on mypy 2.4.0 and on the CI-pinned 1.20.0 (23 errors fixed: generic `dict` annotations, batch executor typing, a list rebound to an ndarray in `analysis`, stale `type: ignore` comments).
 - `test_documented_import_examples` executed prose from `CLAUDE.md` ("so `import xraylabtool` stays fast; ...") and always failed; it now matches only import statements and also scans `README.md`.
+- `xraylabtool.utils`, `.constants`, `.validation`, `.analysis`, `.io`, `.calculators` and `.data_handling` raised `RecursionError` when first accessed as attributes of the package in a fresh interpreter (`import xraylabtool; xraylabtool.utils`); the lazy loader now uses `importlib`, and the lookups for the nonexistent `cleanup`/`export` modules are gone.
+- Energy input: 2-D arrays silently produced wrong delta/beta/f1/f2, 0-d NumPy arrays crashed, complex energies lost their imaginary part (silently in the batch API for scalars), and NaN raised a generic `ValueError`. Energies must now be a scalar or 1-D real array; otherwise `EnergyError`. `XRayResult.energy_kev` is a copy and no longer aliases the caller's array.
+- Negative delta near absorption edges (anomalous dispersion) is no longer rejected as "physically unrealistic": 20 elements, including C, Na, Ca, Ag and Pb, failed at the 0.03 keV limit. The critical angle is 0 where delta < 0; absorption and attenuation are unaffected.
+- `get_bulk_atomic_data` returned a shared mutable dict, so editing it changed later calculations in the process and `clear_scattering_factor_cache()` did not undo that; the mapping is read-only and the cache clear now includes the inner loader.
+- `data/AtomicScatteringFactor/f.nff`: first row energy was `129.3` instead of `29.3`, which corrupted fluorine f1/f2 near 129 eV after sorting.
+- Exports: wide CSV shifted values into the wrong columns for unequal energy grids or scalar fields; dictionary CSV split strings into characters and depended on key order; a dict of `XRayResult` was written as its `repr()` in CSV and JSON; CSV/JSON formatters rounded to a fixed number of decimals, turning small beta and SLD values into 0.
+- `set_backend()` left backend-specific interpolators cached, so the JAX backend could keep using scipy interpolators (and the reverse) depending on call order.
+- Batch API: results were returned in completion order (thread path), the documented per-calculation timeout could never fire, and a process pool that cannot start (for example without semaphores) aborted the batch instead of falling back to threads.
+- JAX scatter kernel recompiled for every distinct density/material because `common_factor` was a static argument.
+- `parse_formula`: invalid text inside a group (`Si(O-2)`, `Si(O2+)`, `Si()`) was silently dropped, and small fractional counts inside a group (`(H0.00001)O`) failed after expansion.
+- Repeated formulas with different densities overwrote each other in `calculate_xray_properties`, `calculate_multiple_xray_properties` and the GUI service; later entries now get a `formula@density` key.
+- `validate_chemical_formula` rejected Ac, Fr, Pa, Ra, Th and U although scattering data exists for them.
+- `scattering_data.load_data_file` failed on pandas 3 (`delim_whitespace` was removed).
+- GUI: both calculation-error slots raised `KeyError` while logging (reserved `message` field), so the error dialog never appeared; `CalculationWorker` crashed on `functools.partial`/builtin callables and mistook a local variable named `progress_cb` for a parameter.
 
 ### Security
 - `filelock` 3.32.7 to 4.2.4 (CVE-2026-112940, fixed in 4.2.1; build/dev tooling only). The update was blocked by `safety`, which required `filelock<4`.
