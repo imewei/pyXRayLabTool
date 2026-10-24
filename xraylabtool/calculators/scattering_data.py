@@ -294,10 +294,10 @@ def load_data_file(filename: str) -> Any:
     if file_path.suffix.lower() == ".csv":
         return pd.read_csv(file_path)
     elif file_path.suffix.lower() in [".txt", ".dat"]:
-        return pd.read_csv(file_path, delim_whitespace=True)  # type: ignore[call-overload]
+        return pd.read_csv(file_path, sep=r"\s+")
     else:
         # Try to load as generic text file
-        return pd.read_csv(file_path, delim_whitespace=True)  # type: ignore[call-overload]
+        return pd.read_csv(file_path, sep=r"\s+")
 
 
 # Initialize element paths at module import time for performance
