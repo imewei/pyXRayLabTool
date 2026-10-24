@@ -69,54 +69,29 @@ from xraylabtool.logging_utils import configure_logging, get_logger, log_environ
 # All modules are now imported lazily via __getattr__ for ultra-fast startup
 
 
+_LAZY_SUBMODULES = frozenset(
+    {
+        "analysis",
+        "calculators",
+        "constants",
+        "data_handling",
+        "io",
+        "utils",
+        "validation",
+    }
+)
+
+
 # Lazy import heavy modules and functions to improve startup time
 def __getattr__(name):  # type: ignore[no-untyped-def]
-    # Lazy module imports
-    if name == "calculators":
-        from xraylabtool import calculators
+    # Lazy submodule imports. Use importlib: `from xraylabtool import X` would call
+    # this __getattr__ again (the submodule is not yet an attribute) and recurse.
+    if name in _LAZY_SUBMODULES:
+        import importlib
 
-        globals()["calculators"] = calculators
-        return calculators
-    elif name == "constants":
-        from xraylabtool import constants
-
-        globals()["constants"] = constants
-        return constants
-    elif name == "data_handling":
-        from xraylabtool import data_handling
-
-        globals()["data_handling"] = data_handling
-        return data_handling
-    elif name == "io":
-        from xraylabtool import io
-
-        globals()["io"] = io
-        return io
-    elif name == "utils":
-        from xraylabtool import utils
-
-        globals()["utils"] = utils
-        return utils
-    elif name == "validation":
-        from xraylabtool import validation
-
-        globals()["validation"] = validation
-        return validation
-    elif name == "analysis":
-        from xraylabtool import analysis
-
-        globals()["analysis"] = analysis
-        return analysis
-    elif name == "cleanup":
-        from xraylabtool import cleanup
-
-        globals()["cleanup"] = cleanup
-        return cleanup
-    elif name == "export":
-        from xraylabtool import export
-
-        globals()["export"] = export
-        return export
+        module = importlib.import_module(f"xraylabtool.{name}")
+        globals()[name] = module
+        return module
 
     # Lazy function imports from calculators
     elif name in [
