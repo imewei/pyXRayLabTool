@@ -10,6 +10,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+        exclude: ^conda-recipe/meta\.yaml$  # Jinja-templated, not plain YAML
       - id: check-toml
       - id: check-json
       - id: check-merge-conflict
