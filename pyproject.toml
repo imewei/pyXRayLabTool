@@ -497,12 +497,10 @@ exclude = [
 ".github/*" = ["S607", "PLW2901"]  # Allow partial paths in GitHub scripts
 "xraylabtool/interfaces/cli/**.py" = ["PLC0415", "PLR0911", "PLR0912", "PLR0915", "ARG001", "ARG002", "S101"]  # CLI lazy imports, complexity, and assert for parsed data guard
 "xraylabtool/interfaces/completion*.py" = ["PLC0415", "PLW0603", "S607", "UP035", "ARG001", "ARG002"]  # Completion system patterns
-"xraylabtool/core/*.py" = ["RUF001", "RUF002", "RUF003"]  # Unicode scientific symbols
 "xraylabtool/analysis/*.py" = ["S110", "SIM102", "B904"]  # Analysis module patterns
 "xraylabtool/analysis/comparator.py" = ["PLR0912"]
 "__init__.py" = ["F401", "PLR0911", "PLR0912", "PLC0415"]     # Allow unused imports, complexity, and lazy imports in __init__.py
 # Relax rules for completion system files (complex generated/template code)
-"**/interfaces/completion.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM102"]
 "**/interfaces/completion_v2/*.py" = ["E501", "PLR0912", "PLR0915", "PLR0911", "SIM112", "B006", "S604", "S603", "ARG002", "SIM118", "PLW0603", "ARG001", "S112", "PLW2901", "RUF001", "PLC0415", "S110"]
 # Scientific computing files with performance-critical lazy imports
 "**/utils.py" = ["PLC0415", "ARG001", "PLR0912"]  # Allow lazy imports, unused args, and complex parse_formula in utility functions
