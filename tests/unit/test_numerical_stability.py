@@ -81,21 +81,26 @@ class TestNumericalStabilityChecks:
                 number_of_electrons=30.0,
             )
 
-    def test_negative_dispersion_detection(self):
-        """Test detection of negative dispersion values (physically unrealistic)."""
+    def test_negative_dispersion_is_valid_anomalous_dispersion(self):
+        """Negative delta (anomalous dispersion near an edge) is physical, not an error."""
         wavelength = np.array([1.24e-10, 1.55e-10])
-        dispersion = np.array([1e-6, -1e-6])  # One negative value
+        dispersion = np.array([1e-6, -1e-6])  # Second point below an absorption edge
         absorption = np.array([1e-8, 1e-8])
 
-        with pytest.raises(ValueError, match="Negative dispersion values detected"):
-            calculate_derived_quantities(
-                wavelength,
-                dispersion,
-                absorption,
-                mass_density=2.2,
-                molecular_weight=60.08,
-                number_of_electrons=30.0,
-            )
+        _, critical_angle, attenuation, re_sld, im_sld = calculate_derived_quantities(
+            wavelength,
+            dispersion,
+            absorption,
+            mass_density=2.2,
+            molecular_weight=60.08,
+            number_of_electrons=30.0,
+        )
+
+        assert critical_angle[0] > 0
+        assert critical_angle[1] == 0.0  # no total external reflection
+        assert np.all(np.isfinite(attenuation)) and np.all(attenuation > 0)
+        assert re_sld[1] < 0 < re_sld[0]
+        assert np.all(im_sld > 0)
 
     def test_safe_critical_angle_calculation(self):
         """Test safe critical angle calculation with np.maximum."""

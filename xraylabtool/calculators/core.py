@@ -10,7 +10,7 @@ public API functions that wire everything together.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np  # Keep for validation and array operations
@@ -142,28 +142,69 @@ def _validate_single_material_inputs(
             "Energy is out of range 0.03keV ~ 30keV", valid_range="0.03-30 keV"
         )
 
+    _require_finite_energies(energy_kev)
+
     return energy_kev
 
 
-def _convert_energy_input(energy_kev: Any) -> EnergyArray:
-    """Convert energy input to array."""
-    if np.isscalar(energy_kev):
-        if isinstance(energy_kev, complex):
-            raise EnergyError(
-                "Complex energy values are not supported; pass real energies in keV",
-                valid_range="0.03-30 keV",
-            )
-        elif isinstance(energy_kev, int | float | np.number):
-            energy_kev = ops.asarray([float(energy_kev)], dtype=ops.float64)
-        else:
-            try:
-                energy_kev = ops.asarray([float(energy_kev)], dtype=ops.float64)  # type: ignore[arg-type]
-            except (ValueError, TypeError) as e:
-                raise ValueError(f"Cannot convert energy to float: {energy_kev}") from e
-    else:
-        energy_kev = ops.asarray(energy_kev, dtype=ops.float64)
+def unique_result_key(results: Mapping[str, Any], formula: str, density: float) -> str:
+    """Return a key for ``formula`` that never overwrites an earlier result.
 
-    return ops.asarray(energy_kev)  # type: ignore[no-any-return]
+    The first occurrence keeps the plain formula; a repeat with another density
+    becomes ``formula@density`` (with a ``#n`` suffix if even that is taken).
+    """
+    if formula not in results:
+        return formula
+    base = f"{formula}@{density:.3f}"
+    key, n = base, 2
+    while key in results:
+        key = f"{base}#{n}"
+        n += 1
+    return key
+
+
+def _coerce_energy_array(energies: Any) -> np.ndarray:
+    """Return ``energies`` as a new, real, 1-D float64 NumPy array.
+
+    The result never aliases the caller's data. Scalars and 0-d arrays become
+    length-one arrays; complex values and arrays with more than one dimension are
+    rejected, because discarding the imaginary part or broadcasting a grid along
+    the wrong axis would silently produce wrong results.
+    """
+    if isinstance(energies, complex) or np.iscomplexobj(energies):
+        raise EnergyError(
+            "Complex energy values are not supported; pass real energies in keV",
+            valid_range="0.03-30 keV",
+        )
+    if np.isscalar(energies):
+        try:
+            return np.array([float(energies)], dtype=np.float64)  # type: ignore[arg-type]
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Cannot convert energy to float: {energies!r}") from e
+
+    array = np.array(energies, dtype=np.float64)
+    if array.ndim == 0:
+        return array.reshape(1)
+    if array.ndim > 1:
+        raise EnergyError(
+            f"Energies must be a scalar or a 1-D array, got {array.ndim}-D "
+            f"array with shape {array.shape}",
+            valid_range="0.03-30 keV",
+        )
+    return array
+
+
+def _require_finite_energies(energies: np.ndarray) -> None:
+    """Reject NaN/Inf energies (NaN passes every ordering comparison)."""
+    if not np.all(np.isfinite(energies)):
+        raise EnergyError(
+            "Energies must be finite (no NaN or Inf)", valid_range="0.03-30 keV"
+        )
+
+
+def _convert_energy_input(energy_kev: Any) -> EnergyArray:
+    """Convert energy input to a 1-D array on the active backend."""
+    return ops.asarray(_coerce_energy_array(energy_kev), dtype=ops.float64)  # type: ignore[no-any-return]
 
 
 # =====================================================================================
@@ -174,7 +215,7 @@ def _convert_energy_input(energy_kev: Any) -> EnergyArray:
 def _calculate_molecular_properties(
     element_symbols: list[str],
     element_counts: list[float],
-    atomic_data_bulk: dict[str, Any],
+    atomic_data_bulk: Mapping[str, Any],
 ) -> tuple[float, float]:
     """Calculate molecular weight and total electrons."""
     molecular_weight = 0.0
@@ -325,7 +366,7 @@ def calculate_multiple_xray_properties(
         raise ValueError("Formula list must not be empty")
 
     # Process each formula
-    results = {}
+    results: dict[str, dict[str, str | float | np.ndarray]] = {}
 
     for formula, mass_density in zip(formula_list, mass_density_list, strict=False):
         try:
@@ -352,7 +393,7 @@ def calculate_multiple_xray_properties(
                 "re_sld": result.real_sld_per_ang2,
                 "im_sld": result.imaginary_sld_per_ang2,
             }
-            results[formula] = result_dict
+            results[unique_result_key(results, formula, mass_density)] = result_dict
         except Exception as e:
             # Log warning but continue processing other formulas
             _logger.warning(
@@ -475,21 +516,7 @@ def _validate_xray_inputs(formulas: list[str], densities: list[float]) -> None:
 
 def _validate_and_process_energies(energies: Any) -> EnergyArray:
     """Validate and convert energies to numpy array."""
-    if np.isscalar(energies):
-        if isinstance(energies, complex):
-            raise EnergyError(
-                "Complex energy values are not supported; pass real energies in keV",
-                valid_range="0.03-30 keV",
-            )
-        elif isinstance(energies, int | float | np.number):
-            energies_array = np.array([float(energies)], dtype=np.float64)
-        else:
-            try:
-                energies_array = np.array([float(energies)], dtype=np.float64)  # type: ignore[arg-type]
-            except (ValueError, TypeError) as e:
-                raise ValueError(f"Cannot convert energy to float: {energies!r}") from e
-    else:
-        energies_array = np.array(energies, dtype=np.float64)
+    energies_array = _coerce_energy_array(energies)
 
     if energies_array.size == 0:
         raise EnergyError("Energies array cannot be empty", valid_range="0.03-30 keV")
@@ -501,6 +528,8 @@ def _validate_and_process_energies(energies: Any) -> EnergyArray:
         raise EnergyError(
             "Energy values must be in range 0.03-30 keV", valid_range="0.03-30 keV"
         )
+
+    _require_finite_energies(energies_array)
 
     return energies_array
 
@@ -565,12 +594,12 @@ def _process_formulas_parallel(
     JAX's JIT-compiled kernels already parallelize at the XLA level.
     """
     formula_density_pairs = list(zip(formulas, densities, strict=False))
-    results = {}
+    results: dict[str, XRayResult] = {}
 
     for pair in formula_density_pairs:
         try:
             formula_result, xray_result = process_func(pair)
-            results[formula_result] = xray_result
+            results[unique_result_key(results, formula_result, pair[1])] = xray_result
         except Exception as e:
             _logger.warning(
                 "Failed to process formula",

@@ -83,9 +83,9 @@ def _get_scattering_kernel() -> Any:
         if "scatter" not in _jit_cache:
             import jax
 
-            _jit_cache["scatter"] = jax.jit(
-                _scattering_math_kernel_raw, static_argnums=(4,)
-            )
+            # common_factor (arg 4) must stay a traced argument: marking it static
+            # would recompile the kernel for every distinct density/material.
+            _jit_cache["scatter"] = jax.jit(_scattering_math_kernel_raw)
         return _jit_cache["scatter"]
     return _scattering_math_kernel_raw
 
@@ -222,8 +222,10 @@ def calculate_derived_quantities(
             "Non-finite values (NaN or Inf) detected in dispersion or absorption coefficients"
         )
 
-    if ops.any(ops.asarray(dispersion) < 0):
-        raise ValueError("Negative dispersion values detected (physically unrealistic)")
+    # Negative dispersion is physical: near absorption edges f1 can be negative
+    # (anomalous dispersion), so delta < 0 is valid. The kernel reports a critical
+    # angle of 0 there (no total external reflection) and keeps absorption and
+    # attenuation, which remain meaningful.
 
     # Calculate electron density (electrons per unit volume).
     electron_density = float(
