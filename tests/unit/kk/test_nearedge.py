@@ -510,3 +510,36 @@ def test_docstring_examples_run() -> None:
     results = doctest.testmod(nearedge, optionflags=doctest.NORMALIZE_WHITESPACE)
     assert results.attempted > 0
     assert results.failed == 0
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("start_ev", [1001, 1015, 1967])
+def test_merge_points_at_data_ends_survive_the_kev_round_trip(start_ev: int) -> None:
+    """(k / 1000) * 1000 != k for some integers; the data ends must still merge."""
+    lo, hi = float(start_ev), float(start_ev + 60)
+    assert (lo / 1000.0) * 1000.0 != lo or (hi / 1000.0) * 1000.0 != hi
+    spec = _edge_spectrum(lo, hi, 13)
+    res = kk_calculate_real(
+        "C8H8",
+        nearedge=spec,
+        input_type="nexafs",
+        merge_points_kev=(lo / 1000.0, hi / 1000.0),
+    )
+    assert np.isfinite(res.f1).all()
+    # The merge points are snapped onto the data ends, not left a ulp inside.
+    assert lo / 1000.0 in res.energy_kev
+    assert hi / 1000.0 in res.energy_kev
+
+
+@pytest.mark.unit
+def test_genuinely_outside_merge_point_still_raises_with_distinct_digits() -> None:
+    spec = to_asf_scale(_edge_spectrum(), "nexafs")  # 270-330 eV
+    with pytest.raises(NearEdgeDataError, match="inside the near-edge") as excinfo:
+        merge_spectra(spec, SEG_EV, COEFFS, merge_points_ev=(270.0 * (1 - 1e-9), 320.0))
+    message = str(excinfo.value)
+    assert "269.99999973" in message  # the offending value, to enough digits
+    assert "270-330 eV" in message
+    top = float(SEG_EV[-1])
+    wide = to_asf_scale(_edge_spectrum(top / 2, top * 2, 20), "nexafs")
+    with pytest.raises(NearEdgeDataError, match="tabulated"):
+        merge_spectra(wide, SEG_EV, COEFFS, merge_points_ev=(top / 2, top * (1 + 1e-9)))

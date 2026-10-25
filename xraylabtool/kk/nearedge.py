@@ -58,8 +58,20 @@ _HC_EV_M = constants.SPEED_OF_LIGHT * constants.PLANCK / constants.ELEMENT_CHARG
 _MIN_RELATIVE_STEP = 1e-6
 
 
+# A merge point within this relative distance of a range end is that end: the
+# keV API multiplies by 1000, and (k / 1000) * 1000 != k for some integers k.
+_SNAP_RTOL = 1e-12
+
+
 def _fmt_range(lo: float, hi: float) -> str:
-    return f"{lo:g}-{hi:g} eV"
+    return f"{lo:.12g}-{hi:.12g} eV"
+
+
+def _snap(value: float, bound: float) -> float:
+    """``bound`` if ``value`` is within rounding of it, else ``value``."""
+    return (
+        bound if math.isclose(value, bound, rel_tol=_SNAP_RTOL, abs_tol=0.0) else value
+    )
 
 
 def _validate_arrays(
@@ -385,16 +397,18 @@ def _resolve_merge_points(
         raise NearEdgeDataError(f"Merge points must be finite, got {low}, {high}")
     if not low < high:
         raise NearEdgeDataError(
-            f"Merge points must be increasing (low < high), got {low:g}, {high:g} eV"
+            f"Merge points must be increasing (low < high), got {low:.12g}, {high:.12g} eV"
         )
+    low, high = _snap(low, data_lo), _snap(high, data_hi)
     if low < data_lo or high > data_hi:
         raise NearEdgeDataError(
-            f"Merge points {low:g}, {high:g} eV must lie inside the near-edge "
+            f"Merge points {low:.12g}, {high:.12g} eV must lie inside the near-edge "
             f"data range {_fmt_range(data_lo, data_hi)}"
         )
+    low, high = _snap(low, tab_lo), _snap(high, tab_hi)
     if low < tab_lo or high > tab_hi:
         raise NearEdgeDataError(
-            f"Merge points {low:g}, {high:g} eV must lie inside the tabulated "
+            f"Merge points {low:.12g}, {high:.12g} eV must lie inside the tabulated "
             f"range {_fmt_range(tab_lo, tab_hi)}"
         )
     return low, high
