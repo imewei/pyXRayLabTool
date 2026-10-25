@@ -46,6 +46,7 @@ def test_kk_docs_build_adds_no_warnings(tmp_path: Path) -> None:
 @pytest.mark.slow
 @pytest.mark.integration
 def test_kk_docs_doctests_pass(tmp_path: Path) -> None:
+    """Whole-docs gate: any doctest failure on any page fails this test."""
     proc = _sphinx("doctest", tmp_path)
     output = (tmp_path / "output.txt").read_text(encoding="utf-8")
     assert proc.returncode == 0, output[-3000:]

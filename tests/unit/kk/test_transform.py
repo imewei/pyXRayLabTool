@@ -206,7 +206,7 @@ def test_matches_paper_eq10_as_corrected(name: str) -> None:
 
 
 @pytest.mark.unit
-def test_printed_eq10_a3_subscripts_are_off_by_one() -> None:
+def test_printed_eq10_a3_sign_is_wrong() -> None:
     coeffs = np.array([[0.0, 0.0, 0.0, 0.0, BASIS_COEFFS[4]]])
     energies = np.array(BASIS_EVAL)
     reference = np.array([_quadrature_f1(e, BASIS_SEG, coeffs) for e in energies])

@@ -53,7 +53,9 @@ def main() -> None:
     ax.text(27.0, 1e-2, "30 keV cut", ha="right", va="center", fontsize=8)
     ax.set_xlabel("Photon energy (keV)")
     ax.set_ylabel(r"$f_1^{\rm trunc} - f_1^{\rm full}$ (e/atom)")
-    ax.set_title("f1 lost by integrating the tabulated f2 only to 30 keV", fontsize=10)
+    ax.set_title(
+        "f1 overestimated by integrating the tabulated f2 only to 30 keV", fontsize=10
+    )
     ax.grid(True, which="major", lw=0.4, alpha=0.5)
     ax.legend(frameon=False, fontsize=9, loc="center left")
     fig.tight_layout()

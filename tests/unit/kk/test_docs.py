@@ -47,9 +47,9 @@ def test_transform_docstrings_cite_paper_equations() -> None:
     assert "Eq. (9)" in (inspect.getdoc(kk.relativistic_correction) or "")
     assert "Eq. (10)" in (inspect.getdoc(kk.kk_piecewise_poly) or "")
     assert "Eq. (8)" in (inspect.getdoc(kk.evaluate_f2) or "")
-    refs = (inspect.getdoc(kk.refine_spectrum) or "").split("References")[1]
-    assert "not in" in refs
-    assert "Watts" in refs
+    doc = inspect.getdoc(kk.refine_spectrum) or ""
+    assert "References" in doc
+    assert "not in B. Watts" in doc.split("References")[1]
 
 
 @pytest.mark.unit
@@ -81,6 +81,7 @@ def test_docs_state_the_eq10_erratum() -> None:
     # The published page prints x_{j+1}^{-1} - x_j^{-1}; a j-1 subscript there
     # is a low-resolution rendering artefact and must not be documented.
     assert "x_{j-1}^{-1}" not in text
+    assert r"\left(x_j^{-1} - x_{j+1}^{-1}\right)" in text
 
 
 @pytest.mark.unit

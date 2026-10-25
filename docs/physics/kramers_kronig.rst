@@ -152,7 +152,7 @@ rounding in the cancelling terms (see Accuracy).
    (:math:`-2/E` in the :math:`x_{j+1}^{-1} - x_j^{-1}` column), and so does
    upstream ``KK_PP``.
 
-   ``test_printed_eq10_a3_subscripts_are_off_by_one`` in
+   ``test_printed_eq10_a3_sign_is_wrong`` in
    ``tests/unit/kk/test_transform.py`` checks this against Cauchy quadrature of
    a pure :math:`a_{j,-3}` interval. The corrected term agrees to 1e-12
    relative. The printed sign is wrong by 0.73, 0.067 and 0.015 at the three
@@ -207,8 +207,11 @@ Integration limits
 Eq. (1) integrates from 0 to infinity. Applied to the first and last
 intervals, the closed form stays finite only if the polynomials vanish
 appropriately (Watts 2014, discussion after Eq. (7)). The interval that starts
-at 0 must have :math:`a_n = 0` for every :math:`n < 0`, so that the transform
-stays finite as :math:`x \to 0`. The interval that extends to infinity must have
+at 0 must have :math:`a_n = 0` for every :math:`n < 0`. The reason is not
+convergence of the integral, which holds for :math:`n = -1`; it is that the
+antiderivative :math:`F(x)` from which the closed form is built (Watts 2014,
+Eq. (4)) must be finite at :math:`x = 0`, as the Kramers-Kronig relations
+require. The interval that extends to infinity must have
 :math:`a_n = 0` for every :math:`n \ge -1`, so that the integrand decays fast
 enough.
 
@@ -322,7 +325,7 @@ up to 30 keV instead of 500 keV. It is negligible for carbon, visible for iron
 and large for lead, the same trend the paper reports for these elements:
 
 .. figure:: ../_static/kk/truncation.png
-   :alt: f1 lost by truncating the integral at 30 keV, for C, Fe and Pb
+   :alt: Overestimate of f1 from truncating the integral at 30 keV, for C, Fe and Pb
    :width: 90%
 
    :math:`f_1^{\rm trunc} - f_1^{\rm full}` against photon energy (log-log).
