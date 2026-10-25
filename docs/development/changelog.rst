@@ -36,6 +36,7 @@ Unreleased
 **Fixed**
 
 - GUI: table headers no longer render uppercase, which turned δ, β and μ into Δ, B and M.
+- GUI: the single-material plot now spans the energy-wavelength converter row and, with the multi-material plot, resizes to fit its panel instead of being forced to 720 px; the scrollbar remains for windows too short to fit it.
 - GUI: toast notifications are sized after their stylesheet is applied, so the message is no longer clipped ("calculation do…").
 - GUI: plot legends use the theme text color on a translucent plot-colored box, stay readable over curves and restyle on a live theme switch; the multi-material results table no longer stretches its last column.
 - GUI: plot axis titles use the theme text color instead of pyqtgraph's near-white default, so they stay readable in the Light theme.
