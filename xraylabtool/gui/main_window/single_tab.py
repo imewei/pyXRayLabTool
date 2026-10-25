@@ -222,8 +222,9 @@ class SingleTabMixin:
         self.single_plot_tabs.addTab(self.single_f1f2, "f1 / f2")
 
         single_plot_container = QWidget()
-        # Give the scroll area real overflow so the scrollbar can actually scroll.
-        single_plot_container.setMinimumHeight(720)
+        # Plots resize to fit the viewport; the scrollbar only scrolls on windows
+        # shorter than this minimum.
+        single_plot_container.setMinimumHeight(440)
         single_plot_layout = QVBoxLayout(single_plot_container)
         single_plot_layout.setContentsMargins(0, 0, 0, 0)
         single_plot_layout.setSpacing(0)
@@ -252,11 +253,11 @@ class SingleTabMixin:
         layout.setHorizontalSpacing(24)
         layout.setVerticalSpacing(20)
         layout.addWidget(left_panel, 0, 0, 1, 1)
-        layout.addLayout(right_layout, 0, 1, 1, 1)
-        # Full-width rows below. The converter's controls are compact, so keep
-        # it left-aligned within its full-width cell instead of stretching a
-        # small toolset across the whole window.
-        layout.addWidget(converter, 1, 0, 1, 2, Qt.AlignmentFlag.AlignLeft)
+        # The plot column spans the converter row so it fills the space beside it.
+        layout.addLayout(right_layout, 0, 1, 2, 1)
+        # The converter's controls are compact, so keep it left-aligned in the
+        # left column rather than stretching a small toolset across the window.
+        layout.addWidget(converter, 1, 0, 1, 1, Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(self.single_table, 2, 0, 1, 2)
         layout.setColumnStretch(0, 0)
         layout.setColumnStretch(1, 1)

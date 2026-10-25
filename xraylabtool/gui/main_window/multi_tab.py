@@ -211,8 +211,9 @@ class MultiTabMixin:
         header_row.addWidget(self.multi_export_csv)
 
         multi_plot_container = QWidget()
-        # Give the scroll area real overflow so the scrollbar can actually scroll.
-        multi_plot_container.setMinimumHeight(720)
+        # Plots resize to fit the viewport; the scrollbar only scrolls on windows
+        # shorter than this minimum.
+        multi_plot_container.setMinimumHeight(440)
         multi_plot_layout = QVBoxLayout(multi_plot_container)
         multi_plot_layout.setContentsMargins(0, 0, 0, 0)
         multi_plot_layout.setSpacing(0)
