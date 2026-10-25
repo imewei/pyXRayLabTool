@@ -160,7 +160,10 @@ def compute_kk(
     Raises
     ------
     XRayLabToolError
-        For invalid formula, energies or near-edge data.
+        For an invalid formula, energies or near-edge data, including
+        ``DataFileError`` for an unreadable near-edge file.
+    ValueError
+        If ``energy_unit`` is not ``"eV"`` or ``"keV"``.
     TypeError
         If near-edge arguments are inconsistent.
     """

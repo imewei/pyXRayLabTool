@@ -112,3 +112,17 @@ def test_compute_kk_default_grid_cxro_matches_result_energies() -> None:
     assert comp.cxro_energy_kev.size > 0
     assert comp.cxro_f1.shape == comp.cxro_energy_kev.shape
     assert np.isfinite(comp.cxro_f1).all()
+
+
+@pytest.mark.unit
+def test_kk_f1_agrees_with_cxro_f1_for_sio2() -> None:
+    """Independent CXRO check; also guards an energy/order mismatch."""
+    comp = compute_kk("SiO2", None, None, "eV", None, None, energies_kev=[1.0, 5.0])
+    np.testing.assert_allclose(comp.cxro_energy_kev, [1.0, 5.0])
+    np.testing.assert_allclose(comp.result.f1, comp.cxro_f1, rtol=5e-3)
+
+
+@pytest.mark.unit
+def test_compute_kk_rejects_unknown_energy_unit() -> None:
+    with pytest.raises(ValueError, match="energy_unit"):
+        compute_kk("Si", None, None, "MeV", None, None)
