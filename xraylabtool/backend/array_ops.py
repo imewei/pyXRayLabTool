@@ -29,6 +29,8 @@ class ArrayBackend(Protocol):
     def square(self, x: Any) -> Array: ...
     def sqrt(self, x: Any) -> Array: ...
     def exp(self, x: Any) -> Array: ...
+    def log(self, x: Any) -> Array: ...
+    def abs(self, x: Any) -> Array: ...
     def sum(self, x: Any, axis: Any = None) -> Array: ...
     def where(self, condition: Any, x: Any, y: Any) -> Array: ...
     def maximum(self, x: Any, y: Any) -> Array: ...
@@ -72,6 +74,12 @@ class NumpyBackend:
 
     def exp(self, x: Any) -> Array:
         return np.exp(x)
+
+    def log(self, x: Any) -> Array:
+        return np.log(x)
+
+    def abs(self, x: Any) -> Array:
+        return np.abs(x)
 
     def sum(self, x: Any, axis: Any = None) -> Array:
         return np.sum(x, axis=axis)
@@ -159,6 +167,12 @@ class JaxBackend:
 
     def exp(self, x: Any) -> Array:
         return self._jnp.exp(x)
+
+    def log(self, x: Any) -> Array:
+        return self._jnp.log(x)
+
+    def abs(self, x: Any) -> Array:
+        return self._jnp.abs(x)
 
     def sum(self, x: Any, axis: Any = None) -> Array:
         return self._jnp.sum(x, axis=axis)
@@ -316,3 +330,27 @@ class _OpsProxy:
 
 
 ops = _OpsProxy()
+
+
+def ensure_float64(x: Any) -> Array:
+    """Cast ``x`` to float64 on the active backend.
+
+    Under JAX, 64-bit mode is enabled first: with ``jax_enable_x64`` off,
+    ``jnp.asarray`` would silently downcast to float32 (and JAX may have been
+    reconfigured since :class:`JaxBackend` was constructed).
+
+    Parameters
+    ----------
+    x : array_like
+        Input of any real dtype.
+
+    Returns
+    -------
+    Array
+        ``x`` as a float64 array of the active backend.
+    """
+    if ops.is_jax():
+        import jax
+
+        jax.config.update("jax_enable_x64", True)
+    return ops.asarray(x, dtype=ops.float64)
