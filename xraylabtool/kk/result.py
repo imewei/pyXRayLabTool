@@ -3,15 +3,31 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 # Imported at runtime (not under TYPE_CHECKING) so that
 # ``typing.get_type_hints(KKResult)`` resolves the string annotations.
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
+
+from xraylabtool.constants import TABULATED_MAX_KEV, TABULATED_MIN_KEV
+from xraylabtool.exceptions import EnergyError, ValidationError
 
 if TYPE_CHECKING:
     from xraylabtool.calculators.xray_result import XRayResult
+
+
+def _readonly_1d(
+    name: str, values: ArrayLike, *, finite: bool = True
+) -> NDArray[np.float64]:
+    """Return a read-only float64 copy of a 1-D array, or raise ``ValidationError``."""
+    arr = np.array(values, dtype=np.float64)
+    if arr.ndim != 1:
+        raise ValidationError(f"{name} must be a 1-D array", name, arr.shape)
+    if finite and not np.isfinite(arr).all():
+        raise ValidationError(f"{name} must be finite", name)
+    arr.setflags(write=False)
+    return arr
 
 
 @dataclass(frozen=True, eq=False)
@@ -47,7 +63,8 @@ class KKResult:
     References
     ----------
     Upstream-only/package addition: a container for the output of the
-    transform of B. Watts, Opt. Express 22(19), 23628 (2014), Eq. (9).
+    transform of B. Watts, Opt. Express 22(19), 23628 (2014), Eqs. (7)-(10)
+    (Z* from Eq. (9)).
 
     Examples
     --------
@@ -66,10 +83,54 @@ class KKResult:
     relativistic_correction: float
     merge_points_kev: tuple[float, float] | None
     n_refined_points: int
-    backend: str
+    backend: Literal["numpy", "jax"]
     nearedge_scaled_kev_f2: tuple[NDArray[np.float64], NDArray[np.float64]] | None = (
         None
     )
+
+    def __post_init__(self) -> None:
+        energy = _readonly_1d("energy_kev", self.energy_kev)
+        f1 = _readonly_1d("f1", self.f1)
+        f2 = _readonly_1d("f2", self.f2)
+        if not energy.size == f1.size == f2.size:
+            raise ValidationError(
+                "energy_kev, f1 and f2 must have the same length",
+                "f1",
+                (energy.size, f1.size, f2.size),
+            )
+        if self.n_refined_points < 0:
+            raise ValidationError(
+                "n_refined_points must be >= 0",
+                "n_refined_points",
+                self.n_refined_points,
+            )
+        if self.backend not in ("numpy", "jax"):
+            raise ValidationError(
+                "backend must be 'numpy' or 'jax'", "backend", self.backend
+            )
+        merge = self.merge_points_kev
+        if merge is not None and not (
+            len(merge) == 2 and np.isfinite(merge).all() and merge[0] < merge[1]
+        ):
+            raise ValidationError(
+                "merge_points_kev must be a finite (low, high) pair with low < high",
+                "merge_points_kev",
+                merge,
+            )
+        scaled = self.nearedge_scaled_kev_f2
+        if scaled is not None:
+            scaled_e = _readonly_1d("nearedge_scaled_kev_f2[0]", scaled[0])
+            scaled_f2 = _readonly_1d("nearedge_scaled_kev_f2[1]", scaled[1])
+            if scaled_e.size != scaled_f2.size:
+                raise ValidationError(
+                    "nearedge_scaled_kev_f2 arrays must have the same length",
+                    "nearedge_scaled_kev_f2",
+                    (scaled_e.size, scaled_f2.size),
+                )
+            object.__setattr__(self, "nearedge_scaled_kev_f2", (scaled_e, scaled_f2))
+        object.__setattr__(self, "energy_kev", energy)
+        object.__setattr__(self, "f1", f1)
+        object.__setattr__(self, "f2", f2)
 
     def to_xray_result(self, density: float) -> XRayResult:
         """Convert to an :class:`~xraylabtool.calculators.xray_result.XRayResult`.
@@ -103,7 +164,7 @@ class KKResult:
         ----------
         Package addition: the adapter to the repository's result type; the
         transform it carries is B. Watts, Opt. Express 22(19), 23628 (2014),
-        Eq. (9).
+        Eqs. (7)-(10) (Z* from Eq. (9)).
 
         Examples
         --------
@@ -118,16 +179,15 @@ class KKResult:
         from xraylabtool.calculators.core import (  # noqa: PLC0415
             calculate_properties_from_factors,
         )
-        from xraylabtool.exceptions import EnergyError  # noqa: PLC0415
 
-        low, high = 0.03, 30.0
+        low, high = TABULATED_MIN_KEV, TABULATED_MAX_KEV
         if self.energy_kev.size and not (
             np.all(self.energy_kev >= low) and np.all(self.energy_kev <= high)
         ):
             raise EnergyError(
                 "Energies must lie in the tabulated range to build an XRayResult; "
                 f"got {self.energy_kev.min():g}-{self.energy_kev.max():g} keV",
-                valid_range="0.03-30 keV",
+                valid_range=f"{low:g}-{high:g} keV",
             )
         return calculate_properties_from_factors(
             self.formula, self.energy_kev, density, self.f1, self.f2

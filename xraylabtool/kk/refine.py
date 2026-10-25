@@ -30,6 +30,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from xraylabtool.exceptions import ValidationError
+from xraylabtool.kk.result import _readonly_1d
 from xraylabtool.kk.spectrum import evaluate_f2
 from xraylabtool.kk.transform import kk_real_spectrum
 from xraylabtool.logging_utils import get_logger
@@ -89,6 +90,25 @@ class RefineOutcome:
     n_added: int
     exhausted: bool
     n_pole_skipped: int = 0
+
+    def __post_init__(self) -> None:
+        energy = _readonly_1d("energy_ev", self.energy_ev)
+        f1 = _readonly_1d("f1", self.f1)
+        f2 = _readonly_1d("f2", self.f2)
+        if not energy.size == f1.size == f2.size:
+            raise ValidationError(
+                "energy_ev, f1 and f2 must have the same length",
+                "f1",
+                (energy.size, f1.size, f2.size),
+            )
+        if energy.size > 1 and not (np.diff(energy) > 0).all():
+            raise ValidationError("energy_ev must be strictly increasing", "energy_ev")
+        for name in ("n_added", "n_pole_skipped"):
+            if getattr(self, name) < 0:
+                raise ValidationError(f"{name} must be >= 0", name, getattr(self, name))
+        object.__setattr__(self, "energy_ev", energy)
+        object.__setattr__(self, "f1", f1)
+        object.__setattr__(self, "f2", f2)
 
 
 def _positive_int(value: object, name: str) -> int:
@@ -271,8 +291,9 @@ def refine_spectrum(
         this many times); at least 1.
     max_points : int, default 100000
         Maximum number of points to add; at least 1. When a pass would
-        exceed it, the leftmost intervals of that pass get their midpoints
-        and refinement stops.
+        exceed it, only the first ``max_points - added`` failing intervals of
+        that pass, in internal order (not necessarily the lowest energies),
+        get their midpoints and refinement stops.
     chunk_size : int, optional
         Evaluation chunk size passed to every
         :func:`~xraylabtool.kk.transform.kk_real_spectrum` call on the
