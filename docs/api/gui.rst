@@ -27,6 +27,11 @@ Main Window Tabs
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: xraylabtool.gui.main_window.kk_tab
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: xraylabtool.gui.main_window.shared
    :members:
    :undoc-members:
@@ -105,6 +110,14 @@ Sweep Plots
 ~~~~~~~~~~~
 
 .. automodule:: xraylabtool.gui.widgets.sweep_plots
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Kramers-Kronig Plot
+~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: xraylabtool.gui.widgets.kk_plot
    :members:
    :undoc-members:
    :show-inheritance:

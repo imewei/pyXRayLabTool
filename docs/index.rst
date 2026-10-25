@@ -3,13 +3,15 @@
 XRayLabTool Documentation
 =========================
 
-.. image:: https://img.shields.io/pypi/v/xraylabtool.svg
-   :target: https://pypi.org/project/xraylabtool/
-   :alt: PyPI version
+.. only:: html
 
-.. image:: https://img.shields.io/pypi/pyversions/xraylabtool.svg
-   :target: https://pypi.org/project/xraylabtool/
-   :alt: Python versions
+   .. image:: https://img.shields.io/pypi/v/xraylabtool.svg
+      :target: https://pypi.org/project/xraylabtool/
+      :alt: PyPI version
+
+   .. image:: https://img.shields.io/pypi/pyversions/xraylabtool.svg
+      :target: https://pypi.org/project/xraylabtool/
+      :alt: Python versions
 
 **XRayLabTool** is a Python package and command-line tool for calculating X-ray optical properties of materials. It provides both a Python API and CLI for synchrotron scientists, materials researchers, and X-ray optics developers.
 
@@ -114,7 +116,6 @@ Navigation
    guides/getting_started
    guides/cli_reference
    guides/completion_guide
-   guides/migration_guide_v0_4
    guides/kk_guide
    examples/index
 
@@ -147,7 +148,6 @@ Navigation
    development/performance
    development/testing
    development/changelog
-   development/rollback_procedures
 
 .. toctree::
    :maxdepth: 1
