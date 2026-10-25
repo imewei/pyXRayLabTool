@@ -209,9 +209,9 @@ intervals, the closed form stays finite only if the polynomials vanish
 appropriately (Watts 2014, discussion after Eq. (7)). The interval that starts
 at 0 must have :math:`a_n = 0` for every :math:`n < 0`. The reason is not
 convergence of the integral, which holds for :math:`n = -1`; it is that the
-antiderivative :math:`F(x)` from which the closed form is built (Watts 2014,
-Eq. (4)) must be finite at :math:`x = 0`, as the Kramers-Kronig relations
-require. The interval that extends to infinity must have
+polynomial describing :math:`f_2` in that interval (:math:`F(x)` in
+Watts 2014) must be finite at :math:`x = 0`, as the Kramers-Kronig relations
+require (Watts 2014, discussion after Eq. (7)). The interval that extends to infinity must have
 :math:`a_n = 0` for every :math:`n \ge -1`, so that the integrand decays fast
 enough.
 
