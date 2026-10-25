@@ -1,6 +1,8 @@
 # kkcalc integration — design
 
-Date: 2026-10-24 · Status: reviewed (round 1), decisions D1–D4 made, awaiting Wei's final read · Owner: Wei Chen
+Date: 2026-10-24 · Status: implemented and merged (PR #31, c5dbe45); decisions D1–D4 from review round 1, D5–D7 from round 2 (see the plan's Global Constraints) · Owner: Wei Chen
+
+> Design record. Where the built code differs from the text below, the code and `docs/superpowers/plans/2026-10-24-kkcalc-integration.md` (Status paragraph) are authoritative.
 
 ## Intent
 
@@ -80,26 +82,25 @@ and adds the relativistic-correction baseline; there is no further tail
 term. Our `.nff` files stop at 30 keV, so they cannot supply the
 30–500 keV contribution.
 
-Decision: **vendor upstream's `ASF.json`** as package data
-(`xraylabtool/data/kkcalc/ASF.json`) with its licence text, rather than
+Decision: **vendor upstream's `ASF.json`**, repacked to `.npz`, as package data
+(`xraylabtool/data/kkcalc/asf.npz`) with its licence text, rather than
 regenerating it from `.nff`. Regenerating would need Biggs-Lighthill source
 data we do not have and would invalidate comparison with upstream. The
 existing `.nff` path is untouched and remains the source for the ordinary
-`calc` commands. *(Open for the builder: JSON size on disk and load time;
-if large, convert once to `.npz` at build time — still no runtime cost
-beyond a lazy load.)*
+`calc` commands. The `.npz` repack is required (resolved in review round 1:
+the JSON is 3.8–5.8 MB); the values are unmodified and loading is lazy.
 
 ## Architecture
 
 ```
 xraylabtool/kk/
 ├── __init__.py       # lazy exports: kk_calculate_real, KKResult, ...
-├── database.py       # lazy-load ASF.json -> backend arrays; stoichiometry sum
+├── database.py       # lazy-load asf.npz -> backend arrays; stoichiometry sum
 ├── transform.py      # PURE kernels: piecewise-poly KK, relativistic correction
 ├── nearedge.py       # load / unit-convert / merge near-edge data (host-side)
 ├── refine.py         # improve_accuracy (adaptive midpoint insertion, host loop)
 └── result.py         # KKResult dataclass (snake_case)
-xraylabtool/data/kkcalc/{ASF.json, LICENSE-kkcalc.txt}
+xraylabtool/data/kkcalc/{asf.npz, LICENSE-kkcalc.txt}
 xraylabtool/interfaces/cli/commands/kk.py
 xraylabtool/gui/main_window/kk_tab.py     # KKTabMixin
 tests/{unit,integration,characterization}/…  # see Verification
@@ -154,9 +155,10 @@ decision D1; there is no `orders` argument)
 
 ### Result
 
-`KKResult` (frozen dataclass): `energy_keV`, `f1`, `f2`, `formula`,
-`relativistic_correction`, `merge_points`, `n_refined_points`,
-`backend`. Convenience `.to_xray_result(density)` to reuse existing
+`KKResult` (frozen dataclass, `eq=False`): `formula`, `energy_kev`, `f1`, `f2`,
+`relativistic_correction`, `merge_points_kev`, `n_refined_points`,
+`backend`, `nearedge_scaled_kev_f2` (near-edge data on the ASF scale, for
+plotting). Convenience `.to_xray_result(density)` to reuse existing
 δ/β/derived-quantity code (builder to confirm the cleanest hook into
 `calculators/kernels.py`).
 
@@ -263,9 +265,9 @@ the paper.
     implementation demonstrates (upstream parity, independent quadrature,
     Lorentz closed form, CXRO f1 agreement, the nine-element data note).
   - Truncation example matching the paper's Figs. 3–5 qualitatively:
-    integrating only to 30 keV changes `f1` by about 1e-4 for C, 0.1 for Fe
-    and 2.5 for Pb at 0.1–10 keV (values measured with upstream `KK_PP` during
-    plan review; ours are pinned by a test).
+    integrating only to 30 keV changes `f1` by about 1e-4 for C, 0.10–0.28 for
+    Fe and 2.5–5.2 for Pb over 0.1–29 keV (values measured with upstream
+    `KK_PP` during plan review; ours are pinned by a test).
 - **`docs/api/kk.rst`** — `automodule` for `xraylabtool.kk` and each
   submodule (the existing `docs/api/*.rst` style), every public function and
   class documented. Each public docstring is NumPy-style with units (eV
@@ -308,7 +310,7 @@ nothing in stage N+1 may require reworking stage N's public API.
 
 ## Left to the builder
 
-Chunk size default; exact `ops` additions; JSON-vs-npz packaging; module
+Chunk size default; exact `ops` additions; module
 file splits inside `kk/`; naming of CLI flags beyond the sketch; GUI widget
 layout details; whether the adapter lives on `KKResult` or in `calculators/`.
 
