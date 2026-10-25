@@ -131,7 +131,6 @@ Full documentation: **[pyxraylabtool.readthedocs.io](https://pyxraylabtool.readt
 
 - [API Reference](https://pyxraylabtool.readthedocs.io/en/latest/api/)
 - [CLI Guide](https://pyxraylabtool.readthedocs.io/en/latest/guides/cli_reference.html)
-- [Migration Guide (v0.3 → v0.4)](https://pyxraylabtool.readthedocs.io/en/latest/guides/migration_guide_v0_4.html)
 - [Architecture Decisions](https://pyxraylabtool.readthedocs.io/en/latest/architecture/)
 - [Changelog](CHANGELOG.md)
 

@@ -121,7 +121,7 @@ The calculations are based on the complex refractive index for X-rays:
 
 .. math::
 
-   n = 1 - \\delta - i\\beta
+   n = 1 - \delta - i\beta
 
 Where:
 
@@ -132,13 +132,13 @@ The critical angle for total external reflection is:
 
 .. math::
 
-   \\theta_c = \\sqrt{2\\delta}
+   \theta_c = \sqrt{2\delta}
 
 The linear absorption coefficient is:
 
 .. math::
 
-   \\mu = \\frac{4\\pi \\beta}{\\lambda}
+   \mu = \frac{4\pi \beta}{\lambda}
 
 Usage Examples
 --------------

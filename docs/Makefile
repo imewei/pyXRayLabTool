@@ -74,3 +74,10 @@ release-html: clean html
 release-pdf: clean latexpdf
 	@echo "PDF build complete."
 	@echo "Output in $(BUILDDIR)/latex/XRayLabTool.pdf"
+
+# Project-level GPU targets: run from docs/, forward to the root Makefile
+# instead of letting the catch-all hand them to Sphinx as builder names.
+GPU_TARGETS = install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose
+.PHONY: $(GPU_TARGETS)
+$(GPU_TARGETS):
+	@$(MAKE) -C .. $@

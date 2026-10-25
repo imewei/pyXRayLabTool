@@ -637,7 +637,3 @@ JAX modernizes XRayLabTool with:
 - **Future Capability**: Autodiff and advanced optimization ready
 
 The migration is transparent to users while enabling significant performance improvements and future scientific computing features.
-
----
-
-**Next:** See `Migration Guide <../guides/migration_guide_v0_4.rst>`_ for upgrade instructions.

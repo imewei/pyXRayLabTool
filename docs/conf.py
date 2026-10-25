@@ -82,6 +82,8 @@ exclude_patterns = [
     ".DS_Store",
     "**.ipynb_checkpoints",
     "archive/*",
+    # Design specs and plans, not part of the published docs
+    "superpowers",
     # Notebooks linked externally (Colab/nbviewer) — not rendered inline
     "examples/basic_examples.ipynb",
     "examples/getting_started.ipynb",
@@ -164,6 +166,12 @@ autodoc_default_options = {
     "show-inheritance": True,
 }
 
+# Signatures show the bare name; the page headings carry the module path
+add_module_names = False
+
+# One parameter per line for long signatures (also avoids overfull LaTeX boxes)
+python_maximum_signature_line_length = 70
+
 autodoc_typehints = "both"
 autodoc_typehints_format = "short"
 autodoc_preserve_defaults = True
@@ -215,6 +223,45 @@ nbsphinx_requirejs_path = ""
 # -- Options for copybutton extension ----------------------------------------
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
 copybutton_prompt_is_regexp = True
+
+# -- Options for LaTeX output ------------------------------------------------
+# xelatex + DejaVu: the pages use Greek letters and math symbols that
+# pdflatex cannot typeset from UTF-8 source.
+latex_engine = "xelatex"
+latex_elements = {
+    "cmappkg": "",  # cmap is a pdftex-only package
+    "passoptionstopackages": r"\PassOptionsToPackage{hyperfootnotes=false}{hyperref}",
+    "papersize": "a4paper",
+    "geometry": r"\usepackage[margin=0.75in]{geometry}",
+    "fontpkg": r"""
+\setmainfont{DejaVu Serif}[SmallCapsFont={DejaVu Serif}]
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}[Scale=0.8]
+""",
+    # Long API signatures and literals: let TeX stretch word spacing instead
+    # of overfilling the margin, and do not report the loose lines that result.
+    "preamble": r"""
+\emergencystretch=3em
+\hbadness=10000
+\usepackage{etoolbox}
+\AtBeginDocument{\hfuzz=6pt \vfuzz=2pt }
+\AtBeginEnvironment{varwidth}{\small}
+\setlength{\tabcolsep}{3pt}
+\makeatletter
+\renewcommand*{\sphinxhyphenininlineliteral}[1]{\mbox{-}\penalty0\relax}
+\makeatother
+\usepackage{newunicodechar}
+\newfontfamily\symbolfont{DejaVu Sans}
+\newunicodechar{✅}{{\symbolfont ✔}}
+\newunicodechar{❌}{{\symbolfont ✘}}
+% Allow a line break after "." and "_" so long dotted/snake_case names wrap.
+\newXeTeXintercharclass\breakafterclass
+\XeTeXcharclass`\. \breakafterclass
+\XeTeXcharclass`\_ \breakafterclass
+\XeTeXinterchartoks\breakafterclass 0={\penalty0\relax}
+\XeTeXinterchartokenstate=1
+""",
+}
 
 
 # -- Custom CSS and JS -------------------------------------------------------

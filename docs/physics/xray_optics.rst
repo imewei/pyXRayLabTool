@@ -32,7 +32,7 @@ Physical Interpretation
 - Controls absorption and attenuation
 - Related to absorption coefficient: :math:`\mu = 4\pi\beta/\lambda`
 - Determines penetration depth
-- Generally β ≪ δ except near absorption edges
+- Generally :math:`\beta \ll \delta` except near absorption edges
 
 Calculation from Atomic Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

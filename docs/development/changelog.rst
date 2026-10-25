@@ -16,6 +16,22 @@ Version Categories
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
 
+Unreleased
+----------
+
+**Added**
+
+- ``xraylabtool.kk``: Kramers-Kronig transform of the imaginary scattering factor f2 to f1 by the piecewise Laurent polynomial method of Watts (2014), a NumPy/JAX port of kkcalc's ``KK_PP`` with its tabulated f2 data (10 eV-500 keV, vendored as ``data/kkcalc/asf.npz``), optional merging of measured near-edge spectra (``load_nearedge``, ``to_asf_scale``, ``merge_spectra``), adaptive refinement (``refine_spectrum``) and ``kk_calculate_real`` returning ``KKResult`` (with ``to_xray_result``). Lazily imported; ``import xraylabtool`` does not load it.
+- ``xraylabtool kk FORMULA`` CLI subcommand (``--nearedge``, ``--input-type``, ``--energy-unit``, ``--merge``, ``--density``, ``--refine``, ``--energies``, ``-o``, ``--format``) with shell completion.
+- GUI "Kramers-Kronig" tab: near-edge file, merge points, refinement, plot of measured/spliced f2, KK f1 and CXRO f1, CSV export.
+- ``NearEdgeDataError`` (a ``ValidationError``), also exported from ``xraylabtool``.
+- Docs: ``physics/kramers_kronig`` (equations, the Eq. (10) a₋₃ sign erratum, accuracy, 30 keV truncation), ``api/kk`` and ``guides/kk_guide``; ``NOTICE`` with the kkcalc Zlib attribution.
+
+**Changed**
+
+- Licence expression is ``MIT AND Zlib`` in ``pyproject.toml`` and ``conda-recipe/meta.yaml``; ``LICENSE-kkcalc.txt`` ships in the sdist and wheel.
+- ``calculators.core.calculate_properties_from_factors(formula, energy_kev, density, f1_total, f2_total)``: new public helper computing δ, β and the derived quantities from given f1/f2 totals; the lookup path shares its code.
+
 v0.4.8 (2026-10-24)
 --------------------
 
@@ -317,10 +333,3 @@ Compatibility Matrix
      - ❌
      - ✅
      - ✅
-
-Migration Guides
-----------------
-
-For upgrading between versions, see:
-
-- :doc:`/guides/migration_guide_v0_4` — Upgrading from v0.3.0 to v0.4.0

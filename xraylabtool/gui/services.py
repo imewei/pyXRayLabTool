@@ -103,21 +103,14 @@ def linear_absorption_cm(inv_length_cm: float | None) -> float | None:
 
 @dataclass(frozen=True)
 class KKComputation:
-    """Kramers-Kronig result plus the CXRO f1 totals to compare it with.
-
-    Attributes
-    ----------
-    result : KKResult
-        Output of :func:`xraylabtool.kk.kk_calculate_real`.
-    cxro_energy_kev : numpy.ndarray, shape (k,)
-        Energies (keV) of ``result`` inside 0.03-30 keV; empty if none.
-    cxro_f1 : numpy.ndarray, shape (k,)
-        CXRO f1 per formula unit (electrons) at ``cxro_energy_kev``.
-    """
+    """Kramers-Kronig result plus the CXRO f1 totals to compare it with."""
 
     result: KKResult
+    """Output of :func:`xraylabtool.kk.kk_calculate_real`."""
     cxro_energy_kev: NDArray[np.float64]
+    """Energies (keV) of ``result`` inside 0.03-30 keV, shape (k,); empty if none."""
     cxro_f1: NDArray[np.float64]
+    """CXRO f1 per formula unit (electrons) at ``cxro_energy_kev``, shape (k,)."""
 
 
 def compute_kk(
