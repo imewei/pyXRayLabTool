@@ -76,6 +76,7 @@ _LAZY_SUBMODULES = frozenset(
         "constants",
         "data_handling",
         "io",
+        "kk",
         "utils",
         "validation",
     }
