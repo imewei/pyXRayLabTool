@@ -53,7 +53,7 @@ def main(argv: list[str] | None = None) -> None:
     theme_manager.apply(app)
 
     window = MainWindow(theme_manager=theme_manager)
-    window.show()
+    window.showMaximized()
 
     if args.test_launch:
         # Close shortly after showing to allow CI smoke tests without hanging
