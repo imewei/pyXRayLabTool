@@ -1,6 +1,6 @@
 """Headless smoke check for the Qt GUI.
 
-This script exercises key Single and Multi flows offscreen and writes PNG/CSV
+This script exercises key Single, Multi and Kramers-Kronig flows offscreen and writes PNG/CSV
 exports to temporary files to ensure the handlers work without user dialogs.
 
 Usage (headless friendly):
@@ -16,10 +16,16 @@ import os
 from pathlib import Path
 import tempfile
 
+import numpy as np
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from xraylabtool.gui.main_window import MainWindow
-from xraylabtool.gui.services import EnergyConfig, compute_multiple, compute_single
+from xraylabtool.gui.services import (
+    EnergyConfig,
+    compute_kk,
+    compute_multiple,
+    compute_single,
+)
 
 
 def _run_smoke() -> None:
@@ -38,6 +44,11 @@ def _run_smoke() -> None:
     window.multi_results = compute_multiple(["Si", "Cu"], [2.33, 8.96], multi_cfg)
     window.multi_comparison = None  # optional comparator; not required for smoke
     window._refresh_multi_views()
+
+    # Prepare results for the Kramers-Kronig flow
+    window._on_kk_finished(
+        compute_kk("SiO2", None, None, "eV", None, None, np.linspace(1.0, 10.0, 8))
+    )
 
     # Monkeypatch QFileDialog to return temporary paths for exports
     tmpdir = Path(tempfile.mkdtemp(prefix="xlt_gui_smoke_"))
@@ -82,8 +93,11 @@ def _run_smoke() -> None:
     try:
         window._save_single_png()
         window._save_multi_png()
-        single_csv = window._export_single_csv()
-        multi_csv = window._export_multi_csv()
+        csv_paths = [
+            window._export_single_csv(),
+            window._export_multi_csv(),
+            window._export_kk_csv(),
+        ]
     finally:
         QFileDialog.getSaveFileName = orig_get  # type: ignore
         QFileDialog.getExistingDirectory = orig_dir  # type: ignore
@@ -91,7 +105,7 @@ def _run_smoke() -> None:
             setattr(QMessageBox, _name, _fn)
 
     # Basic CSV sanity checks
-    for csv_path in [single_csv, multi_csv]:
+    for csv_path in csv_paths:
         csv_file = Path(csv_path)
         if not csv_file.exists():
             raise FileNotFoundError(f"CSV export missing: {csv_file}")

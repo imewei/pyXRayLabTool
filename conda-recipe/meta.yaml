@@ -51,7 +51,10 @@ test:
 about:
   home: https://github.com/imewei/pyXRayLabTool
   summary: {{ pyproject["project"]["description"] }}
-  license: MIT
-  license_file: LICENSE
+  license: MIT AND Zlib
+  license_file:
+    - LICENSE
+    - NOTICE
+    - xraylabtool/data/kkcalc/LICENSE-kkcalc.txt
   doc_url: https://pyxraylabtool.readthedocs.io
   dev_url: https://github.com/imewei/pyXRayLabTool

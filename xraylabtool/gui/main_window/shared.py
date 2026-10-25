@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import pairwise
 from pathlib import Path
 import re
 from typing import TYPE_CHECKING, Any, cast
@@ -114,6 +115,23 @@ class SharedHelpersMixin:
         self.setTabOrder(self.multi_logx, self.multi_logy)
         self.setTabOrder(self.multi_logy, self.multi_save_png)
         self.setTabOrder(self.multi_save_png, self.multi_export_csv)
+        # KK tab order
+        kk_chain = [
+            self.kk_formula,
+            self.kk_nearedge,
+            self.kk_browse_btn,
+            self.kk_input_type,
+            self.kk_energy_unit,
+            self.kk_merge,
+            self.kk_refine,
+            self.kk_energy_start,
+            self.kk_energy_end,
+            self.kk_points,
+            self.kk_run_btn,
+            self.kk_export_csv,
+        ]
+        for first, second in pairwise(kk_chain):
+            self.setTabOrder(first, second)
 
     # ------------------------------------------------------------------
     # Status helpers

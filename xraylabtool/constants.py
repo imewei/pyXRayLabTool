@@ -218,6 +218,12 @@ Units: keV/eV
 Usage: energy_keV = energy_eV * EV_TO_KEV
 """
 
+TABULATED_MIN_KEV: Final[float] = 0.03
+"""Lower end of the tabulated CXRO/NIST energy range (keV)."""
+
+TABULATED_MAX_KEV: Final[float] = 30.0
+"""Upper end of the tabulated CXRO/NIST energy range (keV)."""
+
 ANGSTROM_TO_METER: Final[float] = 1e-10
 """
 Conversion factor from Angstroms to meters.
@@ -462,6 +468,8 @@ __all__ = [
     "SCATTERING_FACTOR",
     "SPEED_OF_LIGHT",
     "SQRT_2",
+    "TABULATED_MAX_KEV",
+    "TABULATED_MIN_KEV",
     # Fundamental constants
     "THOMPSON",
     "TWO_PI",

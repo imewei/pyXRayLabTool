@@ -76,6 +76,7 @@ _LAZY_SUBMODULES = frozenset(
         "constants",
         "data_handling",
         "io",
+        "kk",
         "utils",
         "validation",
     }
@@ -242,6 +243,7 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
         "DataFileError",
         "EnergyError",
         "FormulaError",
+        "NearEdgeDataError",
         "UnknownElementError",
         "ValidationError",
         "XRayLabToolError",
@@ -249,6 +251,7 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
         "validate_density",
         "validate_energy_range",
     ]:
+        from xraylabtool.exceptions import NearEdgeDataError
         from xraylabtool.validation import (
             AtomicDataError,
             BatchProcessingError,
@@ -272,6 +275,7 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
                 "DataFileError": DataFileError,
                 "EnergyError": EnergyError,
                 "FormulaError": FormulaError,
+                "NearEdgeDataError": NearEdgeDataError,
                 "UnknownElementError": UnknownElementError,
                 "ValidationError": ValidationError,
                 "XRayLabToolError": XRayLabToolError,
@@ -335,6 +339,7 @@ __all__ = [
     "DataFileError",
     "EnergyError",
     "FormulaError",
+    "NearEdgeDataError",
     "UnknownElementError",
     "ValidationError",
     # Domain-specific exceptions

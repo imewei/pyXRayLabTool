@@ -46,6 +46,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..services import EnergyConfig
+from ..widgets.kk_plot import KKPlot
 from ..widgets.material_form import MaterialInputForm
 from ..widgets.material_table import MaterialTable
 from ..widgets.plot_canvas import PlotCanvas
@@ -112,6 +113,23 @@ class MainWindowProtocol(Protocol):
     multi_full_table: QTableWidget
     multi_plot_scroll: QScrollArea
 
+    # Kramers-Kronig tab
+    kk_result: Any
+    kk_formula: QLineEdit
+    kk_nearedge: QLineEdit
+    kk_browse_btn: QPushButton
+    kk_input_type: QComboBox
+    kk_energy_unit: QComboBox
+    kk_merge: QLineEdit
+    kk_refine: QDoubleSpinBox
+    kk_energy_start: QDoubleSpinBox
+    kk_energy_end: QDoubleSpinBox
+    kk_points: QSpinBox
+    kk_run_btn: QPushButton
+    kk_export_csv: QPushButton
+    kk_plot: KKPlot
+    kk_table: QTableWidget
+
     # Qt builtins the mixins call directly
     def findChildren(self, *args: Any, **kwargs: Any) -> list[QWidget]: ...
     def setTabOrder(self, first: QWidget, second: QWidget) -> None: ...
@@ -153,3 +171,10 @@ class MainWindowProtocol(Protocol):
     def _refresh_multi_views(self) -> None: ...
     def _save_multi_png(self) -> None: ...
     def _export_multi_csv(self) -> str | None: ...
+
+    # Kramers-Kronig tab
+    def _browse_kk_nearedge(self) -> None: ...
+    def _run_kk(self) -> None: ...
+    def _on_kk_finished(self, computation: Any) -> None: ...
+    def _on_kk_error(self, message: str) -> None: ...
+    def _export_kk_csv(self) -> str | None: ...

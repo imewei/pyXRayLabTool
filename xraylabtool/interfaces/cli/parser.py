@@ -91,6 +91,7 @@ def create_parser() -> argparse.ArgumentParser:
     add_batch_command(subparsers)
     add_compare_command(subparsers)
     add_convert_command(subparsers)
+    add_kk_command(subparsers)
     add_formula_command(subparsers)
     add_atomic_command(subparsers)
     add_bragg_command(subparsers)
@@ -292,6 +293,106 @@ def add_convert_command(subparsers: Any) -> None:
     )
 
     parser.add_argument("-o", "--output", help="Output filename (CSV format)")
+
+
+def add_kk_command(subparsers: Any) -> None:
+    """Add the 'kk' subcommand for Kramers-Kronig f1 calculations."""
+    parser = subparsers.add_parser(
+        "kk",
+        help="Kramers-Kronig f1 from tabulated f2, optionally with near-edge data",
+        description=(
+            "Calculate the real scattering factor f1 from the tabulated f2 by the "
+            "Kramers-Kronig transform, optionally merging measured near-edge "
+            "absorption data"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=dedent("""
+        Examples:
+          # f1 and f2 of silicon on the tabulated grid (0.03-30 keV)
+          xraylabtool kk Si
+
+          # Selected energies in keV
+          xraylabtool kk SiO2 --energies 1.0,2.0,5.0
+
+          # Merge a NEXAFS spectrum (energies in eV) at the carbon K-edge
+          xraylabtool kk C --nearedge c_edge.txt --input-type nexafs
+
+          # Merge points in the file's unit; add midpoints where f1/f2 are coarse
+          xraylabtool kk C --nearedge c_edge.txt --input-type nexafs \\
+              --merge 285,315 --refine 0.05 -o c_edge_f1f2.csv
+        """),
+    )
+
+    parser.add_argument("formula", help="Chemical formula (e.g., SiO2, Al2O3, C)")
+
+    parser.add_argument(
+        "--nearedge",
+        help="Near-edge absorption file (whitespace-separated energy and value columns)",
+    )
+
+    parser.add_argument(
+        "--input-type",
+        choices=["nexafs", "beta", "asf"],
+        help="Kind of values in the near-edge file (required with --nearedge)",
+    )
+
+    parser.add_argument(
+        "--energy-unit",
+        choices=["eV", "keV"],
+        default="eV",
+        help="Energy unit of the near-edge file and of --merge (default: eV)",
+    )
+
+    parser.add_argument(
+        "--merge",
+        metavar="LOW,HIGH",
+        help=(
+            "Merge energies in --energy-unit, inside the near-edge data and the "
+            "tabulated range (default: the whole overlap)"
+        ),
+    )
+
+    parser.add_argument(
+        "-d",
+        "--density",
+        type=float,
+        help=(
+            "Material density in g/cm³, accepted for beta input; it cancels in "
+            "the near-edge normalisation, so it does not change the result"
+        ),
+    )
+
+    parser.add_argument(
+        "--refine",
+        type=float,
+        metavar="TOL",
+        help=(
+            "Insert midpoints until linear interpolation of f1 and f2 is within "
+            "TOL electrons; the output is then sorted and unique"
+        ),
+    )
+
+    parser.add_argument(
+        "--energies",
+        help=dedent("""
+        Output energies in keV (always keV, whatever --energy-unit is). Formats:
+        - Single value: 10.0
+        - Comma-separated: 5.0,10.0,15.0
+        - Range with count: 5-15:11
+        - Log range: 1-30:100:log
+        Default: the tabulated spectrum's own grid within 0.03-30 keV
+        """).strip(),
+    )
+
+    parser.add_argument(
+        "-o", "--output", help="Output filename (CSV or JSON based on extension)"
+    )
+
+    parser.add_argument(
+        "--format",
+        choices=["csv", "json"],
+        help="Output format (default: from the output extension, else csv)",
+    )
 
 
 def add_formula_command(subparsers: Any) -> None:

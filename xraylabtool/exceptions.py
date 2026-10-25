@@ -15,6 +15,7 @@ __all__ = [
     "DataFileError",
     "EnergyError",
     "FormulaError",
+    "NearEdgeDataError",
     "UnknownElementError",
     "ValidationError",
     "XRayLabToolError",
@@ -128,6 +129,15 @@ class ValidationError(XRayLabToolError):
             message = f"{message}: {parameter}"
 
         super().__init__(message)
+
+
+class NearEdgeDataError(ValidationError):
+    """Exception raised when near-edge absorption data cannot be loaded or merged.
+
+    Covers a malformed or non-monotonic spectrum, a spectrum that does not
+    overlap the tabulated energy range, invalid merge points, and degenerate
+    (flat or non-finite) normalisation against the tabulated data.
+    """
 
 
 class AtomicDataError(XRayLabToolError):

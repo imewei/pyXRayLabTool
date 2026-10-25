@@ -512,6 +512,7 @@ class TestMainFunction:
             "calc",
             "batch",
             "convert",
+            "kk",
             "formula",
             "atomic",
             "bragg",

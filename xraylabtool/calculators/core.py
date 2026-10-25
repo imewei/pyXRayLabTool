@@ -106,6 +106,7 @@ if TYPE_CHECKING:
         EnergyArray,
         FloatLike,
         InterpolatorProtocol,
+        OpticalConstantArray,
     )
 
 _logger = get_logger(__name__)
@@ -283,7 +284,7 @@ def _calculate_single_material_xray_properties(
     This is an internal function. Use calculate_single_material_properties()
     for the public API that returns XRayResult objects.
     """
-    from xraylabtool.constants import ENERGY_TO_WAVELENGTH_FACTOR, METER_TO_ANGSTROM
+    from xraylabtool.constants import ENERGY_TO_WAVELENGTH_FACTOR
     from xraylabtool.utils import parse_formula
 
     energy_kev = _validate_single_material_inputs(formula_str, energy_kev, mass_density)
@@ -301,9 +302,48 @@ def _calculate_single_material_xray_properties(
 
     element_data = _prepare_element_data(element_symbols, element_counts)
 
-    dispersion, absorption, f1_total, f2_total = calculate_scattering_factors(
+    _, _, f1_total, f2_total = calculate_scattering_factors(
         energy_ev, wavelength, mass_density, molecular_weight, element_data
     )
+
+    return _properties_from_totals(
+        formula_str,
+        energy_kev,
+        mass_density,
+        molecular_weight,
+        number_of_electrons,
+        f1_total,
+        f2_total,
+    )
+
+
+def _properties_from_totals(
+    formula: str,
+    energy_kev: EnergyArray,
+    mass_density: FloatLike,
+    molecular_weight: float,
+    number_of_electrons: float,
+    f1_total: OpticalConstantArray,
+    f2_total: OpticalConstantArray,
+) -> _MaterialPropertiesDict:
+    """Shared tail: δ, β and derived quantities from per-formula f1/f2 totals.
+
+    Used by both the tabulated-lookup path and
+    :func:`calculate_properties_from_factors`; it does no input validation
+    (callers validate) and uses the same kernels as the lookup path.
+    """
+    from xraylabtool.constants import (
+        ENERGY_TO_WAVELENGTH_FACTOR,
+        METER_TO_ANGSTROM,
+        SCATTERING_FACTOR,
+    )
+
+    wavelength = ENERGY_TO_WAVELENGTH_FACTOR / energy_kev
+    wave_factor = ops.square(wavelength) * (
+        SCATTERING_FACTOR * mass_density / molecular_weight
+    )
+    dispersion = wave_factor * f1_total
+    absorption = wave_factor * f2_total
 
     (
         electron_density,
@@ -321,7 +361,7 @@ def _calculate_single_material_xray_properties(
     )
 
     return {
-        "formula": formula_str,
+        "formula": formula,
         "molecular_weight": molecular_weight,
         "number_of_electrons": number_of_electrons,
         "mass_density": float(mass_density),
@@ -337,6 +377,27 @@ def _calculate_single_material_xray_properties(
         "re_sld": re_sld,
         "im_sld": im_sld,
     }
+
+
+def _xray_result_from_properties(properties: _MaterialPropertiesDict) -> XRayResult:
+    """Build an :class:`XRayResult` from the typed properties dictionary."""
+    return XRayResult(
+        formula=properties["formula"],
+        molecular_weight_g_mol=properties["molecular_weight"],
+        total_electrons=properties["number_of_electrons"],
+        density_g_cm3=properties["mass_density"],
+        electron_density_per_ang3=properties["electron_density"],
+        energy_kev=properties["energy"],
+        wavelength_angstrom=properties["wavelength"],
+        dispersion_delta=properties["dispersion"],
+        absorption_beta=properties["absorption"],
+        scattering_factor_f1=properties["f1_total"],
+        scattering_factor_f2=properties["f2_total"],
+        critical_angle_degrees=properties["critical_angle"],
+        attenuation_length_cm=properties["attenuation_length"],
+        real_sld_per_ang2=properties["re_sld"],
+        imaginary_sld_per_ang2=properties["im_sld"],
+    )
 
 
 def calculate_multiple_xray_properties(
@@ -467,23 +528,125 @@ def calculate_single_material_properties(
         formula, energy_keV, density
     )
 
-    # Create and return XRayResult dataclass using new field names.
-    return XRayResult(
-        formula=properties["formula"],
-        molecular_weight_g_mol=properties["molecular_weight"],
-        total_electrons=properties["number_of_electrons"],
-        density_g_cm3=properties["mass_density"],
-        electron_density_per_ang3=properties["electron_density"],
-        energy_kev=properties["energy"],
-        wavelength_angstrom=properties["wavelength"],
-        dispersion_delta=properties["dispersion"],
-        absorption_beta=properties["absorption"],
-        scattering_factor_f1=properties["f1_total"],
-        scattering_factor_f2=properties["f2_total"],
-        critical_angle_degrees=properties["critical_angle"],
-        attenuation_length_cm=properties["attenuation_length"],
-        real_sld_per_ang2=properties["re_sld"],
-        imaginary_sld_per_ang2=properties["im_sld"],
+    return _xray_result_from_properties(properties)
+
+
+def calculate_properties_from_factors(
+    formula: str,
+    energy_kev: EnergyArray,
+    density: float,
+    f1_total: OpticalConstantArray,
+    f2_total: OpticalConstantArray,
+) -> XRayResult:
+    """Build an :class:`XRayResult` from supplied scattering factors.
+
+    Computes δ, β and the derived quantities from per-formula-unit ``f1`` and
+    ``f2`` that the caller provides instead of reading the tabulated ``.nff``
+    files. It runs the same code as :func:`calculate_single_material_properties`
+    after its table lookup. This function is a package addition, not part of
+    the cited databases or papers.
+
+    Parameters
+    ----------
+    formula : str
+        Chemical formula of one formula unit, e.g. ``"SiO2"``.
+    energy_kev : numpy.ndarray, shape (m,)
+        Photon energies in keV. Finite; the tabulated 0.03-30 keV range is not
+        enforced here.
+    density : float
+        Mass density in g/cm^3; finite and positive.
+    f1_total : numpy.ndarray, shape (m,)
+        Real scattering factor, electrons per formula unit. Negative values
+        (anomalous dispersion near an edge) are kept: δ becomes negative and
+        the critical angle is 0 there.
+    f2_total : numpy.ndarray, shape (m,)
+        Imaginary scattering factor, electrons per formula unit. Negative
+        values are kept; the attenuation length clamps β at ``1e-30``.
+
+    Returns
+    -------
+    XRayResult
+        All fields are arrays of shape ``(m,)`` except the scalar material
+        properties; the order of ``energy_kev`` is preserved.
+
+    Raises
+    ------
+    ValidationError
+        If the three arrays are not non-empty 1-D arrays of equal length, any
+        value is non-finite, or ``density`` is not finite and positive.
+    FormulaError
+        If ``formula`` cannot be parsed or names an unknown element.
+
+    References
+    ----------
+    Package addition. The optical constants follow the CXRO/NIST convention
+    used by :func:`calculate_single_material_properties`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from xraylabtool.calculators.core import calculate_properties_from_factors
+    >>> res = calculate_properties_from_factors(
+    ...     "Si", np.array([8.0]), 2.33, np.array([14.2]), np.array([0.5])
+    ... )
+    >>> res.scattering_factor_f1.shape
+    (1,)
+    >>> bool(res.dispersion_delta[0] > 0)
+    True
+    """
+    from xraylabtool.exceptions import ValidationError
+    from xraylabtool.utils import parse_formula
+
+    arrays: dict[str, np.ndarray] = {}
+    for name, value in (
+        ("energy_kev", energy_kev),
+        ("f1_total", f1_total),
+        ("f2_total", f2_total),
+    ):
+        try:
+            if np.asarray(value).dtype.kind == "c":  # float64 cast drops imag part
+                raise ValidationError("Must be a real numeric array", name)
+            array = np.array(value, dtype=np.float64)
+        except (TypeError, ValueError) as e:
+            raise ValidationError("Must be a real numeric array", name) from e
+        if array.ndim != 1 or array.size == 0:
+            raise ValidationError(
+                "Must be a non-empty 1-D array", name, f"shape {array.shape}"
+            )
+        if not np.all(np.isfinite(array)):
+            raise ValidationError("Must be finite (no NaN or Inf)", name)
+        arrays[name] = array
+    n = arrays["energy_kev"].size
+    if arrays["f1_total"].size != n or arrays["f2_total"].size != n:
+        raise ValidationError(
+            "energy_kev, f1_total and f2_total must have equal length",
+            "length",
+            f"{n}, {arrays['f1_total'].size}, {arrays['f2_total'].size}",
+        )
+    if np.any(arrays["energy_kev"] <= 0):
+        raise ValidationError("Energies must be positive", "energy_kev")
+    try:
+        density_value = float(density)
+    except (TypeError, ValueError) as e:
+        raise ValidationError("Density must be a real number", "density") from e
+    if not np.isfinite(density_value) or density_value <= 0:
+        raise ValidationError("Density must be finite and positive", "density", density)
+
+    element_symbols, element_counts = parse_formula(formula)
+    atomic_data_bulk = get_bulk_atomic_data(tuple(element_symbols))
+    molecular_weight, number_of_electrons = _calculate_molecular_properties(
+        element_symbols, element_counts, atomic_data_bulk
+    )
+    return _xray_result_from_properties(
+        _properties_from_totals(
+            formula,
+            ops.asarray(arrays["energy_kev"], dtype=ops.float64),
+            density_value,
+            molecular_weight,
+            number_of_electrons,
+            ops.asarray(arrays["f1_total"], dtype=ops.float64),
+            ops.asarray(arrays["f2_total"], dtype=ops.float64),
+        )
     )
 
 

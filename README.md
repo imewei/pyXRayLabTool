@@ -74,6 +74,7 @@ xraylabtool convert energy 8.048,10.0 --to wavelength
 xraylabtool formula Al2O3                         # Formula analysis
 xraylabtool bragg -d 3.14,2.45 -e 8.048          # Bragg angles
 xraylabtool batch materials.csv -o results.csv    # Batch processing
+xraylabtool kk Si --energies 8,10,12             # Kramers-Kronig f1 from f2 (keV)
 xraylabtool completion install                    # Shell tab-completion
 ```
 
@@ -159,9 +160,10 @@ make test                        # Or use Makefile shortcuts
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT, with bundled kkcalc material under Zlib (see [NOTICE](NOTICE)). See [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
 - [CXRO](https://henke.lbl.gov/optical_constants/) — Atomic scattering factor databases
 - [NIST](https://www.nist.gov/) — Reference data and validation
+- [kkcalc](https://github.com/benajamin/kkcalc) (Benjamin Watts, Daniel J. Lauk) — Kramers-Kronig transform and tabulated f2 data, ported in `xraylabtool.kk`; method: B. Watts, *Opt. Express* **22**(19), 23628–23639 (2014), doi:10.1364/OE.22.023628

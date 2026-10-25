@@ -323,14 +323,14 @@ jobs:
         # Execute tests with optimal configuration
         # Note: --benchmark-disable prevents pytest-benchmark warning when xdist is active
         # Ignore GUI tests (require PySide6 which is only installed on Ubuntu for smoke test)
-        IGNORE_GUI="--ignore=tests/test_gui_progress.py --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py --ignore=tests/unit/test_calculation_worker.py"
+        IGNORE_GUI="--ignore=tests/test_gui_progress.py --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py --ignore=tests/unit/test_calculation_worker.py --ignore=tests/unit/test_kk_plot.py --ignore=tests/test_gui_kk_tab.py"
 
         if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.python-version }}" == "3.13" ]]; then
           # Primary test run - decide coverage strategy
           if [[ "${SKIP_COVERAGE:-false}" == "true" ]]; then
             # Config-only changes: run tests without coverage requirements
             echo "⏩ Skipping coverage collection (config-only changes)"
-            pytest $TEST_PATHS $IGNORE_GUI \
+            pytest $TEST_PATHS $IGNORE_GUI -m "not slow" \
               --junit-xml=pytest-results.xml \
               -n $WORKERS \
               --benchmark-disable \
@@ -362,7 +362,7 @@ jobs:
               echo "📊 Coverage threshold: 20% (smoke tests)"
             fi
 
-            pytest $TEST_PATHS $IGNORE_GUI \
+            pytest $TEST_PATHS $IGNORE_GUI -m "not slow" \
               --cov=xraylabtool \
               --cov-report=xml \
               --cov-report=term-missing:skip-covered \
@@ -377,7 +377,7 @@ jobs:
           fi
         else
           # Fast execution without coverage for non-primary OS/Python
-          pytest $TEST_PATHS $IGNORE_GUI \
+          pytest $TEST_PATHS $IGNORE_GUI -m "not slow" \
             --junit-xml=pytest-results.xml \
             -n $WORKERS \
             --benchmark-disable \
@@ -386,6 +386,12 @@ jobs:
             -v \
             -x  # Stop on first failure for non-primary runs
         fi
+
+    - name: Slow tests (wheel/sdist build, Sphinx build)
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
+      run: |
+        # Deselected from the matrix legs above; run once on the primary leg.
+        pytest tests/integration -m slow --no-cov -p no:xdist --tb=short -v
 
     - name: GUI smoke (offscreen)
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
@@ -407,7 +413,7 @@ jobs:
         QT_QPA_PLATFORM: offscreen
       run: |
         # Run GUI-dependent tests in a separate process to avoid QApplication segfaults
-        pytest tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py -v --tb=short --timeout=30
+        pytest tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py -v --tb=short --timeout=30
 
     - name: Backend compatibility test (JAX)
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'

@@ -115,6 +115,7 @@ Navigation
    guides/cli_reference
    guides/completion_guide
    guides/migration_guide_v0_4
+   guides/kk_guide
    examples/index
 
 .. toctree::
@@ -124,6 +125,7 @@ Navigation
    physics/xray_optics
    physics/atomic_data
    physics/calculations
+   physics/kramers_kronig
 
 .. toctree::
    :maxdepth: 2

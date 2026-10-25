@@ -151,6 +151,9 @@ dmypy.json
 *.mat
 *.npy
 *.npz
+# Vendored kkcalc ASF tables and Kramers-Kronig golden oracles are committed.
+!xraylabtool/data/kkcalc/*.npz
+!tests/characterization/kk/golden/*.npz
 # Root-level scratch only: the bare names would match tests/data/results/ etc.
 /figures/
 /plots/
@@ -230,6 +233,8 @@ CODE_QUALITY_REPORT.md
 docs/_build/
 docs/build/
 docs/api/generated/
+# Local copy of the Watts 2014 paper (Optica copyright): read for the kk docs, never committed.
+docs/Watts-2014-*.pdf
 .doctrees/
 *.doctree
 /site
