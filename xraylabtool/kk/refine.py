@@ -234,6 +234,7 @@ def refine_spectrum(
     tolerance: float,
     max_passes: int = 50,
     max_points: int = 100_000,
+    chunk_size: int | None = None,
 ) -> RefineOutcome:
     """Insert midpoints where linear interpolation of f1 or f2 is inaccurate.
 
@@ -272,6 +273,10 @@ def refine_spectrum(
         Maximum number of points to add; at least 1. When a pass would
         exceed it, the leftmost intervals of that pass get their midpoints
         and refinement stops.
+    chunk_size : int, optional
+        Evaluation chunk size passed to every
+        :func:`~xraylabtool.kk.transform.kk_real_spectrum` call on the
+        midpoints; ``None`` uses its default.
 
     Returns
     -------
@@ -363,7 +368,7 @@ def refine_spectrum(
             iv, mid = iv[:, splittable], mid[splittable]
         if not mid.size:
             break
-        f1_mid = kk_real_spectrum(mid, seg, coeffs, rel_corr)
+        f1_mid = kk_real_spectrum(mid, seg, coeffs, rel_corr, chunk_size)
         f2_mid = evaluate_f2(mid, seg, coeffs)
         bad = (np.abs(0.5 * (iv[2] + iv[3]) - f1_mid) > tolerance) | (
             np.abs(0.5 * (iv[4] + iv[5]) - f2_mid) > tolerance

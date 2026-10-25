@@ -290,6 +290,11 @@ Limits
   -4.645`` and ``f1(10.16 eV) = -0.70``.
 - ``-d/--density`` is accepted for ``beta`` input but has no effect on the
   result.
+- Without ``--energies`` (``energies_kev``), the output grid is the
+  spectrum's knots inside 0.03-30 keV. If a merge leaves no knot there (for
+  example, near-edge data spanning the whole 10 eV-500 keV range with only two
+  points), this is an ``EnergyError`` (CLI exit code 1) asking for explicit
+  energies; it is never an empty result.
 
 Attribution
 -----------

@@ -258,3 +258,15 @@ def test_type_hints_resolve_at_runtime() -> None:
     hints = typing.get_type_hints(KKResult)
     assert set(hints) == {f.name for f in dataclasses.fields(KKResult)}
     typing.get_type_hints(api.kk_calculate_real)
+
+
+@pytest.mark.unit
+def test_empty_default_grid_after_merge_raises() -> None:
+    from xraylabtool.kk import NearEdgeSpectrum
+
+    spec = NearEdgeSpectrum([10.0, 500000.0], [0.0, 1.0])
+    with pytest.raises(EnergyError, match=r"0\.03-30 keV.*energies"):
+        kk_calculate_real("Si", nearedge=spec, input_type="asf")
+    # Explicit energies still work for the same merge.
+    res = kk_calculate_real("Si", nearedge=spec, input_type="asf", energies_kev=[1.0])
+    assert np.isfinite(res.f1).all()

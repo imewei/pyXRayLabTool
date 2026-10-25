@@ -64,9 +64,14 @@ def test_refined_grid_meets_tolerance_at_midpoints(si) -> None:
         0.5 * (out.f1[:-1] + out.f1[1:]) - kk_real_spectrum(mid, seg, coeffs, rel)
     )
     err2 = np.abs(0.5 * (out.f2[:-1] + out.f2[1:]) - evaluate_f2(mid, seg, coeffs))
-    # Every interval that is not an original one was accepted at its parent's check.
-    assert err.max() < 5 * 0.02
-    assert err2.max() < 5 * 0.02
+    # Every final interval passed its own midpoint check at the tolerance; the
+    # grid stays inside 100 eV-20 keV, so no range-end sliver is exempted.
+    # Re-evaluating the midpoints in a different batch can change f1 only at
+    # the rounding level (<= 3e-8 for Si between JAX chunkings), hence 1e-7.
+    # Measured (NumPy): f1 0.01986, f2 0.01962.
+    assert out.n_pole_skipped == 0
+    assert err.max() <= 0.02 + 1e-7
+    assert err2.max() <= 0.02 + 1e-7
 
 
 @pytest.mark.unit
@@ -411,3 +416,37 @@ def test_heavy_element_segment_grid_against_upstream_emulation(
 def test_n_pole_skipped_defaults_to_zero() -> None:
     z = np.zeros(1)
     assert RefineOutcome(z, z, z, 0, False).n_pole_skipped == 0
+
+
+def _spy_chunk_sizes(monkeypatch: pytest.MonkeyPatch) -> list[object]:
+    seen: list[object] = []
+    real = refine.kk_real_spectrum
+
+    def spy(*args, **kwargs):
+        seen.append(kwargs.get("chunk_size", args[4] if len(args) > 4 else None))
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(refine, "kk_real_spectrum", spy)
+    return seen
+
+
+@pytest.mark.unit
+def test_refine_forwards_chunk_size(si, monkeypatch: pytest.MonkeyPatch) -> None:
+    seen = _spy_chunk_sizes(monkeypatch)
+    _, _, out = _refine(si, GRID, tolerance=0.05, chunk_size=7)
+    assert out.n_added > 0
+    assert seen
+    assert set(seen) == {7}
+
+
+@pytest.mark.unit
+def test_kk_calculate_real_passes_chunk_size_to_refinement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen = _spy_chunk_sizes(monkeypatch)
+    res = kk_calculate_real(
+        "Si", energies_kev=[0.5, 1.0, 2.0], refine_tolerance=0.05, chunk_size=3
+    )
+    assert res.n_refined_points > 0
+    assert seen
+    assert set(seen) == {3}

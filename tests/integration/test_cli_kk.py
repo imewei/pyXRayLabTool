@@ -326,3 +326,17 @@ class TestKKCli:
         ):
             main()
         assert excinfo.value.code == 0
+
+
+def test_empty_default_grid_after_merge_exits_1(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    edge = tmp_path / "wide.txt"
+    edge.write_text("10.0 0.0\n500000.0 1.0\n")
+    rc, out, err = _run(
+        ["kk", "Si", "--nearedge", str(edge), "--input-type", "asf"], capsys
+    )
+    assert rc == 1
+    assert "0.03-30 keV" in err
+    assert "--energies" in err or "energies" in err
+    assert "energy_keV" not in out

@@ -140,8 +140,8 @@ def kk_calculate_real(
         away is logged at INFO.
     chunk_size : int, optional
         Energies per block of the transform, bounding memory; the result does
-        not depend on it beyond rounding. Default: about 32 MiB per float64
-        temporary.
+        not depend on it beyond rounding. Also used for the refinement
+        midpoints. Default: about 32 MiB per float64 temporary.
     nearedge : NearEdgeSpectrum, optional
         Measured near-edge absorption data (energies in eV, see
         :func:`~xraylabtool.kk.nearedge.load_nearedge`). It is converted to
@@ -184,7 +184,9 @@ def kk_calculate_real(
         Z = 1..92, or has a non-positive composition.
     EnergyError
         If ``energies_kev`` is empty, not 1-D, not finite, or outside
-        0.01-500 keV (nothing is extrapolated).
+        0.01-500 keV (nothing is extrapolated); or, without ``energies_kev``,
+        if no knot of the (merged) spectrum lies inside 0.03-30 keV, so the
+        default grid would be empty.
     ValidationError
         If ``chunk_size``, ``refine_max_passes`` or ``refine_max_points`` is
         not a positive integer, ``refine_tolerance`` is not a finite positive
@@ -316,6 +318,14 @@ def kk_calculate_real(
             int((seg_ev < _DEFAULT_MIN_KEV * _EV_PER_KEV).sum()),
             int((seg_ev > _DEFAULT_MAX_KEV * _EV_PER_KEV).sum()),
         )
+        if energy_ev.size == 0:
+            raise EnergyError(
+                f"No merged or tabulated knots inside {_DEFAULT_MIN_KEV:g}-"
+                f"{_DEFAULT_MAX_KEV:g} keV for {formula}, so the default output "
+                "grid is empty; pass explicit energies (energies_kev, or "
+                "--energies on the command line)",
+                valid_range=f"{_DEFAULT_MIN_KEV:g}-{_DEFAULT_MAX_KEV:g} keV",
+            )
     else:
         energy_kev, energy_ev = _validated_energies_ev(
             energies_kev, float(seg_ev[0]), float(seg_ev[-1])
@@ -339,6 +349,7 @@ def kk_calculate_real(
             tolerance=float(refine_tolerance),
             max_passes=refine_max_passes,
             max_points=refine_max_points,
+            chunk_size=chunk_size,
         )
         # Requested energies keep their exact keV value; only midpoints convert.
         original = np.searchsorted(refined.energy_ev, energy_ev)
