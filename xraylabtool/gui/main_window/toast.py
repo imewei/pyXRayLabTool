@@ -33,6 +33,8 @@ class Toast(QLabel):
             f"border: 1px solid {color}; border-radius: 8px;"
         )
         self.setText(message)
+        # Apply the stylesheet padding before sizing, or the text is clipped.
+        self.ensurePolished()
         self.adjustSize()
         self._reposition()
         self.show()

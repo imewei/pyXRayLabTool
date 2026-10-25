@@ -16,6 +16,7 @@ from xraylabtool.gui.widgets import (
     apply_palette_to_item,
     apply_palette_to_widget,
     current_palette,
+    legend_kwargs,
 )
 
 
@@ -27,7 +28,7 @@ class F1F2Plot(QWidget):
         self.plot_widget = pg.PlotWidget()
         palette = current_palette()
         apply_palette_to_widget(self.plot_widget, palette)
-        self._legend = self.plot_widget.addLegend()
+        self._legend = self.plot_widget.addLegend(**legend_kwargs())
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -40,7 +41,7 @@ class F1F2Plot(QWidget):
 
     def clear(self) -> None:
         self.plot_widget.clear()
-        self._legend = self.plot_widget.addLegend()
+        self._legend = self.plot_widget.addLegend(**legend_kwargs())
 
     def render_result(self, result: Any) -> None:
         self.clear()
@@ -100,8 +101,8 @@ class MultiF1F2Plot(QWidget):
         apply_palette_to_item(self._ax1, palette)
         apply_palette_to_item(self._ax2, palette)
 
-        self._ax1.addLegend()
-        self._ax2.addLegend()
+        self._ax1.addLegend(**legend_kwargs())
+        self._ax2.addLegend(**legend_kwargs())
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -115,8 +116,8 @@ class MultiF1F2Plot(QWidget):
     def clear(self) -> None:
         self._ax1.clear()
         self._ax2.clear()
-        self._ax1.addLegend()
-        self._ax2.addLegend()
+        self._ax1.addLegend(**legend_kwargs())
+        self._ax2.addLegend(**legend_kwargs())
 
     def render_multi(self, results: Mapping[str, Any]) -> None:
         """Render f1 and f2 vs energy for multiple materials.

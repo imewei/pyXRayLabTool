@@ -301,7 +301,6 @@ def get_qss(t: ColorPalette) -> str:
         font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
         font-size: 11px;
         font-weight: bold;
-        text-transform: uppercase;
     }}
 
     QStatusBar {{

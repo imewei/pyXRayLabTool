@@ -9,7 +9,11 @@ import numpy as np
 import pyqtgraph as pg  # type: ignore[import-untyped]
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
-from xraylabtool.gui.widgets import apply_palette_to_widget, current_palette
+from xraylabtool.gui.widgets import (
+    apply_palette_to_widget,
+    current_palette,
+    legend_kwargs,
+)
 
 
 class PlotCanvas(QWidget):
@@ -27,7 +31,7 @@ class PlotCanvas(QWidget):
         apply_palette_to_widget(self.plot_widget, palette)
 
         # Legend must be added once; clearing the plot removes items but keeps it
-        self._legend = self.plot_widget.addLegend()
+        self._legend = self.plot_widget.addLegend(**legend_kwargs())
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -45,7 +49,7 @@ class PlotCanvas(QWidget):
     def clear(self) -> None:
         self.plot_widget.clear()
         # Re-attach legend after clear() removes it
-        self._legend = self.plot_widget.addLegend()
+        self._legend = self.plot_widget.addLegend(**legend_kwargs())
 
     def plot_single(
         self,

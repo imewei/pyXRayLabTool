@@ -9,7 +9,11 @@ import pyqtgraph as pg  # type: ignore[import-untyped]
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from xraylabtool.gui.services import KKComputation
-from xraylabtool.gui.widgets import apply_palette_to_widget, current_palette
+from xraylabtool.gui.widgets import (
+    apply_palette_to_widget,
+    current_palette,
+    legend_kwargs,
+)
 
 # curve key -> (legend label, palette-cycle index, dashed, symbols)
 _CURVES: dict[str, tuple[str, int, bool, bool]] = {
@@ -28,7 +32,9 @@ class KKPlot(QWidget):
         self.setMinimumHeight(320)
         self.plot_widget = pg.PlotWidget()
         apply_palette_to_widget(self.plot_widget, current_palette())
-        self._legend = self.plot_widget.addLegend()
+        self._legend = self.plot_widget.addLegend(**legend_kwargs())
+        # Mid-right sits in the gap between the high f1 and low f2 curves.
+        self._legend.anchor(itemPos=(1, 0.5), parentPos=(1, 0.5), offset=(-12, 0))
         self.curves: dict[str, Any] = {
             key: self.plot_widget.plot([], [], name=None) for key in _CURVES
         }

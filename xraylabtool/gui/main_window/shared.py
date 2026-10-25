@@ -68,7 +68,7 @@ class SharedHelpersMixin:
             1, QHeaderView.ResizeMode.ResizeToContents
         )
         tune(self.single_summary, default_size=120, min_size=90)
-        tune(self.multi_full_table, default_size=120, min_size=90)
+        tune(self.multi_full_table, default_size=120, min_size=90, stretch_last=False)
 
     def _reserve_overlay_scrollbar_space(
         self: MainWindowProtocol, scroll_area: QScrollArea
