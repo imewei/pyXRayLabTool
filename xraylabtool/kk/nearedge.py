@@ -45,7 +45,7 @@ InputType = Literal["nexafs", "photoabsorption", "xanes", "beta", "asf"]
 
 _NEXAFS_TYPES = ("nexafs", "photoabsorption", "xanes")
 _INPUT_TYPES = (*_NEXAFS_TYPES, "beta", "asf")
-_ENERGY_UNITS = {"eV": 1.0, "keV": 1000.0}
+_ENERGY_UNITS = {"eV": 1.0, "keV": constants.KEV_TO_EV}
 _COMMENT_PREFIXES = ("#", "%", ";")
 
 # hc in eV m, from the package constants.

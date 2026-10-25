@@ -12,6 +12,7 @@ from numpy.typing import ArrayLike, NDArray
 from xraylabtool.calculators.core import (
     calculate_single_material_properties,
 )
+from xraylabtool.constants import EV_TO_KEV, TABULATED_MAX_KEV, TABULATED_MIN_KEV
 from xraylabtool.logging_utils import get_logger
 
 if TYPE_CHECKING:
@@ -19,11 +20,6 @@ if TYPE_CHECKING:
     from xraylabtool.kk.result import KKResult
 
 logger = get_logger(__name__)
-
-# Tabulated range of the CXRO f1 comparison (keV).
-_CXRO_MIN_KEV = 0.03
-_CXRO_MAX_KEV = 30.0
-_EV_PER_KEV = 1000.0
 
 
 @dataclass
@@ -171,7 +167,7 @@ def compute_kk(
 
     if energy_unit not in ("eV", "keV"):
         raise ValueError(f"energy_unit must be 'eV' or 'keV', got {energy_unit!r}")
-    scale = 1.0 / _EV_PER_KEV if energy_unit == "eV" else 1.0
+    scale = EV_TO_KEV if energy_unit == "eV" else 1.0
     merge_kev = (
         None
         if merge_points is None
@@ -200,8 +196,8 @@ def compute_kk(
         merge_points_kev=merge_kev,
         refine_tolerance=refine_tolerance,
     )
-    in_range = (result.energy_kev >= _CXRO_MIN_KEV) & (
-        result.energy_kev <= _CXRO_MAX_KEV
+    in_range = (result.energy_kev >= TABULATED_MIN_KEV) & (
+        result.energy_kev <= TABULATED_MAX_KEV
     )
     cxro_energy = result.energy_kev[in_range]
     if cxro_energy.size:

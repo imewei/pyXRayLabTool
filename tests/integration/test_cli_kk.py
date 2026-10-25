@@ -271,6 +271,28 @@ class TestKKCli:
         assert out == ""
         assert "Error" in err
 
+    @pytest.mark.parametrize("spec", ["abc", "1.0,x", "1-5:3:cubic"])
+    def test_energies_unparseable_reports_invalid_energies(self, capsys, spec):
+        rc, out, err = _run(["kk", "Si", "--energies", spec], capsys)
+        assert rc == 1
+        assert out == ""
+        assert "Invalid --energies" in err
+
+    def test_input_type_choices_are_valid_api_types(self):
+        from typing import get_args
+
+        from xraylabtool.interfaces.cli.parser import create_parser
+        from xraylabtool.kk.nearedge import InputType
+
+        parser = create_parser()
+        sub = next(
+            a
+            for a in parser._actions
+            if getattr(a, "choices", None) and "kk" in a.choices
+        ).choices["kk"]
+        choices = next(a for a in sub._actions if a.dest == "input_type").choices
+        assert set(choices) <= set(get_args(InputType))
+
     def test_energies_out_of_range_errors(self, capsys):
         rc, _, err = _run(["kk", "Si", "--energies", "1000"], capsys)
         assert rc == 1

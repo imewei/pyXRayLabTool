@@ -21,10 +21,11 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from xraylabtool.backend.array_ops import ops
+from xraylabtool.constants import KEV_TO_EV, TABULATED_MAX_KEV, TABULATED_MIN_KEV
 from xraylabtool.exceptions import EnergyError, NearEdgeDataError, ValidationError
 from xraylabtool.kk.database import load_asf
 from xraylabtool.kk.nearedge import InputType, NearEdgeSpectrum, _merge, to_asf_scale
-from xraylabtool.kk.refine import refine_spectrum
+from xraylabtool.kk.refine import _positive_int, refine_spectrum
 from xraylabtool.kk.result import KKResult
 from xraylabtool.kk.spectrum import compound_spectrum, evaluate_f2
 from xraylabtool.kk.transform import kk_real_spectrum, relativistic_correction
@@ -34,9 +35,8 @@ from xraylabtool.utils import parse_formula
 logger = get_logger("kk")
 
 # Default output window (keV): the package's tabulated range, 0.03-30 keV.
-_DEFAULT_MIN_KEV = 0.03
-_DEFAULT_MAX_KEV = 30.0
-_EV_PER_KEV = 1000.0
+_DEFAULT_MIN_KEV = TABULATED_MIN_KEV
+_DEFAULT_MAX_KEV = TABULATED_MAX_KEV
 
 
 def _validated_energies_ev(
@@ -58,13 +58,13 @@ def _validated_energies_ev(
         raise EnergyError("Energies must not be empty")
     if not np.isfinite(e_kev).all():
         raise EnergyError("Energies must be finite (no NaN or inf)")
-    e_ev = e_kev * _EV_PER_KEV
+    e_ev = e_kev * KEV_TO_EV
     out = (e_ev < lo_ev) | (e_ev > hi_ev)
     if out.any():
         raise EnergyError(
             "Energy outside the tabulated range",
             energy=float(e_kev[out][0]),
-            valid_range=f"{lo_ev / _EV_PER_KEV:g}-{hi_ev / _EV_PER_KEV:g} keV",
+            valid_range=f"{lo_ev / KEV_TO_EV:g}-{hi_ev / KEV_TO_EV:g} keV",
         )
     return e_kev, e_ev
 
@@ -77,7 +77,7 @@ def _merge_points_ev(
         return None
     try:
         low, high = merge_points_kev
-        return float(low) * _EV_PER_KEV, float(high) * _EV_PER_KEV
+        return float(low) * KEV_TO_EV, float(high) * KEV_TO_EV
     except (TypeError, ValueError) as exc:
         raise NearEdgeDataError(
             f"merge_points_kev must be two energies in keV: {exc}"
@@ -99,16 +99,8 @@ def _check_refine_arguments(
             "refine_tolerance",
             tolerance,
         )
-    for name, value in (
-        ("refine_max_passes", max_passes),
-        ("refine_max_points", max_points),
-    ):
-        if (
-            isinstance(value, bool)
-            or not isinstance(value, int | np.integer)
-            or value < 1
-        ):
-            raise ValidationError(f"{name} must be a positive integer", name, value)
+    _positive_int(max_passes, "refine_max_passes")
+    _positive_int(max_points, "refine_max_points")
 
 
 def kk_calculate_real(
@@ -252,14 +244,8 @@ def kk_calculate_real(
     >>> refined.n_refined_points > 0 and bool((refined.energy_kev[1:] > refined.energy_kev[:-1]).all())
     True
     """
-    if chunk_size is not None and (
-        isinstance(chunk_size, bool)
-        or not isinstance(chunk_size, int | np.integer)
-        or chunk_size < 1
-    ):
-        raise ValidationError(
-            "chunk_size must be a positive integer", "chunk_size", chunk_size
-        )
+    if chunk_size is not None:
+        _positive_int(chunk_size, "chunk_size")
 
     _check_refine_arguments(refine_tolerance, refine_max_passes, refine_max_points)
 
@@ -291,22 +277,22 @@ def kk_calculate_real(
             merge_points_kev
             if merge_points_kev is not None
             else (
-                merged.merge_points_ev[0] / _EV_PER_KEV,
-                merged.merge_points_ev[1] / _EV_PER_KEV,
+                merged.merge_points_ev[0] / KEV_TO_EV,
+                merged.merge_points_ev[1] / KEV_TO_EV,
             )
         )
-        scaled_kev_f2 = (nearedge.energy_ev / _EV_PER_KEV, merged.scaled)
+        scaled_kev_f2 = (nearedge.energy_ev / KEV_TO_EV, merged.scaled)
     db = load_asf()
     rel_corr = relativistic_correction(
         [db.symbols.index(s) + 1 for s in symbols], counts
     )
 
     if energies_kev is None:
-        keep = (seg_ev >= _DEFAULT_MIN_KEV * _EV_PER_KEV) & (
-            seg_ev <= _DEFAULT_MAX_KEV * _EV_PER_KEV
+        keep = (seg_ev >= _DEFAULT_MIN_KEV * KEV_TO_EV) & (
+            seg_ev <= _DEFAULT_MAX_KEV * KEV_TO_EV
         )
         energy_ev = seg_ev[keep]
-        energy_kev = energy_ev / _EV_PER_KEV
+        energy_kev = energy_ev / KEV_TO_EV
         logger.info(
             "kk_calculate_real(%s): default grid clipped to %g-%g keV, "
             "kept %d of %d tabulated points (%d below, %d above)",
@@ -315,8 +301,8 @@ def kk_calculate_real(
             _DEFAULT_MAX_KEV,
             energy_ev.size,
             seg_ev.size,
-            int((seg_ev < _DEFAULT_MIN_KEV * _EV_PER_KEV).sum()),
-            int((seg_ev > _DEFAULT_MAX_KEV * _EV_PER_KEV).sum()),
+            int((seg_ev < _DEFAULT_MIN_KEV * KEV_TO_EV).sum()),
+            int((seg_ev > _DEFAULT_MAX_KEV * KEV_TO_EV).sum()),
         )
         if energy_ev.size == 0:
             raise EnergyError(
@@ -333,9 +319,9 @@ def kk_calculate_real(
 
     n_refined = 0
     if refine_tolerance is not None:
-        # D7: refinement works on a sorted unique grid.
+        # refine_spectrum requires a strictly increasing, unique grid.
         energy_kev = np.unique(energy_kev)
-        energy_ev = energy_kev * _EV_PER_KEV
+        energy_ev = energy_kev * KEV_TO_EV
     f1 = kk_real_spectrum(energy_ev, seg_ev, coeffs, rel_corr, chunk_size)
     f2 = evaluate_f2(energy_ev, seg_ev, coeffs)
     if refine_tolerance is not None:
@@ -355,7 +341,7 @@ def kk_calculate_real(
         original = np.searchsorted(refined.energy_ev, energy_ev)
         energy_ev, f1, f2 = refined.energy_ev, refined.f1, refined.f2
         n_refined = refined.n_added
-        energy_kev_out = energy_ev / _EV_PER_KEV
+        energy_kev_out = energy_ev / KEV_TO_EV
         energy_kev_out[original] = energy_kev
         energy_kev = energy_kev_out
     return KKResult(

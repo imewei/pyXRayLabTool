@@ -67,6 +67,27 @@ def test_explicit_energy_between_10ev_and_500kev_ok(energies_kev) -> None:
 
 
 @pytest.mark.unit
+def test_boundary_energies_are_accepted_and_f2_matches_the_table() -> None:
+    from xraylabtool.kk.spectrum import evaluate_f2
+
+    symbols, counts = parse_formula("Si")
+    seg_ev, coeffs = compound_spectrum(symbols, counts)
+    res = kk_calculate_real("Si", energies_kev=[0.01, 500.0])
+    expected = evaluate_f2(np.array([10.0, 500_000.0]), seg_ev, coeffs)
+    np.testing.assert_allclose(res.f2, expected, rtol=1e-12)
+    assert np.isfinite(res.f1).all()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "energy_kev", [np.nextafter(0.01, 0.0), np.nextafter(500.0, 1e3)]
+)
+def test_energy_one_ulp_outside_the_data_range_raises(energy_kev: float) -> None:
+    with pytest.raises(EnergyError, match="tabulated range"):
+        kk_calculate_real("Si", energies_kev=[energy_kev])
+
+
+@pytest.mark.unit
 @pytest.mark.parametrize("energy_kev", [0.009, 501.0, 0.0, -1.0])
 def test_energy_out_of_data_range_raises_energy_error(energy_kev: float) -> None:
     with pytest.raises(EnergyError, match="tabulated range") as excinfo:

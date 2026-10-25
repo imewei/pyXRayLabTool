@@ -8,9 +8,8 @@ from pathlib import Path
 import sys
 from typing import Any
 
+from xraylabtool.constants import EV_TO_KEV
 from xraylabtool.interfaces.cli.utils import parse_energy_string
-
-_EV_PER_KEV = 1000.0
 
 
 def _fail(message: str) -> int:
@@ -29,7 +28,7 @@ def _parse_merge(spec: str, energy_unit: str) -> tuple[float, float]:
         ) from None
     if not (math.isfinite(low) and math.isfinite(high)):
         raise ValueError(f"--merge values must be finite, got {spec!r}")
-    scale = 1.0 / _EV_PER_KEV if energy_unit == "eV" else 1.0
+    scale = EV_TO_KEV if energy_unit == "eV" else 1.0
     return low * scale, high * scale
 
 

@@ -244,6 +244,14 @@ def test_worker_error_shows_toast_not_crash(app: QApplication, win: Any) -> None
     assert win.kk_run_btn.text() == "Compute"
 
 
+def test_gui_input_types_are_valid_api_types() -> None:
+    from typing import get_args
+
+    from xraylabtool.kk.nearedge import InputType
+
+    assert set(kk_tab.KK_INPUT_TYPES) <= set(get_args(InputType))
+
+
 def test_tab_order_includes_kk_widgets(win: Any) -> None:
     chain = [
         win.kk_formula,
