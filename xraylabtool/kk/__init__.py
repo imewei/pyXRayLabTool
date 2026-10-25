@@ -24,12 +24,15 @@ _EXPORTS = {
     "load_nearedge": "nearedge",
     "to_asf_scale": "nearedge",
     "merge_spectra": "nearedge",
+    "RefineOutcome": "refine",
+    "refine_spectrum": "refine",
 }
 
 __all__ = [
     "AsfDatabase",
     "KKResult",
     "NearEdgeSpectrum",
+    "RefineOutcome",
     "compound_spectrum",
     "evaluate_f2",
     "kk_calculate_real",
@@ -38,6 +41,7 @@ __all__ = [
     "load_asf",
     "load_nearedge",
     "merge_spectra",
+    "refine_spectrum",
     "relativistic_correction",
     "to_asf_scale",
 ]

@@ -24,6 +24,7 @@ from xraylabtool.backend.array_ops import ops
 from xraylabtool.exceptions import EnergyError, NearEdgeDataError, ValidationError
 from xraylabtool.kk.database import load_asf
 from xraylabtool.kk.nearedge import InputType, NearEdgeSpectrum, _merge, to_asf_scale
+from xraylabtool.kk.refine import refine_spectrum
 from xraylabtool.kk.result import KKResult
 from xraylabtool.kk.spectrum import compound_spectrum, evaluate_f2
 from xraylabtool.kk.transform import kk_real_spectrum, relativistic_correction
@@ -83,6 +84,33 @@ def _merge_points_ev(
         ) from exc
 
 
+def _check_refine_arguments(
+    tolerance: float | None, max_passes: int, max_points: int
+) -> None:
+    """Raise :class:`ValidationError` for unusable refinement arguments."""
+    if tolerance is not None and (
+        isinstance(tolerance, bool)
+        or not isinstance(tolerance, int | float | np.number)
+        or not np.isfinite(tolerance)
+        or tolerance <= 0
+    ):
+        raise ValidationError(
+            "refine_tolerance must be a finite positive number",
+            "refine_tolerance",
+            tolerance,
+        )
+    for name, value in (
+        ("refine_max_passes", max_passes),
+        ("refine_max_points", max_points),
+    ):
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, int | np.integer)
+            or value < 1
+        ):
+            raise ValidationError(f"{name} must be a positive integer", name, value)
+
+
 def kk_calculate_real(
     formula: str,
     *,
@@ -91,6 +119,9 @@ def kk_calculate_real(
     nearedge: NearEdgeSpectrum | None = None,
     input_type: InputType | None = None,
     merge_points_kev: tuple[float, float] | None = None,
+    refine_tolerance: float | None = None,
+    refine_max_passes: int = 50,
+    refine_max_points: int = 100_000,
 ) -> KKResult:
     """Real part f1 of the scattering factor from the tabulated f2.
 
@@ -123,6 +154,18 @@ def kk_calculate_real(
         ``(low, high)`` merge energies in keV, inside the near-edge data and
         the tabulated range. Default: the whole overlap of the two ranges.
         Only with ``nearedge``.
+    refine_tolerance : float, optional
+        Absolute interpolation error (electrons per formula unit), finite and
+        positive. If given, midpoints are inserted wherever linear
+        interpolation of f1 or f2 between neighbouring energies is off by
+        more than this (see :func:`~xraylabtool.kk.refine.refine_spectrum`),
+        after any near-edge merge. The output is then sorted and
+        de-duplicated: the unique requested energies plus the added
+        midpoints. Without it, the energies keep the caller's order.
+    refine_max_passes : int, default 50
+        Maximum bisection passes of the refinement; at least 1.
+    refine_max_points : int, default 100000
+        Maximum number of points the refinement may add; at least 1.
 
     Returns
     -------
@@ -131,7 +174,8 @@ def kk_calculate_real(
         With near-edge data, ``merge_points_kev`` holds the merge energies
         used and ``nearedge_scaled_kev_f2`` the normalised near-edge data
         ``(energy_kev, f2)`` on its own grid. The default output grid is then
-        the merged spectrum's knots.
+        the merged spectrum's knots. ``n_refined_points`` counts the points
+        added by refinement (0 without ``refine_tolerance``).
 
     Raises
     ------
@@ -142,8 +186,9 @@ def kk_calculate_real(
         If ``energies_kev`` is empty, not 1-D, not finite, or outside
         0.01-500 keV (nothing is extrapolated).
     ValidationError
-        If ``chunk_size`` is not a positive integer, or ``input_type`` is
-        unknown.
+        If ``chunk_size``, ``refine_max_passes`` or ``refine_max_points`` is
+        not a positive integer, ``refine_tolerance`` is not a finite positive
+        number, or ``input_type`` is unknown.
     TypeError
         If ``nearedge`` is given without ``input_type``, is not a
         :class:`~xraylabtool.kk.nearedge.NearEdgeSpectrum`, or
@@ -163,6 +208,11 @@ def kk_calculate_real(
 
     Near-edge values that are negative after normalisation are kept and
     logged at WARNING, never clipped.
+
+    Refinement never drops a requested energy; it logs the points added per
+    pass (DEBUG) and in total (INFO), and a WARNING if it stops on
+    ``refine_max_passes`` or ``refine_max_points`` before the tolerance is
+    met everywhere.
 
     References
     ----------
@@ -191,6 +241,11 @@ def kk_calculate_real(
     (0.28, 0.32)
     >>> 0.29 in merged.energy_kev
     True
+    >>> refined = kk_calculate_real(
+    ...     "Si", energies_kev=[5.0, 0.1, 5.0], refine_tolerance=0.05
+    ... )
+    >>> refined.n_refined_points > 0 and bool((refined.energy_kev[1:] > refined.energy_kev[:-1]).all())
+    True
     """
     if chunk_size is not None and (
         isinstance(chunk_size, bool)
@@ -200,6 +255,8 @@ def kk_calculate_real(
         raise ValidationError(
             "chunk_size must be a positive integer", "chunk_size", chunk_size
         )
+
+    _check_refine_arguments(refine_tolerance, refine_max_passes, refine_max_points)
 
     if nearedge is None:
         if input_type is not None or merge_points_kev is not None:
@@ -261,8 +318,32 @@ def kk_calculate_real(
             energies_kev, float(seg_ev[0]), float(seg_ev[-1])
         )
 
+    n_refined = 0
+    if refine_tolerance is not None:
+        # D7: refinement works on a sorted unique grid.
+        energy_kev = np.unique(energy_kev)
+        energy_ev = energy_kev * _EV_PER_KEV
     f1 = kk_real_spectrum(energy_ev, seg_ev, coeffs, rel_corr, chunk_size)
     f2 = evaluate_f2(energy_ev, seg_ev, coeffs)
+    if refine_tolerance is not None:
+        refined = refine_spectrum(
+            energy_ev,
+            f1,
+            f2,
+            seg_ev,
+            coeffs,
+            rel_corr,
+            tolerance=float(refine_tolerance),
+            max_passes=refine_max_passes,
+            max_points=refine_max_points,
+        )
+        # Requested energies keep their exact keV value; only midpoints convert.
+        original = np.searchsorted(refined.energy_ev, energy_ev)
+        energy_ev, f1, f2 = refined.energy_ev, refined.f1, refined.f2
+        n_refined = refined.n_added
+        energy_kev_out = energy_ev / _EV_PER_KEV
+        energy_kev_out[original] = energy_kev
+        energy_kev = energy_kev_out
     return KKResult(
         formula=formula,
         energy_kev=energy_kev,
@@ -270,7 +351,7 @@ def kk_calculate_real(
         f2=f2,
         relativistic_correction=rel_corr,
         merge_points_kev=used_merge_kev,
-        n_refined_points=0,
+        n_refined_points=n_refined,
         backend="jax" if ops.is_jax() else "numpy",
         nearedge_scaled_kev_f2=scaled_kev_f2,
     )

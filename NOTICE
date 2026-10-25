@@ -19,7 +19,8 @@ Files derived from kkcalc:
   xraylabtool/kk/
       Altered from the original: a JAX/NumPy re-implementation of the
       piecewise-polynomial Kramers-Kronig transform (KK_PP) and the near-edge
-      data merge of upstream kkcalc/kk.py and kkcalc/data.py.
+      data merge and the adaptive refinement (improve_accuracy) of upstream
+      kkcalc/kk.py and kkcalc/data.py.
   tests/characterization/kk/nearedge_example.txt
       Unaltered copy of examples/PS_004_-dc.txt from upstream (polystyrene
       NEXAFS example), used as a test fixture.
