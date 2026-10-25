@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import math
 
 import numpy as np
 import pytest
@@ -10,6 +11,11 @@ import pytest
 from xraylabtool.calculators.core import (
     calculate_properties_from_factors,
     calculate_single_material_properties,
+)
+from xraylabtool.constants import (
+    AVOGADRO,
+    ENERGY_TO_WAVELENGTH_FACTOR,
+    THOMPSON,
 )
 from xraylabtool.exceptions import ValidationError
 
@@ -33,6 +39,28 @@ def test_helper_reproduces_lookup_path() -> None:
         else:
             np.testing.assert_allclose(b, a, rtol=1e-12, atol=0.0, err_msg=field.name)
             assert np.isfinite(b).all()
+
+
+@pytest.mark.unit
+def test_helper_delta_beta_match_closed_form() -> None:
+    """delta, beta from the physical constants, independent of SCATTERING_FACTOR."""
+    ref = calculate_single_material_properties("SiO2", ENERGIES, 2.2)
+    got = calculate_properties_from_factors(
+        "SiO2", ENERGIES, 2.2, ref.scattering_factor_f1, ref.scattering_factor_f2
+    )
+    wavelength_m = ENERGY_TO_WAVELENGTH_FACTOR / ENERGIES
+    prefactor = (
+        wavelength_m**2
+        * (THOMPSON * AVOGADRO * 1e6 / (2 * math.pi))
+        * 2.2
+        / ref.molecular_weight_g_mol
+    )
+    np.testing.assert_allclose(
+        got.dispersion_delta, prefactor * ref.scattering_factor_f1, rtol=1e-12
+    )
+    np.testing.assert_allclose(
+        got.absorption_beta, prefactor * ref.scattering_factor_f2, rtol=1e-12
+    )
 
 
 @pytest.mark.unit
