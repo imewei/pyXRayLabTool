@@ -221,9 +221,10 @@ Near-edge file format
 - Input types: ``nexafs`` (also ``photoabsorption``, ``xanes`` in Python) for
   absorption values proportional to the cross-section; ``beta`` for the
   imaginary part of the refractive index; ``asf`` for values already on the
-  ``f2`` scale. The merge rescales the data anyway, so only the shape of the
-  spectrum matters. For ``beta``, density and formula mass cancel in that
-  rescaling.
+  ``f2`` scale. The input type fixes the energy-dependent conversion (for
+  ``nexafs`` the values are multiplied by E). Constant prefactors cancel in
+  the affine match at the merge points, so for ``beta`` the density and
+  formula mass do not change the result.
 
 Behaviour decisions (D1-D7)
 ---------------------------

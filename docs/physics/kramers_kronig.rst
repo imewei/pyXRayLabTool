@@ -143,9 +143,9 @@ rounding in the cancelling terms (see Accuracy).
 .. admonition:: Erratum: sign of the :math:`a_{j,-3}` term in the typeset Eq. (10)
    :class: warning
 
-   The published Eq. (10) ends in
-   :math:`+\frac{2a_{j,-3}}{E}\left(x_{j+1}^{-1} - x_j^{-1}\right)`. That sign is
-   wrong. Integrating the :math:`a_{j,-3}` term directly, with
+   The a₋₃ term of the published Eq. (10) has the wrong sign: the equation ends
+   in :math:`+\frac{2a_{j,-3}}{E}\left(x_{j+1}^{-1} - x_j^{-1}\right)`.
+   Integrating the :math:`a_{j,-3}` term directly, with
    :math:`x \cdot x^{-3}/(E^2-x^2) = E^{-2}\left(x^{-2} + (E^2-x^2)^{-1}\right)`,
    gives :math:`+\frac{2a_{j,-3}}{E}\left(x_j^{-1} - x_{j+1}^{-1}\right)`
    inside the bracket, as written above. The paper's own Table 1 has this sign

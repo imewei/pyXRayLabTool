@@ -86,8 +86,10 @@ def test_docs_state_the_eq10_erratum() -> None:
 @pytest.mark.unit
 def test_docs_cite_the_paper_and_upstream_licence() -> None:
     citation = "doi:10.1364/OE.22.023628"
-    for page in (PHYSICS_PAGE, GUIDE_PAGE):
-        assert citation in page.read_text(encoding="utf-8"), page
+    for page in (API_PAGE, PHYSICS_PAGE, GUIDE_PAGE):
+        text = page.read_text(encoding="utf-8")
+        assert citation in text, page
+        assert "\nReferences\n----------\n" in text, page
     guide = GUIDE_PAGE.read_text(encoding="utf-8")
     assert "f331ca31a654af946f7d550a22cf4e9c11fa8afc" in guide
     assert "Zlib" in guide

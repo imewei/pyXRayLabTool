@@ -132,3 +132,13 @@ Optical properties from f1 and f2
 
 .. autofunction:: xraylabtool.calculators.core.calculate_properties_from_factors
    :no-index:
+
+References
+----------
+
+- B. Watts, "Calculation of the Kramers-Kronig transform of X-ray spectra by a
+  piecewise Laurent polynomial method", *Opt. Express* **22**\ (19),
+  23628–23639 (2014), doi:10.1364/OE.22.023628.
+- kkcalc, https://github.com/benajamin/kkcalc (commit
+  f331ca31a654af946f7d550a22cf4e9c11fa8afc), zlib/libpng licence; see
+  :doc:`../guides/kk_guide` for the attribution.
