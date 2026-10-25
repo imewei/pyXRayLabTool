@@ -15,21 +15,20 @@ tabulated coefficients are in eV) after a single conversion at the boundary.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 
+# Imported at runtime so ``typing.get_type_hints`` resolves the annotations.
+from numpy.typing import ArrayLike, NDArray
+
 from xraylabtool.backend.array_ops import ops
-from xraylabtool.exceptions import EnergyError, ValidationError
+from xraylabtool.exceptions import EnergyError, NearEdgeDataError, ValidationError
 from xraylabtool.kk.database import load_asf
+from xraylabtool.kk.nearedge import InputType, NearEdgeSpectrum, _merge, to_asf_scale
 from xraylabtool.kk.result import KKResult
 from xraylabtool.kk.spectrum import compound_spectrum, evaluate_f2
 from xraylabtool.kk.transform import kk_real_spectrum, relativistic_correction
 from xraylabtool.logging_utils import get_logger
 from xraylabtool.utils import parse_formula
-
-if TYPE_CHECKING:
-    from numpy.typing import ArrayLike, NDArray
 
 logger = get_logger("kk")
 
@@ -44,10 +43,14 @@ def _validated_energies_ev(
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Return ``(energies_kev, energies_ev)`` after validation (the one unit conversion)."""
     try:
-        e_kev = np.array(energies_kev, dtype=np.float64)
+        raw = np.asarray(energies_kev)
     except (TypeError, ValueError) as exc:
         raise EnergyError(f"Energies must be real numbers: {exc}") from exc
-    e_kev = np.atleast_1d(e_kev)
+    # np.array(..., dtype=float64) would drop a complex part and accept
+    # numeric strings and bools; only integer and float input is an energy.
+    if raw.dtype.kind not in "iuf":
+        raise EnergyError(f"Energies must be real numbers, got dtype {raw.dtype}")
+    e_kev = np.atleast_1d(np.array(raw, dtype=np.float64))
     if e_kev.ndim != 1:
         raise EnergyError(f"Energies must be a 1-D array, got shape {e_kev.shape}")
     if e_kev.size == 0:
@@ -65,11 +68,29 @@ def _validated_energies_ev(
     return e_kev, e_ev
 
 
+def _merge_points_ev(
+    merge_points_kev: tuple[float, float] | None,
+) -> tuple[float, float] | None:
+    """The merge points converted keV -> eV (the one unit conversion)."""
+    if merge_points_kev is None:
+        return None
+    try:
+        low, high = merge_points_kev
+        return float(low) * _EV_PER_KEV, float(high) * _EV_PER_KEV
+    except (TypeError, ValueError) as exc:
+        raise NearEdgeDataError(
+            f"merge_points_kev must be two energies in keV: {exc}"
+        ) from exc
+
+
 def kk_calculate_real(
     formula: str,
     *,
     energies_kev: ArrayLike | None = None,
     chunk_size: int | None = None,
+    nearedge: NearEdgeSpectrum | None = None,
+    input_type: InputType | None = None,
+    merge_points_kev: tuple[float, float] | None = None,
 ) -> KKResult:
     """Real part f1 of the scattering factor from the tabulated f2.
 
@@ -90,11 +111,27 @@ def kk_calculate_real(
         Energies per block of the transform, bounding memory; the result does
         not depend on it beyond rounding. Default: about 32 MiB per float64
         temporary.
+    nearedge : NearEdgeSpectrum, optional
+        Measured near-edge absorption data (energies in eV, see
+        :func:`~xraylabtool.kk.nearedge.load_nearedge`). It is converted to
+        the f2 scale, normalised to the tabulated f2 at the merge points and
+        replaces the tabulated spectrum between them.
+    input_type : {"nexafs", "photoabsorption", "xanes", "beta", "asf"}, optional
+        Kind of ``nearedge`` values; required with ``nearedge`` (see
+        :func:`~xraylabtool.kk.nearedge.to_asf_scale`).
+    merge_points_kev : tuple of float, optional
+        ``(low, high)`` merge energies in keV, inside the near-edge data and
+        the tabulated range. Default: the whole overlap of the two ranges.
+        Only with ``nearedge``.
 
     Returns
     -------
     KKResult
         ``f1`` and ``f2`` in electrons per formula unit at ``energy_kev``.
+        With near-edge data, ``merge_points_kev`` holds the merge energies
+        used and ``nearedge_scaled_kev_f2`` the normalised near-edge data
+        ``(energy_kev, f2)`` on its own grid. The default output grid is then
+        the merged spectrum's knots.
 
     Raises
     ------
@@ -105,7 +142,16 @@ def kk_calculate_real(
         If ``energies_kev`` is empty, not 1-D, not finite, or outside
         0.01-500 keV (nothing is extrapolated).
     ValidationError
-        If ``chunk_size`` is not a positive integer.
+        If ``chunk_size`` is not a positive integer, or ``input_type`` is
+        unknown.
+    TypeError
+        If ``nearedge`` is given without ``input_type``, is not a
+        :class:`~xraylabtool.kk.nearedge.NearEdgeSpectrum`, or
+        ``input_type``/``merge_points_kev`` is given without ``nearedge``.
+    NearEdgeDataError
+        If the near-edge data cannot be merged (no overlap with the
+        tabulated range, bad merge points, flat end points, non-finite
+        normalised values); see :func:`~xraylabtool.kk.nearedge.merge_spectra`.
 
     Notes
     -----
@@ -115,12 +161,16 @@ def kk_calculate_real(
     f1 below ~20 eV for heavy elements is good to about 1e-4 absolute (see
     :func:`~xraylabtool.kk.transform.kk_piecewise_poly`).
 
+    Near-edge values that are negative after normalisation are kept and
+    logged at WARNING, never clipped.
+
     References
     ----------
     B. Watts, Opt. Express 22(19), 23628 (2014), Eqs. (7)-(10): f1 from the
     piecewise-polynomial f2. The keV interface, validation and default
     window are this package's additions; the call sequence follows upstream
-    ``kkcalc.kk.kk_calculate_real`` without near-edge data.
+    ``kkcalc.kk.kk_calculate_real`` (near-edge merge: see
+    :func:`~xraylabtool.kk.nearedge.merge_spectra`).
 
     Examples
     --------
@@ -130,6 +180,16 @@ def kk_calculate_real(
     >>> bool((result.f1 > 0).all() and (result.f2 > 0).all())
     True
     >>> result.backend in ("numpy", "jax")
+    True
+    >>> edge = NearEdgeSpectrum(
+    ...     [280.0, 290.0, 300.0, 310.0, 320.0], [0.05, 0.1, 0.3, 0.45, 0.5]
+    ... )
+    >>> merged = kk_calculate_real(
+    ...     "C", nearedge=edge, input_type="nexafs", merge_points_kev=(0.28, 0.32)
+    ... )
+    >>> merged.merge_points_kev
+    (0.28, 0.32)
+    >>> 0.29 in merged.energy_kev
     True
     """
     if chunk_size is not None and (
@@ -141,8 +201,39 @@ def kk_calculate_real(
             "chunk_size must be a positive integer", "chunk_size", chunk_size
         )
 
+    if nearedge is None:
+        if input_type is not None or merge_points_kev is not None:
+            raise TypeError("input_type and merge_points_kev require nearedge")
+    elif not isinstance(nearedge, NearEdgeSpectrum):
+        raise TypeError(
+            f"nearedge must be a NearEdgeSpectrum, got {type(nearedge).__name__}"
+        )
+    elif input_type is None:
+        raise TypeError(
+            "input_type is required with nearedge (one of nexafs, photoabsorption, "
+            "xanes, beta, asf)"
+        )
+
     symbols, counts = parse_formula(formula)
     seg_ev, coeffs = compound_spectrum(symbols, counts)
+    used_merge_kev: tuple[float, float] | None = None
+    scaled_kev_f2: tuple[NDArray[np.float64], NDArray[np.float64]] | None = None
+    if nearedge is not None:
+        assert input_type is not None  # checked above; narrows for mypy
+        merge_points_ev = _merge_points_ev(merge_points_kev)
+        merged = _merge(
+            to_asf_scale(nearedge, input_type), seg_ev, coeffs, merge_points_ev
+        )
+        seg_ev, coeffs = merged.seg_ev, merged.coeffs
+        used_merge_kev = (
+            merge_points_kev
+            if merge_points_kev is not None
+            else (
+                merged.merge_points_ev[0] / _EV_PER_KEV,
+                merged.merge_points_ev[1] / _EV_PER_KEV,
+            )
+        )
+        scaled_kev_f2 = (nearedge.energy_ev / _EV_PER_KEV, merged.scaled)
     db = load_asf()
     rel_corr = relativistic_correction(
         [db.symbols.index(s) + 1 for s in symbols], counts
@@ -178,7 +269,8 @@ def kk_calculate_real(
         f1=f1,
         f2=f2,
         relativistic_correction=rel_corr,
-        merge_points_kev=None,
+        merge_points_kev=used_merge_kev,
         n_refined_points=0,
         backend="jax" if ops.is_jax() else "numpy",
+        nearedge_scaled_kev_f2=scaled_kev_f2,
     )

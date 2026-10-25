@@ -20,18 +20,26 @@ _EXPORTS = {
     "kk_real_spectrum": "transform",
     "load_asf": "database",
     "AsfDatabase": "database",
+    "NearEdgeSpectrum": "nearedge",
+    "load_nearedge": "nearedge",
+    "to_asf_scale": "nearedge",
+    "merge_spectra": "nearedge",
 }
 
 __all__ = [
     "AsfDatabase",
     "KKResult",
+    "NearEdgeSpectrum",
     "compound_spectrum",
     "evaluate_f2",
     "kk_calculate_real",
     "kk_piecewise_poly",
     "kk_real_spectrum",
     "load_asf",
+    "load_nearedge",
+    "merge_spectra",
     "relativistic_correction",
+    "to_asf_scale",
 ]
 
 
@@ -45,4 +53,4 @@ def __getattr__(name: str) -> Any:
 
 
 def __dir__() -> list[str]:
-    return sorted([*globals(), *_EXPORTS])
+    return sorted({*globals(), *_EXPORTS})

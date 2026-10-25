@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    import numpy as np
-    from numpy.typing import NDArray
+# Imported at runtime (not under TYPE_CHECKING) so that
+# ``typing.get_type_hints(KKResult)`` resolves the string annotations.
+import numpy as np
+from numpy.typing import NDArray
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class KKResult:
     """Real and imaginary scattering factors of a formula unit.
+
+    The dataclass is frozen and compares by identity (``eq=False``): the
+    array fields have no element-wise-safe ``==`` or ``hash``.
 
     Attributes
     ----------

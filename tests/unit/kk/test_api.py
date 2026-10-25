@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 import subprocess
 import sys
+import typing
 
 import numpy as np
 import pytest
@@ -24,16 +25,6 @@ from xraylabtool.utils import parse_formula
 
 ROOT = Path(__file__).resolve().parents[3]
 GOLDEN = ROOT / "tests" / "characterization" / "kk" / "golden"
-
-
-@pytest.fixture
-def kk_log(caplog: pytest.LogCaptureFixture) -> pytest.LogCaptureFixture:
-    """Capture the ``xraylabtool`` logger (it does not propagate to the root)."""
-    logger = logging.getLogger("xraylabtool")
-    logger.addHandler(caplog.handler)
-    caplog.set_level(logging.INFO, logger="xraylabtool")
-    yield caplog
-    logger.removeHandler(caplog.handler)
 
 
 @pytest.mark.unit
@@ -86,7 +77,18 @@ def test_energy_out_of_data_range_raises_energy_error(energy_kev: float) -> None
 @pytest.mark.unit
 @pytest.mark.parametrize(
     "energies",
-    [[float("nan")], [1.0, float("inf")], [-float("inf")], [], [[1.0, 2.0]], ["a"]],
+    [
+        [float("nan")],
+        [1.0, float("inf")],
+        [-float("inf")],
+        [],
+        [[1.0, 2.0]],
+        ["a"],
+        ["1.0"],  # numeric strings are not energies
+        [True, True],  # nor are booleans (1 keV would be a valid energy)
+        [1 + 1j],  # complex input must not lose its imaginary part
+        np.array([1 + 0j]),
+    ],
 )
 def test_invalid_energies_raise_energy_error(energies) -> None:
     with pytest.raises(EnergyError):
@@ -179,6 +181,10 @@ def test_kk_result_is_frozen() -> None:
     with pytest.raises(dataclasses.FrozenInstanceError):
         res.f1 = np.zeros(1)  # type: ignore[misc]
     names = [f.name for f in dataclasses.fields(KKResult)]
+    # eq=False: identity semantics, so array fields never reach == (which raises).
+    assert res == res  # noqa: PLR0124
+    assert res != kk_calculate_real("Si", energies_kev=[1.0])
+    assert isinstance(hash(res), int)
     assert names == [
         "formula",
         "energy_kev",
@@ -225,9 +231,13 @@ def test_kk_is_a_lazy_submodule_of_xraylabtool() -> None:
 @pytest.mark.unit
 def test_public_names_resolve_lazily() -> None:
     assert set(kk.__all__) == set(kk._EXPORTS)
+    names = dir(kk)
+    assert len(names) == len(set(names))
     for name in kk.__all__:
         assert getattr(kk, name) is not None
         assert name in dir(kk)
+    names = dir(kk)  # after the lazy accesses above: still no duplicates
+    assert len(names) == len(set(names))
     assert kk.kk_calculate_real is api.kk_calculate_real
     assert kk.KKResult is KKResult
     with pytest.raises(AttributeError, match="no_such_name"):
@@ -240,3 +250,11 @@ def test_docstring_examples_run(module) -> None:
     results = doctest.testmod(module, optionflags=doctest.NORMALIZE_WHITESPACE)
     assert results.attempted > 0
     assert results.failed == 0
+
+
+@pytest.mark.unit
+def test_type_hints_resolve_at_runtime() -> None:
+    """Sphinx autodoc calls ``get_type_hints``; it must not hit a NameError."""
+    hints = typing.get_type_hints(KKResult)
+    assert set(hints) == {f.name for f in dataclasses.fields(KKResult)}
+    typing.get_type_hints(api.kk_calculate_real)
