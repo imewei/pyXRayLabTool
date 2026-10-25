@@ -11,7 +11,7 @@ authoritative list on your installed version.
 (e.g. ``xtool calc Si -e 8.0 -d 2.33``). The desktop GUI is launched with
 ``xraylabtool-gui`` or its aliases ``xtool-gui`` and ``xlt-gui``.
 
-**Commands:** calc, batch, compare, convert, formula, atomic, bragg, list, completion,
+**Commands:** calc, batch, compare, convert, kk, formula, atomic, bragg, list, completion,
 install-completion, uninstall-completion
 
 **Global Options:** ``--version``, ``--help``, ``-v/--verbose``, ``--debug``
@@ -104,6 +104,41 @@ Energies in keV, wavelengths in Å. ``VALUES`` is a single number or a comma-sep
    xraylabtool convert energy 8.0 --to wavelength
    xraylabtool convert wavelength 1.55 --to energy
    xraylabtool convert energy 5.0,8.0,10.0 --to wavelength
+
+kk - Kramers-Kronig f1
+----------------------
+
+**Usage:** ``xraylabtool kk FORMULA [--nearedge FILE --input-type {nexafs,beta,asf}] [--energy-unit {eV,keV}] [--merge LOW,HIGH] [-d G_CM3] [--refine TOL] [--energies SPEC] [-o FILE] [--format {csv,json}]``
+
+Calculates the real scattering factor f1 from the tabulated f2 by the
+Kramers-Kronig transform and prints ``energy_keV,f1,f2`` (CSV, or JSON with the
+same three keys). Without ``--nearedge`` this is the Kramers-Kronig-consistent f1 of
+the tabulated spectrum. With ``--nearedge`` the measured absorption data replace the
+tabulated f2 between the merge points after normalisation to it.
+
+- ``--input-type`` is required with ``--nearedge``: ``nexafs`` (photoabsorption
+  cross-section values), ``beta`` (imaginary part of the refractive index) or ``asf``
+  (already f2).
+- ``--energy-unit`` (default ``eV``) is the unit of the near-edge file's first column
+  and of ``--merge``. ``--energies`` is always in keV.
+- ``--merge LOW,HIGH`` must lie inside both the near-edge data and the tabulated
+  range (10 eV to 500 keV); the default is their whole overlap.
+- ``--energies`` takes the formats of ``calc -e`` (keV, 0.01 to 500). Without it the
+  output grid is the spectrum's own knots within 0.03-30 keV.
+- ``--refine TOL`` inserts midpoints until linear interpolation of f1 and f2 is within
+  ``TOL`` electrons per formula unit; the output is then sorted and unique, and the
+  number of points added is reported on stderr.
+- ``--density`` is validated (finite, positive) and accepted for ``beta`` input; it
+  cancels in the near-edge normalisation and does not change the result.
+- Errors (bad file, missing ``--input-type``, no overlap with the tabulated range,
+  energies out of range) print to stderr and exit with code 1.
+
+.. code-block:: bash
+
+   xraylabtool kk Si
+   xraylabtool kk SiO2 --energies 1.0,2.0,5.0
+   xraylabtool kk C --nearedge c_edge.txt --input-type nexafs
+   xraylabtool kk C --nearedge c_edge.txt --input-type nexafs --merge 285,315 --refine 0.05 -o c_edge.csv
 
 formula - Formula Analysis
 --------------------------

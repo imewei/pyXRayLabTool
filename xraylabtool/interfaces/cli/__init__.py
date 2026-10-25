@@ -10,7 +10,8 @@ Available Commands:
     batch               Process multiple materials from CSV file
     compare             Compare X-ray properties between multiple materials
     convert             Convert between energy and wavelength units
-    formula             Parse and analyze chemical formulas
+    kk                  Kramers-Kronig f1 from tabulated f2 and near-edge data
+    formula            Parse and analyze chemical formulas
     atomic              Look up atomic data for elements
     bragg               Calculate Bragg angles for diffraction
     list                List available data and information
@@ -61,6 +62,7 @@ from xraylabtool.interfaces.cli.commands.formula import (
     _process_formula,
     cmd_formula,
 )
+from xraylabtool.interfaces.cli.commands.kk import cmd_kk
 from xraylabtool.interfaces.cli.commands.list_cmd import cmd_list
 from xraylabtool.interfaces.cli.formatting import (
     _format_as_csv,
@@ -88,6 +90,7 @@ __all__ = [
     "cmd_convert",
     "cmd_formula",
     "cmd_install_completion",
+    "cmd_kk",
     "cmd_list",
     "cmd_uninstall_completion",
     "create_parser",
@@ -168,6 +171,7 @@ def main() -> int:
         "batch": cmd_batch,
         "compare": cmd_compare,
         "convert": cmd_convert,
+        "kk": cmd_kk,
         "formula": cmd_formula,
         "atomic": cmd_atomic,
         "bragg": cmd_bragg,

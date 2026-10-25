@@ -603,7 +603,7 @@ Register-ArgumentCompleter -Native -CommandName {command_names} -ScriptBlock {{
 
     if ($words.Count -le 1) {{
         # Complete main commands and global options
-        $commands = @('calc', 'batch', 'compare', 'convert', 'formula', 'atomic', 'bragg', 'list', 'completion')
+        $commands = @('calc', 'batch', 'compare', 'convert', 'kk', 'formula', 'atomic', 'bragg', 'list', 'completion')
         $completions = $commands + $globalOptions
         $completions | Where-Object {{ $_ -like "$wordToComplete*" }}
         return
@@ -778,6 +778,27 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
                 "-h",
             ],
             "arguments": ["value", "unit"],
+        },
+        "kk": {
+            "description": "Kramers-Kronig f1 from tabulated f2 and near-edge data",
+            "options": [
+                "--nearedge",
+                "--input-type",
+                "--energy-unit",
+                "--merge",
+                "--density",
+                "-d",
+                "--refine",
+                "--energies",
+                "--output",
+                "-o",
+                "--format",
+                "--verbose",
+                "-v",
+                "--help",
+                "-h",
+            ],
+            "arguments": ["formula"],
         },
         "formula": {
             "description": "Parse and analyze chemical formulas",
