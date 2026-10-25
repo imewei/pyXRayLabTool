@@ -36,6 +36,11 @@ from xraylabtool.logging_utils import get_logger
 
 logger = get_logger("kk")
 
+# An interval at a singular range end narrower than this fraction of its
+# energy is not refined (see refine_spectrum, Notes). The first tabulated
+# segment is 1.6 % wide for every element's lower end.
+_POLE_REL_WIDTH = 0.02
+
 
 @dataclass(frozen=True, eq=False)
 class RefineOutcome:
@@ -59,6 +64,10 @@ class RefineOutcome:
         ``True`` if refinement stopped on a limit (``max_passes``,
         ``max_points`` or float spacing) before every interval met the
         tolerance.
+    n_pole_skipped : int
+        Number of intervals next to a tabulated range end, narrower than 2 %
+        of their energy, that were left unrefined because f1 is
+        logarithmically singular there (see :func:`refine_spectrum`).
 
     References
     ----------
@@ -69,8 +78,8 @@ class RefineOutcome:
     --------
     >>> import numpy as np
     >>> out = RefineOutcome(np.array([1.0]), np.array([2.0]), np.array([3.0]), 0, False)
-    >>> out.n_added, out.exhausted
-    (0, False)
+    >>> out.n_added, out.exhausted, out.n_pole_skipped
+    (0, False, 0)
     """
 
     energy_ev: NDArray[np.float64]
@@ -78,6 +87,7 @@ class RefineOutcome:
     f2: NDArray[np.float64]
     n_added: int
     exhausted: bool
+    n_pole_skipped: int = 0
 
 
 def _positive_int(value: object, name: str) -> int:
@@ -143,6 +153,73 @@ def _checked_inputs(
     _positive_int(max_points, "max_points")
 
     return e, f1_arr, f2_arr, seg
+
+
+def _initial_intervals(
+    e: NDArray[np.float64],
+    f1: NDArray[np.float64],
+    f2: NDArray[np.float64],
+    seg: NDArray[np.float64],
+    tolerance: float,
+) -> NDArray[np.float64]:
+    """Active intervals as rows lo, hi, f1_lo, f1_hi, f2_lo, f2_hi, pole_lo, pole_hi.
+
+    The last two flag an end that is a range end where f1 is singular
+    (``|f2| > tolerance`` there). The array is replaced every pass.
+    """
+    return np.vstack(
+        [
+            e[:-1],
+            e[1:],
+            f1[:-1],
+            f1[1:],
+            f2[:-1],
+            f2[1:],
+            (e[:-1] == seg[0]) & (np.abs(f2[:-1]) > tolerance),
+            (e[1:] == seg[-1]) & (np.abs(f2[1:]) > tolerance),
+        ]
+    )
+
+
+def _drop_slivers(
+    iv: NDArray[np.float64], seg: NDArray[np.float64]
+) -> tuple[NDArray[np.float64], list[tuple[float, float]], int]:
+    """Split off pole-adjacent intervals narrower than ``_POLE_REL_WIDTH``.
+
+    Returns the remaining intervals, ``(energy, width)`` of the dropped ones
+    and how many of those are wider than the tabulated segment at their end.
+    """
+    pole_lo, pole_hi = iv[6] > 0, iv[7] > 0
+    width = iv[1] - iv[0]
+    sliver = (pole_lo | pole_hi) & (
+        width <= _POLE_REL_WIDTH * np.where(pole_lo, iv[0], iv[1])
+    )
+    if not sliver.any():
+        return iv, [], 0
+    end_seg = np.where(pole_lo, seg[1] - seg[0], seg[-1] - seg[-2])
+    dropped = list(zip(iv[0][sliver], width[sliver], strict=True))
+    return iv[:, ~sliver], dropped, int((sliver & (width > end_seg)).sum())
+
+
+def _log_skipped(
+    skipped: list[tuple[float, float]], n_wide: int, tolerance: float
+) -> None:
+    """Report the pole slivers left unrefined (INFO; WARNING if any is wide)."""
+    if not skipped:
+        return
+    log = logger.warning if n_wide else logger.info
+    log(
+        "refine_spectrum: %d interval(s) next to a tabulated range end left "
+        "unrefined (f1 is logarithmically singular at the range end; widest "
+        "%.3g eV at %.6g eV)%s",
+        len(skipped),
+        max(w for _, w in skipped),
+        skipped[0][0],
+        f"; {n_wide} wider than the tabulated end segment, so the tolerance "
+        f"{tolerance:g} is materially unmet there"
+        if n_wide
+        else "",
+    )
 
 
 def refine_spectrum(
@@ -220,11 +297,21 @@ def refine_spectrum(
     cannot be split further; it is left as is and reported as exhausted.
 
     f1 diverges logarithmically at a tabulated range end ``seg_ev[0]`` or
-    ``seg_ev[-1]`` where f2 is nonzero, so bisecting towards it never
-    converges. An input interval that ends there with ``|f2| > tolerance`` is
-    therefore not refined. Upstream skips the first interval of its grid for
-    this reason; it is the same rule on the grids upstream uses (the lower
-    end has f2 well above the usual tolerance, the upper end far below).
+    ``seg_ev[-1]`` where f2 is nonzero, so bisecting towards it does not
+    converge once ``|f2|`` there exceeds ``tolerance``. For such an end the
+    interval touching it is bisected as usual (a failing midpoint is kept),
+    but a piece next to the end that is narrower than 2 % of its energy is
+    left unrefined. Pieces dropped this way are counted in ``n_pole_skipped``
+    and logged: at INFO when each is no wider than the tabulated segment at
+    that end (the expected case), at WARNING otherwise. Upstream instead
+    never splits the first interval of its grid, which is the same as this
+    for the lower end of every element (the first tabulated segment is 1.6 %
+    wide) and leaves the upper end to its recursion limit. On the segment
+    grid at tolerance 0.05 this gives the identical point set for Au
+    (f2 = 0.17 at 500 keV; the chain converges), and for Pb (f2 = 0.20)
+    and U (0.36) 44 fewer points (Pb: 461 against 505): upstream's chain
+    towards 500 keV does not converge and adds points until its recursion
+    limit, here it stops at the 2 % width.
 
     References
     ----------
@@ -254,19 +341,20 @@ def refine_spectrum(
     e, f1_arr, f2_arr, seg = _checked_inputs(
         energy_ev, f1, f2, seg_ev, tolerance, max_passes, max_points
     )
-    # Active intervals as rows lo, hi, f1_lo, f1_hi, f2_lo, f2_hi; replaced every pass.
-    iv = np.vstack([e[:-1], e[1:], f1_arr[:-1], f1_arr[1:], f2_arr[:-1], f2_arr[1:]])
-    max_passes, max_points = int(max_passes), int(max_points)
-    pole = ((iv[0] == seg[0]) & (np.abs(iv[4]) > tolerance)) | (
-        (iv[1] == seg[-1]) & (np.abs(iv[5]) > tolerance)
-    )
-    iv = iv[:, ~pole]
+    iv = _initial_intervals(e, f1_arr, f2_arr, seg, tolerance)
     new_pts: list[NDArray[np.float64]] = []  # (3, k) blocks: energy, f1, f2
     added = 0
     passes = 0
     reason = ""
+    skipped: list[tuple[float, float]] = []  # (energy, width) of dropped slivers
+    wide_skipped = 0
     while iv.shape[1] and passes < max_passes:
         passes += 1
+        iv, dropped, n_wide = _drop_slivers(iv, seg)
+        skipped.extend(dropped)
+        wide_skipped += n_wide
+        if not iv.shape[1]:
+            break
         mid = 0.5 * (iv[0] + iv[1])
         splittable = (mid > iv[0]) & (mid < iv[1])
         if not splittable.all():
@@ -295,8 +383,9 @@ def refine_spectrum(
         new_pts.append(np.vstack([mid, f1_mid, f2_mid])[:, bad])
         if reason.startswith("max_points"):
             break
-        left = np.vstack([iv[0], mid, iv[2], f1_mid, iv[4], f2_mid])
-        right = np.vstack([mid, iv[1], f1_mid, iv[3], f2_mid, iv[5]])
+        zero = np.zeros_like(mid)
+        left = np.vstack([iv[0], mid, iv[2], f1_mid, iv[4], f2_mid, iv[6], zero])
+        right = np.vstack([mid, iv[1], f1_mid, iv[3], f2_mid, iv[5], zero, iv[7]])
         iv = np.hstack([left[:, bad], right[:, bad]])
     if not reason and iv.shape[1] and passes >= max_passes:
         reason = f"max_passes={max_passes}"
@@ -304,6 +393,7 @@ def refine_spectrum(
     pts = np.hstack([np.vstack([e, f1_arr, f2_arr]), *new_pts])
     pts = pts[:, np.argsort(pts[0], kind="stable")]
     exhausted = bool(reason)
+    _log_skipped(skipped, wide_skipped, tolerance)
     logger.info(
         "refine_spectrum: added %d points in %d passes (tolerance %g)",
         added,
@@ -324,4 +414,5 @@ def refine_spectrum(
         f2=pts[2],
         n_added=added,
         exhausted=exhausted,
+        n_pole_skipped=len(skipped),
     )

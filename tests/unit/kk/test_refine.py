@@ -292,11 +292,122 @@ def test_type_hints_resolve_at_runtime() -> None:
     typing.get_type_hints(refine_spectrum)
 
 
+def _max_midpoint_error(si, out, lo_ev, hi_ev):
+    """Largest f1 midpoint-interpolation error over output intervals inside [lo, hi]."""
+    seg, coeffs, rel = si
+    e = out.energy_ev
+    keep = (e[:-1] >= lo_ev) & (e[1:] <= hi_ev)
+    mid = 0.5 * (e[:-1] + e[1:])[keep]
+    exact = kk_real_spectrum(mid, seg, coeffs, rel)
+    return float(np.abs(0.5 * (out.f1[:-1] + out.f1[1:])[keep] - exact).max())
+
+
 @pytest.mark.unit
-def test_interval_at_range_end_with_large_f2_is_not_bisected(si) -> None:
-    """f1 is logarithmically singular at the lower end, so bisection never converges."""
-    grid = np.array([si[0][0], 20.0, 100.0])
+def test_wide_interval_at_lower_range_end_is_refined(si, kk_log) -> None:
+    seg = si[0]
+    _, _, out = _refine(si, [seg[0], 1000.0, 5000.0])
+    inside = (out.energy_ev > seg[0]) & (out.energy_ev < 1000.0)
+    assert inside.sum() > 5
+    # Away from the log-singular end the tolerance is met (was ~8 e- before).
+    assert _max_midpoint_error(si, out, 50.0, 1000.0) < 5 * 0.05
+    assert out.n_pole_skipped == 1
+    assert any("range end" in r.getMessage() for r in kk_log.records)
+
+
+@pytest.mark.unit
+def test_lower_range_end_through_kk_calculate_real() -> None:
+    res = kk_calculate_real("Si", energies_kev=[0.01, 0.02], refine_tolerance=0.05)
+    assert res.n_refined_points > 0
+
+
+@pytest.mark.unit
+def test_narrow_interval_at_range_end_is_reported_not_bisected(si) -> None:
+    """The sliver next to the log pole is dropped; it is counted, not silent."""
+    seg = si[0]
+    grid = np.array([seg[0], seg[0] * 1.01, 100.0])
     _, f2, out = _refine(si, grid)
     assert f2[0] > 0.05
     assert not ((out.energy_ev > grid[0]) & (out.energy_ev < grid[1])).any()
+    assert out.n_pole_skipped == 1
     assert out.n_added > 0  # the smooth interval beyond it is still refined
+
+
+@pytest.mark.unit
+def test_upper_range_end_with_f2_above_tolerance_is_refined(si, kk_log) -> None:
+    seg, coeffs, _ = si
+    tol = 1e-5
+    grid = np.array([1e5, 3e5, seg[-1]])
+    assert evaluate_f2(grid[-1:], seg, coeffs)[0] > tol
+    _, _, out = _refine(si, grid, tolerance=tol, max_passes=200)
+    inside = (out.energy_ev > 3e5) & (out.energy_ev < seg[-1])
+    assert inside.sum() > 5
+    assert _max_midpoint_error(si, out, 3e5, 4.5e5) < 5 * tol
+    assert out.n_pole_skipped >= 1
+
+
+@pytest.mark.unit
+def test_upper_range_end_with_f2_below_tolerance_is_ordinary(si) -> None:
+    seg, coeffs, _ = si
+    grid = np.array([1e5, 3e5, seg[-1]])
+    assert evaluate_f2(grid[-1:], seg, coeffs)[0] <= 0.05
+    _, _, out = _refine(si, grid, tolerance=0.05)
+    assert out.n_pole_skipped == 0
+
+
+def _upstream_like_added(seg, coeffs, rel, tol):
+    """Points upstream ``improve_accuracy`` adds on the segment grid.
+
+    Independent of ``refine_spectrum``: plain bisection, first interval never
+    split, no range-end rule, at most 50 passes.
+    """
+    f1 = kk_real_spectrum(seg, seg, coeffs, rel)
+    f2 = evaluate_f2(seg, seg, coeffs)
+    lo, hi, a1, b1, a2, b2 = seg[1:-1], seg[2:], f1[1:-1], f1[2:], f2[1:-1], f2[2:]
+    added = []
+    for _ in range(50):
+        if lo.size == 0:
+            break
+        m = (lo + hi) / 2
+        fm = kk_real_spectrum(m, seg, coeffs, rel)
+        gm = evaluate_f2(m, seg, coeffs)
+        bad = (np.abs((a1 + b1) / 2 - fm) > tol) | (np.abs((a2 + b2) / 2 - gm) > tol)
+        added.append(m[bad])
+        lo, hi = np.r_[lo[bad], m[bad]], np.r_[m[bad], hi[bad]]
+        a1, b1 = np.r_[a1[bad], fm[bad]], np.r_[fm[bad], b1[bad]]
+        a2, b2 = np.r_[a2[bad], gm[bad]], np.r_[gm[bad], b2[bad]]
+    return np.concatenate(added)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("symbol", "z", "n_upstream", "n_skipped"),
+    [("Au", 79, 265, 1), ("Pb", 82, 505, 2)],
+)
+def test_heavy_element_segment_grid_against_upstream_emulation(
+    symbol: str, z: int, n_upstream: int, n_skipped: int
+) -> None:
+    """Au (f2 = 0.17 at 500 keV): identical to upstream. Pb (0.20): upstream's
+    chain towards 500 keV runs to its recursion limit; ours stops at 2 % width."""
+    seg, coeffs = compound_spectrum([symbol], [1.0])
+    rel = relativistic_correction([z], [1.0])
+    f1 = kk_real_spectrum(seg, seg, coeffs, rel)
+    f2 = evaluate_f2(seg, seg, coeffs)
+    ours = refine_spectrum(seg, f1, f2, seg, coeffs, rel, tolerance=0.05)
+    upstream = _upstream_like_added(seg, coeffs, rel, 0.05)
+    assert upstream.size == n_upstream
+    assert ours.n_pole_skipped == n_skipped
+    in_last = (ours.energy_ev > seg[-2]) & (ours.energy_ev < seg[-1])
+    assert in_last.sum() > 0  # the wide last interval is refined
+    if symbol == "Au":
+        np.testing.assert_array_equal(
+            np.setdiff1d(ours.energy_ev, seg), np.sort(upstream)
+        )
+        assert ours.n_added == upstream.size
+    else:
+        assert 0 < ours.n_added < upstream.size
+
+
+@pytest.mark.unit
+def test_n_pole_skipped_defaults_to_zero() -> None:
+    z = np.zeros(1)
+    assert RefineOutcome(z, z, z, 0, False).n_pole_skipped == 0
