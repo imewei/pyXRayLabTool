@@ -7,6 +7,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+# Importing xraylabtool.gui.services runs xraylabtool.gui.__init__, which imports
+# Qt; skip on headless runners without libEGL (as test_gui_services.py does).
+pytest.importorskip("PySide6.QtWidgets")
+
 from xraylabtool.calculators.core import calculate_single_material_properties
 from xraylabtool.gui.services import KKComputation, compute_kk
 from xraylabtool.kk import kk_calculate_real, load_nearedge

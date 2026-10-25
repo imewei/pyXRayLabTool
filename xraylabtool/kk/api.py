@@ -280,8 +280,8 @@ def kk_calculate_real(
     seg_ev, coeffs = compound_spectrum(symbols, counts)
     used_merge_kev: tuple[float, float] | None = None
     scaled_kev_f2: tuple[NDArray[np.float64], NDArray[np.float64]] | None = None
-    if nearedge is not None:
-        assert input_type is not None  # checked above; narrows for mypy
+    # input_type is never None here with a nearedge (checked above); the test narrows it.
+    if nearedge is not None and input_type is not None:
         merge_points_ev = _merge_points_ev(merge_points_kev)
         merged = _merge(
             to_asf_scale(nearedge, input_type), seg_ev, coeffs, merge_points_ev
