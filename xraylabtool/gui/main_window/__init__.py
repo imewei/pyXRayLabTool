@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from xraylabtool.logging_utils import get_logger
 
+from .kk_tab import KKTabMixin
 from .multi_tab import MultiTabMixin
 from .shared import SharedHelpersMixin
 from .single_tab import PROPERTIES, SingleTabMixin
@@ -25,7 +26,9 @@ __all__ = ["PROPERTIES", "MainWindow", "Toast"]
 logger = get_logger("xraylabtool.gui.main_window")
 
 
-class MainWindow(SingleTabMixin, MultiTabMixin, SharedHelpersMixin, QMainWindow):
+class MainWindow(
+    SingleTabMixin, MultiTabMixin, KKTabMixin, SharedHelpersMixin, QMainWindow
+):
     def __init__(self, theme_manager: Any | None = None) -> None:
         super().__init__()
         self.theme_manager = theme_manager
@@ -104,6 +107,7 @@ class MainWindow(SingleTabMixin, MultiTabMixin, SharedHelpersMixin, QMainWindow)
         self.main_tabs = QTabWidget()
         self.main_tabs.addTab(self._build_single_tab(), "Single Material")
         self.main_tabs.addTab(self._build_multi_tab(), "Multiple Materials")
+        self.main_tabs.addTab(self._build_kk_tab(), "Kramers-Kronig")
         self.setCentralWidget(self.main_tabs)
         self._set_tab_order()
         self._tune_table_headers()
