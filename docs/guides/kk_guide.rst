@@ -198,6 +198,9 @@ Material" and "Multiple Materials".
 5. **Start energy**, **End energy** (0.01-500 keV, default 1-30 keV) and
    **Points** (default 500) define a linear output grid. The CXRO ``f1``
    comparison curve is drawn only for energies inside 0.03-30 keV.
+   When merge points are given, the merge window is also sampled with
+   **Points** energies, even if it lies outside the start/end range, so a
+   narrow near-edge region is never stepped over.
 6. Click **Compute**. The calculation runs off the UI thread. An error is
    shown in the status bar, as a toast and in a message box.
 

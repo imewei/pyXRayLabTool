@@ -38,6 +38,26 @@ logger = get_logger("xraylabtool.gui.main_window")
 KK_INPUT_TYPES = ["nexafs", "beta", "asf"]  # as the `kk` CLI offers
 
 
+def _kk_energy_grid(
+    start: float,
+    end: float,
+    points: int,
+    merge: tuple[float, float] | None,
+    energy_unit: str,
+) -> np.ndarray:
+    """Return the requested keV grid, plus ``points`` samples of the merge window.
+
+    A uniform grid over a wide range can step over a narrow near-edge window
+    (or miss it when the range excludes it), so the window is always sampled.
+    """
+    grid = np.linspace(start, end, points)
+    if merge is None:
+        return grid
+    scale = 1e-3 if energy_unit == "eV" else 1.0
+    window = np.linspace(merge[0] * scale, merge[1] * scale, points)
+    return np.unique(np.concatenate([grid, window]))
+
+
 class KKTabMixin:
     """Widgets and behavior for the 'Kramers-Kronig' tab."""
 
@@ -69,7 +89,10 @@ class KKTabMixin:
 
         self.kk_merge = QLineEdit()
         self.kk_merge.setPlaceholderText("low, high (in the file's unit)")
-        self.kk_merge.setToolTip("Energies between which the data replaces the table")
+        self.kk_merge.setToolTip(
+            "Energies between which the data replaces the table; "
+            "this window is always sampled with N points, even outside the range"
+        )
 
         self.kk_refine = QDoubleSpinBox()
         self.kk_refine.setRange(0.0, 1.0)
@@ -199,7 +222,9 @@ class KKTabMixin:
             self.kk_energy_unit.currentText(),
             merge,
             refine,
-            energies_kev=np.linspace(start, end, points),
+            energies_kev=_kk_energy_grid(
+                start, end, points, merge, self.kk_energy_unit.currentText()
+            ),
         )
         worker.signals.finished.connect(self._on_kk_finished)
         worker.signals.error.connect(self._on_kk_error)

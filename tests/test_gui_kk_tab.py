@@ -169,6 +169,43 @@ def test_nearedge_options_reach_the_service(
 
 
 @pytest.mark.parametrize(
+    ("unit", "merge_text", "window_kev"),
+    [("keV", "0.28, 0.32", (0.28, 0.32)), ("eV", "280, 320", (0.28, 0.32))],
+)
+def test_merge_window_is_always_sampled(
+    app: QApplication,
+    win: Any,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Any,
+    unit: str,
+    merge_text: str,
+    window_kev: tuple[float, float],
+) -> None:
+    captured: dict[str, Any] = {}
+
+    def fake(*args: Any, **kwargs: Any) -> Any:
+        captured.update(kwargs)
+        raise ValueError("stop here")
+
+    monkeypatch.setattr(kk_tab, "compute_kk", fake)
+    win.kk_formula.setText("C")
+    win.kk_nearedge.setText(str(tmp_path / "edge.txt"))
+    win.kk_energy_unit.setCurrentText(unit)
+    win.kk_merge.setText(merge_text)
+    win.kk_energy_start.setValue(1.0)  # range excludes the window
+    win.kk_energy_end.setValue(10.0)
+    win.kk_points.setValue(7)
+    win.kk_run_btn.click()
+    _wait_for_worker(app, win)
+
+    grid = captured["energies_kev"]
+    assert np.all(np.diff(grid) > 0)
+    np.testing.assert_allclose(
+        grid, np.unique(np.r_[np.linspace(1, 10, 7), np.linspace(*window_kev, 7)])
+    )
+
+
+@pytest.mark.parametrize(
     ("setup", "needle"),
     [
         ({"merge": "1,2"}, "near-edge"),
