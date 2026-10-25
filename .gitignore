@@ -233,6 +233,8 @@ CODE_QUALITY_REPORT.md
 docs/_build/
 docs/build/
 docs/api/generated/
+# Local copy of the Watts 2014 paper (Optica copyright): read for the kk docs, never committed.
+docs/Watts-2014-*.pdf
 .doctrees/
 *.doctree
 /site

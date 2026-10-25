@@ -279,6 +279,15 @@ Limits
   emulation).
 - Near-edge data whose values at the two merge points differ by less than
   1e-6 of their size cannot be normalised and are rejected.
+- Many negative ``f2`` points after a merge (the D6 WARNING) usually mean a
+  wrong ``--energy-unit``. An eV file declared ``keV`` still overlaps the
+  table and is merged at 275-390 keV, outside the default output grid, so the
+  output looks normal. The polystyrene example read that way gives 70 of 270
+  negative points.
+- Within a few eV of 10 eV (and of 500 keV), ``f1`` is dominated by the
+  truncation singularity of the integral, not by the data. For Au,
+  ``f1(10 eV) = -0.561`` (the D5 end-point convention), ``f1(10.0001 eV) =
+  -4.645`` and ``f1(10.16 eV) = -0.70``.
 - ``-d/--density`` is accepted for ``beta`` input but has no effect on the
   result.
 

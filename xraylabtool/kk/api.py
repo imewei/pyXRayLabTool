@@ -204,7 +204,9 @@ def kk_calculate_real(
     an :class:`~xraylabtool.calculators.XRayResult` is restricted to
     0.03-30 keV. The transform is numerically exact for any energy but
     f1 below ~20 eV for heavy elements is good to about 1e-4 absolute (see
-    :func:`~xraylabtool.kk.transform.kk_piecewise_poly`).
+    :func:`~xraylabtool.kk.transform.kk_piecewise_poly`). Within a few eV of
+    10 eV or 500 keV, f1 is dominated by the truncation of the integral at the
+    data range, not by the data.
 
     Near-edge values that are negative after normalisation are kept and
     logged at WARNING, never clipped.
