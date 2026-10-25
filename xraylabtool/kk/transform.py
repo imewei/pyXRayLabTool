@@ -105,8 +105,9 @@ def kk_piecewise_poly(
         − 2a₁E(x_{j+1}−x_j) + (2a₋₂/E) ln|x_{j+1}/x_j|
         + (2a₋₃/E)(1/x_j − 1/x_{j+1})
 
-    The last term carries the corrected subscripts; the typeset Eq. (10) of
-    the reference has them shifted by one. The arithmetic follows upstream
+    The last term has the corrected sign; the typeset Eq. (10) of the
+    reference prints it as ``+(2a₋₃/E)(x_{j+1}⁻¹ − x_j⁻¹)``, the opposite of
+    its own Table 1. The arithmetic follows upstream
     ``KK_PP`` term by term so results agree with it to rounding.
 
     Singular evaluation energies (exact float equality with a knot):

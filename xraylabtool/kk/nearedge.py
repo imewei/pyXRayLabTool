@@ -149,6 +149,7 @@ class NearEdgeSpectrum:
 
     Examples
     --------
+    >>> from xraylabtool.kk import NearEdgeSpectrum
     >>> spec = NearEdgeSpectrum([280.0, 290.0, 300.0], [0.1, 0.4, 0.3])
     >>> spec.energy_ev.tolist()
     [280.0, 290.0, 300.0]
@@ -213,6 +214,8 @@ def load_nearedge(
 
     Examples
     --------
+    >>> from pathlib import Path
+    >>> from xraylabtool.kk import load_nearedge
     >>> import tempfile, os
     >>> with tempfile.TemporaryDirectory() as d:
     ...     name = os.path.join(d, "edge.txt")
@@ -318,6 +321,7 @@ def to_asf_scale(
 
     Examples
     --------
+    >>> from xraylabtool.kk import NearEdgeSpectrum, to_asf_scale
     >>> spec = NearEdgeSpectrum([280.0, 290.0], [0.1, 0.2])
     >>> to_asf_scale(spec, "asf").values.tolist()
     [0.1, 0.2]
@@ -557,6 +561,7 @@ def merge_spectra(
 
     Examples
     --------
+    >>> from xraylabtool.kk import NearEdgeSpectrum, merge_spectra
     >>> from xraylabtool.kk.spectrum import compound_spectrum
     >>> seg, coeffs = compound_spectrum(["C"], [1.0])
     >>> edge = NearEdgeSpectrum([280.0, 290.0, 300.0, 310.0], [0.1, 0.2, 0.4, 0.5])

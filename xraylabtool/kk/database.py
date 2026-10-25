@@ -33,6 +33,18 @@ class AsfDatabase:
         Element symbols for Z = 1..92.
     mass : ndarray, shape (92,)
         Atomic masses (g/mol) for Z = 1..92.
+
+    References
+    ----------
+    Upstream-only: data handling of kkcalc, not an equation of B. Watts,
+    Opt. Express 22(19), 23628 (2014); the table form is its Eq. (8).
+
+    Examples
+    --------
+    >>> from xraylabtool.kk import load_asf
+    >>> db = load_asf()
+    >>> db.symbols[0], db.mass.shape
+    ('H', (92,))
     """
 
     symbols: tuple[str, ...]
@@ -59,6 +71,18 @@ class AsfDatabase:
         ------
         ValueError
             If ``z`` is outside 1..92.
+
+        References
+        ----------
+        Upstream-only (kkcalc ``ASF.json`` layout); the knots are the
+        ``x_j`` of B. Watts, Opt. Express 22(19), 23628 (2014), Eq. (10).
+
+        Examples
+        --------
+        >>> from xraylabtool.kk import load_asf
+        >>> knots = load_asf().energy_ev(14)
+        >>> float(knots[0]), float(knots[-1])
+        (10.0, 500000.0)
         """
         _check_z(z)
         return self._energy[self._energy_offsets[z - 1] : self._energy_offsets[z]]
@@ -81,6 +105,18 @@ class AsfDatabase:
         ------
         ValueError
             If ``z`` is outside 1..92.
+
+        References
+        ----------
+        Upstream-only (kkcalc ``ASF.json`` layout); the columns are the
+        coefficients of B. Watts, Opt. Express 22(19), 23628 (2014), Eq. (8).
+
+        Examples
+        --------
+        >>> from xraylabtool.kk import load_asf
+        >>> db = load_asf()
+        >>> db.im_coeffs(14).shape == (db.energy_ev(14).size - 1, 5)
+        True
         """
         _check_z(z)
         return self._coeffs[self._coeff_offsets[z - 1] : self._coeff_offsets[z]]
@@ -100,8 +136,14 @@ def load_asf() -> AsfDatabase:
     AsfDatabase
         Tables for Z = 1..92.
 
+    References
+    ----------
+    Upstream-only: kkcalc's data loading, not an equation of B. Watts,
+    Opt. Express 22(19), 23628 (2014).
+
     Examples
     --------
+    >>> from xraylabtool.kk import load_asf
     >>> db = load_asf()
     >>> db.symbols[13]
     'Si'

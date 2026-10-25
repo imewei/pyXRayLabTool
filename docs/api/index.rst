@@ -13,6 +13,7 @@ XRayLabTool is organized into focused sub-packages:
 - **analysis**: Material comparison and absorption edge detection
 - **gui**: PySide6 desktop application
 - **backend**: NumPy/JAX array backend abstraction
+- **kk**: Kramers-Kronig transform of f2 to f1 (kkcalc port, Watts 2014)
 - **utils**: Utility functions and constants
 
 .. toctree::
@@ -34,6 +35,7 @@ XRayLabTool is organized into focused sub-packages:
    analysis
    gui
    backend
+   kk
 
 High-Level Interface
 --------------------

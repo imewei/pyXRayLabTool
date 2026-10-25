@@ -102,7 +102,8 @@ def _eq10_corrected(
     """Plain transcription of Watts (2014) Eq. (10), a₋₃ term corrected.
 
     ``a3_sign=1`` gives the correct ``+(2a₋₃/E)(x_j⁻¹ − x_{j+1}⁻¹)``;
-    ``a3_sign=-1`` gives the opposite-sign misreading of the typeset term.
+    ``a3_sign=-1`` gives the term as typeset in the published Eq. (10),
+    ``+(2a₋₃/E)(x_{j+1}⁻¹ − x_j⁻¹)``, whose sign contradicts Table 1.
     """
     e = energy[:, None]
     x1, x2 = seg[:-1], seg[1:]

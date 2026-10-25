@@ -224,6 +224,7 @@ def kk_calculate_real(
 
     Examples
     --------
+    >>> from xraylabtool.kk import NearEdgeSpectrum, kk_calculate_real
     >>> result = kk_calculate_real("Si", energies_kev=[1.0, 2.0])
     >>> result.energy_kev.tolist()
     [1.0, 2.0]

@@ -77,6 +77,7 @@ class RefineOutcome:
     Examples
     --------
     >>> import numpy as np
+    >>> from xraylabtool.kk import RefineOutcome
     >>> out = RefineOutcome(np.array([1.0]), np.array([2.0]), np.array([3.0]), 0, False)
     >>> out.n_added, out.exhausted, out.n_pole_skipped
     (0, False, 0)
@@ -321,7 +322,7 @@ def refine_spectrum(
     Examples
     --------
     >>> import numpy as np
-    >>> from xraylabtool.kk import compound_spectrum, evaluate_f2
+    >>> from xraylabtool.kk import compound_spectrum, evaluate_f2, refine_spectrum
     >>> from xraylabtool.kk import kk_real_spectrum, relativistic_correction
     >>> seg, coeffs = compound_spectrum(["Si"], [1.0])
     >>> rel = relativistic_correction([14], [1.0])

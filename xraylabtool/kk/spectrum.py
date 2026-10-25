@@ -76,6 +76,7 @@ def compound_spectrum(
 
     Examples
     --------
+    >>> from xraylabtool.kk import compound_spectrum
     >>> seg_ev, coeffs = compound_spectrum(["Si", "O"], [1.0, 2.0])
     >>> seg_ev.shape[0] == coeffs.shape[0] + 1
     True
@@ -149,6 +150,7 @@ def evaluate_f2(
 
     Examples
     --------
+    >>> from xraylabtool.kk import evaluate_f2
     >>> seg = [1.0, 2.0, 4.0]
     >>> c = [[0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 2.0, 0.0, 0.0]]
     >>> evaluate_f2([1.5, 2.0, 4.0], seg, c).tolist()
