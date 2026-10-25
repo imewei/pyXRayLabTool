@@ -209,10 +209,7 @@ three-brain-out/
 # ----------------------------------------------------------------------------
 # AI documentation & logs
 # ----------------------------------------------------------------------------
-# CLAUDE.md and AGENTS.md are deliberately LOCAL-ONLY in this repo (CI skips the
-# one test that reads them). rheox tracks both as project deliverables; to adopt
-# that here, delete the two lines below and `git add` the files.
-CLAUDE*.md
+# AGENTS.md is deliberately LOCAL-ONLY in this repo. CLAUDE.md is tracked.
 AGENTS.md
 GEMINI.md
 GROK.md
