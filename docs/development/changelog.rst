@@ -31,6 +31,14 @@ Unreleased
 
 - Licence expression is ``MIT AND Zlib`` in ``pyproject.toml`` and ``conda-recipe/meta.yaml``; ``LICENSE-kkcalc.txt`` ships in the sdist and wheel.
 - ``calculators.core.calculate_properties_from_factors(formula, energy_kev, density, f1_total, f2_total)``: new public helper computing δ, β and the derived quantities from given f1/f2 totals; the lookup path shares its code.
+- GUI: the main window opens maximized.
+
+**Fixed**
+
+- GUI: table headers no longer render uppercase, which turned δ, β and μ into Δ, B and M.
+- GUI: toast notifications are sized after their stylesheet is applied, so the message is no longer clipped ("calculation do…").
+- GUI: plot legends use the theme text color on a translucent plot-colored box, stay readable over curves and restyle on a live theme switch; the multi-material results table no longer stretches its last column.
+- GUI: plot axis titles use the theme text color instead of pyqtgraph's near-white default, so they stay readable in the Light theme.
 
 v0.4.8 (2026-10-24)
 --------------------

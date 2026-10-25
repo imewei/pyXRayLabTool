@@ -235,7 +235,7 @@ Launch via:
 
 **Key Features:**
 
-- **Interactive Analysis**: Single and multiple material comparisons.
+- **Interactive Analysis**: Single material, multiple material comparison and Kramers-Kronig tabs; the window opens maximized.
 - **Modern Interface**: Clean design with Light and Dark data-optimized themes.
 - **Theme Toggle**: Switch between Light and Dark modes via the status bar toggle.
 - **Persisted Settings**: Your theme preference is saved automatically.

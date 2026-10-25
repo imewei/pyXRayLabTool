@@ -88,7 +88,7 @@ xraylabtool-gui        # or the short aliases: xtool-gui, xlt-gui
 python -m xraylabtool.gui   # equivalent module form
 ```
 
-Single-material analysis and multi-material comparison with interactive plots and CSV/PNG export.
+Single-material analysis, multi-material comparison and Kramers-Kronig f1 reconstruction with interactive plots and CSV/PNG export. The window opens maximized.
 
 ![GUI overview](docs/_static/gui_main_offscreen.png)
 
