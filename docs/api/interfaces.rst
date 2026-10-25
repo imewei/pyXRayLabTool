@@ -37,10 +37,63 @@ CLI Utilities
    :undoc-members:
    :show-inheritance:
 
+Command Implementations
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: xraylabtool.interfaces.cli.commands.calc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.cli.commands.batch
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.cli.commands.compare
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.cli.commands.convert
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.cli.commands.kk
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.cli.commands.formula
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.cli.commands.atomic
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.cli.commands.bragg
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.cli.commands.list_cmd
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: xraylabtool.interfaces.cli.commands.completion
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 CLI Commands Overview
 ~~~~~~~~~~~~~~~~~~~~~
 
-XRayLabTool provides 11 CLI commands (see :doc:`../guides/cli_reference` for every option):
+XRayLabTool provides 12 CLI commands (see :doc:`../guides/cli_reference` for every option):
 
 .. list-table::
    :header-rows: 1
@@ -56,6 +109,8 @@ XRayLabTool provides 11 CLI commands (see :doc:`../guides/cli_reference` for eve
      - Compare X-ray properties between multiple materials
    * - ``convert``
      - Convert between energy and wavelength units
+   * - ``kk``
+     - Kramers-Kronig f1 from f2, with optional near-edge data and refinement
    * - ``formula``
      - Parse and analyze chemical formulas
    * - ``atomic``
