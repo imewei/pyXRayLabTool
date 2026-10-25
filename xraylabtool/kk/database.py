@@ -151,11 +151,19 @@ def load_asf() -> AsfDatabase:
     10.0
     """
     with np.load(_ASF_PATH, allow_pickle=False) as npz:
-        return AsfDatabase(
-            symbols=tuple(str(s) for s in npz["symbol"]),
-            mass=npz["mass"],
-            _energy=npz["E"],
-            _energy_offsets=npz["E_offsets"],
-            _coeffs=npz["Im"],
-            _coeff_offsets=npz["Im_offsets"],
-        )
+        arrays = {
+            key: npz[key] for key in ("mass", "E", "E_offsets", "Im", "Im_offsets")
+        }
+        symbols = tuple(str(s) for s in npz["symbol"])
+    # The cached tables back every later result: accessor slices are views,
+    # so a caller's in-place write must raise instead of corrupting them.
+    for array in arrays.values():
+        array.setflags(write=False)
+    return AsfDatabase(
+        symbols=symbols,
+        mass=arrays["mass"],
+        _energy=arrays["E"],
+        _energy_offsets=arrays["E_offsets"],
+        _coeffs=arrays["Im"],
+        _coeff_offsets=arrays["Im_offsets"],
+    )

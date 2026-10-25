@@ -94,3 +94,21 @@ def test_nff_divergent_elements() -> None:
         if np.nanmax(rel) > 1e-6:
             divergent.add(symbol)
     assert divergent == EXPECTED_DIVERGENT
+
+
+def test_cached_tables_are_read_only() -> None:
+    """The cached tables back every later result, so writes must fail loudly."""
+    import pytest
+
+    from xraylabtool.kk import kk_calculate_real
+
+    before = kk_calculate_real("Si", energies_kev=[8.0])
+    db = load_asf()
+    for array in (db.im_coeffs(14), db.energy_ev(14), db.mass):
+        with pytest.raises(ValueError, match="read-only"):
+            array[:] *= 2
+    with pytest.raises(ValueError, match="read-only"):
+        db.im_coeffs(14)[0, 0] = 0.0
+    after = kk_calculate_real("Si", energies_kev=[8.0])
+    np.testing.assert_array_equal(after.f2, before.f2)
+    np.testing.assert_array_equal(after.f1, before.f1)
