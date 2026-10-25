@@ -209,7 +209,10 @@ three-brain-out/
 # ----------------------------------------------------------------------------
 # AI documentation & logs
 # ----------------------------------------------------------------------------
-# AGENTS.md is deliberately LOCAL-ONLY in this repo. CLAUDE.md is tracked.
+# AGENTS.md is deliberately LOCAL-ONLY in this repo. CLAUDE.md is tracked;
+# personal overrides stay local.
+CLAUDE.local.md
+.claude.local.md
 AGENTS.md
 GEMINI.md
 GROK.md
