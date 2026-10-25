@@ -78,14 +78,16 @@ class KKTabMixin:
         self.kk_refine.setSpecialValueText("Off")
         self.kk_refine.setToolTip("Adaptive refinement tolerance; Off disables it")
 
+        # The transform covers the data range 10 eV-500 keV (D3); CXRO f1 is
+        # only drawn where it exists (0.03-30 keV).
         self.kk_energy_start = QDoubleSpinBox()
-        self.kk_energy_start.setRange(0.03, 30.0)
-        self.kk_energy_start.setDecimals(3)
+        self.kk_energy_start.setDecimals(4)
+        self.kk_energy_start.setRange(0.01, 500.0)
         self.kk_energy_start.setValue(1.0)
         self.kk_energy_start.setSuffix(" keV")
         self.kk_energy_end = QDoubleSpinBox()
-        self.kk_energy_end.setRange(0.03, 30.0)
-        self.kk_energy_end.setDecimals(3)
+        self.kk_energy_end.setDecimals(4)
+        self.kk_energy_end.setRange(0.01, 500.0)
         self.kk_energy_end.setValue(30.0)
         self.kk_energy_end.setSuffix(" keV")
         self.kk_points = QSpinBox()

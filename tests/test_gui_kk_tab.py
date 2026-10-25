@@ -108,6 +108,37 @@ def test_energy_range_controls_reach_the_service(
     assert win.kk_table.rowCount() == 5
 
 
+@pytest.mark.parametrize(("start", "end"), [(0.012, 0.02), (40.0, 60.0)])
+def test_energies_outside_cxro_range_reach_the_service(
+    app: QApplication,
+    win: Any,
+    monkeypatch: pytest.MonkeyPatch,
+    start: float,
+    end: float,
+) -> None:
+    calls: list[dict[str, Any]] = []
+    real = kk_tab.compute_kk
+
+    def spy(*args: Any, **kwargs: Any) -> Any:
+        calls.append(kwargs)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(kk_tab, "compute_kk", spy)
+    win.kk_formula.setText("Si")
+    win.kk_energy_start.setValue(start)
+    win.kk_energy_end.setValue(end)
+    win.kk_points.setValue(3)
+    win.kk_run_btn.click()
+    _wait_for_worker(app, win)
+
+    assert len(calls) == 1
+    np.testing.assert_allclose(calls[0]["energies_kev"], np.linspace(start, end, 3))
+    assert win.kk_table.rowCount() == 3
+    assert win.kk_plot.curves["kk_f1"].isVisible()
+    assert not win.kk_plot.curves["cxro_f1"].isVisible()
+    assert win.kk_result.cxro_f1.size == 0
+
+
 def test_nearedge_options_reach_the_service(
     app: QApplication, win: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
 ) -> None:

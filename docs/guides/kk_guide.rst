@@ -195,8 +195,9 @@ Material" and "Multiple Materials".
 3. **Merge points**: ``low, high`` in the file's unit. Leave empty for the
    whole overlap. Merge points without a file are an error.
 4. **Refine tolerance**: ``Off`` (0) disables refinement.
-5. **Start energy**, **End energy** (0.03-30 keV) and **Points** (default 500)
-   define a linear output grid.
+5. **Start energy**, **End energy** (0.01-500 keV, default 1-30 keV) and
+   **Points** (default 500) define a linear output grid. The CXRO ``f1``
+   comparison curve is drawn only for energies inside 0.03-30 keV.
 6. Click **Compute**. The calculation runs off the UI thread. An error is
    shown in the status bar, as a toast and in a message box.
 
