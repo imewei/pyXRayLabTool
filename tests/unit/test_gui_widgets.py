@@ -197,3 +197,38 @@ class TestFormValues:
         assert config.start_kev == pytest.approx(5.0)
         assert config.end_kev == pytest.approx(15.0)
         assert config.points == 101
+
+
+class TestPlotAxisLabelTheming:
+    def test_recolor_keeps_axis_title_and_follows_palette(
+        self, qt_app: QApplication
+    ) -> None:
+        import pyqtgraph as pg
+
+        from xraylabtool.gui.style import DARK_THEME, LIGHT_THEME
+        from xraylabtool.gui.widgets import apply_palette_to_widget
+
+        pw = pg.PlotWidget()
+        apply_palette_to_widget(pw, LIGHT_THEME)
+        pw.setLabel("left", "Attenuation length (cm)")
+        for palette in (DARK_THEME, LIGHT_THEME):
+            apply_palette_to_widget(pw, palette)
+            axis = pw.getAxis("left")
+            assert axis.labelText == "Attenuation length (cm)"
+            assert axis.labelStyle["color"].lower() == palette.text_primary.lower()
+
+    def test_legend_labels_follow_palette_on_live_switch(
+        self, qt_app: QApplication
+    ) -> None:
+        import pyqtgraph as pg
+
+        from xraylabtool.gui.style import DARK_THEME, LIGHT_THEME
+        from xraylabtool.gui.widgets import apply_palette_to_widget, legend_kwargs
+
+        pw = pg.PlotWidget()
+        apply_palette_to_widget(pw, LIGHT_THEME)
+        legend = pw.addLegend(**legend_kwargs(LIGHT_THEME))
+        legend.addItem(pw.plot([0, 1], [0, 1]), "curve")
+        apply_palette_to_widget(pw, DARK_THEME)
+        label = legend.items[0][1]
+        assert label.item.toHtml().lower().count(DARK_THEME.text_primary.lower()) >= 1
