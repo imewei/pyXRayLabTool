@@ -604,6 +604,8 @@ def calculate_properties_from_factors(
         ("f2_total", f2_total),
     ):
         try:
+            if np.asarray(value).dtype.kind == "c":  # float64 cast drops imag part
+                raise ValidationError("Must be a real numeric array", name)
             array = np.array(value, dtype=np.float64)
         except (TypeError, ValueError) as e:
             raise ValidationError("Must be a real numeric array", name) from e

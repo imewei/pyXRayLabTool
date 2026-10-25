@@ -121,3 +121,23 @@ def test_helper_rejects_mismatched_nonfinite_or_bad_density(
             f1,
             f2,  # type: ignore[arg-type]
         )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("which", ["energy_kev", "f1_total", "f2_total"])
+def test_helper_rejects_complex_input(which: str) -> None:
+    args: dict[str, object] = {
+        "energy_kev": np.array([1.0, 2.0]),
+        "f1_total": np.array([14.0, 14.1]),
+        "f2_total": np.array([0.5, 0.4]),
+    }
+    args[which] = np.asarray(args[which]) + 1j  # imaginary part must not vanish
+    with pytest.raises(ValidationError, match="real numeric") as info:
+        calculate_properties_from_factors(
+            "Si",
+            args["energy_kev"],  # type: ignore[arg-type]
+            2.33,
+            args["f1_total"],  # type: ignore[arg-type]
+            args["f2_total"],  # type: ignore[arg-type]
+        )
+    assert which in str(info.value)
