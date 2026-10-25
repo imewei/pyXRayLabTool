@@ -142,15 +142,12 @@ def kk_piecewise_poly(
         f1 in electrons per formula unit, as an array of the active backend
         (float64).
 
-    Raises
-    ------
-    Nothing
-        Inputs are not validated (that would need data-dependent branching):
-        non-positive energies or unsorted edges give non-finite or meaningless
-        values. :func:`kk_real_spectrum` validates.
-
     Notes
     -----
+    Raises no exceptions: inputs are not validated (that would need
+    data-dependent branching), so non-positive energies or unsorted edges give
+    non-finite or meaningless values. :func:`kk_real_spectrum` validates.
+
     Under JAX, 64-bit mode must be on before tracing (otherwise the float64
     casts here truncate to float32); :func:`kk_real_spectrum` enables it.
 
