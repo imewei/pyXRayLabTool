@@ -238,7 +238,7 @@ class KKTabMixin:
             self._error("No data to export yet")
             return None
         res = self.kk_result.result
-        fname = f"kk_{self._sanitize_filename(self.kk_formula.text().strip())}.csv"
+        fname = f"kk_{self._sanitize_filename(res.formula)}.csv"
         default_dir = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.DocumentsLocation
         ) or str(Path.home())

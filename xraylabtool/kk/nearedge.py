@@ -230,11 +230,12 @@ def load_nearedge(
         )
     file = Path(path)
     try:
-        text = file.read_text()
+        text = file.read_text(encoding="utf-8-sig")  # tolerate a UTF-8 BOM
     except (OSError, UnicodeDecodeError) as exc:
         raise DataFileError(f"Cannot read near-edge file ({exc})", str(file)) from exc
 
     rows: list[list[float]] = []
+    n_header = 0
     for number, line in enumerate(text.splitlines(), start=1):
         tokens = line.split()
         if not tokens or tokens[0].startswith(_COMMENT_PREFIXES):
@@ -246,8 +247,17 @@ def load_nearedge(
                 raise NearEdgeDataError(
                     f"Non-numeric data line {number} in {file}: {line.strip()!r}"
                 ) from None
+            n_header += 1
     if not rows:
-        raise NearEdgeDataError(f"No numeric rows found in {file}")
+        raise NearEdgeDataError(
+            f"No numeric rows found in {file} (columns must be whitespace-separated)"
+        )
+    if n_header:
+        logger.info(
+            "load_nearedge: skipped %d header line(s) before the first data row in %s",
+            n_header,
+            file,
+        )
     n_cols = {len(r) for r in rows}
     if len(n_cols) != 1 or min(n_cols) < 2:
         raise NearEdgeDataError(

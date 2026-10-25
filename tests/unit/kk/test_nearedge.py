@@ -88,6 +88,48 @@ def test_load_rejects_non_increasing_nan_and_short(
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize("keep_header", [True, False])
+def test_load_utf8_bom_keeps_first_data_row(tmp_path: Path, keep_header: bool) -> None:
+    lines = EXAMPLE.read_text(encoding="utf-8").splitlines(keepends=True)
+    if not keep_header:  # BOM directly in front of the first data row
+        lines = [ln for ln in lines if not ln.startswith("%")]
+    plain = tmp_path / "plain.txt"
+    plain.write_text("".join(lines), encoding="utf-8")
+    bom = tmp_path / "bom.txt"
+    bom.write_text("".join(lines), encoding="utf-8-sig")
+    assert bom.read_bytes().startswith(b"\xef\xbb\xbf")
+
+    expected, got = load_nearedge(plain), load_nearedge(bom)
+    assert got.energy_ev[0] == 275.0
+    assert got.energy_ev.size == expected.energy_ev.size == 272
+    np.testing.assert_array_equal(got.values, expected.values)
+
+
+@pytest.mark.unit
+def test_load_logs_skipped_header_lines(
+    tmp_path: Path, kk_log: pytest.LogCaptureFixture
+) -> None:
+    path = tmp_path / "header.txt"
+    path.write_text("Energy Absorption\nsample A\n280.0 0.1\n290.0 0.4\n")
+    assert load_nearedge(path).energy_ev.tolist() == [280.0, 290.0]
+    messages = [r.getMessage() for r in kk_log.records if r.levelno == logging.INFO]
+    assert any("2 header line" in m for m in messages), messages
+
+    kk_log.clear()
+    load_nearedge(_write(tmp_path / "plain.txt", [[1.0, 1.0], [2.0, 2.0]]))
+    assert not any("header line" in r.getMessage() for r in kk_log.records)
+
+
+@pytest.mark.unit
+def test_near_edge_error_is_exported_at_top_level() -> None:
+    import xraylabtool
+    from xraylabtool import exceptions
+
+    assert xraylabtool.NearEdgeDataError is exceptions.NearEdgeDataError
+    assert "NearEdgeDataError" in xraylabtool.__all__
+
+
+@pytest.mark.unit
 def test_load_rejects_unreadable_or_malformed_files(tmp_path: Path) -> None:
     with pytest.raises(DataFileError):
         load_nearedge(tmp_path / "missing.txt")
@@ -95,6 +137,10 @@ def test_load_rejects_unreadable_or_malformed_files(tmp_path: Path) -> None:
     empty.write_text("# only a header\n")
     with pytest.raises(NearEdgeDataError, match="No numeric rows"):
         load_nearedge(empty)
+    comma = tmp_path / "comma.txt"
+    comma.write_text("280.0,0.1\n290.0,0.4\n")
+    with pytest.raises(NearEdgeDataError, match="whitespace-separated"):
+        load_nearedge(comma)
     ragged = tmp_path / "ragged.txt"
     ragged.write_text("1 2\n2 3 4\n")
     with pytest.raises(NearEdgeDataError, match="columns"):

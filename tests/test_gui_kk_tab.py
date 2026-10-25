@@ -233,6 +233,27 @@ def test_export_csv_columns(
     )
 
 
+def test_export_file_name_uses_computed_formula(
+    app: QApplication, win: Any, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    from xraylabtool.gui import main_window as mw
+
+    _small_run(win)
+    win.kk_formula.setText("Si")
+    win.kk_run_btn.click()
+    _wait_for_worker(app, win)
+    win.kk_formula.setText("Au")  # edited after the compute, not recomputed
+
+    monkeypatch.setattr(
+        mw.QFileDialog, "getExistingDirectory", lambda *a, **k: str(tmp_path)
+    )
+    path = win._export_kk_csv()
+    assert path is not None
+    name = os.path.basename(path)
+    assert "Si" in name
+    assert "Au" not in name
+
+
 def test_export_csv_io_error_is_reported(
     app: QApplication, win: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
