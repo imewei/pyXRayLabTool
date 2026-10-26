@@ -40,6 +40,7 @@ import numpy as np
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
+from tests.fixtures.kk_probes import REFINE_ORDER_GRID  # noqa: E402
 from xraylabtool.kk import (  # noqa: E402
     compound_spectrum,
     evaluate_f2,
@@ -49,7 +50,7 @@ from xraylabtool.kk import (  # noqa: E402
 from xraylabtool.kk.transform import relativistic_correction  # noqa: E402
 
 OUT = REPO / "tests" / "unit" / "kk" / "data" / "prejax_refine_order.npz"
-GRID = np.geomspace(100.0, 20000.0, 12)
+GRID = REFINE_ORDER_GRID
 TOLERANCE = 0.05
 CASES = {"free": {}, "capped": {"max_points": 10}}
 

@@ -49,3 +49,25 @@ def probe_energies(seg_ev: NDArray[np.float64]) -> NDArray[np.float64]:
     return np.concatenate(
         [log_uniform, seg[:1], midpoints, seg[-1:], interior, quarter, above]
     )
+
+
+# ``np.geomspace(100, 20000, 12)`` as recorded in ``prejax_refine_order.npz``.
+# Frozen because ``geomspace`` goes through ``pow``, which differs by an ulp
+# across libm / CPU-dispatch combinations (CI vs a workstation) and the golden
+# comparison is bit-exact.
+REFINE_ORDER_GRID: NDArray[np.float64] = np.array(
+    [
+        100.0,
+        161.87677556400655,
+        262.0409046699977,
+        424.18336713854455,
+        686.6543572027084,
+        1111.5339327095,
+        1799.315289569933,
+        2912.6735729859747,
+        4714.942062654642,
+        7632.396180736402,
+        12355.076835646472,
+        20000.0,
+    ]
+)

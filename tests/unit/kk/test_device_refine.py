@@ -17,6 +17,7 @@ from tests.fixtures.kk_compiles import (
     numerical_programs,
     record_compiles,
 )
+from tests.fixtures.kk_probes import REFINE_ORDER_GRID
 from tests.fixtures.kk_rounding import assert_kk_close
 from xraylabtool.kk import _device, kk_calculate_real, refine
 from xraylabtool.kk.refine import _POLE_REL_WIDTH, refine_spectrum
@@ -24,7 +25,7 @@ from xraylabtool.kk.spectrum import compound_spectrum, evaluate_f2
 from xraylabtool.kk.transform import kk_real_spectrum, relativistic_correction
 
 DATA = Path(__file__).resolve().parent / "data"
-GRID = np.geomspace(100.0, 20000.0, 12)
+GRID = REFINE_ORDER_GRID
 DEBUG_LINE = re.compile(
     r"refine_spectrum: pass (\d+) added (\d+) points \(of (\d+) intervals checked\)"
 )

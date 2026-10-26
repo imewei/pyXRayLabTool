@@ -112,9 +112,11 @@ def test_oracle_agreement(formula: str) -> None:
 @pytest.mark.parametrize("formula", ["H", "SiO2", "Mo"])
 def test_oracle_converges(formula: str) -> None:
     """Quadrature result is independent of the starting node count."""
-    # 1e-14 was measured with 80-bit longdouble (eps 1e-19); where longdouble is
-    # plain float64 (Apple Silicon, Windows) the quadrature noise is ~2000x larger.
-    rtol = max(1e-14, 1e3 * float(np.finfo(np.longdouble).eps))
+    # 1e-14 was measured with 80-bit longdouble (x86 Linux). Where longdouble is
+    # plain float64 (Apple Silicon, Windows) the quadrature noise is orders larger
+    # (macOS CI: 1e-12 relative for Mo, whose terms cancel ~1e7-fold at low E).
+    extended = np.finfo(np.longdouble).nmant > np.finfo(np.float64).nmant
+    rtol = 1e-14 if extended else 1e-10
     seg, coeffs, rel = _spectrum(formula)
     energy = oracle_energies(seg, coeffs)[::17]
     base = _reference(energy, seg, coeffs, rel)
