@@ -135,3 +135,12 @@ def test_energy_blocks_have_few_distinct_shapes() -> None:
     assert len(pairs) == 16  # one per power of two m_b = 1 .. 32768
     capped = {energy_blocks(7, 1248, m) for m in range(1, 20001)}
     assert len(capped) == 16
+
+
+def test_shape_helpers_accept_numpy_integers() -> None:
+    import numpy as np
+
+    assert bucket_pow2(np.int64(100)) == bucket_pow2(100)
+    assert block_for(np.int64(7), np.int64(1228), np.int64(1000)) == block_for(
+        7, 1228, 1000
+    )

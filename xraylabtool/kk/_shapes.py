@@ -101,7 +101,7 @@ def bucket_pow2(n: int, minimum: int = 8) -> int:
     >>> [bucket_pow2(n) for n in (1, 8, 9, 100)]
     [8, 8, 16, 128]
     """
-    return 1 << (max(n, minimum, 1) - 1).bit_length()
+    return 1 << (max(int(n), minimum, 1) - 1).bit_length()
 
 
 def block_for(
@@ -145,7 +145,7 @@ def block_for(
     limit = min(elements // max(capacity, 1), m)
     if chunk_size is not None:
         limit = min(limit, chunk_size)
-    limit = max(limit, 1)
+    limit = max(int(limit), 1)
     best = 1 << (limit.bit_length() - 1)
     rung = 512
     while rung <= limit:

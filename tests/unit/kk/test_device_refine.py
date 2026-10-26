@@ -723,3 +723,25 @@ def test_midpoint_loop_never_evaluates_more_than_block_per_call(
 def test_refine_rejects_unusable_chunk_size(si, bad) -> None:
     with pytest.raises(ValueError, match="chunk_size"):
         _refine(si, GRID, chunk_size=bad)
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.int64, np.uint64])
+def test_refine_accepts_numpy_integer_limits(dtype: type) -> None:
+    args = (
+        [1.5, 2.0, 2.5, 3.0],
+        [1.0] * 4,
+        [0.0] * 4,
+        [1.0, 4.0],
+        np.zeros((1, 5)),
+        1.0,
+    )
+    ref = refine_spectrum(*args, tolerance=0.1, max_points=10, chunk_size=3)
+    out = refine_spectrum(
+        *args,
+        tolerance=0.1,
+        max_points=dtype(10),
+        max_passes=dtype(5),
+        chunk_size=dtype(3),
+    )
+    np.testing.assert_array_equal(out.energy_ev, ref.energy_ev)
+    assert out.n_added == ref.n_added
