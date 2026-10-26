@@ -192,10 +192,10 @@ def create_scattering_factor_interpolators(
         >>> f1_interp, f2_interp = create_scattering_factor_interpolators('Si')
         >>> energy = 100.0  # eV
         >>> f1_value = f1_interp(energy)
-        >>> isinstance(f1_value, (int, float, np.number, np.ndarray))
+        >>> bool(np.isfinite(np.asarray(f1_value)).all())  # NumPy or JAX array
         True
         >>> f2_value = f2_interp(energy)
-        >>> isinstance(f2_value, (int, float, np.number, np.ndarray))
+        >>> bool(np.isfinite(np.asarray(f2_value)).all())
         True
         >>> # Can also handle arrays
         >>> energies = np.array([100.0, 200.0, 300.0])
