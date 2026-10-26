@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import logging
 from pathlib import Path
 import re
@@ -10,7 +11,12 @@ import jax
 import numpy as np
 import pytest
 
-from tests.fixtures.kk_compiles import KK_PROGRAM_NAMES, kk_programs, record_compiles
+from tests.fixtures.kk_compiles import (
+    KK_PROGRAM_NAMES,
+    kk_programs,
+    numerical_programs,
+    record_compiles,
+)
 from tests.fixtures.kk_rounding import assert_kk_close
 from xraylabtool.kk import _device, kk_calculate_real, refine
 from xraylabtool.kk.refine import _POLE_REL_WIDTH, refine_spectrum
@@ -425,6 +431,7 @@ def _device_run(table, e, *, min_active, **kwargs):
     tolerance = kwargs.pop("tolerance", 0.05)
     max_passes = kwargs.pop("max_passes", 50)
     max_points = kwargs.pop("max_points", 100_000)
+    accum_hint = kwargs.pop("accum_hint", None)
     dev = _device.upload(
         (
             np.pad(e, (0, pad)),
@@ -443,6 +450,7 @@ def _device_run(table, e, *, min_active, **kwargs):
         max_passes=max_passes,
         max_points=max_points,
         min_active=min_active,
+        accum_hint=accum_hint,
     )
     return _device.fetch(arrays), info
 
@@ -452,7 +460,7 @@ def _device_run(table, e, *, min_active, **kwargs):
 def test_refine_buffer_invariance(si, kwargs) -> None:
     seg, coeffs, _ = si
     base, base_info = _device_run(si, GRID, min_active=256, **kwargs)
-    for floor in (512, 4096):
+    for floor in (8, 512, 4096):
         big, info = _device_run(si, GRID, min_active=floor, **kwargs)
         assert info == base_info
         n = info.n_total
@@ -460,6 +468,31 @@ def test_refine_buffer_invariance(si, kwargs) -> None:
         assert_kk_close(big.f1[:n], base.f1[:n], base.energy[:n], seg, coeffs, 1e-10)
         np.testing.assert_allclose(big.f2[:n], base.f2[:n], rtol=1e-12)
         assert (big.n_sliver, big.n_wide) == (base.n_sliver, base.n_wide)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("kwargs", [{}, {"max_points": 10}])
+def test_refine_buffer_growth_and_shrink_between_passes_is_bit_identical(
+    si, monkeypatch: pytest.MonkeyPatch, kwargs
+) -> None:
+    widths: list[int] = []
+    real = refine._refine_pass
+
+    def spy(*args, **kw):
+        widths.append(kw["width"])
+        return real(*args, **kw)
+
+    monkeypatch.setattr(refine, "_refine_pass", spy)
+    small, info = _device_run(si, GRID, min_active=8, **kwargs)
+    if not kwargs:  # the capped run stops after two passes
+        # The active buffer really crossed bucket boundaries both ways.
+        assert len(set(widths)) >= 3
+        assert any(b > a for a, b in itertools.pairwise(widths))
+        assert any(b < a for a, b in itertools.pairwise(widths))
+    widths.clear()
+    big, big_info = _device_run(si, GRID, min_active=4096, **kwargs)
+    assert set(widths) <= {4096}
+    _same_result(small, info, big, big_info)
 
 
 @pytest.mark.unit
@@ -519,6 +552,57 @@ def test_device_loop_runs_under_transfer_guard(si) -> None:
     out = _device.fetch(arrays)
     assert info.added == 139
     assert out.energy[: info.n_total].size == GRID.size + 139
+
+
+def _same_result(a, info_a, b, info_b) -> None:
+    assert (info_a.passes, info_a.added, info_a.reason) == (
+        info_b.passes,
+        info_b.added,
+        info_b.reason,
+    )
+    n = info_a.n_total
+    for name in ("energy", "f1", "f2"):
+        np.testing.assert_array_equal(getattr(a, name)[:n], getattr(b, name)[:n])
+
+
+@pytest.mark.unit
+def test_accumulator_is_not_sized_from_max_points(si) -> None:
+    base, base_info = _device_run(si, GRID, min_active=256)
+    for huge in (10**7, 10**9):
+        out, info = _device_run(si, GRID, min_active=256, max_points=huge)
+        _same_result(out, info, base, base_info)
+        # Capacity follows the grid and the points actually added, not max_points.
+        assert info.accum_start == 64  # bucket_pow2(4 * (12 - 1))
+        assert info.accum <= 256
+        assert info.accum >= info.added
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("hint", [1, 8, 20])
+def test_accumulator_growth_path_is_bit_identical(si, hint: int) -> None:
+    base, base_info = _device_run(si, GRID, min_active=256, accum_hint=4096)
+    assert base_info.accum == base_info.accum_start == 4096
+    grown, info = _device_run(si, GRID, min_active=256, accum_hint=hint)
+    assert info.accum > info.accum_start  # the growth really happened
+    assert info.accum >= info.added  # overflow excluded: capacity covers every point
+    _same_result(grown, info, base, base_info)
+    n = info.n_total
+    assert n == GRID.size + info.added
+    assert np.isfinite(grown.energy[:n]).all()
+    assert (np.diff(grown.energy[:n]) > 0).all()  # no padded or dropped point
+    assert np.isinf(grown.energy[n:]).all()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("cap", [1, 9, 10, 40, 139])
+def test_accumulator_growth_with_max_points(si, cap: int) -> None:
+    base, base_info = _device_run(
+        si, GRID, min_active=256, max_points=cap, accum_hint=4096
+    )
+    grown, info = _device_run(si, GRID, min_active=256, max_points=cap, accum_hint=1)
+    _same_result(grown, info, base, base_info)
+    assert info.added == min(cap, 139)
+    assert info.accum >= info.added
 
 
 # --- the whole algorithm against the pre-migration loop ----------------------
@@ -587,16 +671,17 @@ def test_refined_sio2_compiles_few_top_level_programs() -> None:
     jax.clear_caches()
     with record_compiles() as names:
         first = kk_calculate_real("SiO2", refine_tolerance=0.01)
-    programs = kk_programs(names)
+    programs = numerical_programs(names)
     assert first.n_refined_points > 0
     assert 0 < len(programs) <= 6, programs
     assert {"_first_pass", "_refine_pass", "_finalize"} <= set(programs)
-    # A new underscore-named kk program missing from the allow-list fails loudly.
-    assert {n for n in names if n.startswith("_")} <= KK_PROGRAM_NAMES
+    # Any other non-primitive compile (a new public jitted kk function) fails loudly.
+    assert set(programs) <= KK_PROGRAM_NAMES, set(programs) - KK_PROGRAM_NAMES
+    assert kk_programs(names) == programs
     with record_compiles() as again:
         second = kk_calculate_real("SiO2", refine_tolerance=0.0099)
     assert second.n_refined_points > 0
-    assert kk_programs(again) == []  # same buckets, other values: no compile
+    assert numerical_programs(again) == []  # same buckets, other values: no compile
 
 
 @pytest.mark.unit
@@ -631,3 +716,10 @@ def test_midpoint_loop_never_evaluates_more_than_block_per_call(
         coeffs,
         1e-10,
     )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("bad", [0, -3, True, 2.5, "7"])
+def test_refine_rejects_unusable_chunk_size(si, bad) -> None:
+    with pytest.raises(ValueError, match="chunk_size"):
+        _refine(si, GRID, chunk_size=bad)

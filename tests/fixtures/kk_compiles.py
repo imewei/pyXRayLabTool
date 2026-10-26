@@ -37,6 +37,51 @@ KK_PROGRAM_NAMES = frozenset(
         "_first_pass",
         "_refine_pass",
         "_finalize",
+        "_fit_columns",
+    }
+)
+
+# Names under which JAX compiles eager primitives and tiny helper ops; every
+# other compile event is a numerical program and must be in KK_PROGRAM_NAMES.
+TRIVIAL_PRIMITIVES = frozenset(
+    {
+        "convert_element_type",
+        "broadcast_in_dim",
+        "iota",
+        "slice",
+        "dynamic_slice",
+        "dynamic_update_slice",
+        "concatenate",
+        "squeeze",
+        "reshape",
+        "transpose",
+        "select_n",
+        "gather",
+        "scatter",
+        "_pad",
+        "_where",
+        "_unstack",
+        "_reduce_sum",
+        "_reduce_max",
+        "_reduce_min",
+        "_cumsum",
+        "_argsort",
+        "_arange",
+        "_zeros",
+        "_full",
+        "_asarray",
+        "add",
+        "sub",
+        "mul",
+        "div",
+        "neg",
+        "eq",
+        "lt",
+        "le",
+        "gt",
+        "ge",
+        "max",
+        "min",
     }
 )
 
@@ -75,3 +120,8 @@ def record_compiles() -> Iterator[list[str]]:
 def kk_programs(names: list[str]) -> list[str]:
     """The entries of ``names`` that are top-level ``xraylabtool.kk`` programs."""
     return [n for n in names if n in KK_PROGRAM_NAMES]
+
+
+def numerical_programs(names: list[str]) -> list[str]:
+    """Every compile event that is not a trivial primitive (kk or not)."""
+    return [n for n in names if n not in TRIVIAL_PRIMITIVES]

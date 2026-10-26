@@ -279,6 +279,8 @@ class _RefineInfo:
     passes: int
     added: int
     reason: str
+    accum_start: int = 0  # added-points capacity at the first pass
+    accum: int = 0  # ... and at the end (grown on demand)
 
     @property
     def n_total(self) -> int:
@@ -385,13 +387,19 @@ def _sliver_split(
     )
 
 
-# Smallest block of energies per trip of the midpoint loop (see _midpoint_f1).
-_MIN_TRIP_BLOCK = 64
+# Energies per trip of the midpoint loop (see _midpoint_f1): whole coarse trips
+# for the bulk of the live intervals, fine trips for the remainder.
+_COARSE_TRIP = 128
+_FINE_TRIP = 16
 
 
-def _trip_size(block: int, cap: int) -> int:
-    """Energies per loop trip: at most ``block`` (the ``chunk_size`` bound)."""
-    return min(block, max(_MIN_TRIP_BLOCK, cap // 32))
+def _trip_sizes(block: int, cap: int) -> tuple[int, int]:
+    """``(coarse, fine)`` energies per loop trip: both at most ``block``.
+
+    ``block`` is the ``chunk_size`` bound; the coarse trip also grows with the
+    buffer so a large first pass makes few trips.
+    """
+    return min(block, max(_COARSE_TRIP, cap // 16)), min(block, _FINE_TRIP)
 
 
 def _midpoint_f1(
@@ -406,8 +414,9 @@ def _midpoint_f1(
 
     Entries past the last block that holds an active one are left at zero.
 
-    The kernel runs over blocks of energies in a loop whose trip count is the
-    number of blocks that hold active intervals, so a pass costs in
+    The kernel runs over blocks of energies in two loops with dynamic trip
+    counts (coarse blocks for the bulk, fine blocks for the remainder), so a
+    pass costs in
     proportion to the live intervals and not to the buffer capacity (a typical
     refinement shrinks from ~10^3 intervals to a handful). Each energy is
     evaluated by :func:`~xraylabtool.kk.transform.kk_piecewise_poly` exactly
@@ -415,20 +424,28 @@ def _midpoint_f1(
     trip count, so this is not reverse-differentiable (not needed here).
     """
     cap = probe.shape[0]
-    size = _trip_size(block, cap)
-    n_blocks = -(-cap // size)
-    padded = jnp.pad(_f64(probe), (0, n_blocks * size - cap), mode="edge")
+    coarse, fine = _trip_sizes(block, cap)
+    # Room for the coarse and fine trips past the active prefix: no slice clamps.
+    padded = jnp.pad(_f64(probe), (0, coarse + fine), mode="edge")
     seg, coeffs = _live_table(spectrum)
     rel = _f64(rel_corr)
 
-    def body(i: jax.Array, out: jax.Array) -> jax.Array:
-        chunk = jax.lax.dynamic_slice_in_dim(padded, i * size, size)
-        return jax.lax.dynamic_update_slice_in_dim(
-            out, kk_piecewise_poly(chunk, seg, coeffs, rel), i * size, 0
-        )
+    def trips(
+        size: int, start: jax.Array, count: jax.Array, out: jax.Array
+    ) -> jax.Array:
+        def body(i: jax.Array, out: jax.Array) -> jax.Array:
+            at = start + i * size
+            chunk = jax.lax.dynamic_slice_in_dim(padded, at, size)
+            return jax.lax.dynamic_update_slice_in_dim(
+                out, kk_piecewise_poly(chunk, seg, coeffs, rel), at, 0
+            )
 
-    trips = (n_active + size - 1) // size
-    out: jax.Array = jax.lax.fori_loop(0, trips, body, jnp.zeros(n_blocks * size))
+        return jax.lax.fori_loop(0, count, body, out)  # type: ignore[no-any-return]
+
+    n_coarse = n_active // coarse
+    done = n_coarse * coarse
+    out = trips(coarse, jnp.int32(0), n_coarse, jnp.zeros(cap + coarse + fine))
+    out = trips(fine, done, (n_active - done + fine - 1) // fine, out)
     return out[:cap]
 
 
@@ -518,7 +535,7 @@ def _start(
     return _start_state(energy, f1, f2, spectrum, knobs, active=active, accum=accum)
 
 
-@partial(jax.jit, static_argnames="block")
+@partial(jax.jit, static_argnames=("block", "width"), donate_argnums=0)
 def _refine_pass(
     state: _PassState,
     spectrum: Spectrum,
@@ -526,8 +543,17 @@ def _refine_pass(
     tolerance: Any,
     *,
     block: int,
+    width: int,
 ) -> tuple[_PassState, _PassStatus]:
-    """Jitted :func:`_pass_body`: one program per active capacity and block."""
+    """Jitted :func:`_pass_body` on the first ``width`` active columns.
+
+    The state is donated: its buffers are reused for the output, so a pass
+    copies nothing. ``state.iv`` should have ``2 * width`` columns (the
+    children capacity of the previous pass, see :func:`_fit_active`) for the
+    donation to be usable. One program per ``(width, block)`` and accumulator
+    capacity.
+    """
+    state = state._replace(iv=state.iv[:, :width])
     return _pass_body(state, spectrum, rel_corr, tolerance, block=block)
 
 
@@ -588,27 +614,32 @@ def _finalize(
     )
 
 
+@partial(jax.jit, static_argnames="width")
+def _fit_columns(a: jax.Array, width: int) -> jax.Array:
+    """``a`` cut or zero-padded to ``width`` columns (jitted: no host constants)."""
+    n = a.shape[1]
+    return a[:, :width] if n > width else jnp.pad(a, ((0, 0), (0, width - n)))
+
+
 def _fit_active(state: _PassState, width: int) -> _PassState:
     """``state`` with the active buffer cut or zero-padded to ``width`` columns."""
-    n = state.iv.shape[1]
-    if n > width:
-        return state._replace(iv=jax.lax.slice_in_dim(state.iv, 0, width, axis=1))
-    if n < width:
-        return state._replace(iv=jnp.pad(state.iv, ((0, 0), (0, width - n))))
-    return state
+    if state.iv.shape[1] == width:
+        return state
+    return state._replace(iv=_fit_columns(state.iv, width))
 
 
-def _accumulator_size(n_intervals: int, max_passes: int, max_points: int) -> int:
-    """Capacity of the added-points buffer: a bound that cannot overflow.
+def _grow_accumulator(state: _PassState, size: int) -> _PassState:
+    """``state`` with the added-points buffer zero-padded to ``size`` columns."""
+    return state._replace(acc=_fit_columns(state.acc, size))
 
-    At most ``max_points`` points are added, and a pass has at most twice as
-    many intervals as the one before, so ``n_intervals * (2**max_passes - 1)``
-    bounds the total as well.
+
+def _accumulator_need(added: int, n_next: int, max_points: int) -> int:
+    """Most points the accumulator can hold after a pass over ``n_next`` intervals.
+
+    A pass adds at most one point per interval and at most what is left of
+    ``max_points``.
     """
-    bound = max_points
-    if max_passes < 64:
-        bound = min(bound, n_intervals * (2**max_passes - 1))
-    return bucket_pow2(bound)
+    return added + min(n_next, max_points - added)
 
 
 def _refine_device(
@@ -624,6 +655,7 @@ def _refine_device(
     max_points: int,
     chunk_size: int | None = None,
     min_active: int = _MIN_ACTIVE,
+    accum_hint: int | None = None,
 ) -> tuple[_RefineArrays, _RefineInfo]:
     """Refinement on device-resident inputs, with no upload and no final download.
 
@@ -650,6 +682,12 @@ def _refine_device(
         (already validated); the host needs them to size buffers and decide.
     min_active : int, default 2048
         Smallest active-buffer capacity (a power of two).
+    accum_hint : int, optional
+        Starting capacity of the added-points buffer, default
+        ``min(max_points, 4 * (m - 1))``. The buffer is never smaller than
+        the first pass needs and grows (to the next power of two, from the
+        host-known counts) before any pass that could overflow it, so
+        ``max_points`` never sizes an allocation. Mainly a test knob.
 
     Returns
     -------
@@ -663,7 +701,10 @@ def _refine_device(
     Design spec §7 (``2026-10-25-kk-jax-first-design.md``).
     """
     n_next = m - 1
-    accum = _accumulator_size(n_next, max_passes, max_points)
+    hint = min(max_points, 4 * n_next) if accum_hint is None else accum_hint
+    accum = accum_start = bucket_pow2(
+        max(hint, _accumulator_need(0, n_next, max_points))
+    )
     capacity = spectrum.coeffs.shape[0]
     state: _PassState | None = None
     added = passes = 0
@@ -685,12 +726,17 @@ def _refine_device(
                 block=block,
             )
         else:
+            need = _accumulator_need(added, n_next, max_points)
+            if need > accum:
+                accum = bucket_pow2(need)
+                state = _grow_accumulator(state, accum)
             state, device_status = _refine_pass(
-                _fit_active(state, width),
+                _fit_active(state, 2 * width),
                 spectrum,
                 rel_corr,
                 knobs.tolerance,
                 block=block,
+                width=width,
             )
         status = _device.fetch_status(device_status)
         n_next = 0
@@ -713,7 +759,7 @@ def _refine_device(
         n_next = int(status.n_next_active)
     if not reason and n_next and passes >= max_passes:
         reason = f"max_passes={max_passes}"
-    info = _RefineInfo(m=m, passes=passes, added=added, reason=reason)
+    info = _RefineInfo(m, passes, added, reason, accum_start, accum)
     if state is None:  # a single point: nothing was refined
         state = _start(energy, f1, f2, spectrum, knobs, active=min_active, accum=accum)
     arrays = _finalize(energy, f1, f2, knobs, state, out_len=bucket_pow2(info.n_total))
@@ -927,8 +973,12 @@ def refine_spectrum(
         energy_ev, f1, f2, seg_ev, tolerance, max_passes, max_points
     )
     seg, coeffs_arr = _device.validated_arrays(seg, coeffs, e, rel_corr)
-    if chunk_size is not None and chunk_size < 1:
-        raise ValueError(f"chunk_size must be >= 1, got {chunk_size}")
+    if chunk_size is not None and (
+        isinstance(chunk_size, bool)
+        or not isinstance(chunk_size, int | np.integer)
+        or chunk_size < 1
+    ):
+        raise ValueError(f"chunk_size must be a positive integer, got {chunk_size!r}")
     _device.ensure_x64()
     length = bucket_pow2(e.size)
     spectrum = _device.host_spectrum(seg, coeffs_arr)
