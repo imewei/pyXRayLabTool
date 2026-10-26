@@ -48,7 +48,9 @@ def _kk_energy_grid(
     """Return the requested keV grid, plus ``points`` samples of the merge window.
 
     A uniform grid over a wide range can step over a narrow near-edge window
-    (or miss it when the range excludes it), so the window is always sampled.
+    (or miss it when the range excludes it), so an explicit merge window is
+    always sampled. Without one (``merge is None``) only the requested range
+    is sampled.
     """
     grid = np.linspace(start, end, points)
     if merge is None:

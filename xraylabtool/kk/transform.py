@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from xraylabtool.backend.array_ops import ensure_float64, ops
+from xraylabtool.kk.spectrum import _real_float64
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -279,8 +280,8 @@ def kk_real_spectrum(
     Raises
     ------
     ValueError
-        If an input has the wrong shape, is not finite, an energy or edge is
-        not positive, the edges are not strictly increasing, or
+        If an input is complex, has the wrong shape or is not finite, an
+        energy or edge is not positive, the edges are not strictly increasing, or
         ``chunk_size < 1``.
 
     References
@@ -299,9 +300,9 @@ def kk_real_spectrum(
     >>> print(np.round(f1, 6))
     [-0.661907  0.078578]
     """
-    e = np.asarray(eval_ev, dtype=np.float64)
-    seg = np.asarray(seg_ev, dtype=np.float64)
-    c = np.asarray(coeffs, dtype=np.float64)
+    e = _real_float64("eval_ev", eval_ev)
+    seg = _real_float64("seg_ev", seg_ev)
+    c = _real_float64("coeffs", coeffs)
     rel = float(rel_corr)
     if e.ndim != 1:
         raise ValueError(f"eval_ev must be 1-D, got shape {e.shape}")

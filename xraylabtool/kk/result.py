@@ -21,6 +21,8 @@ def _readonly_1d(
     name: str, values: ArrayLike, *, finite: bool = True
 ) -> NDArray[np.float64]:
     """Return a read-only float64 copy of a 1-D array, or raise ``ValidationError``."""
+    if np.iscomplexobj(values):
+        raise ValidationError(f"{name} must be real numbers, got complex", name)
     arr = np.array(values, dtype=np.float64)
     if arr.ndim != 1:
         raise ValidationError(f"{name} must be a 1-D array", name, arr.shape)
@@ -52,6 +54,7 @@ class KKResult:
     merge_points_kev : tuple of float or None
         Energies (keV) at which near-edge data was merged into the tabulated
         spectrum, or ``None`` when the tabulated spectrum alone was used.
+        Stored as a tuple of floats.
     n_refined_points : int
         Number of points added by adaptive refinement (0 if not refined).
     backend : str
@@ -128,6 +131,10 @@ class KKResult:
                     (scaled_e.size, scaled_f2.size),
                 )
             object.__setattr__(self, "nearedge_scaled_kev_f2", (scaled_e, scaled_f2))
+        if merge is not None:
+            object.__setattr__(
+                self, "merge_points_kev", (float(merge[0]), float(merge[1]))
+            )
         object.__setattr__(self, "energy_kev", energy)
         object.__setattr__(self, "f1", f1)
         object.__setattr__(self, "f2", f2)
