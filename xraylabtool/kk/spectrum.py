@@ -192,10 +192,11 @@ def compound_spectrum_device(
         Packed tables from :meth:`AsfDatabase.device_tables
         <xraylabtool.kk.database.AsfDatabase.device_tables>`.
     capacity : int
-        Static segment capacity, at least the true segment count (use
-        :meth:`AsfDatabase.compound_capacity
-        <xraylabtool.kk.database.AsfDatabase.compound_capacity>`; a smaller
-        value silently truncates the union).
+        Static segment capacity, at least the true segment count; a smaller
+        value silently truncates the union. :meth:`AsfDatabase.compound_capacity
+        <xraylabtool.kk.database.AsfDatabase.compound_capacity>` is a safe
+        sum bound; the pipeline sizes it to the exact union instead
+        (``api._compound_segments``), which is never larger.
 
     Returns
     -------

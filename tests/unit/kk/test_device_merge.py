@@ -523,3 +523,100 @@ def test_undersized_merge_capacity_reports_the_true_count() -> None:
     res = merge_device(spec, e_d, v_d, np.int32(NE_E.size), 22.0, 38.0, capacity=cap)
     ref_ev, _, _ = _reference(SEG, COEFFS, NE_E, NE_V, 22.0, 38.0)
     assert int(res.status.n_segments) == ref_ev.size - 1 > cap
+
+
+# --- scale invariance of tiny data (XLA flushes subnormals) -----------------------
+
+_TINY_E = [280.0, 300.0, 320.0]
+_TINY_BASE = np.array([1.0, 1.000002, 1.000004])
+
+
+def _tiny_run(values, input_type="asf", **extra):
+    return kk_calculate_real(
+        "C",
+        nearedge=nearedge.NearEdgeSpectrum(_TINY_E, values),
+        input_type=input_type,
+        energies_kev=[0.28, 0.30, 0.32],
+        merge_points_kev=(0.28, 0.32),
+        **extra,
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("input_type", ["asf", "nexafs", "beta"])
+@pytest.mark.parametrize("exponent", [-700, -1020, -1040, -1060])
+def test_power_of_two_scale_of_the_near_edge_values_changes_nothing_bitwise(
+    input_type: str, exponent: int
+) -> None:
+    """Exact scaling commutes with the conversion and the affine normalisation.
+
+    The last two exponents put the values themselves in the subnormal range,
+    which XLA flushes on the device (the base has few mantissa bits, so the
+    subnormal values are still exact).
+    """
+    base = np.array([1.0, 1.0625, 1.125])
+    ref = _tiny_run(base, input_type)
+    out = _tiny_run(np.ldexp(base, exponent), input_type)
+    np.testing.assert_array_equal(out.f2, ref.f2)
+    np.testing.assert_array_equal(out.f1, ref.f1)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("scale", "base"),
+    [
+        (1e-302, _TINY_BASE),  # normal values, subnormal differences
+        (1e-308, np.array([1.0, 2.0, 4.0])),
+        (1e-200, _TINY_BASE),
+        (1e-300, _TINY_BASE),
+        (1e-307, _TINY_BASE),
+    ],
+)
+def test_decimal_scale_of_the_near_edge_values_matches_scale_one(
+    scale: float, base: np.ndarray
+) -> None:
+    ref = _tiny_run(base)
+    out = _tiny_run(scale * base)
+    # scale * base is not an exact multiple of base: a relative 1e-16 input
+    # error, amplified by 1 / 2e-6 in the end-point step.
+    np.testing.assert_allclose(out.f2, ref.f2, rtol=1e-9)
+    np.testing.assert_allclose(out.f1, ref.f1, rtol=1e-9, atol=1e-9)
+    if scale == 1e-302 and base is _TINY_BASE:
+        np.testing.assert_allclose(
+            out.f2, [0.15128665, 1.88862790, 3.62596916], rtol=1e-7
+        )
+
+
+@pytest.mark.unit
+def test_host_scale_conversion_and_merge_of_tiny_data_match_scale_one() -> None:
+    dyadic = np.array([1.0, 1.0625, 1.125])  # exact even as subnormals
+    spec = nearedge.NearEdgeSpectrum(_TINY_E, np.ldexp(dyadic, -1040))
+    # "asf" is the identity: even subnormal values come back exactly.
+    assert np.array_equal(to_asf_scale(spec, "asf").values, spec.values)
+    ref = to_asf_scale(nearedge.NearEdgeSpectrum(_TINY_E, dyadic), "nexafs")
+    out = to_asf_scale(spec, "nexafs")
+    np.testing.assert_array_equal(np.ldexp(out.values, 1040), ref.values)
+    seg, coeffs = compound_spectrum(*parse_formula("C"))
+    merged = merge_spectra(spec, seg, coeffs, merge_points_ev=(280.0, 320.0))
+    expected = merge_spectra(
+        nearedge.NearEdgeSpectrum(_TINY_E, dyadic),
+        seg,
+        coeffs,
+        merge_points_ev=(280.0, 320.0),
+    )
+    np.testing.assert_array_equal(merged[0], expected[0])
+    np.testing.assert_array_equal(merged[1], expected[1])
+
+
+@pytest.mark.unit
+def test_flat_tiny_data_reports_the_unscaled_end_point_values() -> None:
+    with pytest.raises(NearEdgeDataError, match=r"\(1e-303, 1e-303\)"):
+        _tiny_run(np.full(3, 1e-303))
+
+
+@pytest.mark.unit
+def test_ordinary_data_are_never_rescaled() -> None:
+    assert nearedge.value_exponent(np.array([1e-150, 3.0, 0.0])) == 0
+    assert nearedge.value_exponent(np.zeros(3)) == 0
+    assert nearedge.value_exponent(np.array([np.nan, np.inf])) == 0
+    assert nearedge.value_exponent(np.array([1e-302, np.nan])) != 0

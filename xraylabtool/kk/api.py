@@ -50,8 +50,10 @@ from xraylabtool.kk.nearedge import (
     InputType,
     NearEdgeSpectrum,
     _asf_scale_arguments,
+    _rescaled,
     _resolve_merge_points,
     raise_or_log,
+    value_exponent,
 )
 from xraylabtool.kk.refine import (
     _INT_MAX,
@@ -100,6 +102,8 @@ def _validated_energies_ev(
     energies_kev: ArrayLike, lo_ev: float, hi_ev: float
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Return ``(energies_kev, energies_ev)`` after validation (the one unit conversion)."""
+    if isinstance(energies_kev, jax.Array):
+        energies_kev = _device.fetch(energies_kev)  # counted input-preparation fetch
     try:
         raw = np.asarray(energies_kev)
     except (TypeError, ValueError) as exc:
@@ -336,7 +340,8 @@ def _host_inputs(
     ne = None
     if plan.near is not None:
         near = plan.near
-        energy, values = near.spectrum.energy_ev, near.spectrum.values
+        energy = near.spectrum.energy_ev
+        values = _rescaled(near.spectrum.values, value_exponent(near.spectrum.values))
         pad = bucket_pow2(energy.size) - energy.size
         ne = NearEdgeInputs(
             np.concatenate([energy, np.full(pad, energy[-1])]),
@@ -378,7 +383,12 @@ def _checked_merge(
         and status.merge is not None
         and status.used_points_ev is not None
     ):
-        raise_or_log(status.merge, plan.near.low_ev, plan.near.high_ev)
+        raise_or_log(
+            status.merge,
+            plan.near.low_ev,
+            plan.near.high_ev,
+            value_exponent(plan.near.spectrum.values),
+        )
         used = _reported_merge_kev(
             merge_points_kev,
             plan.near.given_ev,
@@ -440,7 +450,9 @@ def kk_calculate_real(
         Photon energies in keV, 0.01 to 500, finite, any order, repeats
         allowed. Default: the knots of the tabulated spectrum (union of the
         elemental grids) inside 0.03-30 keV; the number of points clipped
-        away is logged at INFO.
+        away is logged at INFO. A ``jax.Array`` is validated on the host, so
+        it costs one extra counted fetch (input preparation) before the
+        calculation's own single upload.
     chunk_size : int, optional
         Energies per block of the transform, bounding memory; the result does
         not depend on it beyond rounding. Also used for the refinement

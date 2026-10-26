@@ -66,6 +66,29 @@ _HC_EV_M = constants.SPEED_OF_LIGHT * constants.PLANCK / constants.ELEMENT_CHARG
 # magnitude.
 _MIN_RELATIVE_STEP = 1e-6
 
+# Data whose largest magnitude is below this are rescaled by a power of two
+# before they reach the device: XLA flushes subnormals (inputs and results),
+# which would turn the tiny differences of such data into zeros.
+_TINY_PEAK = 2.0**-500
+
+
+def value_exponent(values: NDArray[np.float64]) -> int:
+    """Power-of-two exponent that brings tiny near-edge ``values`` to order one.
+
+    ``0`` (no rescaling, bit-identical results) unless the largest finite
+    magnitude is below ``2**-500``. Multiplying by ``2**exponent`` is exact,
+    and every later step (conversion, the affine normalisation of the merge)
+    is homogeneous in the values, so the merged spectrum does not depend on it.
+    """
+    finite = np.abs(values[np.isfinite(values)])
+    peak = float(finite.max()) if finite.size else 0.0
+    return -int(np.frexp(peak)[1]) if 0.0 < peak < _TINY_PEAK else 0
+
+
+def _rescaled(values: NDArray[np.float64], exponent: int) -> NDArray[np.float64]:
+    """``values * 2**exponent`` (exact); ``values`` itself when ``exponent`` is 0."""
+    return np.ldexp(values, exponent) if exponent else values
+
 
 # A merge point within this relative distance of a range end is that end: the
 # keV API multiplies by 1000, and (k / 1000) * 1000 != k for some integers k.
@@ -362,7 +385,10 @@ def to_asf_scale(
     :func:`merge_spectra` rescales the data to the tabulated f2 at the merge
     points, so a constant factor (the absolute scale of ``nexafs`` data, the
     density and formula mass of ``beta`` data) drops out of the merged
-    spectrum; only the shape of the measured curve matters.
+    spectrum; only the shape of the measured curve matters. Data whose
+    largest magnitude is below ``2**-500`` are scaled by an exact power of two
+    for the device calculation (XLA flushes subnormals) and the result is
+    scaled back, so the outcome does not depend on the absolute scale.
 
     References
     ----------
@@ -386,6 +412,8 @@ def to_asf_scale(
     )
 
     energy, values = spec.energy_ev, spec.values
+    exponent = value_exponent(values)
+    values = _rescaled(values, exponent)
     pad = bucket_pow2(energy.size) - energy.size
     _device.ensure_x64()
     # The beta scalars travel in the same single upload (a Python float passed
@@ -401,7 +429,8 @@ def to_asf_scale(
     converted = _device.fetch(
         to_asf_scale_device(e_d, v_d, kind, density=density_d, formula_mass=mass_d)
     )
-    return NearEdgeSpectrum(energy, np.asarray(converted[: energy.size]))
+    out = np.asarray(converted[: energy.size])
+    return NearEdgeSpectrum(energy, _rescaled(out, -exponent))
 
 
 @partial(jax.jit, static_argnames="input_type")
@@ -761,7 +790,9 @@ def merge_device(
     return MergeResult(Spectrum(seg_out, coeffs, n_out), scaled, points, status)
 
 
-def raise_or_log(status: MergeStatus, low: float, high: float) -> None:
+def raise_or_log(
+    status: MergeStatus, low: float, high: float, exponent: int = 0
+) -> None:
     """Raise or log what a device merge reported (host side).
 
     Parameters
@@ -771,6 +802,9 @@ def raise_or_log(status: MergeStatus, low: float, high: float) -> None:
         :func:`~xraylabtool.kk._device.fetch_status`).
     low, high : float
         The merge points in eV, for the messages.
+    exponent : int, default 0
+        The :func:`value_exponent` the values were rescaled by before the
+        merge; the reported end-point values are shown unscaled.
 
     Raises
     ------
@@ -791,6 +825,7 @@ def raise_or_log(status: MergeStatus, low: float, high: float) -> None:
     if not abs(float(status.measured_step)) > _MIN_RELATIVE_STEP * max(
         abs(v_low), abs(v_high)
     ):
+        v_low, v_high = math.ldexp(v_low, -exponent), math.ldexp(v_high, -exponent)
         raise NearEdgeDataError(
             f"Near-edge data have flat endpoints: the values at the merge points {low:g} "
             f"and {high:g} eV ({v_low:.6g}, {v_high:.6g}) differ by less than "
@@ -872,6 +907,8 @@ def _merge(
     table = _padded_table(seg, coef, bucket(coef.shape[0]))
 
     energy, values = spec.energy_ev, spec.values
+    exponent = value_exponent(values)
+    values = _rescaled(values, exponent)
     n_ne = energy.size
     pad = bucket_pow2(n_ne) - n_ne
     _device.ensure_x64()
@@ -894,7 +931,7 @@ def _merge(
         high_d,
         capacity=bucket(coef.shape[0] + n_ne + 2),
     )
-    raise_or_log(_device.fetch_status(result.status), low, high)
+    raise_or_log(_device.fetch_status(result.status), low, high, exponent)
     out = _device.fetch(result)
     n_out = int(out.spectrum.n_segments)
     _device.check_capacity(n_out, out.spectrum.coeffs.shape[0])

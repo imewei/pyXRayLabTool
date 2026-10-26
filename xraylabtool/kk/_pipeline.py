@@ -124,9 +124,11 @@ def _assemble(
     inputs : PipelineInputs
         The uploaded inputs.
     capacity : int
-        Segment capacity of the compound spectrum
-        (:meth:`AsfDatabase.compound_capacity
-        <xraylabtool.kk.database.AsfDatabase.compound_capacity>`).
+        Segment capacity of the compound spectrum. The host passes the exact
+        union size (``api._compound_capacity``), which is
+        never above the sum bound
+        :meth:`AsfDatabase.compound_capacity
+        <xraylabtool.kk.database.AsfDatabase.compound_capacity>`.
     merge_capacity : int
         Capacity of the merged spectrum (only used with near-edge data).
     input_type : str or None

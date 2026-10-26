@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from functools import partial
 import math
+import operator
 from typing import TYPE_CHECKING, Any, overload
 
 import jax
@@ -38,10 +39,10 @@ if TYPE_CHECKING:
 
 def _f64(x: Any) -> jax.Array:
     """``x`` as a float64 JAX array; 64-bit mode is a precondition of the kernel."""
-    out = jnp.asarray(x, dtype=jnp.float64)
-    if out.dtype != jnp.float64:
+    # Checked first: with x64 off, asarray(dtype=float64) warns before it truncates.
+    if not jax.config.jax_enable_x64:
         raise TypeError("the Kramers-Kronig kernel needs jax_enable_x64 (float64)")
-    return out
+    return jnp.asarray(x, dtype=jnp.float64)
 
 
 @jax.jit
@@ -300,6 +301,18 @@ def _kk_f1_blocks(
     return jnp.where(jnp.arange(out.size) < n_valid, out, 0.0)
 
 
+@partial(jax.jit, static_argnames="total")
+def _pad_edge(e: jax.Array, *, total: int) -> tuple[jax.Array, jax.Array]:
+    """``e`` flattened and edge-padded to ``total`` entries, and its true count."""
+    return jnp.pad(e.reshape(-1), (0, total - e.size), mode="edge"), jnp.int32(e.size)
+
+
+@partial(jax.jit, static_argnames="shape")
+def _crop(out: jax.Array, *, shape: tuple[int, ...]) -> jax.Array:
+    """The first ``prod(shape)`` entries of ``out``, reshaped to ``shape``."""
+    return out[: math.prod(shape)].reshape(shape)
+
+
 def kk_f1(
     eval_ev: Any,
     spectrum: Spectrum,
@@ -329,7 +342,9 @@ def kk_f1(
     spectrum : Spectrum
         Padded f2 table.
     rel_corr : float or jax.Array
-        Relativistic correction Z* (see :func:`relativistic_correction`).
+        Relativistic correction Z* (see :func:`relativistic_correction`). A
+        Python float is an implicit host-to-device transfer per call; pass a
+        device scalar to keep a warmed call free of transfers.
     block : int, optional
         Static upper bound on energies per block. The default follows the
         platform (see :func:`~xraylabtool.kk._shapes.energy_blocks`): on a CPU
@@ -374,11 +389,15 @@ def kk_f1(
     e = _f64(eval_ev)
     m = e.size
     if m == 0:
-        return jnp.zeros(e.shape, dtype=jnp.float64)
+        return e  # already float64 and empty
     blk, n_blocks = energy_blocks(block, spectrum.coeffs.shape[0], m)
-    padded = jnp.pad(e.reshape(-1), (0, blk * n_blocks - m), mode="edge")
-    out: jax.Array = _kk_f1_blocks(padded, spectrum, rel_corr, jnp.int32(m), block=blk)
-    return out[:m].reshape(e.shape)
+    # Pad, count and crop are tiny compiled helpers: an eager op with a
+    # constant (``jnp.int32(m)``, ``jnp.pad``) is a host-to-device transfer of
+    # its own, which the strict guard forbids on a warmed call.
+    padded, n_valid = _pad_edge(e, total=blk * n_blocks)
+    out: jax.Array = _kk_f1_blocks(padded, spectrum, rel_corr, n_valid, block=blk)
+    cropped: jax.Array = _crop(out, shape=e.shape)
+    return cropped
 
 
 def kk_real_spectrum(
@@ -424,6 +443,8 @@ def kk_real_spectrum(
         If an input is complex, has the wrong shape or is not finite, an
         energy or edge is not positive, the edges are not strictly increasing, or
         ``chunk_size < 1``.
+    TypeError
+        If ``chunk_size`` is not an integer (a float, even ``2.0``, or nan).
 
     References
     ----------
@@ -444,8 +465,12 @@ def kk_real_spectrum(
     e = _real_float64("eval_ev", eval_ev)
     seg, c = _device.validated_arrays(seg_ev, coeffs, e, rel_corr)
     rel = float(rel_corr)
-    if chunk_size is not None and chunk_size < 1:
-        raise ValueError(f"chunk_size must be >= 1, got {chunk_size}")
+    if chunk_size is not None:
+        if chunk_size < 1:
+            raise ValueError(f"chunk_size must be >= 1, got {chunk_size}")
+        # Integers (NumPy's too) only: the shape helpers' int() would truncate
+        # 2.5 and `min` ignores nan. index() keeps the legacy TypeError text.
+        chunk_size = operator.index(chunk_size)
 
     ensure_x64()
     m = e.size

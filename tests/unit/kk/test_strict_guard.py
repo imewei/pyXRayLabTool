@@ -25,7 +25,7 @@ from xraylabtool.kk._device import Spectrum
 from xraylabtool.kk.database import load_asf
 from xraylabtool.kk.nearedge import merge_device, to_asf_scale_device
 from xraylabtool.kk.spectrum import compound_spectrum_device, evaluate_f2_device
-from xraylabtool.kk.transform import relativistic_correction
+from xraylabtool.kk.transform import kk_f1, relativistic_correction
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -146,3 +146,16 @@ def test_host_to_asf_scale_beta_passes_the_strict_guard() -> None:
     with jax.transfer_guard("disallow_explicit"):
         out = call()
     assert np.isfinite(out.values).all()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("shape", [(0,), (3,), (2, 5), (700,)])
+def test_public_kk_f1_under_strict_guard(shape: tuple[int, ...]) -> None:
+    """The bare public ``kk_f1`` (pad, constants and slice included) makes no transfer of its own."""
+    spec = _device.upload(Spectrum.from_numpy([2.0, 5.0, 9.0], np.ones((2, 5))))
+    e, rel = _device.upload(
+        (np.linspace(2.5, 8.5, int(np.prod(shape))).reshape(shape), np.float64(0.0))
+    )  # a Python float rel_corr would be a caller-side implicit transfer
+    _warm_then_guarded(lambda: kk_f1(e, spec, rel))
+    got = _device.fetch(kk_f1(e, spec, rel))
+    assert got.shape == shape

@@ -61,7 +61,10 @@ def test_padding_neutral_at_knots(name: str) -> None:
     k = case["energy"].size
     base = _eval(case, n, energy)
     assert_kk_close(base[:k], case["f1"], case["energy"], seg, coeffs, rtol=1e-8)
-    for capacity in (bucket(n), bucket(n + 1), bucket(bucket(n + 1) + 1)):
+    b0 = bucket(n)
+    b1 = bucket(b0 + 1)
+    b2 = bucket(b1 + 1)
+    for capacity in (b0, b1, b2):
         out = _eval(case, capacity, energy)
         assert_kk_close(out, base, energy, seg, coeffs, rtol=1e-8)
         assert_kk_close(out[:k], case["f1"], case["energy"], seg, coeffs, rtol=1e-8)
@@ -237,6 +240,40 @@ def test_x64_restored_by_entry(x64_restored) -> None:
     assert out.shape == expected.shape
 
 
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("chunk_size", "error", "match"),
+    [
+        (2.5, TypeError, "'float' object cannot be interpreted as an integer"),
+        (2.0, TypeError, "'float' object cannot be interpreted as an integer"),
+        (np.nan, TypeError, "'float' object cannot be interpreted as an integer"),
+        (np.float64(3.0), TypeError, "cannot be interpreted as an integer"),
+        ("8", TypeError, "not supported between"),
+        (0, ValueError, "chunk_size must be >= 1"),
+        (0.5, ValueError, "chunk_size must be >= 1"),
+        (-3, ValueError, "chunk_size must be >= 1"),
+    ],
+)
+def test_real_spectrum_rejects_unusable_chunk_size(chunk_size, error, match) -> None:
+    """Legacy exception types survive; the shape helpers' int() must not validate."""
+    with pytest.raises(error, match=match):
+        kk_real_spectrum(
+            [1.5, 2.0, 2.5, 3.0],
+            [1.0, 4.0],
+            np.zeros((1, 5)),
+            1.0,
+            chunk_size=chunk_size,
+        )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("make", [np.int64, np.int32, int, bool])
+def test_real_spectrum_accepts_integer_chunk_sizes(make) -> None:
+    args = ([1.5, 2.0, 2.5, 3.0], [1.0, 4.0], np.zeros((1, 5)), 1.0)
+    ref = kk_real_spectrum(*args)
+    assert np.array_equal(kk_real_spectrum(*args, chunk_size=make(1)), ref)
+
+
 # --- Spectrum container ------------------------------------------------------------
 
 
@@ -283,3 +320,15 @@ def test_x64_restored_by_entry_on_empty_input(x64_restored) -> None:
     assert jax.config.jax_enable_x64
     assert out.dtype == np.float64
     assert out.shape == (0,)
+
+
+@pytest.mark.unit
+def test_kernel_without_x64_raises_the_documented_error_without_a_warning(
+    x64_restored,
+) -> None:
+    """``filterwarnings = error``: a UserWarning from asarray would surface instead."""
+    case = _case("SiO2")
+    spec = _device.Spectrum.from_numpy(case["seg"], case["coeffs"])
+    jax.config.update("jax_enable_x64", False)
+    with pytest.raises(TypeError, match="jax_enable_x64"):
+        kk_f1(case["energy"], spec, case["rel"])

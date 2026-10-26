@@ -227,6 +227,23 @@ def test_no_host_conversion_outside_the_device_helpers(
 
 
 @pytest.mark.unit
+def test_jax_array_energies_are_fetched_through_the_counted_helper(
+    stray_conversions: list[str],
+) -> None:
+    """A device-array ``energies_kev`` costs one extra, counted input-preparation fetch."""
+    grid = np.geomspace(0.05, 20.0, 64)
+    expected = api.kk_calculate_real("SiO2", energies_kev=grid)  # warm
+    dev = _device.upload(grid)
+    stray_conversions.clear()
+    _device.reset_transfer_counts()
+    with jax.transfer_guard("disallow_explicit"):
+        result = api.kk_calculate_real("SiO2", energies_kev=dev)
+    assert stray_conversions == []
+    assert _device.transfer_counts() == {"upload": 1, "fetch_status": 1, "fetch": 2}
+    np.testing.assert_array_equal(result.f1, expected.f1)
+
+
+@pytest.mark.unit
 def test_conversion_probe_sees_a_stray_conversion(
     stray_conversions: list[str],
 ) -> None:
@@ -304,10 +321,16 @@ def test_kernel_evaluates_only_blocks_holding_real_energies(
         jax.debug.callback(lambda: calls.append(1))
         return original(e, seg, coeffs, rel)
 
+    # The jit cache would serve an earlier trace (no callback) on a second run,
+    # or keep this patched trace for later tests: clear it around the patch.
+    transform._kk_f1_blocks.clear_cache()
     monkeypatch.setattr(transform, "kk_piecewise_poly", counted)
-    padded = jax.numpy.asarray(np.linspace(20.0, 900.0, 160))
-    out = transform._kk_f1_blocks(padded, spectrum, 0.0, 50, block=40)
-    jax.block_until_ready(out)
+    try:
+        padded = jax.numpy.asarray(np.linspace(20.0, 900.0, 160))
+        out = transform._kk_f1_blocks(padded, spectrum, 0.0, 50, block=40)
+        jax.block_until_ready(out)
+    finally:
+        transform._kk_f1_blocks.clear_cache()
     assert len(calls) == 2
     assert np.all(np.asarray(out)[50:] == 0.0)
     assert np.all(np.isfinite(np.asarray(out)[:50]))

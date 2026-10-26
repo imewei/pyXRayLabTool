@@ -285,9 +285,11 @@ def test_gradient_at_continuous_knot_is_finite() -> None:
 # Bound = rtol 1e-10 + ATOL. The NumPy-era bound was rtol=1e-10, atol=0 for all
 # three. On JAX-CPU Ne at its 10 eV end point drifts by 7.6e-9 from the NumPy
 # golden (XLA reassociates the cancelling log terms; the NumPy default backend
-# used to mask it), so Ne gets atol=5e-8 (6.6x the drift, 8x tighter than the
-# 32x rounding-scale allowance). Violating D5 (keeping the dropped boundary log)
-# changes f1 by O(1), far above this.
+# used to mask it), so Ne gets atol=5e-8. Only the 500 keV end point
+# discriminates D5: dropping the boundary log moves f1 there by 5.0e-5 against
+# a bound of about 5e-8 + 1e-10*|f1| (about 1000x margin). At the 10 eV end
+# point the convention term moves f1 by only -2.8e-16 and at the 21.5 eV knot
+# by 2.7e-15, so the widened atol cannot hide a violation there either way.
 JUMP_ATOL = {"ar": 0.0, "ne": 5e-8, "synthetic": 0.0}
 
 

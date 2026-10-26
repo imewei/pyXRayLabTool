@@ -459,7 +459,7 @@ def _pass_body(
 ) -> tuple[_PassState, _PassStatus]:
     """One bisection round on the active intervals of ``state``.
 
-    Drops the pole slivers, evaluates f1 (``kk_f1`` in blocks of ``block``)
+    Drops the pole slivers, evaluates f1 (``_midpoint_f1`` in blocks of ``block``)
     and f2 at the midpoints of the splittable rest, keeps those whose
     interpolation error exceeds ``tolerance`` (truncated to the first
     ``state.points_left`` of them in internal order) and returns the next
@@ -785,15 +785,6 @@ def _log_slivers(
         if n_wide
         else "",
     )
-
-
-def _log_skipped(
-    skipped: list[tuple[float, float]], n_wide: int, tolerance: float
-) -> None:
-    """:func:`_log_slivers` for a list of ``(energy, width)`` of dropped slivers."""
-    if skipped:
-        widest_energy, widest = max(skipped, key=lambda s: s[1])
-        _log_slivers(len(skipped), n_wide, widest_energy, widest, tolerance)
 
 
 def _outcome(
