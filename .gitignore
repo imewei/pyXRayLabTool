@@ -154,6 +154,7 @@ dmypy.json
 # Vendored kkcalc ASF tables and Kramers-Kronig golden oracles are committed.
 !xraylabtool/data/kkcalc/*.npz
 !tests/characterization/kk/golden/*.npz
+!tests/unit/kk/data/*.npz
 # Root-level scratch only: the bare names would match tests/data/results/ etc.
 /figures/
 /plots/
