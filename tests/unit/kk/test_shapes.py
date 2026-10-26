@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from xraylabtool.kk._shapes import block_for, bucket, bucket_pow2
+from xraylabtool.kk._shapes import block_for, bucket, bucket_pow2, energy_blocks
 
 
 @pytest.mark.unit
@@ -87,3 +87,26 @@ def test_block_for_never_exceeds_the_request() -> None:
                 assert b <= max(1, 2**22 // capacity)
                 if chunk is not None:
                     assert b <= chunk
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("m", [1, 7, 100, 1000, 3000, 10000])
+@pytest.mark.parametrize("chunk", [None, 7, 512])
+def test_energy_blocks_padded_length_is_bounded(m: int, chunk: int | None) -> None:
+    block, n_blocks = energy_blocks(chunk, 1248, m)
+    padded = block * n_blocks
+    assert padded >= m
+    assert padded < 2 * m + block  # m_b < 2m, plus at most one (ladder) block
+    assert block <= bucket_pow2(m, minimum=1)
+    assert chunk is None or block <= chunk
+    if chunk == 7 and m >= 7:
+        assert block == 4
+        assert padded < 2 * m  # power-of-two block: m_b is a multiple of it
+
+
+@pytest.mark.unit
+def test_energy_blocks_have_few_distinct_shapes() -> None:
+    pairs = {energy_blocks(None, 1248, m) for m in range(1, 20001)}
+    assert len(pairs) == 16  # one per power of two m_b = 1 .. 32768
+    capped = {energy_blocks(7, 1248, m) for m in range(1, 20001)}
+    assert len(capped) == 16

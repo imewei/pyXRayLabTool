@@ -139,3 +139,42 @@ def block_for(chunk_size: int | None, capacity: int, m: int) -> int:
         best = max(best, rung)
         rung = _next_bucket(rung)
     return best
+
+
+def energy_blocks(chunk_size: int | None, capacity: int, m: int) -> tuple[int, int]:
+    """Static ``(block, n_blocks)`` for evaluating ``m`` energies.
+
+    ``m`` is first rounded up to a power of two (``m_b``, no minimum); the
+    block is then :func:`block_for` ``(chunk_size, capacity, m_b)`` and
+    ``n_blocks = ⌈m_b / block⌉``. The padded length ``block * n_blocks`` is
+    below ``2m`` plus at most one block, and the number of distinct pairs
+    grows only with ``log₂ m`` (times the distinct capacities and chunk
+    sizes in use).
+
+    Parameters
+    ----------
+    chunk_size : int or None
+        Requested maximum block size.
+    capacity : int
+        Segment capacity of the spectrum.
+    m : int
+        Number of energies, at least 1.
+
+    Returns
+    -------
+    block, n_blocks : int
+        Static block size and block count.
+
+    References
+    ----------
+    Design spec §3-§4 (``2026-10-25-kk-jax-first-design.md``).
+
+    Examples
+    --------
+    >>> from xraylabtool.kk._shapes import energy_blocks
+    >>> energy_blocks(None, 1248, 1000), energy_blocks(7, 1248, 1000)
+    ((1024, 1), (4, 256))
+    """
+    m_b = bucket_pow2(m, minimum=1)
+    block = block_for(chunk_size, capacity, m_b)
+    return block, -(-m_b // block)

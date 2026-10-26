@@ -27,7 +27,7 @@ import numpy as np
 
 from xraylabtool.kk import _device
 from xraylabtool.kk._device import Spectrum, ensure_x64
-from xraylabtool.kk._shapes import block_for, bucket_pow2
+from xraylabtool.kk._shapes import energy_blocks
 from xraylabtool.kk.spectrum import _real_float64
 
 if TYPE_CHECKING:
@@ -287,9 +287,12 @@ def kk_f1(
         Relativistic correction Z* (see :func:`relativistic_correction`).
     block : int, optional
         Static upper bound on energies per block; default
-        ``min(2**22 // capacity, m)`` rounded down to a power of two or
-        bucket-ladder value. The number of blocks is rounded up to a power of
-        two so repeated calls share compiled programs.
+        ``min(2**22 // capacity, m)``, rounded down to a power of two or
+        bucket-ladder value. ``m`` is first rounded up to a power of two and
+        the block count follows from it (see
+        :func:`~xraylabtool.kk._shapes.energy_blocks`), so repeated calls
+        share compiled programs and evaluate fewer than ``2m`` energies plus
+        at most one block.
 
     Returns
     -------
@@ -321,9 +324,7 @@ def kk_f1(
     m = e.size
     if m == 0:
         return jnp.zeros(e.shape, dtype=jnp.float64)
-    blk = block_for(None, spectrum.coeffs.shape[0], m) if block is None else block
-    blk = min(blk, m)
-    n_blocks = bucket_pow2(-(-m // blk))
+    blk, n_blocks = energy_blocks(block, spectrum.coeffs.shape[0], m)
     padded = jnp.pad(e.reshape(-1), (0, blk * n_blocks - m), mode="edge")
     out: jax.Array = _kk_f1_blocks(padded, spectrum, rel_corr, jnp.int32(m), block=blk)
     return out[:m].reshape(e.shape)
@@ -408,8 +409,7 @@ def kk_real_spectrum(
         return np.empty(0, dtype=np.float64)
     ensure_x64()
     host = _device.host_spectrum(seg, c)
-    block = block_for(chunk_size, host.coeffs.shape[0], m)
-    n_blocks = bucket_pow2(-(-m // block))
+    block, n_blocks = energy_blocks(chunk_size, host.coeffs.shape[0], m)
     # Pad with a real energy (never 0, which would divide by zero).
     padded = np.concatenate([e, np.full(block * n_blocks - m, e[0])])
     dev_spec, dev_e, dev_rel, dev_m = _device.upload(

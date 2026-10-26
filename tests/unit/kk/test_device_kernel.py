@@ -9,7 +9,6 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from tests.fixtures.kk_probes import probe_energies
 from tests.fixtures.kk_rounding import assert_kk_close
 from xraylabtool.kk import _device
 from xraylabtool.kk._shapes import bucket
