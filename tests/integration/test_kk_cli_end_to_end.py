@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from xraylabtool.interfaces.cli import main
-from xraylabtool.kk import kk_calculate_real, load_nearedge
+from xraylabtool.kk import _device, kk_calculate_real, load_nearedge
 
 ROOT = Path(__file__).resolve().parents[2]
 EDGE = ROOT / "tests" / "characterization" / "kk" / "nearedge_example.txt"
@@ -179,10 +179,24 @@ def test_version_unaffected() -> None:
 
 
 @pytest.mark.integration
-def test_cli_writes_the_persistent_compile_cache(tmp_path: Path) -> None:
+def test_cli_writes_the_persistent_compile_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """The CLI enables the cache by default: compiled programs land in the cache dir."""
+    # Every variable the OS-specific cache location reads (Linux: XDG_CACHE_HOME,
+    # macOS: HOME, Windows: LOCALAPPDATA), so the subprocess and the expected path
+    # resolve under tmp_path on all three.
+    redirect = {
+        "XDG_CACHE_HOME": str(tmp_path),
+        "HOME": str(tmp_path),
+        "USERPROFILE": str(tmp_path),
+        "LOCALAPPDATA": str(tmp_path),
+    }
+    for name, value in redirect.items():
+        monkeypatch.setenv(name, value)
+    cache_dir = _device._user_cache_dir()
     env = {k: v for k, v in os.environ.items() if k != "XRAYLABTOOL_NO_JAX_CACHE"}
-    env.update(JAX_PLATFORMS="cpu", XDG_CACHE_HOME=str(tmp_path), PYTHONPATH=str(ROOT))
+    env.update(JAX_PLATFORMS="cpu", PYTHONPATH=str(ROOT))
     done = subprocess.run(
         [sys.executable, "-c", _ENTRY, "kk", "Si", "--energies", "1,2"],
         capture_output=True,
@@ -193,4 +207,5 @@ def test_cli_writes_the_persistent_compile_cache(tmp_path: Path) -> None:
         check=False,
     )
     assert done.returncode == 0, done.stderr[-2000:]
-    assert any((tmp_path / "xraylabtool" / "jax").iterdir())
+    assert tmp_path in cache_dir.parents
+    assert any(cache_dir.iterdir())

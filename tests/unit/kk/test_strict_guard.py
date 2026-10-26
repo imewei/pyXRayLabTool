@@ -10,6 +10,7 @@ op on a device array with a Python constant, would be an implicit transfer).
 from __future__ import annotations
 
 from collections.abc import Callable
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -119,7 +120,7 @@ def test_cold_concurrent_first_call_uploads_the_tables_once() -> None:
         print(_device.transfer_counts()["upload"] - before, all(t is got[0] for t in got), len(got))
         """
     )
-    env = {"JAX_PLATFORMS": "cpu", "PATH": "/usr/bin:/bin", "HOME": str(Path.home())}
+    env = {**os.environ, "JAX_PLATFORMS": "cpu"}
     done = subprocess.run(
         [sys.executable, "-c", script],
         cwd=ROOT,
