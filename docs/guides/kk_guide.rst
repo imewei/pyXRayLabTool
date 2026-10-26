@@ -39,8 +39,8 @@ Without ``energies_kev`` the result is on the spectrum's own knots, clipped to
 
 The result is a :class:`~xraylabtool.kk.result.KKResult` with the fields
 ``formula``, ``energy_kev``, ``f1``, ``f2``, ``relativistic_correction``,
-``merge_points_kev``, ``n_refined_points``, ``backend`` and
-``nearedge_scaled_kev_f2``. ``to_xray_result(density)`` turns it into an
+``merge_points_kev``, ``n_refined_points``, ``backend``,
+``nearedge_scaled_kev_f2`` and ``refine_exhausted``. ``to_xray_result(density)`` turns it into an
 ordinary :class:`~xraylabtool.calculators.xray_result.XRayResult` (δ, β,
 critical angle, attenuation length, ...) computed from the KK ``f1``. It
 accepts only energies in 0.03-30 keV:

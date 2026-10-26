@@ -94,7 +94,7 @@ Result
    :undoc-members:
    :show-inheritance:
    :exclude-members: formula, energy_kev, f1, f2, relativistic_correction, merge_points_kev,
-      n_refined_points, backend, nearedge_scaled_kev_f2
+      n_refined_points, backend, nearedge_scaled_kev_f2, refine_exhausted
 
 Transform kernel
 ----------------
