@@ -25,7 +25,7 @@ import pytest
 from tests.fixtures.kk_compiles import kk_programs, numerical_programs, record_compiles
 from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
 from xraylabtool.exceptions import CalculationError, NearEdgeDataError
-from xraylabtool.kk import _device, api, database, nearedge, refine
+from xraylabtool.kk import _device, api, database, nearedge, refine, transform
 from xraylabtool.kk._device import Spectrum
 from xraylabtool.kk.nearedge import NearEdgeSpectrum
 
@@ -137,6 +137,97 @@ def test_transfer_budget_warm_call(name: str, kk_log: pytest.LogCaptureFixture) 
     }
 
 
+_CONVERSIONS = (
+    "__array__",
+    "__float__",
+    "__int__",
+    "__bool__",
+    "__index__",
+    "item",
+    "tolist",
+    "block_until_ready",
+)
+_NUMPY_CONVERSIONS = ("asarray", "array", "asanyarray", "ascontiguousarray")
+
+
+def _outside_device_helpers() -> bool:
+    """True unless the nearest ``xraylabtool`` frame on the stack is ``kk._device``."""
+    frame = sys._getframe(2)
+    while frame is not None:
+        module = frame.f_globals.get("__name__", "")
+        if module.startswith("xraylabtool"):
+            return module != "xraylabtool.kk._device"
+        frame = frame.f_back
+    return True
+
+
+@pytest.fixture
+def stray_conversions(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Names of host conversions of a device array made outside ``kk._device``.
+
+    ``jax.transfer_guard`` does not stop ``np.asarray`` or ``float`` on a device
+    array on the CPU platform, and ``np.asarray`` reads the buffer directly
+    without calling ``ArrayImpl.__array__``. The probe therefore wraps both the
+    array methods and the NumPy constructors that package code calls.
+    """
+    array_type = type(jax.numpy.zeros(1))
+    found: list[str] = []
+
+    def patch_method(name: str) -> None:
+        original = getattr(array_type, name)
+
+        def wrapper(self, *args, **kwargs):
+            if _outside_device_helpers():
+                found.append(name)
+            return original(self, *args, **kwargs)
+
+        monkeypatch.setattr(array_type, name, wrapper)
+
+    def patch_numpy(name: str) -> None:
+        original = getattr(np, name)
+
+        def wrapper(obj, *args, **kwargs):
+            if isinstance(obj, jax.Array) and _outside_device_helpers():
+                found.append(f"np.{name}")
+            return original(obj, *args, **kwargs)
+
+        monkeypatch.setattr(np, name, wrapper)
+
+    for name in _CONVERSIONS:
+        patch_method(name)
+    for name in _NUMPY_CONVERSIONS:
+        patch_numpy(name)
+    return found
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("cold", [False, True])
+@pytest.mark.parametrize("name", list(CALLS))
+def test_no_host_conversion_outside_the_device_helpers(
+    name: str,
+    cold: bool,
+    stray_conversions: list[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _run(name)  # compile outside the probe
+    stray_conversions.clear()
+    if cold:
+        monkeypatch.setattr(database, "_tables_cache", {})
+    result = _run(name)
+    assert stray_conversions == []
+    assert result.f1.size > 0
+
+
+@pytest.mark.unit
+def test_conversion_probe_sees_a_stray_conversion(
+    stray_conversions: list[str],
+) -> None:
+    """The probe has teeth: a bare ``np.asarray`` on a device array is recorded."""
+    np.asarray(jax.numpy.arange(3.0))
+    float(jax.numpy.float64(2.0))
+    assert stray_conversions == ["np.asarray", "__float__"]
+
+
 @pytest.mark.unit
 def test_cold_table_upload_is_counted_once_and_separately(monkeypatch) -> None:
     monkeypatch.setattr(database, "_tables_cache", {})
@@ -169,6 +260,49 @@ def test_second_call_no_recompile() -> None:
     assert refined.n_refined_points > 0
     assert kk_programs(events) == []
     assert numerical_programs(events) == []
+
+
+@pytest.mark.unit
+def test_energy_length_bucket_recompiles_only_the_evaluation() -> None:
+    """The output grid stays out of ``_assemble``: only ``_evaluate`` is shape-specific."""
+    small = np.geomspace(0.05, 20.0, 100)
+    large = np.geomspace(0.05, 20.0, 3000)
+    api.kk_calculate_real("SiO2", energies_kev=small)
+    api.kk_calculate_real("SiO2", energies_kev=large)  # compile the large bucket too
+    with record_compiles() as events:
+        api.kk_calculate_real("SiO2", energies_kev=small * 1.01)
+        api.kk_calculate_real("SiO2", energies_kev=large * 0.99)
+    assert kk_programs(events) == []
+    api.kk_calculate_real("C", energies_kev=small)
+    with record_compiles() as events:
+        api.kk_calculate_real("C", energies_kev=large)
+    assert kk_programs(events) == ["_evaluate"]
+
+
+@pytest.mark.unit
+def test_kernel_evaluates_only_blocks_holding_real_energies(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Padded blocks cost nothing: 50 real energies in 4 blocks of 40 run 2 blocks."""
+    spectrum = Spectrum.from_numpy(
+        np.array([10.0, 100.0, 1000.0, 5000.0]),
+        np.array([[0.0, 1.0, 0.0, 0.0, 0.0]] * 3),
+        512,
+    )
+    calls: list[int] = []
+    original = transform.kk_piecewise_poly
+
+    def counted(e, seg, coeffs, rel):
+        jax.debug.callback(lambda: calls.append(1))
+        return original(e, seg, coeffs, rel)
+
+    monkeypatch.setattr(transform, "kk_piecewise_poly", counted)
+    padded = jax.numpy.asarray(np.linspace(20.0, 900.0, 160))
+    out = transform._kk_f1_blocks(padded, spectrum, 0.0, 50, block=40)
+    jax.block_until_ready(out)
+    assert len(calls) == 2
+    assert np.all(np.asarray(out)[50:] == 0.0)
+    assert np.all(np.isfinite(np.asarray(out)[:50]))
 
 
 _BUDGET_SCRIPT = """

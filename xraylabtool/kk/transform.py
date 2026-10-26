@@ -269,6 +269,10 @@ def _kk_f1_blocks(
 ) -> jax.Array:
     """Compiled block driver: f1 at bucket-padded energies, zero beyond ``n_valid``.
 
+    Blocks that start at or beyond ``n_valid`` are skipped (``lax.cond``), so
+    the work follows the real energy count rather than the padded length; the
+    result and its gradients are unchanged because those entries are zeroed.
+
     ``padded_energies`` has length ``block × n_blocks`` (both static through
     the array shape and ``block``); coefficients of segments at or beyond
     ``spectrum.n_segments`` are masked to exactly zero, so the result does not
@@ -277,8 +281,19 @@ def _kk_f1_blocks(
     seg, coeffs = _live_table(spectrum)
     rel = _f64(rel_corr)
     blocks = _f64(padded_energies).reshape(-1, block)
-    out = jax.lax.map(lambda e: kk_piecewise_poly(e, seg, coeffs, rel), blocks)
-    out = out.reshape(-1)
+    first = jnp.arange(blocks.shape[0]) * block
+
+    def one(args: tuple[jax.Array, jax.Array]) -> jax.Array:
+        e, lo = args
+        f1: jax.Array = jax.lax.cond(
+            lo < n_valid,
+            lambda e: kk_piecewise_poly(e, seg, coeffs, rel),
+            jnp.zeros_like,
+            e,
+        )
+        return f1
+
+    out = jax.lax.map(one, (blocks, first)).reshape(-1)
     return jnp.where(jnp.arange(out.size) < n_valid, out, 0.0)
 
 
@@ -314,12 +329,12 @@ def kk_f1(
         Relativistic correction Z* (see :func:`relativistic_correction`).
     block : int, optional
         Static upper bound on energies per block; default
-        ``min(2**22 // capacity, m)``, rounded down to a power of two or
-        bucket-ladder value. ``m`` is first rounded up to a power of two and
-        the block count follows from it (see
-        :func:`~xraylabtool.kk._shapes.energy_blocks`), so repeated calls
-        share compiled programs and evaluate fewer than ``2m`` energies plus
-        at most one block.
+        ``min(2**18 // capacity, m)``, rounded down to a power of two. ``m``
+        is first rounded up to a power of two and the block count follows
+        from it (see :func:`~xraylabtool.kk._shapes.energy_blocks`), so
+        repeated calls share compiled programs, and blocks past the last real
+        energy are skipped, so fewer than ``m`` plus one block of energies
+        are evaluated.
 
     Returns
     -------
@@ -392,7 +407,7 @@ def kk_real_spectrum(
         Relativistic correction Z* (see :func:`relativistic_correction`).
     chunk_size : int, optional
         Upper bound on energies per block (rounded down to a power of two or
-        bucket-ladder value). Default: ``2**22 // capacity``, about 32 MiB per
+        bucket-ladder value). Default: ``2**18 // capacity``, about 2 MiB per
         float64 temporary.
 
     Returns

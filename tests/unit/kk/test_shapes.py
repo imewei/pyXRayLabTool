@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from xraylabtool.kk._shapes import block_for, bucket, bucket_pow2, energy_blocks
+from xraylabtool.kk._shapes import (
+    EVAL_ELEMENTS,
+    block_for,
+    bucket,
+    bucket_pow2,
+    energy_blocks,
+)
 
 
 @pytest.mark.unit
@@ -90,7 +96,7 @@ def test_block_for_never_exceeds_the_request() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("m", [1, 7, 100, 1000, 3000, 10000])
+@pytest.mark.parametrize("m", [1, 7, 100, 1000, 1116, 3000, 10000])
 @pytest.mark.parametrize("chunk", [None, 7, 512])
 def test_energy_blocks_padded_length_is_bounded(m: int, chunk: int | None) -> None:
     block, n_blocks = energy_blocks(chunk, 1248, m)
@@ -102,6 +108,25 @@ def test_energy_blocks_padded_length_is_bounded(m: int, chunk: int | None) -> No
     if chunk == 7 and m >= 7:
         assert block == 4
         assert padded < 2 * m  # power-of-two block: m_b is a multiple of it
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("capacity", [512, 1248, 3000])
+@pytest.mark.parametrize("chunk", [None, 7, 512])
+def test_energy_blocks_live_work_is_within_one_block_of_m(
+    capacity: int, chunk: int | None
+) -> None:
+    """The kernel runs ceil(m / block) blocks: evaluated energies < m + block."""
+    for m in range(1, 20001):
+        block, n_blocks = energy_blocks(chunk, capacity, m)
+        live = -(-m // block)
+        assert live <= n_blocks
+        assert live * block < m + block
+        assert block * capacity <= max(EVAL_ELEMENTS, capacity)
+    # 5 % of m once m is a few blocks long, at the block the CPU sweep favoured
+    block, _ = energy_blocks(None, 1248, 1116)
+    assert block == 128
+    assert -(-1116 // block) * block / 1116 < 1.05
 
 
 @pytest.mark.unit

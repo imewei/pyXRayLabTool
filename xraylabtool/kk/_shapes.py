@@ -18,6 +18,12 @@ from __future__ import annotations
 # temporaries the kernel keeps alive at once.
 CHUNK_ELEMENTS = 2**22
 
+# Energy evaluation works on blocks of at most this many (block, n_segments)
+# elements (2 MiB per float64 temporary): small enough to stay cache-resident,
+# which measured fastest on CPU, and fine enough that the energies evaluated
+# beyond the real count are below one block.
+EVAL_ELEMENTS = 2**18
+
 _MIN_BUCKET_FLOOR = 64
 
 
@@ -98,10 +104,15 @@ def bucket_pow2(n: int, minimum: int = 8) -> int:
     return 1 << (max(n, minimum, 1) - 1).bit_length()
 
 
-def block_for(chunk_size: int | None, capacity: int, m: int) -> int:
+def block_for(
+    chunk_size: int | None,
+    capacity: int,
+    m: int,
+    elements: int = CHUNK_ELEMENTS,
+) -> int:
     """Energies per block: a ladder or power-of-two value never above the request.
 
-    The upper bound is ``min(chunk_size, 2**22 // capacity, m)`` (at least 1);
+    The upper bound is ``min(chunk_size, elements // capacity, m)`` (at least 1);
     the result is the largest power of two or :func:`bucket` ladder value that
     does not exceed it, so a requested ``chunk_size`` is never exceeded.
 
@@ -113,6 +124,8 @@ def block_for(chunk_size: int | None, capacity: int, m: int) -> int:
         Segment capacity of the spectrum (columns of each temporary).
     m : int
         Number of energies to evaluate.
+    elements : int, default ``CHUNK_ELEMENTS``
+        Element budget of one ``(block, capacity)`` temporary.
 
     Returns
     -------
@@ -129,7 +142,7 @@ def block_for(chunk_size: int | None, capacity: int, m: int) -> int:
     >>> block_for(7, 1228, 1000), block_for(None, 1228, 1)
     (4, 1)
     """
-    limit = min(CHUNK_ELEMENTS // max(capacity, 1), m)
+    limit = min(elements // max(capacity, 1), m)
     if chunk_size is not None:
         limit = min(limit, chunk_size)
     limit = max(limit, 1)
@@ -145,11 +158,13 @@ def energy_blocks(chunk_size: int | None, capacity: int, m: int) -> tuple[int, i
     """Static ``(block, n_blocks)`` for evaluating ``m`` energies.
 
     ``m`` is first rounded up to a power of two (``m_b``, no minimum); the
-    block is then :func:`block_for` ``(chunk_size, capacity, m_b)`` and
-    ``n_blocks = ⌈m_b / block⌉``. The padded length ``block * n_blocks`` is
-    below ``2m`` plus at most one block, and the number of distinct pairs
-    grows only with ``log₂ m`` (times the distinct capacities and chunk
-    sizes in use).
+    block is then :func:`block_for` ``(chunk_size, capacity, m_b)`` with the
+    cache-sized budget :data:`EVAL_ELEMENTS`, and ``n_blocks = ⌈m_b / block⌉``.
+    The padded length ``block * n_blocks`` is below ``2m`` plus at most one
+    block and the number of distinct pairs grows only with ``log₂ m`` (times
+    the distinct capacities and chunk sizes in use). The kernel evaluates only
+    the ``⌈m / block⌉`` blocks that hold a real energy, so the work done is
+    below ``m + block`` energies whatever the padded length.
 
     Parameters
     ----------
@@ -173,8 +188,8 @@ def energy_blocks(chunk_size: int | None, capacity: int, m: int) -> tuple[int, i
     --------
     >>> from xraylabtool.kk._shapes import energy_blocks
     >>> energy_blocks(None, 1248, 1000), energy_blocks(7, 1248, 1000)
-    ((1024, 1), (4, 256))
+    ((128, 8), (4, 256))
     """
     m_b = bucket_pow2(m, minimum=1)
-    block = block_for(chunk_size, capacity, m_b)
+    block = block_for(chunk_size, capacity, m_b, EVAL_ELEMENTS)
     return block, -(-m_b // block)
