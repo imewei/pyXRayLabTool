@@ -303,8 +303,9 @@ cold start:
 
    warm_up(("SiO2",))  # compiles the default and refined (0.01) programs
 
-``warm_up`` is called only by the GUI, on an idle worker after the window is
-shown. The ``xraylabtool kk`` command and the GUI launcher also enable JAX's
+The GUI warms the programs of its own default Compute click on an idle worker
+after the window is shown (through the public ``kk_calculate_real``, with the
+tab's explicit energy grid); the library never warms up by itself. The ``xraylabtool kk`` command and the GUI launcher also enable JAX's
 persistent compile cache (``xraylabtool/jax`` under the OS user-cache
 directory, compile-time threshold 0) unless ``jax_compilation_cache_dir`` is
 already configured or ``XRAYLABTOOL_NO_JAX_CACHE=1`` is set. The library never
@@ -379,8 +380,9 @@ JAX vs NumPy memory semantics:
 **Kramers-Kronig padding:** a ``Spectrum`` of ``n`` segments is stored at a
 capacity ``N >= n`` with zero-coefficient pad segments on knots
 ``x_n * (1 + k)``, which contribute exactly nothing to the transform. Memory is
-bounded by ``chunk_size`` (energies per block, an upper bound; default about
-2 MiB per float64 temporary), and the true counts are traced int32 leaves so
+bounded by ``chunk_size`` (energies per block, an upper bound; the default
+depends on the platform: cache-sized blocks of about 2 MiB per float64
+temporary on a CPU, one block or blocks of about 32 MiB on an accelerator), and the true counts are traced int32 leaves so
 different-sized spectra of one capacity share a compiled program.
 
 

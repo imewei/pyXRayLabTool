@@ -65,8 +65,8 @@ Equation numbers refer to B. Watts, *Opt. Express* **22**\ (19), 23628 (2014).
      - High-level entry point (keV) and its result.
    * - ``warm_up``
      - not in the paper
-     - Precompiles the default device programs for given formulas (used by the
-       GUI; see :doc:`../guides/kk_guide`).
+     - Precompiles the default device programs for given formulas (the GUI
+       warms its own Compute call the same way; see :doc:`../guides/kk_guide`).
    * - ``calculate_properties_from_factors``
      - not in the paper
      - ``xraylabtool.calculators.core``: δ, β and derived quantities from

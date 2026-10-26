@@ -275,7 +275,7 @@ Array shapes are rounded up to buckets, so a second call with other values and
 the same buckets compiles nothing.
 
 The first call in a process compiles. Measured on a CPU, ``SiO2`` with
-``refine_tolerance=0.01``: about 1.3-1.5 s cold, 0.1-0.16 s warm (see
+``refine_tolerance=0.01``: about 1.3-1.5 s cold and 0.15-0.16 s warm (medians; the fastest warm calls were 0.10-0.12 s) (see
 :doc:`../architecture/005-adr-kk-jax-only` for the table and its caveats).
 Two things reduce the cold cost:
 
@@ -286,13 +286,14 @@ Two things reduce the cold cost:
   cache the cold refined run takes about 0.6 s. When it turns the cache on it
   also sets ``jax_persistent_cache_min_compile_time_secs`` to 0, because JAX's
   default of 1 s would skip nearly every kk program. It does nothing if you
-  already set ``jax_compilation_cache_dir`` (or the threshold), or if
-  ``XRAYLABTOOL_NO_JAX_CACHE=1``. The library itself never enables the cache;
+  already set ``jax_compilation_cache_dir`` or if ``XRAYLABTOOL_NO_JAX_CACHE=1``;
+  a threshold you set yourself is kept. The library itself never enables the cache;
   to use it from Python set ``jax_compilation_cache_dir`` yourself.
 - **Warm-up.** :func:`~xraylabtool.kk.api.warm_up` compiles the programs a
   default calculation of the given formulas and a refined run touch. The GUI
-  calls it on an idle worker after the window is shown; the command line never
-  does, so a one-shot call does not pay for formulas it was not asked for.
+  warms the programs of its own Compute click on an idle worker after the
+  window is shown; the command line never warms up, so a one-shot call does
+  not pay for formulas it was not asked for.
 
 >>> from xraylabtool.kk import warm_up
 >>> warm_up(("Si",), refine_tolerance=None)

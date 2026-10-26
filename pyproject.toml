@@ -151,13 +151,13 @@ dependencies = [
 [project.optional-dependencies]
 gpu_cuda13 = [
     # CUDA 13 GPU support (SM >= 7.5: Turing+) — versions must match jaxlib
-    "jax-cuda13-plugin>=0.8.0",
-    "jax-cuda13-pjrt>=0.8.0",
+    "jax-cuda13-plugin>=0.12.0.1",
+    "jax-cuda13-pjrt>=0.12.0.1",
 ]
 gpu_cuda12 = [
     # CUDA 12 GPU support (SM >= 5.2: Maxwell+) — versions must match jaxlib
-    "jax-cuda12-plugin>=0.8.0",
-    "jax-cuda12-pjrt>=0.8.0",
+    "jax-cuda12-plugin>=0.12.0.1",
+    "jax-cuda12-pjrt>=0.12.0.1",
 ]
 [project.urls]
 Homepage = "https://github.com/imewei/pyXRayLabTool"

@@ -96,8 +96,10 @@ def test_cache_helper_respects_opt_out_and_existing_config(
 
 @pytest.mark.unit
 def test_cache_helper_keeps_user_threshold(
-    cache_config: None, monkeypatch: pytest.MonkeyPatch
+    cache_config: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    monkeypatch.setattr(sys, "platform", "linux")
     jax.config.update("jax_persistent_cache_min_compile_time_secs", 5.0)
     assert _device.enable_persistent_cache() is True
     assert jax.config.jax_persistent_cache_min_compile_time_secs == 5.0

@@ -129,13 +129,85 @@ def test_close_during_warm_up_does_not_hang(
     t0 = time.perf_counter()
     win.close()
     assert time.perf_counter() - t0 < 5.0  # close never waits for the running job
-    assert QThreadPool.globalInstance().waitForDone(120_000)  # and it does finish
+    assert QThreadPool.globalInstance().waitForDone(20_000)  # and it does finish
 
 
 def test_warm_up_failure_is_logged_not_raised(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
+    import logging
+
     from xraylabtool.gui import services
 
-    monkeypatch.setattr("xraylabtool.kk.warm_up", MagicMock(side_effect=OSError("x")))
-    services.warm_up_kk()  # must not raise
+    monkeypatch.setattr(
+        "xraylabtool.kk.kk_calculate_real", MagicMock(side_effect=OSError("boom"))
+    )
+    logger = logging.getLogger(services.logger.name)
+    logger.addHandler(caplog.handler)
+    try:
+        with caplog.at_level(logging.WARNING, logger=logger.name):
+            services.warm_up_kk()  # must not raise
+    finally:
+        logger.removeHandler(caplog.handler)
+    assert any(
+        r.levelno == logging.WARNING and "kk warm-up failed" in r.getMessage()
+        for r in caplog.records
+    )
+
+
+_WARM_GUI_SCRIPT = """
+    import json, os
+    os.environ["QT_QPA_PLATFORM"] = "offscreen"
+    import jax
+    jax.config.update("jax_log_compiles", True)  # worker threads: not thread-local
+    from PySide6.QtCore import QThreadPool
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication, QMessageBox
+    from tests.fixtures.kk_compiles import kk_programs, record_compiles
+    from xraylabtool.gui.main_window import MainWindow
+
+    QMessageBox.critical = staticmethod(lambda *a, **k: None)
+    app = QApplication([])
+    win = MainWindow()
+    if {warm}:
+        win.start_kk_warm_up()
+        assert QThreadPool.globalInstance().waitForDone(120000)
+    with record_compiles() as events:
+        win.kk_run_btn.click()  # default form: SiO2, 500 points, 1-30 keV, refine off
+        for _ in range(3000):
+            app.processEvents()
+            QTest.qWait(10)
+            if not win._workers:
+                break
+        assert win.kk_result is not None
+    print(json.dumps(kk_programs(events)))
+"""
+
+
+def test_warm_up_covers_the_first_compute_click() -> None:
+    """Fresh interpreters: after the idle warm-up the default click compiles nothing."""
+    from tests.unit.kk.test_pipeline_device import _subprocess
+
+    assert _subprocess(
+        _WARM_GUI_SCRIPT.format(warm=False)
+    )  # control: cold click compiles
+    assert _subprocess(_WARM_GUI_SCRIPT.format(warm=True)) == []
+
+
+def test_launcher_schedules_the_warm_up(monkeypatch: pytest.MonkeyPatch) -> None:
+    from xraylabtool.gui import __main__ as launcher
+
+    timer = MagicMock()
+    window = MagicMock()
+    monkeypatch.setattr(launcher, "QTimer", timer)
+    monkeypatch.setattr(launcher, "QApplication", MagicMock())
+    monkeypatch.setattr(launcher, "ThemeManager", MagicMock())
+    monkeypatch.setattr(launcher, "MainWindow", MagicMock(return_value=window))
+    with pytest.raises(SystemExit):
+        launcher.main([])
+    timer.singleShot.assert_called_once_with(0, window.start_kk_warm_up)
+
+    timer.reset_mock()
+    with pytest.raises(SystemExit):
+        launcher.main(["--test-launch"])  # smoke mode quits after 500 ms, no warm-up
+    assert [c.args[0] for c in timer.singleShot.call_args_list] == [500]

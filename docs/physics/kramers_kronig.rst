@@ -291,8 +291,9 @@ Eq. (8) (D1), so it cannot reproduce that test, and no such claim is made.
   (Si, Au, SiO\ :sub:`2`, Ar, Ne, a synthetic spectrum, and polystyrene with
   its upstream near-edge example), the JAX kernel (the only implementation)
   agrees with f2 to 1e-12 relative (measured 4.3e-16) and with f1 to a
-  relative tolerance of 1e-8 plus a multiple of the rounding scale of the
-  closed-form sum; the measured excess is at most 2.0 times that scale. The
+  relative tolerance of 1e-8 plus 32 times the rounding scale of the
+  closed-form sum (the largest difference seen on the transform goldens is 2.1
+  times that scale, Au at 13.1 eV). The
   fused XLA expressions round differently from upstream's NumPy, which is why
   the tolerance has a rounding-scale term and why the JAX floor is
   ``>=0.12.0.1`` (the release the tolerances were measured on). The worst case

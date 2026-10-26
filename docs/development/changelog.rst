@@ -28,7 +28,7 @@ Unreleased
 - Docs: ``physics/kramers_kronig`` (equations, the Eq. (10) a₋₃ sign erratum, accuracy, 30 keV truncation), ``api/kk`` and ``guides/kk_guide``; ``NOTICE`` with the kkcalc Zlib attribution.
 - ``xraylabtool.kk`` is JAX-only: one ``jax.numpy`` implementation, a single device-resident pipeline (one upload, one status fetch after assembly and merge, one per refinement pass, one download) over bucketed shapes, so a default refined run compiles five programs and a second call with the same buckets compiles none. See ADR-005.
 - ``xraylabtool.kk.Spectrum`` (padded piecewise-polynomial f2 table, a JAX pytree) and ``xraylabtool.kk.kk_f1``: ``jit``/``vmap``/``grad``-compatible device-level f1.
-- ``xraylabtool.kk.warm_up(formulas=("SiO2",), refine_tolerance=0.01)`` precompiles the default programs; the GUI calls it on an idle worker, the CLI never does.
+- ``xraylabtool.kk.warm_up(formulas=("SiO2",), refine_tolerance=0.01)`` precompiles the default programs. The GUI warms the programs of its own Compute click on an idle worker; the CLI never warms up.
 - The ``xraylabtool kk`` command and the GUI launcher enable JAX's persistent compile cache under the OS user-cache directory (``xraylabtool/jax``, compile-time threshold 0) unless ``jax_compilation_cache_dir`` is already set or ``XRAYLABTOOL_NO_JAX_CACHE=1``; the library never enables it.
 - ``scripts/kk_gpu_check.py``: manual GPU gate (oracle, additivity, transfer budget with the guard live, padding invariance, f2 at the Si edge, benchmark) for the CUDA machine.
 - ``docs/architecture/005-adr-kk-jax-only.md``; ``jax_architecture`` and the kk guide describe the device pipeline.

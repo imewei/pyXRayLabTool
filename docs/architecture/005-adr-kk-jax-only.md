@@ -51,8 +51,10 @@ NumPy twin of any algorithm and no `ops`-proxy dispatch inside `kk`.
    every worker entry, not only at import.
 6. **Persistent compile cache for the CLI and GUI only.** They call
    `xraylabtool.kk._device.enable_persistent_cache()`; the library never does.
-   `XRAYLABTOOL_NO_JAX_CACHE=1` opts out. The GUI also calls `kk.warm_up()` on
-   an idle worker; the CLI never does.
+   `XRAYLABTOOL_NO_JAX_CACHE=1` opts out. The GUI also warms, on an idle
+   worker, the programs of its own default Compute click (the public
+   `kk_calculate_real` with the tab's explicit grid; `kk.warm_up()` does the
+   same for the default grid); the CLI never warms up.
 
 ## Evidence
 
@@ -93,8 +95,8 @@ were measured, not loosened.
 
 ## Consequences
 
-- **Cold start grows.** A one-shot CLI call that took about 0.3-0.4 s now takes
-  about 1.3-1.5 s when it must compile, and about 0.6 s with the persistent
+- **Cold start grows.** A cold refined `SiO2` run took 0.29 s with NumPy and now
+  takes 1.31-1.46 s when it must compile, and 0.58-0.65 s with the persistent
   cache filled. The persistent cache is therefore on by default in the CLI and
   GUI, with the compile-time threshold set to 0 because JAX's default of 1 s
   would skip nearly every kk program.
@@ -102,6 +104,9 @@ were measured, not loosened.
   and ignored by `kk` (no warning, no error); the rest of the package keeps its
   backend selection. `KKResult.backend` is always `"jax"` from `kk`; the legacy
   value `"numpy"` is still accepted when constructing a `KKResult`.
+- **Open acceptance item: the CPU gate "refined warm <= 0.10 s" was NOT met** in
+  the runs above (median 0.154-0.158 s, min 0.096-0.119 s, on a loaded shared
+  machine). The figure will be updated after a run on a quiet machine.
 - `ensure_float64` is removed from `xraylabtool.backend.array_ops`; `kk`
   establishes x64 itself.
 - Tests that were parametrised over NumPy and JAX collapse to JAX. The

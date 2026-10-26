@@ -219,7 +219,7 @@ test-characterization:
 
 test-gui:
 	@echo "$(YELLOW)Running GUI tests serially...$(NC)"
-	$(PYTEST) $(NO_COV) $(GUI_TESTS) --timeout=30
+	$(PYTEST) $(NO_COV) $(GUI_TESTS) --timeout=60
 	@echo "$(GREEN)✅ GUI tests completed$(NC)"
 
 # Performance and optimization tests

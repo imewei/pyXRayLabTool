@@ -113,19 +113,28 @@ class KKComputation:
     """CXRO f1 per formula unit (electrons) at ``cxro_energy_kev``, shape (k,)."""
 
 
-def warm_up_kk() -> None:
-    """Precompile the default Kramers-Kronig programs (no Qt, safe in a worker).
+def warm_up_kk(
+    formula: str = "SiO2",
+    energies_kev: ArrayLike | None = None,
+    refine_tolerance: float = 0.01,
+) -> None:
+    """Precompile the programs of the KK tab's Compute click (no Qt, safe in a worker).
 
-    Best effort: a failure is logged, never raised, because nothing the user
-    asked for depends on it.
+    Runs the same public call the tab makes (``kk_calculate_real`` with an
+    explicit energy grid), once without and once with refinement, so whatever
+    buckets that call uses are the ones compiled. Best effort: a failure is
+    logged, never raised, because nothing the user asked for depends on it.
     """
-    from xraylabtool.kk import warm_up
+    from xraylabtool.kk import kk_calculate_real
     from xraylabtool.kk._device import ensure_x64, worker_guard
 
     ensure_x64()
     try:
         with worker_guard():
-            warm_up()
+            kk_calculate_real(formula, energies_kev=energies_kev)
+            kk_calculate_real(
+                formula, energies_kev=energies_kev, refine_tolerance=refine_tolerance
+            )
     except Exception:
         logger.warning("kk warm-up failed", exc_info=True)
 

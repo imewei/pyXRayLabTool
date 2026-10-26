@@ -235,15 +235,28 @@ class KKTabMixin:
             self.threadpool.start(worker)
 
     def start_kk_warm_up(self: MainWindowProtocol) -> None:
-        """Precompile the default KK programs on an idle pool thread.
+        """Precompile the programs of the tab's default Compute click on an idle thread.
 
-        Called by the launcher once the window is shown. The worker is not
-        tracked and has no result handlers: it must not touch the KK tab.
+        Called by the launcher once the window is shown. It uses the formula and
+        energy grid currently in the form, so the first click with those values
+        compiles nothing. The worker is not tracked and has no result handlers:
+        it must not touch the KK tab.
         """
         if self.threadpool is None:
             self.threadpool = QThreadPool.globalInstance()
         if self.threadpool is not None:
-            self.threadpool.start(CalculationWorker(warm_up_kk))
+            grid = _kk_energy_grid(
+                self.kk_energy_start.value(),
+                self.kk_energy_end.value(),
+                self.kk_points.value(),
+                None,
+                self.kk_energy_unit.currentText(),
+            )
+            self.threadpool.start(
+                CalculationWorker(
+                    warm_up_kk, self.kk_formula.text().strip() or "SiO2", grid
+                )
+            )
 
     def _on_kk_finished(self: MainWindowProtocol, computation: Any) -> None:
         self.kk_run_btn.setEnabled(True)

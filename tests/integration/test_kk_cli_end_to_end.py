@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 
 from xraylabtool.interfaces.cli import main
-from xraylabtool.kk import kk_calculate_real
+from xraylabtool.kk import kk_calculate_real, load_nearedge
 
 ROOT = Path(__file__).resolve().parents[2]
 EDGE = ROOT / "tests" / "characterization" / "kk" / "nearedge_example.txt"
@@ -53,6 +53,13 @@ def _table(text: str) -> dict[str, np.ndarray]:
     return dict(zip(rows[0], data.T, strict=True))
 
 
+def _assert_matches(table: dict[str, np.ndarray], ref) -> None:
+    """Grid, f1 and f2 of a CLI table equal the API result at rtol 1e-12."""
+    np.testing.assert_allclose(table["energy_keV"], ref.energy_kev, rtol=1e-12)
+    np.testing.assert_allclose(table["f1"], ref.f1, rtol=1e-12)
+    np.testing.assert_allclose(table["f2"], ref.f2, rtol=1e-12)
+
+
 @pytest.mark.integration
 @pytest.mark.parametrize("runner", ["in_process", "subprocess"])
 class TestKKCliEndToEnd:
@@ -68,8 +75,7 @@ class TestKKCliEndToEnd:
     def test_compound_default_grid(self, runner, capsys):
         rc, out, _ = self.run(runner, ["kk", "SiO2"], capsys)
         assert rc == 0
-        table = _table(out)
-        assert table["energy_keV"].size > 100
+        _assert_matches(_table(out), kk_calculate_real("SiO2"))
 
     def test_energy_list_matches_api(self, runner, capsys):
         rc, out, _ = self.run(runner, ["kk", "Si", "--energies", "1,2,5"], capsys)
@@ -80,15 +86,27 @@ class TestKKCliEndToEnd:
     def test_refine(self, runner, capsys):
         rc, out, err = self.run(runner, ["kk", "Si", "--refine", "0.05"], capsys)
         assert rc == 0
-        assert "Refinement added" in err
-        assert (np.diff(_table(out)["energy_keV"]) > 0).all()
+        ref = kk_calculate_real("Si", refine_tolerance=0.05)
+        assert f"Refinement added {ref.n_refined_points} points" in err
+        table = _table(out)
+        assert ref.n_refined_points > 0
+        assert table["energy_keV"].size > kk_calculate_real("Si").energy_kev.size
+        _assert_matches(table, ref)
 
     def test_nearedge_with_merge(self, runner, capsys):
         argv = ["kk", "C8H8", *EDGE_ARGS, "--merge", "280,320"]
         rc, out, _ = self.run(runner, argv, capsys)
         assert rc == 0
-        grid = _table(out)["energy_keV"]
-        assert ((grid > 0.28) & (grid < 0.32)).any()  # near-edge knots are in the grid
+        ref = kk_calculate_real(
+            "C8H8",
+            nearedge=load_nearedge(str(EDGE), energy_unit="eV"),
+            input_type="nexafs",
+            merge_points_kev=(0.28, 0.32),
+        )
+        # Ignoring --nearedge/--merge would give the plain tabulated grid and f1.
+        assert ref.merge_points_kev == (0.28, 0.32)
+        assert ref.energy_kev.size != kk_calculate_real("C8H8").energy_kev.size
+        _assert_matches(_table(out), ref)
 
     @pytest.mark.parametrize("fmt", ["csv", "json"])
     def test_output_file_round_trip(self, runner, capsys, tmp_path, fmt):
@@ -154,3 +172,21 @@ def test_version_unaffected() -> None:
     done = _subprocess(["--version"])
     assert done.returncode == 0
     assert "jax" not in done.stderr.lower()
+
+
+@pytest.mark.integration
+def test_cli_writes_the_persistent_compile_cache(tmp_path: Path) -> None:
+    """The CLI enables the cache by default: compiled programs land in the cache dir."""
+    env = {k: v for k, v in os.environ.items() if k != "XRAYLABTOOL_NO_JAX_CACHE"}
+    env.update(JAX_PLATFORMS="cpu", XDG_CACHE_HOME=str(tmp_path), PYTHONPATH=str(ROOT))
+    done = subprocess.run(
+        [sys.executable, "-c", _ENTRY, "kk", "Si", "--energies", "1,2"],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        env=env,
+        timeout=300,
+        check=False,
+    )
+    assert done.returncode == 0, done.stderr[-2000:]
+    assert any((tmp_path / "xraylabtool" / "jax").iterdir())
