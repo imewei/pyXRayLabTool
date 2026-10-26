@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-
 import numpy as np
 import pytest
 
@@ -122,11 +120,10 @@ def test_refinement_accepts_keV_values_that_collide_in_eV() -> None:
 
 @pytest.mark.unit
 def test_skipped_sliver_log_pairs_widest_width_with_its_own_energy(
-    caplog: pytest.LogCaptureFixture,
+    kk_log: pytest.LogCaptureFixture,
 ) -> None:
-    with caplog.at_level(logging.INFO, logger="xraylabtool.kk"):
-        _log_skipped([(10.0, 0.1), (5.0e5, 8000.0)], 1, 0.05)
-    assert "widest 8e+03 eV at 500000 eV" in caplog.text
+    _log_skipped([(10.0, 0.1), (5.0e5, 8000.0)], 1, 0.05)
+    assert "widest 8e+03 eV at 500000 eV" in kk_log.text
 
 
 @pytest.mark.unit
