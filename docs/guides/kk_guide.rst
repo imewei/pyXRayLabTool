@@ -298,6 +298,13 @@ Two things reduce the cold cost:
 >>> from xraylabtool.kk import warm_up
 >>> warm_up(("Si",), refine_tolerance=None)
 
+The kk functions need 64-bit mode and switch ``jax_enable_x64`` on when they
+are called. A surrounding thread-local ``jax.enable_x64(False)`` context is not
+overridden: the call raises ``TypeError`` naming ``jax_enable_x64``. Known
+deviations from the performance gates (CPU refined-warm, small-m GPU overhead,
+bare-library GPU cold start) are listed in
+:doc:`../architecture/005-adr-kk-jax-only`.
+
 Gradients
 ~~~~~~~~~
 

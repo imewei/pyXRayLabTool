@@ -291,7 +291,8 @@ Compilation in XRayLabTool
 **Kramers-Kronig programs and shape buckets:**
 
 ``xraylabtool.kk`` compiles only for *bucketed* shapes: segment tables are
-padded to a geometric capacity ladder and energy counts to powers of two, so a
+padded to a geometric capacity ladder and energy counts to a power of two on
+CPU (the fine bucket ladder in equal blocks on accelerators), so a
 default refined ``SiO2`` run compiles five top-level programs (``_assemble``,
 ``_evaluate``, ``_first_pass``, ``_refine_pass``, ``_finalize``) and a second
 call with other values but the same buckets compiles none. Two helpers cut the

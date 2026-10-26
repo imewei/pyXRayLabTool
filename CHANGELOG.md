@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `xraylabtool.kk.warm_up(formulas=("SiO2",), refine_tolerance=0.01)` precompiles the default programs. The GUI warms the programs of its own Compute click on an idle worker; the CLI never warms up.
 - The `xraylabtool kk` command and the GUI launcher enable JAX's persistent compile cache under the OS user-cache directory (`xraylabtool/jax`, compile-time threshold 0) unless `jax_compilation_cache_dir` is already set or `XRAYLABTOOL_NO_JAX_CACHE=1`; the library never enables it.
 - `scripts/kk_gpu_check.py`: manual GPU gate (oracle, additivity, transfer budget with the guard live, padding invariance, f2 at the Si edge, benchmark) for the CUDA machine.
-- `docs/architecture/005-adr-kk-jax-only.md`; `jax_architecture` and the kk guide describe the device pipeline.
+- `docs/architecture/005-adr-kk-jax-only.md` (with the section "Known deviations from the acceptance gates": CPU refined run 10-20 % slower than the forced-JAX baseline, GPU small-m overhead of 2-4 ms, bare-library GPU cold start 3.7-4.4 s); `jax_architecture` and the kk guide describe the device pipeline.
 
 ### Changed
 - Licence expression is `MIT AND Zlib` in `pyproject.toml` and `conda-recipe/meta.yaml`; `LICENSE-kkcalc.txt` ships in the sdist and wheel.

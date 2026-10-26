@@ -38,8 +38,9 @@ NumPy twin of any algorithm and no `ops`-proxy dispatch inside `kk`.
    stacked and `vmap`-ed. `Spectrum` and `kk_f1` are public and
    `jit`/`vmap`/`grad`-compatible.
 3. **Shape buckets.** Every compiled entry sees only bucketed shapes
-   (a geometric ladder with ratio at most 1.25 for segment capacities, powers
-   of two for energy counts), so the set of compiled programs is small. A
+   (a geometric ladder with ratio at most 1.25 for segment capacities; for
+   energy counts a power of two on CPU, the fine bucket ladder in equal blocks
+   on accelerators), so the set of compiled programs is small. A
    default refined `SiO2` run compiles five top-level programs
    (`_assemble`, `_evaluate`, `_first_pass`, `_refine_pass`, `_finalize`); a
    second call with other values and the same buckets compiles none.
@@ -104,9 +105,6 @@ were measured, not loosened.
   and ignored by `kk` (no warning, no error); the rest of the package keeps its
   backend selection. `KKResult.backend` is always `"jax"` from `kk`; the legacy
   value `"numpy"` is still accepted when constructing a `KKResult`.
-- **Open acceptance item: the CPU gate "refined warm <= 0.10 s" was NOT met** in
-  the runs above (median 0.154-0.158 s, min 0.096-0.119 s, on a loaded shared
-  machine). The figure will be updated after a run on a quiet machine.
 - `ensure_float64` is removed from `xraylabtool.backend.array_ops`; `kk`
   establishes x64 itself.
 - Tests that were parametrised over NumPy and JAX collapse to JAX. The
@@ -115,6 +113,37 @@ were measured, not loosened.
   release; releases 0.8.0 to 0.12.0 differ in the last digits of fused XLA
   expressions and miss some of them by a few units in the twelfth digit. The
   tolerances were not loosened; the dependency floor was raised instead.
+
+### Known deviations from the acceptance gates
+
+Measured on 2026-10-26 on a shared 20-core CPU and an RTX 4090 laptop GPU
+(times in ms; min / median where both are given). These gates were not met and
+are accepted:
+
+- **CPU refined run (`SiO2`, `refine_tolerance=0.01`) is 10-20 % slower in
+  steady state than the forced-JAX pipeline at `1bf56d9`.** Median at HEAD
+  128.5 / 151.3 / 132.5 / 143.9 against 119.4 / 117.6 / 124.5 / 122.5 (four
+  interleaved rounds). The gate "refined warm <= 0.10 s" is **not met**: the
+  median is about 0.125-0.155 s on this machine (minimum 0.096-0.119 s).
+- **GPU fixed overhead at small m** (device-side assembly plus the status
+  fetch), minimum ms, `1bf56d9` -> HEAD: m = 10^3 2.5 -> 4.1; m = 3100
+  5.2 -> 7.0; m = 10^4 13.0 -> 15.8 (the kernel gate of 20 ms is met);
+  m = 10^5 108.9 -> 115.1.
+- **Bare-library GPU refined cold run is 3.7-4.4 s against the 2.5 s gate**
+  (`1bf56d9` itself took 3.5 s). With the persistent cache primed it takes
+  0.54 s, which is what the CLI and GUI get.
+
+The cause is the design itself: the spectrum is assembled and merged on the
+device, so the inputs go up once and the result comes down once, at the price
+of a status fetch and a few more small programs than the host-assembled
+pipeline; cold compiles on a GPU are slower than on a CPU.
+
+### x64 requirement
+
+All kk entries need 64-bit mode and set `jax_enable_x64` globally when they are
+called. A surrounding thread-local `jax.enable_x64(False)` context is not
+overridden: inside it the call raises `TypeError` naming `jax_enable_x64`.
+This is a documented limitation.
 
 ## Alternatives considered
 

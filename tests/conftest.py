@@ -26,6 +26,9 @@ os.environ.setdefault("XLA_PYTHON_CLIENT_MEM_FRACTION", ".05")
 # The kk CLI/GUI entry points enable a persistent compile cache under the
 # user's home; keep the suite from writing there or caching across tests.
 os.environ.setdefault("XRAYLABTOOL_NO_JAX_CACHE", "1")
+# The kk worker entries (GUI services) run under a disallow_explicit transfer
+# guard when this is set; the library no longer detects pytest itself.
+os.environ.setdefault("XRAYLABTOOL_TRANSFER_GUARD", "1")
 
 # Import centralized test configuration
 from tests.fixtures.test_config import (

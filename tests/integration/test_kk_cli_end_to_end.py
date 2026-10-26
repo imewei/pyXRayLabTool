@@ -11,6 +11,7 @@ import subprocess
 import sys
 from unittest.mock import patch
 
+import jax
 import numpy as np
 import pytest
 
@@ -20,6 +21,9 @@ from xraylabtool.kk import kk_calculate_real, load_nearedge
 ROOT = Path(__file__).resolve().parents[2]
 EDGE = ROOT / "tests" / "characterization" / "kk" / "nearedge_example.txt"
 # main() reads sys.argv[1:], which after ``-c`` is exactly ``argv``.
+# The reference kk_calculate_real runs on this process's default device, so the
+# subprocess must use the same platform (a GPU host must not compare cpu to cuda).
+_PLATFORM = {"gpu": "cuda"}.get(jax.default_backend(), jax.default_backend())
 _ENTRY = "import sys; from xraylabtool.interfaces.cli import main; sys.exit(main())"
 EDGE_ARGS = ["--nearedge", str(EDGE), "--input-type", "nexafs"]
 
@@ -39,7 +43,7 @@ def _subprocess(argv: list[str]) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
         cwd=ROOT,
-        env={**os.environ, "JAX_PLATFORMS": "cpu"},
+        env={**os.environ, "JAX_PLATFORMS": _PLATFORM},
         timeout=300,
         check=False,
     )
