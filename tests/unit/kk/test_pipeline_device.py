@@ -243,7 +243,10 @@ def test_conversion_probe_sees_a_stray_conversion(
     """The probe has teeth: a bare ``np.asarray`` on a device array is recorded."""
     np.asarray(jax.numpy.arange(3.0))
     float(jax.numpy.float64(2.0))
-    assert stray_conversions == ["np.asarray", "__float__"]
+    # On an accelerator np.asarray also goes through __array__, so the list can
+    # carry an extra entry between the two; the order of these two is fixed.
+    assert {"np.asarray", "__float__"} <= set(stray_conversions)
+    assert stray_conversions.index("np.asarray") < stray_conversions.index("__float__")
 
 
 @pytest.mark.unit
@@ -345,7 +348,8 @@ def test_kernel_evaluates_only_blocks_holding_real_energies(
 def test_accelerator_block_rule_gives_the_same_result(
     kwargs: dict, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The GPU shape path (fine-ladder blocks) runs in CI by forcing the predicate."""
+    """Both block rules run on any host by forcing the platform predicate."""
+    monkeypatch.setattr(_shapes, "_on_cpu", lambda: True)
     cpu = api.kk_calculate_real("SiO2", **kwargs)
     chunk, m = kwargs.get("chunk_size"), cpu.energy_kev.size
     cpu_shape = _shapes.energy_blocks(chunk, 1248, m)
