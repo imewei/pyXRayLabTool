@@ -376,6 +376,8 @@ def check_bench(repeats: int) -> None:
     import kk_bench  # noqa: PLC0415
 
     platform = os.environ.get("JAX_PLATFORMS") or jax.default_backend()
+    if platform == "gpu":  # default_backend() says "gpu"; JAX_PLATFORMS=gpu probes ROCm
+        platform = "cuda"
     on_cpu = platform == "cpu"
     gates = kk_bench.GATES_MS if on_cpu else GPU_GATES_MS
     kern = kk_bench._run_worker("kernel", platform, repeats)
