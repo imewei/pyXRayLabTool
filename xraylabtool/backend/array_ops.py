@@ -308,12 +308,6 @@ def set_backend(name: str) -> None:
         _jit_cache.clear()
     except ImportError:
         pass
-    try:
-        from xraylabtool.kk.transform import _jit_cache as _kk_jit_cache
-
-        _kk_jit_cache.clear()
-    except ImportError:
-        pass
 
 
 class _OpsProxy:

@@ -5,12 +5,12 @@ from __future__ import annotations
 import doctest
 from pathlib import Path
 
+import jax
 import numpy as np
 import pytest
 from scipy.integrate import quad
 
 from tests.fixtures.kk_rounding import assert_kk_close
-from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
 from xraylabtool.kk import transform
 from xraylabtool.kk.transform import (
     kk_piecewise_poly,
@@ -35,25 +35,11 @@ def _args(g: dict[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray, float]:
     return g["seg_ev"], g["coeffs"], float(g["rel_corr"])
 
 
-@pytest.fixture(params=["numpy", "jax"])
-def backend_name(request: pytest.FixtureRequest):
-    """Run the test under each backend, restoring the original afterwards."""
-    if request.param == "jax":
-        pytest.importorskip("jax")
-    original = "jax" if isinstance(get_backend(), JaxBackend) else "numpy"
-    set_backend(request.param)
-    yield request.param
-    set_backend(original)
-
-
 @pytest.fixture
-def jax_backend():
-    """Select the JAX backend for one test, restoring the original afterwards."""
-    jax = pytest.importorskip("jax")
-    original = "jax" if isinstance(get_backend(), JaxBackend) else "numpy"
-    set_backend("jax")
-    yield jax
-    set_backend(original)
+def x64_restored():
+    """Restore ``jax_enable_x64`` after a test that switches it off."""
+    yield
+    jax.config.update("jax_enable_x64", True)
 
 
 # --- independent references -------------------------------------------------
@@ -280,8 +266,7 @@ def test_interior_knot_with_continuous_f2_is_finite_and_continuous(name: str) ->
 
 
 @pytest.mark.unit
-def test_gradient_at_continuous_knot_is_finite(jax_backend) -> None:
-    jax = jax_backend
+def test_gradient_at_continuous_knot_is_finite() -> None:
     jnp = jax.numpy
     g = _golden("si")
     seg, coeffs, rel = (jnp.asarray(a) for a in _args(g))
@@ -303,16 +288,21 @@ def test_jump_and_endpoint_follow_upstream_convention(name: str) -> None:
     g = _golden(name)
     mask = (g["eval_kind"] == 2) | (g["eval_kind"] == 3)
     assert np.any(g["eval_kind"] == 2)
-    out = kk_real_spectrum(g["eval_ev"][mask], *_args(g))
+    energies = g["eval_ev"][mask]
+    out = kk_real_spectrum(energies, *_args(g))
     assert np.isfinite(out).all()
-    np.testing.assert_allclose(out, g["f1_kk_pp"][mask], rtol=1e-10)
+    # XLA vs the NumPy-era rtol=1e-10: Ne at its 10 eV end point differs by
+    # 7.6e-9 = 0.62x the kernel's rounding scale (K = 32 allows 32x).
+    assert_kk_close(
+        out, g["f1_kk_pp"][mask], energies, g["seg_ev"], g["coeffs"], rtol=1e-10
+    )
 
 
-# --- evaluation order, chunking, backends ------------------------------------------
+# --- evaluation order, chunking ------------------------------------------
 
 
 @pytest.mark.unit
-def test_unsorted_duplicate_energies(backend_name: str) -> None:
+def test_unsorted_duplicate_energies() -> None:
     g = _golden("synthetic")
     energies = g["eval_ev"]
     rng = np.random.default_rng(7)
@@ -327,7 +317,7 @@ def test_unsorted_duplicate_energies(backend_name: str) -> None:
 
 
 @pytest.mark.unit
-def test_chunk_invariance(backend_name: str) -> None:
+def test_chunk_invariance() -> None:
     g = _golden("si")
     energies = g["eval_ev"]
     full = kk_real_spectrum(energies, *_args(g))
@@ -376,17 +366,7 @@ def test_empty_eval_returns_empty() -> None:
 
 
 @pytest.mark.unit
-def test_jax_numpy_parity(jax_backend) -> None:
-    g = _golden("au")
-    jax_out = kk_real_spectrum(g["eval_ev"], *_args(g))
-    set_backend("numpy")
-    np_out = kk_real_spectrum(g["eval_ev"], *_args(g))
-    assert_kk_close(jax_out, np_out, g["eval_ev"], g["seg_ev"], g["coeffs"], rtol=1e-8)
-
-
-@pytest.mark.unit
-def test_kernel_jits_without_tracer_error(jax_backend) -> None:
-    jax = jax_backend
+def test_kernel_jits_without_tracer_error() -> None:
     g = _golden("synthetic")
     jitted = jax.jit(kk_piecewise_poly)
     out = np.asarray(jitted(g["eval_ev"], *_args(g)))
@@ -395,8 +375,7 @@ def test_kernel_jits_without_tracer_error(jax_backend) -> None:
 
 
 @pytest.mark.unit
-def test_float32_inputs_give_float64_output(jax_backend) -> None:
-    jax = jax_backend
+def test_float32_inputs_give_float64_output(x64_restored) -> None:
     g = _golden("synthetic")
     e32 = g["eval_ev"].astype(np.float32)
     s32 = g["seg_ev"].astype(np.float32)
@@ -412,15 +391,6 @@ def test_float32_inputs_give_float64_output(jax_backend) -> None:
         float(np.float32(g["rel_corr"])),
     )
     np.testing.assert_allclose(out, expected, rtol=1e-12)
-
-
-@pytest.mark.unit
-def test_set_backend_clears_kk_cache(jax_backend) -> None:
-    g = _golden("synthetic")
-    kk_real_spectrum(g["eval_ev"], *_args(g))
-    assert transform._jit_cache
-    set_backend("numpy")
-    assert not transform._jit_cache
 
 
 @pytest.mark.unit

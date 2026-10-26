@@ -29,6 +29,13 @@ Equation numbers refer to B. Watts, *Opt. Express* **22**\ (19), 23628 (2014).
    * - ``kk_real_spectrum``
      - Eq. (10)
      - Validated, chunked wrapper of ``kk_piecewise_poly`` (eV).
+   * - ``kk_f1``
+     - Eq. (10)
+     - Device-level f1 of a padded ``Spectrum`` (eV); ``jit``/``vmap``/``grad``
+       compatible.
+   * - ``Spectrum``
+     - Eq. (8)
+     - Padded piecewise-polynomial f2 table, a JAX pytree (eV).
    * - ``relativistic_correction``
      - Eq. (9)
      - Z* of a formula unit.
@@ -92,6 +99,12 @@ Transform kernel
    :members:
    :undoc-members:
    :show-inheritance:
+
+Padded spectrum
+---------------
+
+.. autoclass:: xraylabtool.kk.Spectrum
+   :members:
 
 Compound spectrum
 -----------------
