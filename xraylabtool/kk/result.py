@@ -65,9 +65,10 @@ class KKResult:
         ``(energy_kev, f2)`` of the near-edge data on the scattering-factor
         scale, on its own energy grid; ``None`` without near-edge data.
     refine_exhausted : bool
-        ``True`` if adaptive refinement stopped on a limit (``max_passes``,
-        ``max_points`` or float spacing) before every interval met the
-        tolerance; ``False`` when it converged or was not requested.
+        ``True`` if adaptive refinement stopped on a limit
+        (``refine_max_passes``, ``refine_max_points`` or float spacing) before
+        every interval met the tolerance; ``False`` when it converged or was
+        not requested.
 
     References
     ----------
@@ -153,7 +154,8 @@ class KKResult:
         ``f1`` and ``f2`` of this result, with the same code as
         ``calculate_single_material_properties``. Negative ``f1`` near an
         absorption edge is kept (critical angle 0 there); the energy order is
-        preserved.
+        preserved. ``XRayResult`` has no field for it, so ``refine_exhausted``
+        is not carried over: check it on this result first.
 
         Parameters
         ----------

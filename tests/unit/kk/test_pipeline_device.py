@@ -765,6 +765,24 @@ def test_refine_exhausted_is_reported_on_the_result() -> None:
 
 
 @pytest.mark.unit
+def test_refine_exhausted_on_max_passes() -> None:
+    """Stopping on ``refine_max_passes`` is reported too, not only ``refine_max_points``."""
+    one_pass = api.kk_calculate_real("SiO2", refine_tolerance=1e-4, refine_max_passes=1)
+    assert one_pass.refine_exhausted
+    assert one_pass.n_refined_points > 0
+
+
+@pytest.mark.unit
+def test_refinement_knobs_do_not_recompile_assembly() -> None:
+    """``tolerance`` / ``max_points`` stay out of ``_assemble``'s pytree."""
+    api.kk_calculate_real("Cu")  # unrefined: compiles _assemble and _evaluate
+    with record_compiles() as events:
+        api.kk_calculate_real("Cu", refine_tolerance=0.05)
+        api.kk_calculate_real("Cu", refine_tolerance=0.2, refine_max_points=500)
+    assert "_assemble" not in kk_programs(events)
+
+
+@pytest.mark.unit
 def test_worker_guard_follows_the_environment(monkeypatch) -> None:
     """The guard is on only when XRAYLABTOOL_TRANSFER_GUARD is set."""
     monkeypatch.setenv("XRAYLABTOOL_TRANSFER_GUARD", "1")

@@ -275,6 +275,15 @@ class KKTabMixin:
                 self.kk_table.setItem(i, col, item)
         self.kk_table.resizeColumnsToContents()
         logger.info("kk_compute_complete", extra={"points": len(res.energy_kev)})
+        if res.refine_exhausted:
+            # The curve is plotted, but refinement stopped on a limit first.
+            message = (
+                "Kramers-Kronig done, but refinement stopped on a limit before "
+                "every interval met the tolerance"
+            )
+            self.status_bar.showMessage(message, 10000)
+            self.toast.show_toast(message, "warning")
+            return
         self._info("Kramers-Kronig calculation complete")
         self.toast.show_toast("Kramers-Kronig calculation done", "success")
 

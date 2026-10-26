@@ -20,9 +20,15 @@ class Toast(QLabel):
         self._kind_colors = {
             "info": "#00f0ff",
             "success": "#00ff9d",
+            "warning": "#ff9d00",
             "error": "#ff9d00",
         }
-        self._durations = {"info": 2000, "success": 2400, "error": 3500}
+        self._durations = {
+            "info": 2000,
+            "success": 2400,
+            "warning": 3500,
+            "error": 3500,
+        }
 
     def show_toast(
         self, message: str, kind: str = "info", duration_ms: int | None = None

@@ -184,8 +184,8 @@ def test_cli_writes_the_persistent_compile_cache(
 ) -> None:
     """The CLI enables the cache by default: compiled programs land in the cache dir."""
     # Every variable the OS-specific cache location reads (Linux: XDG_CACHE_HOME,
-    # macOS: HOME, Windows: LOCALAPPDATA), so the subprocess and the expected path
-    # resolve under tmp_path on all three.
+    # macOS: HOME, Windows: LOCALAPPDATA, with USERPROFILE for Path.home()), so
+    # the subprocess and the expected path resolve under tmp_path on all three.
     redirect = {
         "XDG_CACHE_HOME": str(tmp_path),
         "HOME": str(tmp_path),
