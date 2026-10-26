@@ -17,40 +17,51 @@ is the kk model everywhere: one implementation in `jax.numpy` float64, one devic
 program per public call, one upload and one download, NumPy only at the I/O, GUI and
 reporting edges.
 
-## Evidence (measured 2026-10-26, this machine: RTX 4090 Laptop, CUDA 13, CPU runs with `JAX_PLATFORMS=cpu`)
+## Evidence (measured 2026-10-26, this machine: RTX 4090 Laptop, CUDA 13, 20 cores; CPU runs use `JAX_PLATFORMS=cpu`)
 
-Today's paths, `SiO2` at 200 energies unless stated (session scratch bench script, 30 reps; `scripts/core_bench.py` in Task 0 replaces it):
+Method: each row is the median of 5 fresh-process runs of a scratch script (`scripts/core_bench.py`
+in Task 0 replaces it); "warm" means after one warm-up call; the machine was idle. An earlier
+pass of this section was taken while a 41-minute test run was loading the machine and mixed
+first-use compilation with steady state; it is replaced by the table below.
 
-| Path | first call | SiO2 ×200 E | SiO2 ×20 000 E | 200 formulas ×200 E |
-|---|---|---|---|---|
-| NumPy backend (CPU default) | 2 ms | 0.09 ms | 1.87 ms | 23 ms |
-| JAX backend, CPU | 2070 ms | 1.83 ms | 9.62 ms | 1521 ms |
-| JAX backend, GPU | 4205 ms | 16.1 ms | 12.1 ms | 4331 ms |
-
-Making today's JAX backend the default would therefore ship a 20× to 190× regression:
-the cost is dispatch (a Python loop over elements, one interpolator call about 75 µs
-each, two separate jit kernels, host syncs such as `ops.all(isfinite)` mid-pipeline),
-not arithmetic.
-
-Throwaway spike (not product code; stacked tables, vmap'd PCHIP with one shared
-interval search for f1 and f2, one jit program, one `device_put`, one fetch):
-
-| Path | first call (compile) | SiO2 ×200 E | SiO2 ×20 000 E | 200 formulas ×200 E | 2000 formulas ×200 E |
+| Path | first call | SiO2 ×200 E, warm | SiO2 ×20 000 E, warm | 200 formulas ×200 E, warm | 2000 formulas ×200 E, warm |
 |---|---|---|---|---|---|
-| Spike, CPU | 194 ms | 0.535 ms | 5.97 ms | 21.6 ms | 212 ms |
-| Spike, GPU | 714 ms | 2.51 ms | 2.52 ms | 5.45 ms | 20.5 ms |
+| NumPy backend (CPU-host default) | 2 ms | 0.09 ms | 1.84 ms | 17.9 ms | 202 ms |
+| JAX backend today, CPU | 1398 ms | 0.86 ms | 4.86 ms | 176 ms | 1828 ms |
+| JAX backend today, GPU | 2025 ms | 3.89 ms | 4.52 ms | 759 ms | 8088 ms |
+| Spike (design), CPU | 174 ms | 0.263 ms | 3.81 ms | 12.9 ms | 165 ms |
+| Spike (design), GPU | 238 ms | 0.622 ms | 0.833 ms | 1.63 ms | 10.2 ms |
 
-Parity of the spike with today's `scattering_factor_f1/f2`: max relative error
-2.5e-16 (f1), 3.2e-16 (f2) on CPU, 0.0 on GPU. The spike times include
-`parse_formula`, `device_put` of the inputs and the fetch. K=2 elements for the
-single material, K=4 for the batches.
+Today's JAX backend is therefore 9× (single call) to 10× (batches) slower than NumPy on CPU
+and 40× slower on GPU, and its first batch in a fresh process costs 1.2 to 4.0 s. Root causes
+(measured by `cProfile`, stage timers and `jax.log_compiles`, CPU):
 
-Other facts the design rests on: 93 element tables of 433 to 449 points each,
-29.3 to 30 000 eV, so the five padded arrays (x, f1, f2 and two slope arrays) are
-1.7 MB in float64; `import jax` costs 0.73 s and the first tiny jit 0.22 s; the CLI
-`calc SiO2 -e 10 -d 2.2` cold start is 1.74 s on the NumPy path (via `uv run`);
-`ProcessPoolExecutor` is used only in `data_handling/batch_processing.py`; 21
-`set_backend(` call sites in 4 test files.
+1. **Shape-keyed eager compilation.** The first call compiles 68 programs (1.5 s in XLA); every
+   new energy-array length compiles 16 more (0.45 to 0.54 s) and every new table length about
+   18 (0.4 s), because the glue (`ops.*`, slope construction) runs op by op, not in one jit.
+2. **Host/device ping-pong per call.** The XLA kernel is 24 µs of a 896 µs call (2.6%). The rest
+   is about 60 tiny dispatches and 6 blocking syncs: validation with JAX scalar ops and
+   `np.any` on JAX arrays (259 µs, 29%), `ops.asarray(list_of_device_arrays)` row stacking
+   (247 µs, 28%), four interpolator calls each uploading the energies (134 µs, 15%), the host
+   `isfinite` guard plus eager tail (145 µs, 16%), ten separate downloads in `XRayResult` (38 µs).
+3. **Batch is the single path in a Python loop** (no `vmap`), so every formula repeats cause 2.
+4. **Structure:** JAX hides behind an `ops` layer built for NumPy semantics, and a host sync
+   splits the pipeline into two kernels, so XLA never sees the whole computation.
+
+Throwaway spike (not product code; stacked tables, vmap'd PCHIP with one shared interval search
+for f1 and f2, one jit program, one `device_put`, one fetch). Parity with today's
+`scattering_factor_f1/f2`: max relative error 2.5e-16 (f1), 3.2e-16 (f2) on CPU, 0.0 on GPU. The
+spike times include `parse_formula`, `device_put` of the inputs and the fetch; K=2 elements for
+the single material, K=4 for the batches.
+
+CLI cold start (median of 5, `uv run xraylabtool …`): `calc SiO2 -e 10 -d 2.2` 0.86 s on a CPU
+host and 3.30 s on this GPU host; `--version` 0.87 s and 1.27 s. On a GPU host today's backend
+auto-select imports JAX and initializes CUDA even for `--version`.
+
+Other facts the design rests on: 93 element tables of 433 to 449 points each, 29.3 to 30 000 eV,
+so the five padded arrays (x, f1, f2 and two slope arrays) are 1.7 MB in float64; `import jax`
+costs 0.73 s and the first tiny jit 0.22 s; `ProcessPoolExecutor` is used only in
+`data_handling/batch_processing.py`; 21 `set_backend(` call sites in 4 test files.
 
 ## Goals
 
@@ -89,9 +100,9 @@ Other facts the design rests on: 93 element tables of 433 to 449 points each,
 ## Anti-goals (a failure even if every test passes)
 
 - A silent NumPy fallback or any second implementation of an algorithm.
-- A call path slower than today's JAX backend, or a batch of 200 formulas slower
-  than today's 23 ms NumPy sequential run, or a recompile per material, element
-  count or energy count.
+- A warm call path slower than today's JAX backend, or a warm batch of 200 formulas
+  slower than today's 17.9 ms NumPy sequential run, or a recompile per material,
+  element count or energy count (within a bucket).
 - `import xraylabtool` (or `--help`, `--version`, `completion`, `formula`, `atomic`,
   `list`) importing JAX.
 - `fork` after JAX has started (process pools, `multiprocessing` with fork).
@@ -300,24 +311,25 @@ warms the core programs for its Compute path on an idle worker (as
 
 ## Acceptance gates (CPU = this machine with `JAX_PLATFORMS=cpu`)
 
-| # | Gate | Spike | Today |
-|---|---|---|---|
-| P1 | SiO2 ×200 E, warm, CPU | ≤ 0.8 ms | 0.535 ms (NumPy 0.09, JAX 1.83) |
-| P2 | SiO2 ×20 000 E, warm, CPU | ≤ 8 ms | 5.97 ms (NumPy 1.87, JAX 9.62) |
-| P3 | 200 formulas ×200 E, CPU | ≤ 30 ms | 21.6 ms (NumPy 23, JAX 1521) |
-| P4 | 2000 formulas ×200 E, CPU | ≤ 300 ms | 212 ms |
-| P5 | SiO2 ×200 E, warm, GPU | ≤ 4 ms | 2.51 ms (JAX 16.1) |
-| P6 | 200 formulas ×200 E, GPU | ≤ 10 ms | 5.45 ms (JAX 4331) |
-| P7 | SiO2 ×20 000 E, GPU | ≤ 4 ms | 2.52 ms (JAX 12.1) |
-| P8 | first call (compile, no cache), CPU | ≤ 1.0 s | 194 ms |
-| P9 | CLI `calc` cold, warm persistent cache | ≤ 3.0 s | baseline 1.74 s (NumPy) |
-| P10 | `--help`, `--version` cold | baseline + 0.05 s | no JAX import |
-| P11 | transfers per public call | ≤ 1 upload, ≤ 1 fetch | |
-| P12 | compiles after warm-up, same buckets | 0 | |
+| # | Gate (warm unless stated) | Binding value | Spike | Today |
+|---|---|---|---|---|
+| P1 | SiO2 ×200 E, CPU | ≤ 0.5 ms | 0.263 ms | NumPy 0.09, JAX 0.86 |
+| P2 | SiO2 ×20 000 E, CPU | ≤ 6 ms | 3.81 ms | NumPy 1.84, JAX 4.86 |
+| P3 | 200 formulas ×200 E, CPU | ≤ 18 ms (≤ NumPy) | 12.9 ms | NumPy 17.9, JAX 176 |
+| P4 | 2000 formulas ×200 E, CPU | ≤ 200 ms (≤ NumPy) | 165 ms | NumPy 202, JAX 1828 |
+| P5 | SiO2 ×200 E, GPU | ≤ 1.5 ms | 0.622 ms | JAX 3.89 |
+| P6 | 200 formulas ×200 E, GPU | ≤ 5 ms | 1.63 ms | JAX 759 |
+| P7 | SiO2 ×20 000 E, GPU | ≤ 2 ms | 0.833 ms | JAX 4.52 |
+| P8 | first call incl. compile, no cache, CPU | ≤ 1.0 s | 174 ms | JAX 1398 ms |
+| P9 | CLI `calc` cold, warm persistent cache | CPU host ≤ 2.0 s; GPU host ≤ 3.3 s | | 0.86 s; 3.30 s |
+| P10 | CLI `--version`, `--help` cold | ≤ 0.9 s on both hosts (no JAX import) | | 0.87 s; 1.27 s GPU host |
+| P11 | transfers per public call | ≤ 1 upload, ≤ 1 fetch | | |
+| P12 | compiles after warm-up, same buckets | 0 | | |
+| P13 | compiles for a new energy count inside a bucket | 0 | | 16 |
 
 Known deviation, accepted with the mandate and to be recorded in ADR-006: a single
-small call on CPU costs about 0.5 ms against NumPy's 0.09 ms, and on GPU about 2.5 ms
-(launch latency); `JAX_PLATFORMS=cpu` selects the CPU device. `scripts/core_bench.py`
+small call on CPU costs about 0.26 ms against NumPy's 0.09 ms (about 3×), and on GPU about
+0.62 ms (launch latency); `JAX_PLATFORMS=cpu` selects the CPU device. `scripts/core_bench.py`
 (CPU) and `scripts/core_gpu_check.py` (manual, CUDA) are standalone gates, not
 collected by pytest. Gate values are confirmed or revised from the Task 0 baselines;
 a miss is recorded as a deviation, never silently relaxed.
