@@ -245,6 +245,12 @@ def kk_piecewise_poly(
     return (symb_b - singular) / (math.pi * e[:, 0]) + _f64(rel_corr)
 
 
+def _live_table(spectrum: Spectrum) -> tuple[jax.Array, jax.Array]:
+    """``(seg_ev, coeffs)`` of a padded spectrum, coefficients beyond ``n_segments`` zeroed."""
+    live = jnp.arange(spectrum.coeffs.shape[0]) < spectrum.n_segments
+    return _f64(spectrum.seg_ev), jnp.where(live[:, None], _f64(spectrum.coeffs), 0.0)
+
+
 @partial(jax.jit, static_argnames="block")
 def _kk_f1_blocks(
     padded_energies: jax.Array,
@@ -261,9 +267,7 @@ def _kk_f1_blocks(
     ``spectrum.n_segments`` are masked to exactly zero, so the result does not
     depend on the capacity the spectrum was padded to.
     """
-    seg = _f64(spectrum.seg_ev)
-    live = jnp.arange(spectrum.coeffs.shape[0]) < spectrum.n_segments
-    coeffs = jnp.where(live[:, None], _f64(spectrum.coeffs), 0.0)
+    seg, coeffs = _live_table(spectrum)
     rel = _f64(rel_corr)
     blocks = _f64(padded_energies).reshape(-1, block)
     out = jax.lax.map(lambda e: kk_piecewise_poly(e, seg, coeffs, rel), blocks)

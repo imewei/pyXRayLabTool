@@ -209,7 +209,7 @@ Alternatives considered and rejected:
 | Steady-state kernel, CPU, SiO2 m = 10³ / 10⁴ | ≤ 35 / ≤ 250 ms (today 27 / 207); never slower than the removed NumPy path (258 / 1 645) |
 | First `kk_calculate_real` (SiO2, 1 000 explicit energies), after import, CPU | ≤ 1.0 s |
 | Refined run `refine_tolerance=0.01`, SiO2, CPU: cold / warm | ≤ 1.7 s / ≤ 0.10 s (cold ≤ 0.7 s with the persistent cache as configured in §10); GPU cold ≤ 2.5 s. Measured in fresh subprocesses with the platform selected before importing jax, warm timings after `block_until_ready` / completed host output |
-| Top-level numerical programs compiled in that refined run | ≤ 6 (confirmed or revised by the Task 4 prototype before it becomes a hard gate) |
+| Top-level numerical programs compiled in that refined run | ≤ 6, confirmed by the Task 4 prototype: the run compiles exactly 6 today (`compound_spectrum_device`, `_kk_f1_blocks`, `evaluate_f2_device`, and the refinement's `_first_pass`, `_refine_pass`, `_finalize`; the active buffer has a 2048-interval floor, so one pass program serves every tabulated formula). Task 5 must not add a program on top |
 | Accuracy | oracle and goldens as in Verification; no tolerance loosened |
 | Quality | `ruff`, `mypy --strict`, whole test tree green on CPU; GPU gate green on the CUDA machine |
 
