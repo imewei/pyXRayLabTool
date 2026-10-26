@@ -28,7 +28,9 @@ FORMULAS = [
     "Ca5(PO4)3OH",
 ]
 CHUNK_SIZES = [1, 7, 4096]
-INPUT_TYPES = ["nexafs", "photoabsorption", "xanes"]  # same absorption scale
+# nexafs/photoabsorption/xanes are one conversion; beta and asf are the others.
+INPUT_TYPES = ["nexafs", "photoabsorption", "xanes", "beta", "asf"]
+BRANCH_TYPES = ["nexafs", "beta", "asf"]  # one per distinct conversion branch
 N_CALLS = 40
 
 
@@ -49,9 +51,13 @@ def _random_call(seed: int) -> dict[str, object]:
                 )
             )
         kwargs["energies_kev"] = energies
-    if rng.random() < 0.5:
+    if seed < len(BRANCH_TYPES) or rng.random() < 0.5:
         kwargs["nearedge"] = load_nearedge(NEAREDGE)
-        kwargs["input_type"] = INPUT_TYPES[int(rng.integers(len(INPUT_TYPES)))]
+        # The first seeds cover each conversion branch; the rest draw at random.
+        if seed < len(BRANCH_TYPES):
+            kwargs["input_type"] = BRANCH_TYPES[seed]
+        else:
+            kwargs["input_type"] = INPUT_TYPES[int(rng.integers(len(INPUT_TYPES)))]
         if rng.random() < 0.5:
             kwargs["merge_points_kev"] = (0.28, 0.32)
     return {"formula": formula, **kwargs}
@@ -76,3 +82,12 @@ def test_fuzz_valid_calls(seed: int) -> None:
         if requested is not None:
             n_unique = np.unique(np.asarray(requested) * 1e3).size
             assert result.energy_kev.size == n_unique + result.n_refined_points
+
+
+def test_fuzz_covers_every_input_type() -> None:
+    used = {
+        c["input_type"]
+        for c in (_random_call(seed) for seed in range(N_CALLS))
+        if "input_type" in c
+    }
+    assert used == set(INPUT_TYPES)

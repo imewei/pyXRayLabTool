@@ -320,6 +320,12 @@ def kk_f1(
     ValueError
         If ``block < 1``.
 
+    Notes
+    -----
+    A padded spectrum is finite only while its pad knots ``x_n·(1 + k)`` do
+    not overflow when squared (edges below about 1e152 eV; see
+    :class:`~xraylabtool.kk.Spectrum`), far outside the physical range.
+
     References
     ----------
     B. Watts, Opt. Express 22(19), 23628 (2014), Eqs. (7) and (10) (see
@@ -407,23 +413,15 @@ def kk_real_spectrum(
     [-0.661907  0.078578]
     """
     e = _real_float64("eval_ev", eval_ev)
-    if e.ndim != 1:
-        raise ValueError(f"eval_ev must be 1-D, got shape {e.shape}")
-    seg, c = _device.validated_arrays(seg_ev, coeffs)
+    seg, c = _device.validated_arrays(seg_ev, coeffs, e, rel_corr)
     rel = float(rel_corr)
-    if not np.isfinite(e).all():
-        raise ValueError("eval_ev must be finite")
-    if not math.isfinite(rel):
-        raise ValueError("rel_corr must be finite")
-    if (e <= 0).any():
-        raise ValueError("eval_ev must be positive")
     if chunk_size is not None and chunk_size < 1:
         raise ValueError(f"chunk_size must be >= 1, got {chunk_size}")
 
+    ensure_x64()
     m = e.size
     if m == 0:
         return np.empty(0, dtype=np.float64)
-    ensure_x64()
     host = _device.host_spectrum(seg, c)
     block, n_blocks = energy_blocks(chunk_size, host.coeffs.shape[0], m)
     # Pad with a real energy (never 0, which would divide by zero).

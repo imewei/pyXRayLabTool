@@ -282,19 +282,25 @@ def test_gradient_at_continuous_knot_is_finite() -> None:
     assert np.isfinite(grads).all()
 
 
+# Bound = rtol 1e-10 + ATOL. The NumPy-era bound was rtol=1e-10, atol=0 for all
+# three. On JAX-CPU Ne at its 10 eV end point drifts by 7.6e-9 from the NumPy
+# golden (XLA reassociates the cancelling log terms; the NumPy default backend
+# used to mask it), so Ne gets atol=5e-8 (6.6x the drift, 8x tighter than the
+# 32x rounding-scale allowance). Violating D5 (keeping the dropped boundary log)
+# changes f1 by O(1), far above this.
+JUMP_ATOL = {"ar": 0.0, "ne": 5e-8, "synthetic": 0.0}
+
+
 @pytest.mark.unit
-@pytest.mark.parametrize("name", ["ar", "ne", "synthetic"])
+@pytest.mark.parametrize("name", sorted(JUMP_ATOL))
 def test_jump_and_endpoint_follow_upstream_convention(name: str) -> None:
     g = _golden(name)
     mask = (g["eval_kind"] == 2) | (g["eval_kind"] == 3)
     assert np.any(g["eval_kind"] == 2)
-    energies = g["eval_ev"][mask]
-    out = kk_real_spectrum(energies, *_args(g))
+    out = kk_real_spectrum(g["eval_ev"][mask], *_args(g))
     assert np.isfinite(out).all()
-    # XLA vs the NumPy-era rtol=1e-10: Ne at its 10 eV end point differs by
-    # 7.6e-9 = 0.62x the kernel's rounding scale (K = 32 allows 32x).
-    assert_kk_close(
-        out, g["f1_kk_pp"][mask], energies, g["seg_ev"], g["coeffs"], rtol=1e-10
+    np.testing.assert_allclose(
+        out, g["f1_kk_pp"][mask], rtol=1e-10, atol=JUMP_ATOL[name]
     )
 
 
@@ -355,6 +361,69 @@ def test_rejects_malformed_inputs(
 ) -> None:
     with pytest.raises(ValueError, match=match):
         kk_real_spectrum(eval_ev, seg_ev, coeffs, 0.0)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("eval_ev", "seg_ev", "coeffs", "rel", "message"),
+    [
+        (
+            [0.0],
+            [2.0, 5.0],
+            [[0, 1, 0, 0, 0]],
+            0.0,
+            "eval_ev and seg_ev must be positive",
+        ),
+        (
+            [1.0],
+            [0.0, 5.0],
+            [[0, 1, 0, 0, 0]],
+            0.0,
+            "eval_ev and seg_ev must be positive",
+        ),
+        ([1.0], [2.0, 5.0], [[0, 1, 0, 0, 0]], np.nan, "rel_corr must be finite"),
+        ([np.inf], [2.0, 5.0], [[0, 1, 0, 0, 0]], 0.0, "eval_ev must be finite"),
+        (
+            [[1.0]],
+            [2.0, 5.0],
+            [[0, 1, 0, 0, 0]],
+            0.0,
+            r"eval_ev must be 1-D, got shape \(1, 1\)",
+        ),
+    ],
+)
+def test_legacy_error_messages(eval_ev, seg_ev, coeffs, rel, message) -> None:
+    with pytest.raises(ValueError, match=message):
+        kk_real_spectrum(eval_ev, seg_ev, coeffs, rel)
+
+
+@pytest.mark.unit
+def test_legacy_validation_order_with_several_invalid_inputs() -> None:
+    ok_seg, ok_c = [2.0, 5.0], [[0, 1, 0, 0, 0]]
+    # eval_ev shape precedes everything below it
+    with pytest.raises(ValueError, match="eval_ev must be 1-D"):
+        kk_real_spectrum([[1.0]], [5.0], ok_c, 0.0)
+    # seg shape precedes coeffs shape, which precedes finiteness
+    with pytest.raises(ValueError, match="seg_ev must be 1-D"):
+        kk_real_spectrum([np.nan], [5.0], ok_c, 0.0)
+    with pytest.raises(ValueError, match="coeffs must have shape"):
+        kk_real_spectrum([np.nan], ok_seg, [[0, 0, 0, 0, 0]] * 2, 0.0)
+    # finiteness: eval_ev, then seg_ev, then coeffs, then rel_corr
+    with pytest.raises(ValueError, match="eval_ev must be finite"):
+        kk_real_spectrum([np.nan], [np.nan, 5.0], [[np.nan, 1, 0, 0, 0]], np.nan)
+    with pytest.raises(ValueError, match="seg_ev must be finite"):
+        kk_real_spectrum([1.0], [np.nan, 5.0], [[np.nan, 1, 0, 0, 0]], np.nan)
+    with pytest.raises(ValueError, match="coeffs must be finite"):
+        kk_real_spectrum([1.0], ok_seg, [[np.nan, 1, 0, 0, 0]], np.nan)
+    # finiteness (all arrays) precedes positivity precedes ordering precedes chunk_size
+    with pytest.raises(ValueError, match="rel_corr must be finite"):
+        kk_real_spectrum([0.0], [5.0, 2.0], ok_c, np.inf, chunk_size=0)
+    with pytest.raises(ValueError, match="must be positive"):
+        kk_real_spectrum([0.0], [5.0, 2.0], ok_c, 0.0, chunk_size=0)
+    with pytest.raises(ValueError, match="strictly increasing"):
+        kk_real_spectrum([1.0], [5.0, 2.0], ok_c, 0.0, chunk_size=0)
+    with pytest.raises(ValueError, match="chunk_size"):
+        kk_real_spectrum([1.0], ok_seg, ok_c, 0.0, chunk_size=0)
 
 
 @pytest.mark.unit

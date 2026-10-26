@@ -93,7 +93,8 @@ def test_padding_neutral_synthetic() -> None:
     for capacity in (5, 8, 64, 640):
         np.testing.assert_allclose(_eval(case, capacity, energy), base, rtol=1e-12)
     pad = _device.Spectrum.from_numpy(seg, coeffs, 64).seg_ev
-    assert pad[7] == 21.0 * 3.0  # first pad knot x_n(1+k), k = 2 at index n+2
+    assert pad[6] == 21.0 * 2.0  # first pad knot x_n(1+k), k = 1, at index n+1
+    assert pad[7] == 21.0 * 3.0  # second pad knot, k = 2
     # Pad knots as evaluation energies leave the real-segment sum untouched.
     knots = np.asarray(pad)[6:12]
     ref = kk_real_spectrum(knots, seg, coeffs, 1.5)
@@ -272,3 +273,13 @@ def test_transfer_helpers_are_counted() -> None:
     case = _case("SiO2")
     kk_real_spectrum(case["energy"], case["seg"], case["coeffs"], case["rel"])
     assert _device.transfer_counts() == {"upload": 1, "fetch_status": 0, "fetch": 1}
+
+
+@pytest.mark.unit
+def test_x64_restored_by_entry_on_empty_input(x64_restored) -> None:
+    case = _case("SiO2")
+    jax.config.update("jax_enable_x64", False)
+    out = kk_real_spectrum(np.array([]), case["seg"], case["coeffs"], case["rel"])
+    assert jax.config.jax_enable_x64
+    assert out.dtype == np.float64
+    assert out.shape == (0,)

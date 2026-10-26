@@ -14,6 +14,7 @@ Design: ``docs/superpowers/specs/2026-10-25-kk-jax-first-design.md`` §1-§2.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 import threading
 from typing import TYPE_CHECKING, Any
 
@@ -91,25 +92,45 @@ def fetch[T](tree: T) -> T:
 
 
 def validated_arrays(
-    seg_ev: ArrayLike, coeffs: ArrayLike
+    seg_ev: ArrayLike,
+    coeffs: ArrayLike,
+    eval_ev: NDArray[np.float64] | None = None,
+    rel_corr: float | None = None,
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
-    """Host validation of a segment table: float64 ``(seg_ev, coeffs)`` or ``ValueError``."""
-    # Deferred: spectrum.py will import this module for the device assembly.
+    """Host validation of a segment table: float64 ``(seg_ev, coeffs)`` or ``ValueError``.
+
+    With ``eval_ev`` (already float64) and ``rel_corr`` it also checks those, in
+    the order and with the messages of the pre-migration ``kk_real_spectrum``:
+    conversions, shapes (``eval_ev``, ``seg_ev``, ``coeffs``), finiteness
+    (``eval_ev``, ``seg_ev``, ``coeffs``, ``rel_corr``), positivity, ordering.
+    """
+    # Deferred: spectrum.py imports this module for the device assembly.
     from xraylabtool.kk.spectrum import _real_float64  # noqa: PLC0415
 
     seg = _real_float64("seg_ev", seg_ev)
     c = _real_float64("coeffs", coeffs)
+    rel = None if rel_corr is None else float(rel_corr)
+    if eval_ev is not None and eval_ev.ndim != 1:
+        raise ValueError(f"eval_ev must be 1-D, got shape {eval_ev.shape}")
     if seg.ndim != 1 or seg.size < 2:
         raise ValueError(
             f"seg_ev must be 1-D with at least 2 edges, got shape {seg.shape}"
         )
     if c.shape != (seg.size - 1, 5):
         raise ValueError(f"coeffs must have shape ({seg.size - 1}, 5), got {c.shape}")
-    for label, arr in (("seg_ev", seg), ("coeffs", c)):
+    arrays = [("seg_ev", seg), ("coeffs", c)]
+    if eval_ev is not None:
+        arrays.insert(0, ("eval_ev", eval_ev))
+    for label, arr in arrays:
         if not np.isfinite(arr).all():
             raise ValueError(f"{label} must be finite")
-    if (seg <= 0).any():
-        raise ValueError("seg_ev must be positive")
+    if rel is not None and not math.isfinite(rel):
+        raise ValueError("rel_corr must be finite")
+    if eval_ev is None:
+        if (seg <= 0).any():
+            raise ValueError("seg_ev must be positive")
+    elif (eval_ev <= 0).any() or (seg <= 0).any():
+        raise ValueError("eval_ev and seg_ev must be positive")
     if (np.diff(seg) <= 0).any():
         raise ValueError("seg_ev must be strictly increasing")
     return seg, c
@@ -136,6 +157,14 @@ class Spectrum:
         are ignored by the kernels.
     n_segments : jax.Array
         True segment count ``n`` (int32 scalar).
+
+    Notes
+    -----
+    Pad knots grow as ``x_n·(1 + k)`` and the kernel squares them, so for
+    absurd edges (about 1e152 eV and above, far outside the tabulated
+    10 eV-500 keV range) the finite pad knots overflow to ``inf`` and the
+    result is NaN where the unpadded kernel is still finite. Use
+    ``capacity == n`` (no padding) there.
 
     References
     ----------
