@@ -27,7 +27,6 @@ from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
 from xraylabtool.exceptions import CalculationError, NearEdgeDataError
 from xraylabtool.kk import _device, api, database, nearedge, refine
 from xraylabtool.kk._device import Spectrum
-from xraylabtool.kk.database import AsfDatabase
 from xraylabtool.kk.nearedge import NearEdgeSpectrum
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -88,9 +87,14 @@ def backend_restored():
     set_backend(original)
 
 
-def _subprocess(code: str, timeout: float = 240) -> dict:
+def _subprocess(code: str, timeout: float = 240, **env_extra: str) -> dict:
     """Run ``code`` in a fresh CPU-only interpreter; it prints one JSON line last."""
-    env = {**os.environ, "JAX_PLATFORMS": "cpu", "PYTHONPATH": str(ROOT)}
+    env = {
+        **os.environ,
+        "JAX_PLATFORMS": "cpu",
+        "PYTHONPATH": str(ROOT),
+        **env_extra,
+    }
     out = subprocess.run(
         [sys.executable, "-c", textwrap.dedent(code)],
         capture_output=True,
@@ -443,7 +447,8 @@ _QT_SCRIPT = """
 @pytest.mark.unit
 def test_qthreadpool_workers_agree() -> None:
     pytest.importorskip("PySide6")
-    out = _subprocess(_QT_SCRIPT)
+    # The worker entry opens its own (thread-local) disallow_explicit scope.
+    out = _subprocess(_QT_SCRIPT, XRAYLABTOOL_TRANSFER_GUARD="1")
     assert out["errors"] == []
     assert out["n"] == 4
     assert out["equal"]
@@ -491,9 +496,13 @@ def test_undersized_capacity_raises_instead_of_truncating(monkeypatch) -> None:
     with pytest.raises(CalculationError, match=r"capacity 2.*7|7.*capacity 2"):
         over.to_numpy()
 
-    monkeypatch.setattr(AsfDatabase, "compound_capacity", lambda self, z: 64)
+    monkeypatch.setattr(api, "_compound_capacity", lambda n: 64)
     with pytest.raises(CalculationError, match="capacity 64"):
         api.kk_calculate_real("SiO2", energies_kev=[1.0, 2.0])
+    # With near-edge data the merge capacity is sized separately and can hide a
+    # truncated compound spectrum, so the compound count is checked on its own.
+    with pytest.raises(CalculationError, match="capacity 64"):
+        _run("nearedge")
 
 
 @pytest.mark.unit
@@ -527,3 +536,15 @@ def test_merge_points_reported_are_the_used_values() -> None:
     assert res.merge_points_kev == (0.28, 0.32)
     whole = api.kk_calculate_real("C", nearedge=EDGE, input_type="nexafs")
     assert whole.merge_points_kev == (0.28, 0.32)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("energies", [[1.0], [1.0, 1.0], [0.03], [500.0, 500.0]])
+def test_single_point_grid_with_refinement(energies: list[float]) -> None:
+    """A grid of one unique energy reaches the refinement as a length-1 array."""
+    plain = api.kk_calculate_real("Si", energies_kev=energies)
+    refined = api.kk_calculate_real("Si", energies_kev=energies, refine_tolerance=0.05)
+    assert refined.n_refined_points == 0
+    unique = np.unique(np.asarray(energies) * 1000.0)
+    assert refined.energy_kev.size == unique.size
+    np.testing.assert_array_equal(refined.f1, plain.f1[: unique.size])

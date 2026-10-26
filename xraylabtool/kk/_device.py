@@ -13,8 +13,10 @@ Design: ``docs/superpowers/specs/2026-10-25-kk-jax-first-design.md`` §1-§2.
 
 from __future__ import annotations
 
+from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 import math
+import os
 import threading
 from typing import TYPE_CHECKING, Any
 
@@ -51,6 +53,30 @@ def ensure_x64() -> None:
 
 
 ensure_x64()
+
+
+def worker_guard() -> AbstractContextManager[Any]:
+    """The transfer-guard scope a worker entry opens around a kk call under tests.
+
+    The guard is thread-local, so every worker thread opens its own. It is on
+    when ``PYTEST_CURRENT_TEST`` or ``XRAYLABTOOL_TRANSFER_GUARD`` is set
+    (the latter for subprocesses a test starts) and a no-op otherwise.
+
+    References
+    ----------
+    Design spec §1 and §10 (``2026-10-25-kk-jax-first-design.md``).
+
+    Examples
+    --------
+    >>> from xraylabtool.kk._device import worker_guard
+    >>> with worker_guard():
+    ...     pass
+    """
+    if os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get(
+        "XRAYLABTOOL_TRANSFER_GUARD"
+    ):
+        return jax.transfer_guard("disallow_explicit")
+    return nullcontext()
 
 
 def _bump(kind: str) -> None:

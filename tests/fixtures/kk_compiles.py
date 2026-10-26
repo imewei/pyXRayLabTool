@@ -119,6 +119,9 @@ def record_compiles() -> Iterator[list[str]]:
         logger.setLevel(level)
 
 
+record = record_compiles
+
+
 def kk_programs(names: list[str]) -> list[str]:
     """The entries of ``names`` that are top-level ``xraylabtool.kk`` programs."""
     return [n for n in names if n in KK_PROGRAM_NAMES]

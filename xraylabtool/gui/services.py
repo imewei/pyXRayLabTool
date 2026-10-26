@@ -157,7 +157,7 @@ def compute_kk(
         If near-edge arguments are inconsistent.
     """
     from xraylabtool.kk import kk_calculate_real, load_nearedge
-    from xraylabtool.kk._device import ensure_x64
+    from xraylabtool.kk._device import ensure_x64, worker_guard
 
     # Worker threads start with whatever the process configured; x64 is a
     # precondition of the float64 pipeline.
@@ -185,14 +185,16 @@ def compute_kk(
             "refine": refine_tolerance,
         },
     )
-    result = kk_calculate_real(
-        formula,
-        energies_kev=energies_kev,
-        nearedge=nearedge,
-        input_type=cast("InputType | None", input_type),
-        merge_points_kev=merge_kev,
-        refine_tolerance=refine_tolerance,
-    )
+    # The guard (a no-op outside tests) is thread-local: this worker opens its own.
+    with worker_guard():
+        result = kk_calculate_real(
+            formula,
+            energies_kev=energies_kev,
+            nearedge=nearedge,
+            input_type=cast("InputType | None", input_type),
+            merge_points_kev=merge_kev,
+            refine_tolerance=refine_tolerance,
+        )
     in_range = (result.energy_kev >= TABULATED_MIN_KEV) & (
         result.energy_kev <= TABULATED_MAX_KEV
     )

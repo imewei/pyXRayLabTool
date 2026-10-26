@@ -73,15 +73,17 @@ class PipelineInputs(NamedTuple):
 class AssembleStatus(NamedTuple):
     """What the host reads after assembly and merge (one status fetch).
 
-    ``n_segments`` is the unclamped true count of the (merged) spectrum;
-    ``n_grid`` the number of output energies (the default-grid size, or the
-    uploaded count); ``n_below`` and ``n_above`` count the knots clipped away
-    by the default window. ``converted_nonfinite`` flags a near-edge value that
+    ``n_compound`` and ``n_segments`` are the unclamped true segment counts of
+    the compound spectrum and of the (merged) spectrum, each to be checked
+    against the capacity it was built at; ``n_grid`` is the number of output
+    energies (the default-grid size, or the uploaded count); ``n_below`` and
+    ``n_above`` count the knots clipped away by the default window. ``converted_nonfinite`` flags a near-edge value that
     overflowed in the conversion to the f2 scale, ``merge`` is the
     :class:`~xraylabtool.kk.nearedge.MergeStatus` and ``used_points_ev`` the
     merge points the splice used.
     """
 
+    n_compound: jax.Array
     n_segments: jax.Array
     n_grid: jax.Array
     n_below: jax.Array
@@ -146,6 +148,7 @@ def _assemble(
     spec = compound_spectrum_device(
         inputs.z, inputs.counts, inputs.n_elements, tables, capacity=capacity
     )
+    n_compound = spec.n_segments
     ne = inputs.nearedge
     converted_nonfinite = merge_status = used = scaled = None
     if ne is not None:
@@ -183,6 +186,7 @@ def _assemble(
         else inputs.n_grid
     )
     status = AssembleStatus(
+        n_compound,
         spec.n_segments,
         n_grid,
         n_below,

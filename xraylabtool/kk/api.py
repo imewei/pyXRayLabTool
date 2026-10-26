@@ -45,7 +45,7 @@ from xraylabtool.kk._pipeline import (
     _evaluate,
 )
 from xraylabtool.kk._shapes import bucket, bucket_pow2, energy_blocks
-from xraylabtool.kk.database import load_asf
+from xraylabtool.kk.database import AsfDatabase, load_asf
 from xraylabtool.kk.nearedge import (
     InputType,
     NearEdgeSpectrum,
@@ -198,6 +198,7 @@ class _Plan:
     z_list: list[int]
     counts: Sequence[float]
     rel_corr: float
+    n_segments: int  # of the compound spectrum, exact (from the host tables)
     capacity: int  # compound spectrum
     final_capacity: int  # after the near-edge merge
     near: _NearEdgeCall | None
@@ -246,6 +247,21 @@ def _explicit_energies(
     return energy_kev, energy_ev, None
 
 
+def _compound_segments(db: AsfDatabase, z_list: list[int]) -> int:
+    """Exact segment count of the compound spectrum: distinct elemental knots minus one.
+
+    Counted on the host from the tables, so the capacity below is the
+    smallest ladder value that cannot overflow (``compound_capacity`` is the
+    looser sum bound, up to twice as large for several elements).
+    """
+    return int(np.unique(np.concatenate([db.energy_ev(z) for z in z_list])).size) - 1
+
+
+def _compound_capacity(n_segments: int) -> int:
+    """Segment capacity of the compound spectrum for ``n_segments`` true segments."""
+    return bucket(n_segments)
+
+
 def _plan(
     formula: str,
     energies_kev: ArrayLike | None,
@@ -263,7 +279,8 @@ def _plan(
         min(float(db.energy_ev(z)[0]) for z in z_list),
         max(float(db.energy_ev(z)[-1]) for z in z_list),
     )
-    capacity = db.compound_capacity(z_list)
+    n_segments = _compound_segments(db, z_list)
+    capacity = _compound_capacity(n_segments)
     nearedge, input_type, merge_points_kev = near_args
     near = (
         None
@@ -280,12 +297,13 @@ def _plan(
     final = (
         capacity
         if near is None
-        else bucket(capacity + near.spectrum.energy_ev.size + 2)
+        else bucket(n_segments + near.spectrum.energy_ev.size + 2)
     )
     return _Plan(
         z_list,
         counts,
         relativistic_correction(z_list, counts),
+        n_segments,
         capacity,
         final,
         near,
@@ -350,6 +368,7 @@ def _checked_merge(
     Order of the checks: capacity, near-edge conversion overflow, merge data
     errors, then the energy error deferred by :func:`_explicit_energies`.
     """
+    _device.check_capacity(int(status.n_compound), plan.capacity)
     _device.check_capacity(int(status.n_segments), plan.final_capacity)
     if status.converted_nonfinite:
         raise NearEdgeDataError("Near-edge energies and values must be finite")
