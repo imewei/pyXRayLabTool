@@ -1,0 +1,156 @@
+"""Unmocked ``xraylabtool kk``: in-process ``main()`` and a real subprocess."""
+
+from __future__ import annotations
+
+import csv
+import io
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+from unittest.mock import patch
+
+import numpy as np
+import pytest
+
+from xraylabtool.interfaces.cli import main
+from xraylabtool.kk import kk_calculate_real
+
+ROOT = Path(__file__).resolve().parents[2]
+EDGE = ROOT / "tests" / "characterization" / "kk" / "nearedge_example.txt"
+# main() reads sys.argv[1:], which after ``-c`` is exactly ``argv``.
+_ENTRY = "import sys; from xraylabtool.interfaces.cli import main; sys.exit(main())"
+EDGE_ARGS = ["--nearedge", str(EDGE), "--input-type", "nexafs"]
+
+
+def _in_process(
+    argv: list[str], capsys: pytest.CaptureFixture[str]
+) -> tuple[int, str, str]:
+    with patch("sys.argv", ["xraylabtool", *argv]):
+        rc = main()
+    out = capsys.readouterr()
+    return rc, out.out, out.err
+
+
+def _subprocess(argv: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-c", _ENTRY, *argv],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        env={**os.environ, "JAX_PLATFORMS": "cpu"},
+        timeout=300,
+        check=False,
+    )
+
+
+def _table(text: str) -> dict[str, np.ndarray]:
+    rows = list(csv.reader(io.StringIO(text)))
+    assert rows[0] == ["energy_keV", "f1", "f2"]
+    data = np.array(rows[1:], dtype=float)
+    assert np.isfinite(data).all()
+    return dict(zip(rows[0], data.T, strict=True))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("runner", ["in_process", "subprocess"])
+class TestKKCliEndToEnd:
+    @staticmethod
+    def run(
+        runner: str, argv: list[str], capsys: pytest.CaptureFixture[str]
+    ) -> tuple[int, str, str]:
+        if runner == "in_process":
+            return _in_process(argv, capsys)
+        done = _subprocess(argv)
+        return done.returncode, done.stdout, done.stderr
+
+    def test_compound_default_grid(self, runner, capsys):
+        rc, out, _ = self.run(runner, ["kk", "SiO2"], capsys)
+        assert rc == 0
+        table = _table(out)
+        assert table["energy_keV"].size > 100
+
+    def test_energy_list_matches_api(self, runner, capsys):
+        rc, out, _ = self.run(runner, ["kk", "Si", "--energies", "1,2,5"], capsys)
+        assert rc == 0
+        ref = kk_calculate_real("Si", energies_kev=[1.0, 2.0, 5.0])
+        np.testing.assert_allclose(_table(out)["f1"], ref.f1, rtol=1e-12)
+
+    def test_refine(self, runner, capsys):
+        rc, out, err = self.run(runner, ["kk", "Si", "--refine", "0.05"], capsys)
+        assert rc == 0
+        assert "Refinement added" in err
+        assert (np.diff(_table(out)["energy_keV"]) > 0).all()
+
+    def test_nearedge_with_merge(self, runner, capsys):
+        argv = ["kk", "C8H8", *EDGE_ARGS, "--merge", "280,320"]
+        rc, out, _ = self.run(runner, argv, capsys)
+        assert rc == 0
+        grid = _table(out)["energy_keV"]
+        assert ((grid > 0.28) & (grid < 0.32)).any()  # near-edge knots are in the grid
+
+    @pytest.mark.parametrize("fmt", ["csv", "json"])
+    def test_output_file_round_trip(self, runner, capsys, tmp_path, fmt):
+        path = tmp_path / f"out.{fmt}"
+        argv = ["kk", "Si", "--energies", "1,2", "-o", str(path), "--format", fmt]
+        rc, out, _ = self.run(runner, argv, capsys)
+        assert rc == 0
+        assert out.strip() == ""
+        ref = kk_calculate_real("Si", energies_kev=[1.0, 2.0])
+        if fmt == "json":
+            data = json.loads(path.read_text())
+            assert data["energy_keV"] == [1.0, 2.0]
+            f1 = np.array(data["f1"])
+        else:
+            f1 = _table(path.read_text())["f1"]
+        np.testing.assert_allclose(f1, ref.f1, rtol=1e-12)
+
+    @pytest.mark.parametrize(
+        ("argv", "needle"),
+        [
+            (["kk", "Xx", "--energies", "1"], "Xx"),
+            (["kk", "Si", "--energies", "nan"], "nergies"),
+            (["kk", "Si", "--energies", "1000"], "outside"),
+            (["kk", "Si", "--energies", "0.001"], "outside"),
+            (
+                [
+                    "kk",
+                    "C",
+                    "--nearedge",
+                    "no-such-file.txt",
+                    "--input-type",
+                    "nexafs",
+                ],
+                "no-such-file",
+            ),
+            (["kk", "Si", "--merge", "1,2"], "--merge"),
+        ],
+    )
+    def test_errors_exit_1_with_message(self, runner, capsys, argv, needle):
+        rc, out, err = self.run(runner, argv, capsys)
+        assert rc == 1
+        assert out.strip() == ""
+        assert needle.lower() in err.lower()
+
+    def test_flat_nearedge_end_errors(self, runner, capsys, tmp_path):
+        flat = tmp_path / "flat.txt"
+        flat.write_text("".join(f"{e} 3.0\n" for e in range(270, 341, 10)))
+        argv = ["kk", "C", "--nearedge", str(flat), "--input-type", "asf"]
+        rc, _, err = self.run(runner, [*argv, "--merge", "280,320"], capsys)
+        assert rc == 1
+        assert "flat endpoints" in err
+
+    def test_bad_format_exits_1(self, runner, capsys):
+        # argparse rejects the choice; the CLI maps its exit to 1 with the message.
+        rc, out, err = self.run(runner, ["kk", "Si", "--format", "xml"], capsys)
+        assert rc == 1
+        assert out.strip() == ""
+        assert "invalid choice" in err
+
+
+@pytest.mark.integration
+def test_version_unaffected() -> None:
+    done = _subprocess(["--version"])
+    assert done.returncode == 0
+    assert "jax" not in done.stderr.lower()

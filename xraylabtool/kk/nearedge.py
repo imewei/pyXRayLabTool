@@ -488,17 +488,17 @@ class MergeStatus(NamedTuple):
     ----------
     n_segments : int32
         True segment count of the merged spectrum.
-    v_low, v_high : float64
+    v_low, v_high : float
         Measured near-edge values at the two merge points.
-    a_low, a_high : float64
+    a_low, a_high : float
         Tabulated f2 at the two merge points.
-    measured_step, tabulated_step : float64
+    measured_step, tabulated_step : float
         ``v_high - v_low`` and ``a_high - a_low``.
     nonfinite : bool
         Any normalised near-edge value is not finite.
     n_negative : int32
         Normalised values below zero strictly inside the merge window.
-    f2_min : float64
+    f2_min : float
         Their minimum over the window (``inf`` when the window holds none).
     n_inside : int32
         Near-edge points strictly inside the merge window.
@@ -681,7 +681,9 @@ def merge_device(
     n_ne : jax.Array
         Number of real near-edge points (int scalar, at least 2).
     low_ev, high_ev : float or jax.Array
-        Merge points, ``low_ev < high_ev``.
+        Merge points, ``low_ev < high_ev``. Inside a
+        ``jax.transfer_guard("disallow_explicit")`` region they must already be
+        device scalars: converting a Python float is an implicit transfer.
     capacity : int
         Static output segment capacity; use
         ``bucket(n_segments_upper_bound + n_near_edge + 2)``, a smaller value
@@ -826,7 +828,9 @@ def _padded_table(
 
     The merge accepts non-positive leading edges (the old behaviour); the
     last edge is always positive because a merge point lies inside the range,
-    so the usual pad edges ``x_n (1 + k)`` are finite and increasing.
+    so the usual pad edges ``x_n (1 + k)`` are increasing, and finite for any
+    physical edge (they overflow to ``inf`` only if the last edge exceeds about
+    ``1.8e308 / (capacity + 1)``, far outside the 10 eV-500 keV tables).
     """
     k = np.arange(1, capacity - coef.shape[0] + 1)
     last = seg[-1]

@@ -12,6 +12,7 @@ from typing import Any
 # public name -> submodule that defines it
 _EXPORTS = {
     "kk_calculate_real": "api",
+    "warm_up": "api",
     "KKResult": "result",
     "compound_spectrum": "spectrum",
     "evaluate_f2": "spectrum",
@@ -48,6 +49,7 @@ __all__ = [
     "refine_spectrum",
     "relativistic_correction",
     "to_asf_scale",
+    "warm_up",
 ]
 
 

@@ -113,6 +113,23 @@ class KKComputation:
     """CXRO f1 per formula unit (electrons) at ``cxro_energy_kev``, shape (k,)."""
 
 
+def warm_up_kk() -> None:
+    """Precompile the default Kramers-Kronig programs (no Qt, safe in a worker).
+
+    Best effort: a failure is logged, never raised, because nothing the user
+    asked for depends on it.
+    """
+    from xraylabtool.kk import warm_up
+    from xraylabtool.kk._device import ensure_x64, worker_guard
+
+    ensure_x64()
+    try:
+        with worker_guard():
+            warm_up()
+    except Exception:
+        logger.warning("kk warm-up failed", exc_info=True)
+
+
 def compute_kk(
     formula: str,
     nearedge_path: str | None,

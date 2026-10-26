@@ -116,12 +116,13 @@ def test_energy_blocks_padded_length_is_bounded(m: int, chunk: int | None) -> No
 def test_energy_blocks_live_work_is_within_one_block_of_m(
     capacity: int, chunk: int | None
 ) -> None:
-    """The kernel runs ceil(m / block) blocks: evaluated energies < m + block."""
+    """Live blocks cover m; the padded length is under 2 m plus one block."""
     for m in range(1, 20001):
         block, n_blocks = energy_blocks(chunk, capacity, m)
         live = -(-m // block)
         assert live <= n_blocks
-        assert live * block < m + block
+        assert live * block >= m
+        assert n_blocks * block < 2 * m + block  # m_b < 2 m, plus a partial block
         assert block * capacity <= max(EVAL_ELEMENTS, capacity)
     # 5 % of m once m is a few blocks long, at the block the CPU sweep favoured
     block, _ = energy_blocks(None, 1248, 1116)

@@ -63,6 +63,10 @@ Equation numbers refer to B. Watts, *Opt. Express* **22**\ (19), 23628 (2014).
    * - ``kk_calculate_real``, ``KKResult``
      - steps 1-6
      - High-level entry point (keV) and its result.
+   * - ``warm_up``
+     - not in the paper
+     - Precompiles the default device programs for given formulas (used by the
+       GUI; see :doc:`../guides/kk_guide`).
    * - ``calculate_properties_from_factors``
      - not in the paper
      - ``xraylabtool.calculators.core``: δ, β and derived quantities from
@@ -121,6 +125,8 @@ Near-edge data
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: n_segments, nonfinite, n_negative, f2_min, n_inside, spectrum,
+      scaled_f2, used_points_ev, status
 
 Refinement
 ----------
@@ -138,7 +144,7 @@ Database
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: symbols, mass
+   :exclude-members: symbols, mass, knots, coeffs, n_knots
 
 Optical properties from f1 and f2
 ---------------------------------

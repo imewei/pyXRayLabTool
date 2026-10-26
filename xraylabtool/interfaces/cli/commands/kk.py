@@ -80,7 +80,11 @@ def cmd_kk(args: Any) -> int:
     # Lazy imports for this command
     from xraylabtool.exceptions import XRayLabToolError
     from xraylabtool.kk import kk_calculate_real, load_nearedge
+    from xraylabtool.kk._device import enable_persistent_cache
 
+    # The CLI never calls warm_up (a one-shot call must not compile formulas it
+    # was not asked for); it only lets repeated invocations reuse compiled code.
+    enable_persistent_cache()
     try:
         energies = _parse_energies(args.energies) if args.energies else None
         merge = _parse_merge(args.merge, args.energy_unit) if args.merge else None

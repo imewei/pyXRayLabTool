@@ -675,3 +675,46 @@ def kk_calculate_real(
             np.asarray(scaled, dtype=np.float64)[: plan.near.spectrum.energy_ev.size],
         ),
     )
+
+
+def warm_up(
+    formulas: Sequence[str] = ("SiO2",),
+    refine_tolerance: float | None = 0.01,
+) -> None:
+    """Compile the programs a default call of each formula touches.
+
+    Runs the default-grid calculation of every formula, and the refined one
+    when ``refine_tolerance`` is given (the tolerance decides which active
+    buckets the refinement visits), so later calls with the same buckets
+    compile nothing. Idempotent; returns after the results are on the host,
+    i.e. after everything is compiled and executed. Only the GUI calls it
+    (on an idle worker); the CLI does not, so a one-shot call never pays for
+    formulas it was not asked for.
+
+    Parameters
+    ----------
+    formulas : sequence of str, default ("SiO2",)
+        Chemical formulas whose default calculations are compiled.
+    refine_tolerance : float or None, default 0.01
+        Also compile a refined run at this tolerance; ``None`` skips it.
+
+    Raises
+    ------
+    FormulaError
+        If a formula is invalid (as for :func:`kk_calculate_real`).
+
+    References
+    ----------
+    Design spec §10 (``2026-10-25-kk-jax-first-design.md``).
+
+    Examples
+    --------
+    >>> from xraylabtool.kk import warm_up
+    >>> warm_up(("Si",), refine_tolerance=None)
+    """
+    if isinstance(formulas, str):
+        formulas = (formulas,)
+    for formula in formulas:
+        kk_calculate_real(formula)
+        if refine_tolerance is not None:
+            kk_calculate_real(formula, refine_tolerance=refine_tolerance)

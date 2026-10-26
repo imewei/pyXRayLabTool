@@ -17,6 +17,8 @@ from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 import math
 import os
+from pathlib import Path
+import sys
 import threading
 from typing import TYPE_CHECKING, Any
 
@@ -53,6 +55,62 @@ def ensure_x64() -> None:
 
 
 ensure_x64()
+
+
+_cache_lock = threading.Lock()
+
+
+def _user_cache_dir(platform: str | None = None) -> Path:
+    """OS user-cache directory for the JAX compile cache (``.../xraylabtool/jax``)."""
+    platform = sys.platform if platform is None else platform
+    home = Path.home()
+    if platform == "win32":
+        base = Path(os.environ.get("LOCALAPPDATA") or home / "AppData" / "Local")
+    elif platform == "darwin":
+        base = home / "Library" / "Caches"
+    else:
+        base = Path(os.environ.get("XDG_CACHE_HOME") or home / ".cache")
+    return base / "xraylabtool" / "jax"
+
+
+def enable_persistent_cache() -> bool:
+    """Turn on JAX's persistent compile cache in the OS user-cache directory.
+
+    Called by the ``kk`` CLI command and the GUI launcher, never by the
+    library. Does nothing when ``XRAYLABTOOL_NO_JAX_CACHE=1`` or when the user
+    already set ``jax_compilation_cache_dir``. When it enables the cache it
+    also sets ``jax_persistent_cache_min_compile_time_secs`` to 0 (JAX's
+    default of 1 s would skip most kk programs) unless the user configured
+    that threshold; the lock makes concurrent calls single-flight.
+
+    Returns
+    -------
+    bool
+        Whether this call enabled the cache.
+
+    References
+    ----------
+    Design spec §10 (``2026-10-25-kk-jax-first-design.md``).
+
+    Examples
+    --------
+    >>> from xraylabtool.kk._device import enable_persistent_cache
+    >>> isinstance(enable_persistent_cache.__doc__, str)
+    True
+    """
+    if os.environ.get("XRAYLABTOOL_NO_JAX_CACHE") == "1":
+        return False
+    with _cache_lock:
+        if jax.config.jax_compilation_cache_dir:
+            return False
+        jax.config.update("jax_compilation_cache_dir", str(_user_cache_dir()))
+        # shortcut: JAX's default (1.0) is indistinguishable from an explicit 1.0.
+        if (
+            "JAX_PERSISTENT_CACHE_MIN_COMPILE_TIME_SECS" not in os.environ
+            and jax.config.jax_persistent_cache_min_compile_time_secs == 1.0
+        ):
+            jax.config.update("jax_persistent_cache_min_compile_time_secs", 0.0)
+        return True
 
 
 def worker_guard() -> AbstractContextManager[Any]:

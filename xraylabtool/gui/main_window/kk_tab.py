@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 
 from xraylabtool.logging_utils import get_logger
 
-from ..services import compute_kk
+from ..services import compute_kk, warm_up_kk
 from ..widgets.kk_plot import KKPlot
 from ..workers import CalculationWorker
 
@@ -233,6 +233,17 @@ class KKTabMixin:
         self._track_worker(worker)
         if self.threadpool is not None:
             self.threadpool.start(worker)
+
+    def start_kk_warm_up(self: MainWindowProtocol) -> None:
+        """Precompile the default KK programs on an idle pool thread.
+
+        Called by the launcher once the window is shown. The worker is not
+        tracked and has no result handlers: it must not touch the KK tab.
+        """
+        if self.threadpool is None:
+            self.threadpool = QThreadPool.globalInstance()
+        if self.threadpool is not None:
+            self.threadpool.start(CalculationWorker(warm_up_kk))
 
     def _on_kk_finished(self: MainWindowProtocol, computation: Any) -> None:
         self.kk_run_btn.setEnabled(True)

@@ -262,6 +262,71 @@ D7, refinement grid
    requested energies and the added midpoints. Without it, the output keeps
    the caller's order.
 
+Device pipeline, warm-up and the compile cache
+----------------------------------------------
+
+``xraylabtool.kk`` is JAX-only: one ``jax.numpy`` implementation in float64
+on the default JAX device (CPU, or the GPU of a CUDA install). ``set_backend``
+has no effect on it. :func:`~xraylabtool.kk.api.kk_calculate_real` uploads all
+inputs once, assembles and merges the spectrum on the device, fetches one small
+status record (the host raises the usual errors from it), evaluates f1 and f2,
+runs the refinement one device pass at a time and downloads the result once.
+Array shapes are rounded up to buckets, so a second call with other values and
+the same buckets compiles nothing.
+
+The first call in a process compiles. Measured on a CPU, ``SiO2`` with
+``refine_tolerance=0.01``: about 1.3-1.5 s cold, 0.1-0.16 s warm (see
+:doc:`../architecture/005-adr-kk-jax-only` for the table and its caveats).
+Two things reduce the cold cost:
+
+- **Persistent compile cache.** The ``xraylabtool kk`` command and the GUI
+  launcher enable JAX's on-disk compile cache in ``xraylabtool/jax`` under
+  the OS user-cache directory (``$XDG_CACHE_HOME`` or ``~/.cache`` on Linux,
+  ``~/Library/Caches`` on macOS, ``%LOCALAPPDATA%`` on Windows). With a filled
+  cache the cold refined run takes about 0.6 s. When it turns the cache on it
+  also sets ``jax_persistent_cache_min_compile_time_secs`` to 0, because JAX's
+  default of 1 s would skip nearly every kk program. It does nothing if you
+  already set ``jax_compilation_cache_dir`` (or the threshold), or if
+  ``XRAYLABTOOL_NO_JAX_CACHE=1``. The library itself never enables the cache;
+  to use it from Python set ``jax_compilation_cache_dir`` yourself.
+- **Warm-up.** :func:`~xraylabtool.kk.api.warm_up` compiles the programs a
+  default calculation of the given formulas and a refined run touch. The GUI
+  calls it on an idle worker after the window is shown; the command line never
+  does, so a one-shot call does not pay for formulas it was not asked for.
+
+>>> from xraylabtool.kk import warm_up
+>>> warm_up(("Si",), refine_tolerance=None)
+
+Gradients
+~~~~~~~~~
+
+:class:`~xraylabtool.kk.Spectrum` (a padded piecewise-polynomial f2 table, a
+JAX pytree) and :func:`~xraylabtool.kk.transform.kk_f1` are pure functions
+compatible with ``jax.jit``, ``jax.vmap`` and ``jax.grad``. The gradient with
+respect to the energies agrees with a central difference:
+
+>>> import jax
+>>> import jax.numpy as jnp
+>>> from xraylabtool.kk import Spectrum, kk_f1
+>>> spec = Spectrum.from_numpy([2.0, 5.0], [[0.0, 1.0, 0.0, 0.0, 0.0]])
+>>> def f1_at(e):
+...     return kk_f1(e, spec, 0.0)
+>>> e, h = jnp.array(10.0), 1e-4
+>>> g = jax.grad(f1_at)(e)
+>>> fd = (f1_at(e + h) - f1_at(e - h)) / (2 * h)
+>>> bool(jnp.isfinite(g)) and abs(float(g - fd)) < 1e-9
+True
+
+and so does the gradient with respect to the coefficients (here the
+sensitivity of f1(10 eV) to the constant term ``a0``, which equals f1 itself
+because f1 is linear in the coefficients; padded rows get gradient 0):
+
+>>> def f1_of_coeffs(c):
+...     return kk_f1(e, Spectrum(spec.seg_ev, c, spec.n_segments), 0.0)
+>>> gc = jax.grad(f1_of_coeffs)(spec.coeffs)
+>>> round(float(gc[0, 1]), 6), float(jnp.abs(gc[1:]).max())
+(0.078578, 0.0)
+
 Limits
 ------
 
