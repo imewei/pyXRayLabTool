@@ -636,7 +636,9 @@ _QT_SCRIPT = """
 
 @pytest.mark.unit
 def test_qthreadpool_workers_agree() -> None:
-    pytest.importorskip("PySide6")
+    # xraylabtool.gui eagerly imports QtWidgets, which needs libEGL; skip on
+    # headless runners without the Qt stack, like the other GUI tests.
+    pytest.importorskip("PySide6.QtWidgets")
     # The worker entry opens its own (thread-local) disallow_explicit scope.
     out = _subprocess(_QT_SCRIPT, XRAYLABTOOL_TRANSFER_GUARD="1")
     assert out["errors"] == []
