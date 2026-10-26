@@ -290,6 +290,34 @@ def _check_positive(name: str, value: float | None) -> float | None:
     return float(value)
 
 
+def _asf_scale_arguments(
+    input_type: InputType, density: float | None, formula_mass: float | None
+) -> tuple[str, float | None, float | None]:
+    """Validated ``(kind, density, formula_mass)`` of :func:`to_asf_scale`.
+
+    ``beta`` input falls back to a density of 1 g/cm3 and a formula mass of
+    100 g/mol (each logged at INFO); the other kinds ignore both.
+    """
+    kind = input_type.lower() if isinstance(input_type, str) else input_type
+    if kind not in _INPUT_TYPES:
+        raise ValidationError(
+            f"input_type must be one of {', '.join(_INPUT_TYPES)}",
+            "input_type",
+            input_type,
+        )
+    density = _check_positive("density", density)
+    formula_mass = _check_positive("formula_mass", formula_mass)
+
+    if kind == "beta":
+        if density is None:
+            logger.info("beta input: assuming a mass density of 1 g/cm3")
+            density = 1.0
+        if formula_mass is None:
+            logger.info("beta input: assuming a formula mass of 100 g/mol")
+            formula_mass = 100.0
+    return kind, density, formula_mass
+
+
 def to_asf_scale(
     spec: NearEdgeSpectrum,
     input_type: InputType,
@@ -353,23 +381,9 @@ def to_asf_scale(
     >>> bool(out.values[1] / out.values[0] > 2.0)  # E * mu: ratio 2 * 290/280
     True
     """
-    kind = input_type.lower() if isinstance(input_type, str) else input_type
-    if kind not in _INPUT_TYPES:
-        raise ValidationError(
-            f"input_type must be one of {', '.join(_INPUT_TYPES)}",
-            "input_type",
-            input_type,
-        )
-    density = _check_positive("density", density)
-    formula_mass = _check_positive("formula_mass", formula_mass)
-
-    if kind == "beta":
-        if density is None:
-            logger.info("beta input: assuming a mass density of 1 g/cm3")
-            density = 1.0
-        if formula_mass is None:
-            logger.info("beta input: assuming a formula mass of 100 g/mol")
-            formula_mass = 100.0
+    kind, density, formula_mass = _asf_scale_arguments(
+        input_type, density, formula_mass
+    )
 
     energy, values = spec.energy_ev, spec.values
     pad = bucket_pow2(energy.size) - energy.size
@@ -531,12 +545,12 @@ class MergeResult(NamedTuple):
 
 def _resolve_merge_points(
     spec: NearEdgeSpectrum,
-    seg_ev: NDArray[np.float64],
+    tab_lo: float,
+    tab_hi: float,
     merge_points_ev: Sequence[float] | None,
 ) -> tuple[float, float]:
-    """Validated ``(low, high)`` merge points in eV."""
+    """Validated ``(low, high)`` merge points in eV inside the tabulated range."""
     data_lo, data_hi = float(spec.energy_ev[0]), float(spec.energy_ev[-1])
-    tab_lo, tab_hi = float(seg_ev[0]), float(seg_ev[-1])
     if data_hi <= tab_lo or data_lo >= tab_hi:
         raise NearEdgeDataError(
             f"Near-edge data (parsed as {_fmt_range(data_lo, data_hi)}) do not "
@@ -841,7 +855,9 @@ def _merge(
             "seg_ev must have shape (n+1,) and coeffs shape (n, 5), got "
             f"{seg.shape} and {coef.shape}"
         )
-    low, high = _resolve_merge_points(spec, seg, merge_points_ev)
+    low, high = _resolve_merge_points(
+        spec, float(seg[0]), float(seg[-1]), merge_points_ev
+    )
     # Same checks, order and types as the pre-migration merge, which got them
     # from evaluate_f2: edges only need to be finite and increasing (not
     # positive), and the coefficients are not checked here.
@@ -877,6 +893,7 @@ def _merge(
     raise_or_log(_device.fetch_status(result.status), low, high)
     out = _device.fetch(result)
     n_out = int(out.spectrum.n_segments)
+    _device.check_capacity(n_out, out.spectrum.coeffs.shape[0])
     return _Merged(
         np.asarray(out.spectrum.seg_ev[: n_out + 1], dtype=np.float64),
         np.asarray(out.spectrum.coeffs[:n_out], dtype=np.float64),

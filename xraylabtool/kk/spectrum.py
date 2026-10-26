@@ -47,6 +47,40 @@ def _real_float64(name: str, values: ArrayLike) -> NDArray[np.float64]:
     return arr.astype(np.float64, copy=False)
 
 
+def _atomic_numbers(symbols: Sequence[str], counts: Sequence[float]) -> list[int]:
+    """Atomic numbers of ``symbols`` after the formula checks of :func:`compound_spectrum`."""
+    if len(symbols) == 0:
+        raise FormulaError("No elements given")
+    if len(symbols) != len(counts):
+        raise FormulaError(
+            f"symbols and counts differ in length ({len(symbols)} != {len(counts)})"
+        )
+    db = load_asf()
+    atomic_numbers = []
+    for symbol, count in zip(symbols, counts, strict=True):
+        if symbol not in db.symbols:
+            raise FormulaError(f"Unsupported element {symbol!r} (Z = 1..92 only)")
+        if not (math.isfinite(count) and count > 0):
+            raise FormulaError(
+                f"Element count must be finite and positive, got {count!r} "
+                f"for {symbol!r}"
+            )
+        atomic_numbers.append(db.symbols.index(symbol) + 1)
+    return atomic_numbers
+
+
+def _element_arrays(
+    atomic_numbers: Sequence[int], counts: Sequence[float]
+) -> tuple[NDArray[np.int32], NDArray[np.float64]]:
+    """Atomic numbers and counts padded to a bucketed length (padded counts are 0)."""
+    k = bucket_pow2(len(atomic_numbers))
+    z_pad = np.ones(k, dtype=np.int32)
+    z_pad[: len(atomic_numbers)] = atomic_numbers
+    n_pad = np.zeros(k)
+    n_pad[: len(atomic_numbers)] = counts
+    return z_pad, n_pad
+
+
 def compound_spectrum(
     symbols: Sequence[str], counts: Sequence[float]
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
@@ -101,29 +135,9 @@ def compound_spectrum(
     >>> float(seg_ev[0]), float(seg_ev[-1])
     (10.0, 500000.0)
     """
-    if len(symbols) == 0:
-        raise FormulaError("No elements given")
-    if len(symbols) != len(counts):
-        raise FormulaError(
-            f"symbols and counts differ in length ({len(symbols)} != {len(counts)})"
-        )
+    atomic_numbers = _atomic_numbers(symbols, counts)
+    z_pad, n_pad = _element_arrays(atomic_numbers, counts)
     db = load_asf()
-    atomic_numbers = []
-    for symbol, count in zip(symbols, counts, strict=True):
-        if symbol not in db.symbols:
-            raise FormulaError(f"Unsupported element {symbol!r} (Z = 1..92 only)")
-        if not (math.isfinite(count) and count > 0):
-            raise FormulaError(
-                f"Element count must be finite and positive, got {count!r} "
-                f"for {symbol!r}"
-            )
-        atomic_numbers.append(db.symbols.index(symbol) + 1)
-
-    k = bucket_pow2(len(atomic_numbers))
-    z_pad = np.ones(k, dtype=np.int32)
-    z_pad[: len(atomic_numbers)] = atomic_numbers
-    n_pad = np.zeros(k)
-    n_pad[: len(atomic_numbers)] = counts
     _device.ensure_x64()
     tables = db.device_tables()
     z_d, n_d, n_el = _device.upload((z_pad, n_pad, np.int32(len(atomic_numbers))))

@@ -11,16 +11,24 @@ doi:10.1364/OE.22.023628.
 
 The public API takes energies in keV; the transform runs in eV (the
 tabulated coefficients are in eV) after a single conversion at the boundary.
+
+The numerical part is a device pipeline (:mod:`xraylabtool.kk._pipeline`,
+:mod:`xraylabtool.kk.refine`): one upload of all inputs, one status fetch
+after assembly and merge, one per refinement pass, one final download.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+import threading
+from typing import TYPE_CHECKING, cast
+
+import jax
 import numpy as np
 
 # Imported at runtime so ``typing.get_type_hints`` resolves the annotations.
 from numpy.typing import ArrayLike, NDArray
 
-from xraylabtool.backend.array_ops import ops
 from xraylabtool.constants import KEV_TO_EV, TABULATED_MAX_KEV, TABULATED_MIN_KEV
 from xraylabtool.exceptions import (
     EnergyError,
@@ -28,20 +36,64 @@ from xraylabtool.exceptions import (
     NearEdgeDataError,
     ValidationError,
 )
+from xraylabtool.kk import _device
+from xraylabtool.kk._pipeline import (
+    AssembleStatus,
+    NearEdgeInputs,
+    PipelineInputs,
+    _assemble,
+    _evaluate,
+)
+from xraylabtool.kk._shapes import bucket, bucket_pow2, energy_blocks
 from xraylabtool.kk.database import load_asf
-from xraylabtool.kk.nearedge import InputType, NearEdgeSpectrum, _merge, to_asf_scale
-from xraylabtool.kk.refine import _positive_int, refine_spectrum
+from xraylabtool.kk.nearedge import (
+    InputType,
+    NearEdgeSpectrum,
+    _asf_scale_arguments,
+    _resolve_merge_points,
+    raise_or_log,
+)
+from xraylabtool.kk.refine import (
+    _INT_MAX,
+    _Knobs,
+    _outcome,
+    _positive_int,
+    _refine_device,
+)
 from xraylabtool.kk.result import KKResult
-from xraylabtool.kk.spectrum import compound_spectrum, evaluate_f2
-from xraylabtool.kk.transform import kk_real_spectrum, relativistic_correction
+from xraylabtool.kk.spectrum import _atomic_numbers, _element_arrays
+from xraylabtool.kk.transform import relativistic_correction
 from xraylabtool.logging_utils import get_logger
 from xraylabtool.utils import parse_formula
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 logger = get_logger("kk")
 
 # Default output window (keV): the package's tabulated range, 0.03-30 keV.
 _DEFAULT_MIN_KEV = TABULATED_MIN_KEV
 _DEFAULT_MAX_KEV = TABULATED_MAX_KEV
+_WINDOW_EV = (_DEFAULT_MIN_KEV * KEV_TO_EV, _DEFAULT_MAX_KEV * KEV_TO_EV)
+
+_runtime_logged = threading.Event()
+_runtime_lock = threading.Lock()
+
+
+def _log_runtime_once() -> None:
+    """Log platform, device, jax version and x64 once per process (INFO)."""
+    with _runtime_lock:
+        if _runtime_logged.is_set():
+            return
+        _runtime_logged.set()
+    device = jax.devices()[0]
+    logger.info(
+        "kk runtime: jax %s, platform %s, device %s, x64 %s",
+        jax.__version__,
+        device.platform,
+        device,
+        jax.config.jax_enable_x64,
+    )
 
 
 def _validated_energies_ev(
@@ -124,6 +176,223 @@ def _check_refine_arguments(
         )
     _positive_int(max_passes, "refine_max_passes")
     _positive_int(max_points, "refine_max_points")
+
+
+@dataclass(frozen=True)
+class _NearEdgeCall:
+    """Resolved near-edge arguments of one call (host side)."""
+
+    spectrum: NearEdgeSpectrum
+    kind: str
+    density: float | None
+    formula_mass: float | None
+    low_ev: float
+    high_ev: float
+    given_ev: tuple[float, float] | None  # the merge points as the caller gave them
+
+
+@dataclass(frozen=True)
+class _Plan:
+    """Everything decided on the host before anything is uploaded."""
+
+    z_list: list[int]
+    counts: Sequence[float]
+    rel_corr: float
+    capacity: int  # compound spectrum
+    final_capacity: int  # after the near-edge merge
+    near: _NearEdgeCall | None
+    explicit: bool
+    energy_kev: NDArray[np.float64]  # explicit energies (first kept under refinement)
+    energy_ev: NDArray[np.float64]
+    deferred: EnergyError | None  # bad energies, raised once the merge has been checked
+
+
+def _near_edge_call(
+    nearedge: NearEdgeSpectrum,
+    input_type: InputType,
+    merge_points_kev: tuple[float, float] | None,
+    tab_range: tuple[float, float],
+) -> _NearEdgeCall:
+    """Validate the near-edge arguments (same order and errors as before the pipeline)."""
+    given_ev = _merge_points_ev(merge_points_kev)
+    kind, density, formula_mass = _asf_scale_arguments(input_type, None, None)
+    low, high = _resolve_merge_points(nearedge, *tab_range, given_ev)
+    return _NearEdgeCall(nearedge, kind, density, formula_mass, low, high, given_ev)
+
+
+def _explicit_energies(
+    energies_kev: ArrayLike,
+    tab_range: tuple[float, float],
+    near: _NearEdgeCall | None,
+    refine: bool,
+) -> tuple[NDArray[np.float64], NDArray[np.float64], EnergyError | None]:
+    """Validated ``(energy_kev, energy_ev, deferred_error)`` of explicit energies.
+
+    With near-edge data a bad grid does not raise yet: a data error in the
+    merge outranks it (as it did before the pipeline moved to the device), so
+    the error is returned and a one-point stand-in grid is used. Under
+    refinement the grid is made unique in eV, keeping the first keV value of
+    each group, because ``refine_spectrum`` needs a strictly increasing grid.
+    """
+    try:
+        energy_kev, energy_ev = _validated_energies_ev(energies_kev, *tab_range)
+    except EnergyError as exc:
+        if near is None:
+            raise
+        return np.array([tab_range[0] / KEV_TO_EV]), np.array([tab_range[0]]), exc
+    if refine:
+        energy_ev, first = np.unique(energy_ev, return_index=True)
+        energy_kev = energy_kev[first]
+    return energy_kev, energy_ev, None
+
+
+def _plan(
+    formula: str,
+    energies_kev: ArrayLike | None,
+    near_args: tuple[
+        NearEdgeSpectrum | None, InputType | None, tuple[float, float] | None
+    ],
+    refine: bool,
+) -> _Plan:
+    """Host side of a call: formula, near-edge arguments, energies, capacities."""
+    symbols, counts = parse_formula(formula)
+    z_list = _atomic_numbers(symbols, counts)
+    db = load_asf()
+    # Every element shares the tabulated range, which the merge keeps.
+    tab_range = (
+        min(float(db.energy_ev(z)[0]) for z in z_list),
+        max(float(db.energy_ev(z)[-1]) for z in z_list),
+    )
+    capacity = db.compound_capacity(z_list)
+    nearedge, input_type, merge_points_kev = near_args
+    near = (
+        None
+        if nearedge is None or input_type is None
+        else _near_edge_call(nearedge, input_type, merge_points_kev, tab_range)
+    )
+    explicit = energies_kev is not None
+    energy_kev = energy_ev = np.empty(0)
+    deferred = None
+    if energies_kev is not None:
+        energy_kev, energy_ev, deferred = _explicit_energies(
+            energies_kev, tab_range, near, refine
+        )
+    final = (
+        capacity
+        if near is None
+        else bucket(capacity + near.spectrum.energy_ev.size + 2)
+    )
+    return _Plan(
+        z_list,
+        counts,
+        relativistic_correction(z_list, counts),
+        capacity,
+        final,
+        near,
+        explicit,
+        energy_kev,
+        energy_ev,
+        deferred,
+    )
+
+
+def _host_inputs(
+    plan: _Plan,
+    block_shape: tuple[int, int],
+    refine: tuple[float, int] | None,
+) -> PipelineInputs:
+    """NumPy-leaved :class:`PipelineInputs`: one pytree for one upload.
+
+    Explicit energies are padded to ``block * n_blocks`` with their first
+    entry (an in-range energy), near-edge arrays to a bucketed length with
+    their last. ``refine`` is ``(tolerance, max_points)``.
+    """
+    z_pad, n_pad = _element_arrays(plan.z_list, plan.counts)
+    grid = n_grid = None
+    if plan.explicit:
+        e = plan.energy_ev
+        grid = np.concatenate(
+            [e, np.full(block_shape[0] * block_shape[1] - e.size, e[0])]
+        )
+        n_grid = np.int32(e.size)
+    ne = None
+    if plan.near is not None:
+        near = plan.near
+        energy, values = near.spectrum.energy_ev, near.spectrum.values
+        pad = bucket_pow2(energy.size) - energy.size
+        ne = NearEdgeInputs(
+            np.concatenate([energy, np.full(pad, energy[-1])]),
+            np.concatenate([values, np.full(pad, values[-1])]),
+            np.int32(energy.size),
+            np.float64(near.low_ev),
+            np.float64(near.high_ev),
+            None if near.density is None else np.float64(near.density),
+            None if near.formula_mass is None else np.float64(near.formula_mass),
+        )
+    return PipelineInputs(
+        z_pad,
+        n_pad,
+        np.int32(len(plan.z_list)),
+        np.float64(plan.rel_corr),
+        grid,
+        n_grid,
+        ne,
+        None if refine is None else np.float64(refine[0]),
+        None if refine is None else np.int64(min(refine[1], _INT_MAX)),
+    )
+
+
+def _checked_merge(
+    plan: _Plan, status: AssembleStatus, merge_points_kev: tuple[float, float] | None
+) -> tuple[float, float] | None:
+    """Raise what the assembly status reports; return the merge points used (keV).
+
+    Order of the checks: capacity, near-edge conversion overflow, merge data
+    errors, then the energy error deferred by :func:`_explicit_energies`.
+    """
+    _device.check_capacity(int(status.n_segments), plan.final_capacity)
+    if status.converted_nonfinite:
+        raise NearEdgeDataError("Near-edge energies and values must be finite")
+    used = None
+    if (
+        plan.near is not None
+        and status.merge is not None
+        and status.used_points_ev is not None
+    ):
+        raise_or_log(status.merge, plan.near.low_ev, plan.near.high_ev)
+        used = _reported_merge_kev(
+            merge_points_kev,
+            plan.near.given_ev,
+            (float(status.used_points_ev[0]), float(status.used_points_ev[1])),
+        )
+    if plan.deferred is not None:
+        raise plan.deferred
+    return used
+
+
+def _default_grid_size(formula: str, status: AssembleStatus) -> int:
+    """Size of the default grid from the status; logs the clipping, raises if empty."""
+    size = int(status.n_grid)
+    logger.info(
+        "kk_calculate_real(%s): default grid clipped to %g-%g keV, "
+        "kept %d of %d tabulated points (%d below, %d above)",
+        formula,
+        _DEFAULT_MIN_KEV,
+        _DEFAULT_MAX_KEV,
+        size,
+        int(status.n_segments) + 1,
+        int(status.n_below),
+        int(status.n_above),
+    )
+    if size == 0:
+        raise EnergyError(
+            f"No merged or tabulated knots inside {_DEFAULT_MIN_KEV:g}-"
+            f"{_DEFAULT_MAX_KEV:g} keV for {formula}, so the default output "
+            "grid is empty; pass explicit energies (energies_kev, or "
+            "--energies on the command line)",
+            valid_range=f"{_DEFAULT_MIN_KEV:g}-{_DEFAULT_MAX_KEV:g} keV",
+        )
+    return size
 
 
 def kk_calculate_real(
@@ -250,8 +519,8 @@ def kk_calculate_real(
     [1.0, 2.0]
     >>> bool((result.f1 > 0).all() and (result.f2 > 0).all())
     True
-    >>> result.backend in ("numpy", "jax")
-    True
+    >>> result.backend
+    'jax'
     >>> edge = NearEdgeSpectrum(
     ...     [280.0, 290.0, 300.0, 310.0, 320.0], [0.05, 0.1, 0.3, 0.45, 0.5]
     ... )
@@ -268,6 +537,7 @@ def kk_calculate_real(
     >>> refined.n_refined_points > 0 and bool((refined.energy_kev[1:] > refined.energy_kev[:-1]).all())
     True
     """
+    _device.ensure_x64()
     if not isinstance(formula, str):
         raise FormulaError(f"Formula must be a string, got {type(formula).__name__}")
     if chunk_size is not None:
@@ -288,94 +558,98 @@ def kk_calculate_real(
             "xanes, beta, asf)"
         )
 
-    symbols, counts = parse_formula(formula)
-    seg_ev, coeffs = compound_spectrum(symbols, counts)
-    used_merge_kev: tuple[float, float] | None = None
-    scaled_kev_f2: tuple[NDArray[np.float64], NDArray[np.float64]] | None = None
-    # input_type is never None here with a nearedge (checked above); the test narrows it.
-    if nearedge is not None and input_type is not None:
-        merge_points_ev = _merge_points_ev(merge_points_kev)
-        merged = _merge(
-            to_asf_scale(nearedge, input_type), seg_ev, coeffs, merge_points_ev
-        )
-        seg_ev, coeffs = merged.seg_ev, merged.coeffs
-        used_merge_kev = _reported_merge_kev(
-            merge_points_kev, merge_points_ev, merged.merge_points_ev
-        )
-        scaled_kev_f2 = (nearedge.energy_ev / KEV_TO_EV, merged.scaled)
-    db = load_asf()
-    rel_corr = relativistic_correction(
-        [db.symbols.index(s) + 1 for s in symbols], counts
+    plan = _plan(
+        formula,
+        energies_kev,
+        (nearedge, input_type, merge_points_kev),
+        refine_tolerance is not None,
+    )
+    _log_runtime_once()
+    refine = (
+        None
+        if refine_tolerance is None
+        else (float(refine_tolerance), refine_max_points)
+    )
+    block_shape = (
+        energy_blocks(chunk_size, plan.final_capacity, plan.energy_ev.size)
+        if plan.explicit
+        else (0, 0)
+    )
+    tables = load_asf().device_tables()
+    dev = _device.upload(_host_inputs(plan, block_shape, refine))
+    assembled = _assemble(
+        tables,
+        dev,
+        capacity=plan.capacity,
+        merge_capacity=plan.final_capacity,
+        input_type=None if plan.near is None else plan.near.kind,
+        window_ev=_WINDOW_EV,
+    )
+    status = _device.fetch_status(assembled.status)
+    used_merge_kev = _checked_merge(plan, status, merge_points_kev)
+
+    m = plan.energy_ev.size
+    if not plan.explicit:
+        m = _default_grid_size(formula, status)
+        block_shape = energy_blocks(chunk_size, assembled.spectrum.coeffs.shape[0], m)
+    grid_ev, f1_d, f2_d = _evaluate(
+        assembled.spectrum,
+        dev.energies_ev,
+        assembled.n_grid,
+        dev.rel_corr,
+        block=block_shape[0],
+        n_blocks=block_shape[1],
+        window_ev=_WINDOW_EV,
     )
 
-    if energies_kev is None:
-        keep = (seg_ev >= _DEFAULT_MIN_KEV * KEV_TO_EV) & (
-            seg_ev <= _DEFAULT_MAX_KEV * KEV_TO_EV
-        )
-        energy_ev = seg_ev[keep]
-        energy_kev = energy_ev / KEV_TO_EV
-        logger.info(
-            "kk_calculate_real(%s): default grid clipped to %g-%g keV, "
-            "kept %d of %d tabulated points (%d below, %d above)",
-            formula,
-            _DEFAULT_MIN_KEV,
-            _DEFAULT_MAX_KEV,
-            energy_ev.size,
-            seg_ev.size,
-            int((seg_ev < _DEFAULT_MIN_KEV * KEV_TO_EV).sum()),
-            int((seg_ev > _DEFAULT_MAX_KEV * KEV_TO_EV).sum()),
-        )
-        if energy_ev.size == 0:
-            raise EnergyError(
-                f"No merged or tabulated knots inside {_DEFAULT_MIN_KEV:g}-"
-                f"{_DEFAULT_MAX_KEV:g} keV for {formula}, so the default output "
-                "grid is empty; pass explicit energies (energies_kev, or "
-                "--energies on the command line)",
-                valid_range=f"{_DEFAULT_MIN_KEV:g}-{_DEFAULT_MAX_KEV:g} keV",
-            )
-    else:
-        energy_kev, energy_ev = _validated_energies_ev(
-            energies_kev, float(seg_ev[0]), float(seg_ev[-1])
-        )
-
     n_refined = 0
-    if refine_tolerance is not None:
-        # refine_spectrum requires a strictly increasing grid of unique eV
-        # values; keV values equal in eV count once. Keeping the eV array (not
-        # recomputing it from keV) leaves default-grid knots bit-exact, and
-        # evaluate_f2 is right-continuous at edges.
-        energy_ev, first = np.unique(energy_ev, return_index=True)
-        energy_kev = energy_kev[first]
-    f1 = kk_real_spectrum(energy_ev, seg_ev, coeffs, rel_corr, chunk_size)
-    f2 = evaluate_f2(energy_ev, seg_ev, coeffs)
-    if refine_tolerance is not None:
-        refined = refine_spectrum(
-            energy_ev,
-            f1,
-            f2,
-            seg_ev,
-            coeffs,
-            rel_corr,
-            tolerance=float(refine_tolerance),
+    if refine is None:
+        grid_h, f1_h, f2_h, scaled = _device.fetch(
+            (None if plan.explicit else grid_ev, f1_d, f2_d, assembled.scaled_f2)
+        )
+        f1, f2 = np.asarray(f1_h)[:m], np.asarray(f2_h)[:m]
+        energy_kev = (
+            plan.energy_kev if plan.explicit else np.asarray(grid_h)[:m] / KEV_TO_EV
+        )
+    else:
+        arrays, info = _refine_device(
+            grid_ev,
+            f1_d,
+            f2_d,
+            assembled.spectrum,
+            dev.rel_corr,
+            _Knobs(
+                cast("jax.Array", dev.tolerance),
+                cast("jax.Array", dev.max_points),
+                assembled.n_grid,
+            ),
+            m=m,
             max_passes=refine_max_passes,
             max_points=refine_max_points,
             chunk_size=chunk_size,
         )
-        # Requested energies keep their exact keV value; only midpoints convert.
-        original = np.searchsorted(refined.energy_ev, energy_ev)
-        energy_ev, f1, f2 = refined.energy_ev, refined.f1, refined.f2
-        n_refined = refined.n_added
-        energy_kev_out = energy_ev / KEV_TO_EV
-        energy_kev_out[original] = energy_kev
-        energy_kev = energy_kev_out
+        arrays_h, scaled = _device.fetch((arrays, assembled.scaled_f2))
+        refined = _outcome(arrays_h, info, refine[0])
+        f1, f2, n_refined = refined.f1, refined.f2, refined.n_added
+        energy_kev = refined.energy_ev / KEV_TO_EV
+        if plan.explicit:
+            # Requested energies keep their exact keV value; only midpoints convert.
+            energy_kev[np.searchsorted(refined.energy_ev, plan.energy_ev)] = (
+                plan.energy_kev
+            )
     return KKResult(
         formula=formula,
         energy_kev=energy_kev,
         f1=f1,
         f2=f2,
-        relativistic_correction=rel_corr,
+        relativistic_correction=plan.rel_corr,
         merge_points_kev=used_merge_kev,
         n_refined_points=n_refined,
-        backend="jax" if ops.is_jax() else "numpy",
-        nearedge_scaled_kev_f2=scaled_kev_f2,
+        backend="jax",
+        nearedge_scaled_kev_f2=None
+        if plan.near is None
+        else (
+            plan.near.spectrum.energy_ev / KEV_TO_EV,
+            np.asarray(scaled, dtype=np.float64)[: plan.near.spectrum.energy_ev.size],
+        ),
     )

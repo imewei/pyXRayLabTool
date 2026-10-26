@@ -33,6 +33,8 @@ KK_PROGRAM_NAMES = frozenset(
         "to_asf_scale_device",
         "merge_device",
         "_kk_f1_blocks",
+        "_assemble",
+        "_evaluate",
         "_start",
         "_first_pass",
         "_refine_pass",

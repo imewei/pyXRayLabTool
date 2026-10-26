@@ -157,7 +157,11 @@ def compute_kk(
         If near-edge arguments are inconsistent.
     """
     from xraylabtool.kk import kk_calculate_real, load_nearedge
+    from xraylabtool.kk._device import ensure_x64
 
+    # Worker threads start with whatever the process configured; x64 is a
+    # precondition of the float64 pipeline.
+    ensure_x64()
     if energy_unit not in ("eV", "keV"):
         raise ValueError(f"energy_unit must be 'eV' or 'keV', got {energy_unit!r}")
     scale = EV_TO_KEV if energy_unit == "eV" else 1.0

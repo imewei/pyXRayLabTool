@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any
 import jax
 import numpy as np
 
+from xraylabtool.exceptions import CalculationError
 from xraylabtool.kk._shapes import bucket
 
 if TYPE_CHECKING:
@@ -89,6 +90,34 @@ def fetch[T](tree: T) -> T:
     _bump("fetch")
     with jax.transfer_guard("allow"):
         return jax.device_get(tree)  # type: ignore[no-any-return]
+
+
+def check_capacity(n_segments: int, capacity: int) -> None:
+    """Raise if a fetched true segment count exceeds the capacity it was built at.
+
+    ``n_segments`` is the unclamped count of the distinct knots, so a static
+    allocation that was too small shows up here instead of silently
+    truncating the table.
+
+    Raises
+    ------
+    CalculationError
+        If ``n_segments > capacity`` (an internal sizing error, never user input).
+
+    References
+    ----------
+    Design spec §3 (``2026-10-25-kk-jax-first-design.md``).
+
+    Examples
+    --------
+    >>> from xraylabtool.kk._device import check_capacity
+    >>> check_capacity(5, 8)
+    """
+    if n_segments > capacity:
+        raise CalculationError(
+            f"internal error: the spectrum has {n_segments} segments but its "
+            f"capacity {capacity} is smaller, so the table would be truncated"
+        )
 
 
 def validated_arrays(
@@ -232,6 +261,12 @@ class Spectrum:
         seg_ev : numpy.ndarray, shape (n + 1,)
         coeffs : numpy.ndarray, shape (n, 5)
 
+        Raises
+        ------
+        CalculationError
+            If the true segment count exceeds the capacity (the table would
+            be truncated).
+
         References
         ----------
         Design spec §2 (``2026-10-25-kk-jax-first-design.md``).
@@ -245,6 +280,7 @@ class Spectrum:
         """
         seg, c, n_seg = fetch((self.seg_ev, self.coeffs, self.n_segments))
         n = int(n_seg)
+        check_capacity(n, c.shape[0])
         return (
             np.asarray(seg[: n + 1], dtype=np.float64),
             np.asarray(c[:n], dtype=np.float64),

@@ -58,7 +58,9 @@ class KKResult:
     n_refined_points : int
         Number of points added by adaptive refinement (0 if not refined).
     backend : str
-        Array backend that ran the transform, ``"numpy"`` or ``"jax"``.
+        Array backend that ran the transform. ``kk_calculate_real`` always
+        reports ``"jax"``; ``"numpy"`` is still accepted for results built
+        directly (legacy).
     nearedge_scaled_kev_f2 : tuple of numpy.ndarray or None
         ``(energy_kev, f2)`` of the near-edge data on the scattering-factor
         scale, on its own energy grid; ``None`` without near-edge data.
