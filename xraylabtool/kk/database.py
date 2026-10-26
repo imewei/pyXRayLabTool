@@ -70,7 +70,7 @@ class AsfDatabase:
         Raises
         ------
         ValueError
-            If ``z`` is outside 1..92.
+            If ``z`` is not an integer in 1..92.
 
         References
         ----------
@@ -104,7 +104,7 @@ class AsfDatabase:
         Raises
         ------
         ValueError
-            If ``z`` is outside 1..92.
+            If ``z`` is not an integer in 1..92.
 
         References
         ----------
@@ -123,8 +123,8 @@ class AsfDatabase:
 
 
 def _check_z(z: int) -> None:
-    if not 1 <= z <= 92:
-        raise ValueError(f"atomic number must be in 1..92, got {z}")
+    if isinstance(z, bool) or not isinstance(z, int | np.integer) or not 1 <= z <= 92:
+        raise ValueError(f"atomic number must be an integer in 1..92, got {z}")
 
 
 @cache

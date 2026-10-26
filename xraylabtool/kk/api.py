@@ -22,7 +22,12 @@ from numpy.typing import ArrayLike, NDArray
 
 from xraylabtool.backend.array_ops import ops
 from xraylabtool.constants import KEV_TO_EV, TABULATED_MAX_KEV, TABULATED_MIN_KEV
-from xraylabtool.exceptions import EnergyError, NearEdgeDataError, ValidationError
+from xraylabtool.exceptions import (
+    EnergyError,
+    FormulaError,
+    NearEdgeDataError,
+    ValidationError,
+)
 from xraylabtool.kk.database import load_asf
 from xraylabtool.kk.nearedge import InputType, NearEdgeSpectrum, _merge, to_asf_scale
 from xraylabtool.kk.refine import _positive_int, refine_spectrum
@@ -82,6 +87,24 @@ def _merge_points_ev(
         raise NearEdgeDataError(
             f"merge_points_kev must be two energies in keV: {exc}"
         ) from exc
+
+
+def _reported_merge_kev(
+    given_kev: tuple[float, float] | None,
+    given_ev: tuple[float, float] | None,
+    used_ev: tuple[float, float],
+) -> tuple[float, float]:
+    """Merge points in keV as used: the caller's value unless snapping moved it.
+
+    Keeping the caller's own value avoids ``(k / 1000) * 1000 != k`` noise.
+    """
+    low, high = (ev / KEV_TO_EV for ev in used_ev)
+    if given_kev is not None and given_ev is not None:
+        if given_ev[0] == used_ev[0]:
+            low = float(given_kev[0])
+        if given_ev[1] == used_ev[1]:
+            high = float(given_kev[1])
+    return low, high
 
 
 def _check_refine_arguments(
@@ -152,8 +175,9 @@ def kk_calculate_real(
         interpolation of f1 or f2 between neighbouring energies is off by
         more than this (see :func:`~xraylabtool.kk.refine.refine_spectrum`),
         after any near-edge merge. The output is then sorted and
-        de-duplicated: the unique requested energies plus the added
-        midpoints. Without it, the energies keep the caller's order.
+        de-duplicated: the unique requested energies (keV values that are
+        equal in eV count once) plus the added midpoints. Without it, the
+        energies keep the caller's order.
     refine_max_passes : int, default 50
         Maximum bisection passes of the refinement; at least 1.
     refine_max_points : int, default 100000
@@ -172,8 +196,8 @@ def kk_calculate_real(
     Raises
     ------
     FormulaError
-        If the formula is empty or malformed, contains an element outside
-        Z = 1..92, or has a non-positive composition.
+        If the formula is not a string, is empty or malformed, contains an
+        element outside Z = 1..92, or has a non-positive composition.
     EnergyError
         If ``energies_kev`` is empty, not 1-D, not finite, or outside
         0.01-500 keV (nothing is extrapolated); or, without ``energies_kev``,
@@ -244,6 +268,8 @@ def kk_calculate_real(
     >>> refined.n_refined_points > 0 and bool((refined.energy_kev[1:] > refined.energy_kev[:-1]).all())
     True
     """
+    if not isinstance(formula, str):
+        raise FormulaError(f"Formula must be a string, got {type(formula).__name__}")
     if chunk_size is not None:
         _positive_int(chunk_size, "chunk_size")
 
@@ -273,13 +299,8 @@ def kk_calculate_real(
             to_asf_scale(nearedge, input_type), seg_ev, coeffs, merge_points_ev
         )
         seg_ev, coeffs = merged.seg_ev, merged.coeffs
-        used_merge_kev = (
-            merge_points_kev
-            if merge_points_kev is not None
-            else (
-                merged.merge_points_ev[0] / KEV_TO_EV,
-                merged.merge_points_ev[1] / KEV_TO_EV,
-            )
+        used_merge_kev = _reported_merge_kev(
+            merge_points_kev, merge_points_ev, merged.merge_points_ev
         )
         scaled_kev_f2 = (nearedge.energy_ev / KEV_TO_EV, merged.scaled)
     db = load_asf()
@@ -319,9 +340,12 @@ def kk_calculate_real(
 
     n_refined = 0
     if refine_tolerance is not None:
-        # refine_spectrum requires a strictly increasing, unique grid.
-        energy_kev = np.unique(energy_kev)
-        energy_ev = energy_kev * KEV_TO_EV
+        # refine_spectrum requires a strictly increasing grid of unique eV
+        # values; keV values equal in eV count once. Keeping the eV array (not
+        # recomputing it from keV) leaves default-grid knots bit-exact, and
+        # evaluate_f2 is right-continuous at edges.
+        energy_ev, first = np.unique(energy_ev, return_index=True)
+        energy_kev = energy_kev[first]
     f1 = kk_real_spectrum(energy_ev, seg_ev, coeffs, rel_corr, chunk_size)
     f2 = evaluate_f2(energy_ev, seg_ev, coeffs)
     if refine_tolerance is not None:

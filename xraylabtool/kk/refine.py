@@ -31,7 +31,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from xraylabtool.exceptions import ValidationError
 from xraylabtool.kk.result import _readonly_1d
-from xraylabtool.kk.spectrum import evaluate_f2
+from xraylabtool.kk.spectrum import _real_float64, evaluate_f2
 from xraylabtool.kk.transform import kk_real_spectrum
 from xraylabtool.logging_utils import get_logger
 
@@ -119,6 +119,8 @@ def _positive_int(value: object, name: str) -> int:
 
 def _grid_array(values: ArrayLike, name: str) -> NDArray[np.float64]:
     try:
+        if np.iscomplexobj(values):
+            raise ValidationError(f"{name} must be real numbers, got complex", name)
         arr = np.array(values, dtype=np.float64)
     except (TypeError, ValueError) as exc:
         raise ValidationError(f"{name} must be real numbers: {exc}", name) from exc
@@ -155,7 +157,7 @@ def _checked_inputs(
             "energy_ev must be positive, strictly increasing and unique",
             "energy_ev",
         )
-    seg = np.asarray(seg_ev, dtype=np.float64)
+    seg = _real_float64("seg_ev", seg_ev)
     if e[0] < seg[0] or e[-1] > seg[-1]:
         raise ValidationError(
             "energy_ev must lie inside the tabulated range",
@@ -229,13 +231,14 @@ def _log_skipped(
     if not skipped:
         return
     log = logger.warning if n_wide else logger.info
+    widest_energy, widest = max(skipped, key=lambda s: s[1])
     log(
         "refine_spectrum: %d interval(s) next to a tabulated range end left "
         "unrefined (f1 is logarithmically singular at the range end; widest "
         "%.3g eV at %.6g eV)%s",
         len(skipped),
-        max(w for _, w in skipped),
-        skipped[0][0],
+        widest,
+        widest_energy,
         f"; {n_wide} wider than the tabulated end segment, so the tolerance "
         f"{tolerance:g} is materially unmet there"
         if n_wide

@@ -29,11 +29,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, NamedTuple
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 from xraylabtool import constants
 from xraylabtool.exceptions import DataFileError, NearEdgeDataError, ValidationError
-from xraylabtool.kk.spectrum import evaluate_f2
+from xraylabtool.kk.spectrum import _real_float64, evaluate_f2
 from xraylabtool.logging_utils import get_logger
 
 if TYPE_CHECKING:
@@ -271,7 +271,12 @@ def load_nearedge(
 def _check_positive(name: str, value: float | None) -> float | None:
     if value is None:
         return None
-    if isinstance(value, bool) or not math.isfinite(value) or value <= 0:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int | float | np.number)
+        or not math.isfinite(value)
+        or value <= 0
+    ):
         raise ValidationError(f"{name} must be positive and finite", name, value)
     return float(value)
 
@@ -399,7 +404,7 @@ def _resolve_merge_points(
     if merge_points_ev is None:
         return max(data_lo, tab_lo), min(data_hi, tab_hi)
     try:
-        points = np.asarray(merge_points_ev, dtype=np.float64)
+        points = _real_float64("merge points", merge_points_ev)
     except (TypeError, ValueError) as exc:
         raise NearEdgeDataError(f"Merge points must be two numbers: {exc}") from exc
     if points.shape != (2,):
@@ -430,13 +435,16 @@ def _resolve_merge_points(
 
 def _merge(
     spec: NearEdgeSpectrum,
-    seg_ev: object,
-    coeffs: object,
+    seg_ev: ArrayLike,
+    coeffs: ArrayLike,
     merge_points_ev: Sequence[float] | None,
 ) -> _Merged:
     """Implementation of :func:`merge_spectra`, also returning the scaled data."""
-    seg = np.asarray(seg_ev, dtype=np.float64)
-    coef = np.asarray(coeffs, dtype=np.float64)
+    try:
+        seg = _real_float64("seg_ev", seg_ev)
+        coef = _real_float64("coeffs", coeffs)
+    except ValueError as exc:
+        raise ValidationError(str(exc), "seg_ev/coeffs") from exc
     if seg.ndim != 1 or seg.size < 2 or coef.shape != (seg.size - 1, 5):
         raise ValidationError(
             "seg_ev must have shape (n+1,) and coeffs shape (n, 5), got "
@@ -553,7 +561,7 @@ def merge_spectra(
         finite.
     ValidationError
         If ``seg_ev`` and ``coeffs`` do not have shapes ``(n+1,)`` and
-        ``(n, 5)``.
+        ``(n, 5)``, or are complex.
 
     Notes
     -----

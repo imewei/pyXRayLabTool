@@ -31,6 +31,14 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike, NDArray
 
 
+def _real_float64(name: str, values: ArrayLike) -> NDArray[np.float64]:
+    """float64 array of ``values``; complex input raises instead of losing its imaginary part."""
+    arr = np.asarray(values)
+    if arr.dtype.kind == "c":
+        raise ValueError(f"{name} must be real numbers, got dtype {arr.dtype}")
+    return arr.astype(np.float64, copy=False)
+
+
 def compound_spectrum(
     symbols: Sequence[str], counts: Sequence[float]
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
@@ -139,8 +147,9 @@ def evaluate_f2(
     Raises
     ------
     ValueError
-        If an input has the wrong shape, ``energy_ev`` is not finite or lies
-        outside the segment range, or ``seg_ev`` is not strictly increasing.
+        If an input is complex or has the wrong shape, ``energy_ev`` is not
+        finite or lies outside the segment range, or ``seg_ev`` is not finite
+        and strictly increasing.
 
     References
     ----------
@@ -156,9 +165,9 @@ def evaluate_f2(
     >>> evaluate_f2([1.5, 2.0, 4.0], seg, c).tolist()
     [1.0, 1.0, 0.5]
     """
-    e = np.asarray(energy_ev, dtype=np.float64)
-    seg = np.asarray(seg_ev, dtype=np.float64)
-    c = np.asarray(coeffs, dtype=np.float64)
+    e = _real_float64("energy_ev", energy_ev)
+    seg = _real_float64("seg_ev", seg_ev)
+    c = _real_float64("coeffs", coeffs)
     if e.ndim != 1:
         raise ValueError(f"energy_ev must be 1-D, got shape {e.shape}")
     if seg.ndim != 1 or seg.size < 2:
@@ -169,6 +178,8 @@ def evaluate_f2(
         raise ValueError(f"coeffs must have shape ({seg.size - 1}, 5), got {c.shape}")
     if not np.isfinite(e).all():
         raise ValueError("energy_ev must be finite")
+    if not np.isfinite(seg).all():
+        raise ValueError("seg_ev must be finite")
     if (np.diff(seg) <= 0).any():
         raise ValueError("seg_ev must be strictly increasing")
     if e.size and (e.min() < seg[0] or e.max() > seg[-1]):
