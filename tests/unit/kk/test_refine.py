@@ -418,35 +418,46 @@ def test_n_pole_skipped_defaults_to_zero() -> None:
     assert RefineOutcome(z, z, z, 0, False).n_pole_skipped == 0
 
 
-def _spy_chunk_sizes(monkeypatch: pytest.MonkeyPatch) -> list[object]:
-    seen: list[object] = []
-    real = refine.kk_real_spectrum
+def _spy_blocks(monkeypatch: pytest.MonkeyPatch) -> list[int]:
+    """Block sizes the device passes were compiled with (static ``block`` argument)."""
+    seen: list[int] = []
 
-    def spy(*args, **kwargs):
-        seen.append(kwargs.get("chunk_size", args[4] if len(args) > 4 else None))
-        return real(*args, **kwargs)
+    def wrap(real):
+        def spy(*args, **kwargs):
+            seen.append(kwargs["block"])
+            return real(*args, **kwargs)
 
-    monkeypatch.setattr(refine, "kk_real_spectrum", spy)
+        return spy
+
+    monkeypatch.setattr(refine, "_first_pass", wrap(refine._first_pass))
+    monkeypatch.setattr(refine, "_refine_pass", wrap(refine._refine_pass))
     return seen
 
 
 @pytest.mark.unit
-def test_refine_forwards_chunk_size(si, monkeypatch: pytest.MonkeyPatch) -> None:
-    seen = _spy_chunk_sizes(monkeypatch)
-    _, _, out = _refine(si, GRID, tolerance=0.05, chunk_size=7)
+@pytest.mark.parametrize("chunk_size", [1, 3, 7, None])
+def test_refine_block_never_exceeds_chunk_size(
+    si, monkeypatch: pytest.MonkeyPatch, chunk_size
+) -> None:
+    seen = _spy_blocks(monkeypatch)
+    _, _, out = _refine(si, GRID, tolerance=0.05, chunk_size=chunk_size)
     assert out.n_added > 0
     assert seen
-    assert set(seen) == {7}
+    # chunk_size is an upper bound, rounded down to the block ladder, never up.
+    assert all(1 <= b <= (chunk_size or 2**22) for b in seen)
+    if chunk_size == 7:
+        assert set(seen) == {4}
 
 
 @pytest.mark.unit
-def test_kk_calculate_real_passes_chunk_size_to_refinement(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize("chunk_size", [1, 3, 7, None])
+def test_kk_calculate_real_block_never_exceeds_chunk_size(
+    monkeypatch: pytest.MonkeyPatch, chunk_size
 ) -> None:
-    seen = _spy_chunk_sizes(monkeypatch)
+    seen = _spy_blocks(monkeypatch)
     res = kk_calculate_real(
-        "Si", energies_kev=[0.5, 1.0, 2.0], refine_tolerance=0.05, chunk_size=3
+        "Si", energies_kev=[0.5, 1.0, 2.0], refine_tolerance=0.05, chunk_size=chunk_size
     )
     assert res.n_refined_points > 0
     assert seen
-    assert set(seen) == {3}
+    assert all(1 <= b <= (chunk_size or 2**22) for b in seen)

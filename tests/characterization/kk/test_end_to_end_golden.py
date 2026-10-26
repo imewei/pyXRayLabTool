@@ -9,7 +9,6 @@ import pytest
 
 from tests.fixtures.kk_rounding import assert_kk_close
 import xraylabtool
-from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
 from xraylabtool.kk import kk_calculate_real
 from xraylabtool.kk.database import load_asf
 from xraylabtool.kk.spectrum import compound_spectrum
@@ -22,42 +21,27 @@ CASES = [("si", "Si"), ("au", "Au"), ("sio2", "SiO2")]
 
 # Tolerance rtol·|f1| + K·rounding scale (tests/fixtures/kk_rounding.py) for
 # energies that reach the kernel bit-identically to upstream's.
-# Measured on NumPy: worst relative error 3.9e-12 (Si), i.e. inside the rtol
-# term. On JAX the excess over the rtol term is at most 2.0x the rounding
-# scale (SiO2), 1.9x (Au), 0.65x (Si); the allowance is 32x.
-RTOL = {"numpy": 1e-10, "jax": 1e-8}
+# Measured: the excess over the rtol term is at most 2.0x the rounding scale
+# (SiO2), 1.9x (Au), 0.65x (Si); the allowance is 32x.
+RTOL = 1e-8
 # keV -> eV (x1000) of eV/1000 differs from the golden energy by 1 ulp for 12
 # of 760 (Si), 6 of 510 (Au), 17 of 1202 (SiO2) knots. The kernel then
 # evaluates one ulp beside the knot instead of on it; f2 is continuous there
 # so f1 agrees, but only to the knot-continuity level (Task 3: the
 # ln|x - E| terms one ulp from a knot are amplified ~30x). Measured worst
-# absolute difference: NumPy Si 9.8e-9, SiO2 1.5e-10, Au 2.0e-5; JAX Si
-# 1.2e-9, SiO2 1.5e-10, Au 2.0e-5. Bounds: Si 3x, SiO2 7x, Au 5x (the Task 3
+# absolute difference: Si 1.2e-9, SiO2 1.5e-10, Au 2.0e-5. Bounds: Si 3x, SiO2 7x, Au 5x (the Task 3
 # JAX fusion deviation reaches 6e-5).
 KNOT_ULP_ATOL = {"Si": 3e-8, "SiO2": 1e-9, "Au": 1e-4}
 
 
-@pytest.fixture(params=["numpy", "jax"])
-def backend_name(request: pytest.FixtureRequest):
-    """Run the test under each backend, restoring the original afterwards."""
-    if request.param == "jax":
-        pytest.importorskip("jax")
-    original = "jax" if isinstance(get_backend(), JaxBackend) else "numpy"
-    set_backend(request.param)
-    yield request.param
-    set_backend(original)
-
-
 @pytest.mark.parametrize(("name", "formula"), CASES)
-def test_end_to_end_matches_upstream_golden(
-    name: str, formula: str, backend_name: str
-) -> None:
+def test_end_to_end_matches_upstream_golden(name: str, formula: str) -> None:
     with np.load(GOLDEN / f"{name}.npz") as g:
         energy_ev, f1, f2 = g["energy_ev"], g["f1"], g["f2"]
         rel_corr = float(g["rel_corr"])
     res = kk_calculate_real(formula, energies_kev=energy_ev / 1000.0)
     seg, coeffs = compound_spectrum(*parse_formula(formula))
-    assert res.backend == backend_name
+    assert res.backend == "jax"
     assert np.isfinite(res.f1).all()
     assert res.relativistic_correction == rel_corr
 
@@ -72,14 +56,14 @@ def test_end_to_end_matches_upstream_golden(
         energy_ev[exact],
         seg,
         coeffs,
-        rtol=RTOL[backend_name],
+        rtol=RTOL,
     )
     assert np.abs(res.f1[~exact] - f1[~exact]).max() < KNOT_ULP_ATOL[formula]
 
 
 @pytest.mark.parametrize(("name", "formula"), CASES)
 def test_default_grid_matches_upstream_golden_bit_for_bit_inputs(
-    name: str, formula: str, backend_name: str
+    name: str, formula: str
 ) -> None:
     """The default grid reaches the kernel in eV without a round trip."""
     with np.load(GOLDEN / f"{name}.npz") as g:
@@ -88,7 +72,7 @@ def test_default_grid_matches_upstream_golden_bit_for_bit_inputs(
     res = kk_calculate_real(formula)
     seg, coeffs = compound_spectrum(*parse_formula(formula))
     assert res.energy_kev.size == energy_ev.size
-    assert_kk_close(res.f1, f1, energy_ev, seg, coeffs, rtol=RTOL[backend_name])
+    assert_kk_close(res.f1, f1, energy_ev, seg, coeffs, rtol=RTOL)
 
 
 # CXRO comparison -----------------------------------------------------------

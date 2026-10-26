@@ -21,17 +21,36 @@ Unreleased
 
 **Added**
 
-- ``xraylabtool.kk``: Kramers-Kronig transform of the imaginary scattering factor f2 to f1 by the piecewise Laurent polynomial method of Watts (2014), a NumPy/JAX port of kkcalc's ``KK_PP`` with its tabulated f2 data (10 eV-500 keV, vendored as ``data/kkcalc/asf.npz``), optional merging of measured near-edge spectra (``load_nearedge``, ``to_asf_scale``, ``merge_spectra``), adaptive refinement (``refine_spectrum``) and ``kk_calculate_real`` returning ``KKResult`` (with ``to_xray_result``). Lazily imported; ``import xraylabtool`` does not load it.
+- ``xraylabtool.kk``: Kramers-Kronig transform of the imaginary scattering factor f2 to f1 by the piecewise Laurent polynomial method of Watts (2014), a JAX port of kkcalc's ``KK_PP`` with its tabulated f2 data (10 eV-500 keV, vendored as ``data/kkcalc/asf.npz``), optional merging of measured near-edge spectra (``load_nearedge``, ``to_asf_scale``, ``merge_spectra``), adaptive refinement (``refine_spectrum``) and ``kk_calculate_real`` returning ``KKResult`` (with ``to_xray_result``). Lazily imported; ``import xraylabtool`` does not load it.
 - ``xraylabtool kk FORMULA`` CLI subcommand (``--nearedge``, ``--input-type``, ``--energy-unit``, ``--merge``, ``--density``, ``--refine``, ``--energies``, ``-o``, ``--format``) with shell completion.
 - GUI "Kramers-Kronig" tab: near-edge file, merge points, refinement, plot of measured/spliced f2, KK f1 and CXRO f1, CSV export.
 - ``NearEdgeDataError`` (a ``ValidationError``), also exported from ``xraylabtool``.
 - Docs: ``physics/kramers_kronig`` (equations, the Eq. (10) a₋₃ sign erratum, accuracy, 30 keV truncation), ``api/kk`` and ``guides/kk_guide``; ``NOTICE`` with the kkcalc Zlib attribution.
+- ``xraylabtool.kk`` is JAX-only: one ``jax.numpy`` implementation, a single device-resident pipeline (one upload, one status fetch after assembly and merge, one per refinement pass, one download) over bucketed shapes, so a default refined run compiles five programs and a second call with the same buckets compiles none. See ADR-005.
+- ``xraylabtool.kk.Spectrum`` (padded piecewise-polynomial f2 table, a JAX pytree) and ``xraylabtool.kk.kk_f1``: ``jit``/``vmap``/``grad``-compatible device-level f1.
+- ``xraylabtool.kk.warm_up(formulas=("SiO2",), refine_tolerance=0.01)`` precompiles the default programs. The GUI warms the programs of its own Compute click on an idle worker; the CLI never warms up.
+- The ``xraylabtool kk`` command and the GUI launcher enable JAX's persistent compile cache under the OS user-cache directory (``xraylabtool/jax``, compile-time threshold 0) unless ``jax_compilation_cache_dir`` is already set or ``XRAYLABTOOL_NO_JAX_CACHE=1``; the library never enables it.
+- ``KKResult.refine_exhausted`` (default ``False``) is ``True`` when adaptive refinement stopped on ``refine_max_passes``, ``refine_max_points`` or float spacing before every interval met the tolerance; the ``kk`` CLI prints a warning then.
+- ``scripts/kk_gpu_check.py``: manual GPU gate (oracle, additivity, transfer budget with the guard live, padding invariance, f2 at the Si edge, benchmark) for the CUDA machine.
+- ``docs/architecture/005-adr-kk-jax-only.md`` (with the section "Known deviations from the acceptance gates": CPU refined run 10-20 % slower than the forced-JAX baseline, GPU small-m overhead of 2-4 ms, bare-library GPU cold start 3.7-4.4 s); ``jax_architecture`` and the kk guide describe the device pipeline.
 
 **Changed**
 
 - Licence expression is ``MIT AND Zlib`` in ``pyproject.toml`` and ``conda-recipe/meta.yaml``; ``LICENSE-kkcalc.txt`` ships in the sdist and wheel.
 - ``calculators.core.calculate_properties_from_factors(formula, energy_kev, density, f1_total, f2_total)``: new public helper computing δ, β and the derived quantities from given f1/f2 totals; the lookup path shares its code.
 - GUI: the main window opens maximized.
+- ``kk_calculate_real(chunk_size=...)``: ``bool``, ``float`` and ``str`` now raise ``ValueError`` (a positive integer, including NumPy integers, is required; it is an upper bound on the energies per block).
+- ``refine_spectrum`` validates the spectrum table and ``chunk_size`` up front; one-point grids and sliver-only passes no longer skip validation.
+- Near-edge conversion overflow now surfaces after the merge-point validation (precedence deviation from the pre-JAX pipeline: same exception type, different message; also when the data do not overlap the table).
+- ``set_backend()`` has no effect on ``xraylabtool.kk``; ``KKResult.backend`` is always ``"jax"`` from ``kk`` (the legacy value ``"numpy"`` is still accepted when constructing a ``KKResult``).
+- NumPy integer values are accepted for the point and chunk limits (``refine_max_passes``, ``refine_max_points``, ``chunk_size``).
+- Minimum JAX is ``>=0.12.0.1`` (``pyproject.toml``, ``uv.lock``): the golden tolerances were measured on it, and releases 0.8.0 to 0.12.0 differ in the last digits of fused XLA expressions.
+- ``tests/test_code_quality.py::test_naming_conventions`` ignores physical unit symbols (``eV``, ``keV``, ...) in its camelCase check; the threshold is unchanged.
+- ``docs/api/kk.rst`` no longer documents ``MergeStatus``, ``MergeResult`` and ``DeviceTables`` fields twice (duplicate-object warnings).
+
+**Removed**
+
+- ``ensure_float64`` from ``xraylabtool.backend.array_ops`` (its only user was ``kk``, which now establishes x64 itself) and the NumPy twin of the kk kernel, assembly, merge and refinement.
 
 **Fixed**
 

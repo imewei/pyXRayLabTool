@@ -58,10 +58,17 @@ class KKResult:
     n_refined_points : int
         Number of points added by adaptive refinement (0 if not refined).
     backend : str
-        Array backend that ran the transform, ``"numpy"`` or ``"jax"``.
+        Array backend that ran the transform. ``kk_calculate_real`` always
+        reports ``"jax"``; ``"numpy"`` is still accepted for results built
+        directly (legacy).
     nearedge_scaled_kev_f2 : tuple of numpy.ndarray or None
         ``(energy_kev, f2)`` of the near-edge data on the scattering-factor
         scale, on its own energy grid; ``None`` without near-edge data.
+    refine_exhausted : bool
+        ``True`` if adaptive refinement stopped on a limit
+        (``refine_max_passes``, ``refine_max_points`` or float spacing) before
+        every interval met the tolerance; ``False`` when it converged or was
+        not requested.
 
     References
     ----------
@@ -90,6 +97,7 @@ class KKResult:
     nearedge_scaled_kev_f2: tuple[NDArray[np.float64], NDArray[np.float64]] | None = (
         None
     )
+    refine_exhausted: bool = False
 
     def __post_init__(self) -> None:
         energy = _readonly_1d("energy_kev", self.energy_kev)
@@ -146,7 +154,8 @@ class KKResult:
         ``f1`` and ``f2`` of this result, with the same code as
         ``calculate_single_material_properties``. Negative ``f1`` near an
         absorption edge is kept (critical angle 0 there); the energy order is
-        preserved.
+        preserved. ``XRayResult`` has no field for it, so ``refine_exhausted``
+        is not carried over: check it on this result first.
 
         Parameters
         ----------

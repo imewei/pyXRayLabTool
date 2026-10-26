@@ -1,6 +1,7 @@
 """Integration tests for the ``kk`` CLI subcommand."""
 
 import csv
+import dataclasses
 from importlib.metadata import entry_points
 import io
 import json
@@ -315,6 +316,29 @@ class TestKKCli:
         assert "refine" not in out.lower()
         table = _parse_csv(out)
         assert table["energy_keV"].size == ref.energy_kev.size
+
+    def test_exhausted_refinement_warns_on_stderr_only(self, capsys):
+        real = kk_calculate_real
+
+        def exhausted(*args, **kwargs):
+            return dataclasses.replace(real(*args, **kwargs), refine_exhausted=True)
+
+        with patch("xraylabtool.kk.kk_calculate_real", exhausted):
+            rc, out, err = _run(
+                ["kk", "Si", "--energies", "5.0,0.1", "--refine", "0.05"], capsys
+            )
+        assert rc == 0
+        assert "Warning: refinement stopped on a limit" in err
+        assert "0.05" in err
+        assert "Warning" not in out
+        assert _parse_csv(out)["f1"].size >= 2
+
+    def test_converged_refinement_does_not_warn(self, capsys):
+        rc, _, err = _run(
+            ["kk", "Si", "--energies", "5.0,0.1", "--refine", "0.05"], capsys
+        )
+        assert rc == 0
+        assert "Warning" not in err
 
     @pytest.mark.parametrize("tol", ["0", "-0.1", "nan"])
     def test_bad_refine_errors(self, capsys, tol):

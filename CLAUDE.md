@@ -87,7 +87,7 @@ xraylabtool/
 │   └── completion_v2/    # Virtual-environment-centric shell completion
 ├── validation/validators.py  # validate_chemical_formula/energy_range/density/calculation_parameters
 ├── analysis/comparator.py    # MaterialComparator
-├── kk/                   # Kramers-Kronig f2→f1 (kkcalc port, Watts 2014): api, transform, spectrum, nearedge, refine, result, database
+├── kk/                   # Kramers-Kronig f2→f1 (kkcalc port, Watts 2014; JAX-only): api, _pipeline, _device, _shapes, transform, spectrum, nearedge, refine, result, database
 ├── io/                   # file_operations.py, data_export.py
 ├── gui/                  # PySide6 app: main_window/ (per-tab mixins incl. kk_tab), widgets/, services.py (Qt-free compute), workers.py, theme_manager.py, style.py
 ├── data/AtomicScatteringFactor/  # .nff data files (CXRO)
@@ -102,7 +102,7 @@ xraylabtool/
 4. **Backend auto-select**: JAX only when JAX is installed *and* an NVIDIA GPU is present; NumPy otherwise. `set_backend()` overrides
 5. **Batch tiers**: `calculate_xray_properties` is sequential; `data_handling.batch_processing.calculate_batch_properties` chunks (default 100) and uses `ProcessPoolExecutor` for chunks ≥ 8 items, `ThreadPoolExecutor` below
 6. **Cache warming**: All 92 elements preload at import; per-element interpolators build lazily — `warm_up_cache()` / `warm_cache_for_compounds()` front-load them
-7. **Kramers-Kronig (`xraylabtool.kk`)**: lazy, not imported by `import xraylabtool`; public API in keV, transform in eV; uses its own vendored data (differs from `.nff` for Sc, Mo, Ru, Be, Ti, Si, La, Gd, W); core accepts 10 eV-500 keV, only `KKResult.to_xray_result` enforces 0.03-30 keV. Docs: `docs/physics/kramers_kronig.rst` (Eq. 10 a₋₃ sign erratum), `docs/guides/kk_guide.rst`
+7. **Kramers-Kronig (`xraylabtool.kk`)**: lazy, not imported by `import xraylabtool`; **kk is JAX-only** (one `jax.numpy` implementation in float64, no NumPy twin; `set_backend()` does not affect it, ADR-005). `kk_calculate_real` is a device-resident pipeline (`_pipeline.py`, `refine.py`; helpers and `Spectrum` in `_device.py`): one upload, one status fetch after assembly/merge, one per refinement pass, one download, over bucketed shapes (`_shapes.py`). Public API in keV, transform in eV; `Spectrum`/`kk_f1` are jit/vmap/grad-compatible. `kk.warm_up()` is public API (precompiles a formula's default and refined programs); the GUI warms its own Compute path on an idle worker via `gui/services.warm_up_kk`, the CLI never warms up; the CLI `kk` command and the GUI launcher enable the persistent compile cache via `_device.enable_persistent_cache()` (`XRAYLABTOOL_NO_JAX_CACHE=1` opts out; the suite sets it in `tests/conftest.py`). Uses its own vendored data (differs from `.nff` for Sc, Mo, Ru, Be, Ti, Si, La, Gd, W); core accepts 10 eV-500 keV, only `KKResult.to_xray_result` enforces 0.03-30 keV. JAX floor `>=0.12.0.1` (golden tolerances are measured on it). `scripts/kk_bench.py` (CPU) and `scripts/kk_gpu_check.py` (manual, CUDA) are standalone gates. Docs: `docs/physics/kramers_kronig.rst` (Eq. 10 a₋₃ sign erratum), `docs/guides/kk_guide.rst`, `docs/architecture/005-adr-kk-jax-only.md`
 
 ### Test Structure
 
@@ -122,7 +122,7 @@ Registered markers (`--strict-markers`; an unregistered one is a collection erro
 
 - `--cov` is in pytest `addopts`, so every run measures coverage; pass `--no-cov` for single-test runs.
 - `filterwarnings = error`: a new warning fails the test.
-- GUI tests (`test_gui_smoke.py`, `test_gui_progress.py`, `test_gui_kk_tab.py`, `unit/test_gui_widgets.py`, `unit/test_calculation_worker.py`, `unit/test_kk_plot.py`) run serially, outside xdist; the Makefile (`GUI_TESTS`) and `.github/workflows/ci.yml` (`IGNORE_GUI`) exclude them from the parallel pass, so add a new GUI test file to both lists.
+- GUI tests (`test_gui_smoke.py`, `test_gui_progress.py`, `test_gui_kk_tab.py`, `test_gui_kk_worker_end_to_end.py`, `unit/test_gui_widgets.py`, `unit/test_calculation_worker.py`, `unit/test_kk_plot.py`) run serially, outside xdist; the Makefile (`GUI_TESTS`) and `.github/workflows/ci.yml` (`IGNORE_GUI`) exclude them from the parallel pass, so add a new GUI test file to both lists.
 - ruff is pinned to the same version in `.pre-commit-config.yaml`, `.github/workflows/{ci,security}.yml` and `uv.lock`; bump all four together.
 - A version bump touches ~10 places; run `python scripts/check_version.py` (also a pre-commit hook; `--expect X.Y.Z` for a release).
 - `mypy --strict` is clean locally (`untyped_calls_exclude = ["jax"]`); CI's mypy step is advisory.

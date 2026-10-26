@@ -12,12 +12,15 @@ from typing import Any
 # public name -> submodule that defines it
 _EXPORTS = {
     "kk_calculate_real": "api",
+    "warm_up": "api",
     "KKResult": "result",
     "compound_spectrum": "spectrum",
     "evaluate_f2": "spectrum",
     "relativistic_correction": "transform",
     "kk_piecewise_poly": "transform",
     "kk_real_spectrum": "transform",
+    "kk_f1": "transform",
+    "Spectrum": "_device",
     "load_asf": "database",
     "AsfDatabase": "database",
     "NearEdgeSpectrum": "nearedge",
@@ -33,9 +36,11 @@ __all__ = [
     "KKResult",
     "NearEdgeSpectrum",
     "RefineOutcome",
+    "Spectrum",
     "compound_spectrum",
     "evaluate_f2",
     "kk_calculate_real",
+    "kk_f1",
     "kk_piecewise_poly",
     "kk_real_spectrum",
     "load_asf",
@@ -44,6 +49,7 @@ __all__ = [
     "refine_spectrum",
     "relativistic_correction",
     "to_asf_scale",
+    "warm_up",
 ]
 
 

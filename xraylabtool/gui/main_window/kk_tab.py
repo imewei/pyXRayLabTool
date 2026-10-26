@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 
 from xraylabtool.logging_utils import get_logger
 
-from ..services import compute_kk
+from ..services import compute_kk, warm_up_kk
 from ..widgets.kk_plot import KKPlot
 from ..workers import CalculationWorker
 
@@ -234,6 +234,30 @@ class KKTabMixin:
         if self.threadpool is not None:
             self.threadpool.start(worker)
 
+    def start_kk_warm_up(self: MainWindowProtocol) -> None:
+        """Precompile the programs of the tab's default Compute click on an idle thread.
+
+        Called by the launcher once the window is shown. It uses the formula and
+        energy grid currently in the form, so the first click with those values
+        compiles nothing. The worker is not tracked and has no result handlers:
+        it must not touch the KK tab.
+        """
+        if self.threadpool is None:
+            self.threadpool = QThreadPool.globalInstance()
+        if self.threadpool is not None:
+            grid = _kk_energy_grid(
+                self.kk_energy_start.value(),
+                self.kk_energy_end.value(),
+                self.kk_points.value(),
+                None,
+                self.kk_energy_unit.currentText(),
+            )
+            self.threadpool.start(
+                CalculationWorker(
+                    warm_up_kk, self.kk_formula.text().strip() or "SiO2", grid
+                )
+            )
+
     def _on_kk_finished(self: MainWindowProtocol, computation: Any) -> None:
         self.kk_run_btn.setEnabled(True)
         self.kk_run_btn.setText("Compute")
@@ -251,6 +275,15 @@ class KKTabMixin:
                 self.kk_table.setItem(i, col, item)
         self.kk_table.resizeColumnsToContents()
         logger.info("kk_compute_complete", extra={"points": len(res.energy_kev)})
+        if res.refine_exhausted:
+            # The curve is plotted, but refinement stopped on a limit first.
+            message = (
+                "Kramers-Kronig done, but refinement stopped on a limit before "
+                "every interval met the tolerance"
+            )
+            self.status_bar.showMessage(message, 10000)
+            self.toast.show_toast(message, "warning")
+            return
         self._info("Kramers-Kronig calculation complete")
         self.toast.show_toast("Kramers-Kronig calculation done", "success")
 

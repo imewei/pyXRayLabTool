@@ -5,12 +5,12 @@ from __future__ import annotations
 import doctest
 from pathlib import Path
 
+import jax
 import numpy as np
 import pytest
 from scipy.integrate import quad
 
 from tests.fixtures.kk_rounding import assert_kk_close
-from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
 from xraylabtool.kk import transform
 from xraylabtool.kk.transform import (
     kk_piecewise_poly,
@@ -33,27 +33,6 @@ def _golden(name: str) -> dict[str, np.ndarray]:
 
 def _args(g: dict[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray, float]:
     return g["seg_ev"], g["coeffs"], float(g["rel_corr"])
-
-
-@pytest.fixture(params=["numpy", "jax"])
-def backend_name(request: pytest.FixtureRequest):
-    """Run the test under each backend, restoring the original afterwards."""
-    if request.param == "jax":
-        pytest.importorskip("jax")
-    original = "jax" if isinstance(get_backend(), JaxBackend) else "numpy"
-    set_backend(request.param)
-    yield request.param
-    set_backend(original)
-
-
-@pytest.fixture
-def jax_backend():
-    """Select the JAX backend for one test, restoring the original afterwards."""
-    jax = pytest.importorskip("jax")
-    original = "jax" if isinstance(get_backend(), JaxBackend) else "numpy"
-    set_backend("jax")
-    yield jax
-    set_backend(original)
 
 
 # --- independent references -------------------------------------------------
@@ -280,8 +259,7 @@ def test_interior_knot_with_continuous_f2_is_finite_and_continuous(name: str) ->
 
 
 @pytest.mark.unit
-def test_gradient_at_continuous_knot_is_finite(jax_backend) -> None:
-    jax = jax_backend
+def test_gradient_at_continuous_knot_is_finite() -> None:
     jnp = jax.numpy
     g = _golden("si")
     seg, coeffs, rel = (jnp.asarray(a) for a in _args(g))
@@ -297,22 +275,35 @@ def test_gradient_at_continuous_knot_is_finite(jax_backend) -> None:
     assert np.isfinite(grads).all()
 
 
+# Bound = rtol 1e-10 + K x the rounding scale of the closed-form sum
+# (tests/fixtures/kk_rounding.py), not a flat atol: the cancelling log terms
+# round differently with the CPU's vector ``log`` (Ne at 10 eV drifts by 7.6e-9
+# from the NumPy golden here, Ar at its jump knot by 1e-8 on the CI runner), and
+# the scale is what bounds that. It stays tightest where the test discriminates
+# D5: at the 500 keV end point of Ne the bound is about 1e-9, while keeping the
+# dropped boundary log would add a finite part of about 5.0e-5 to f1 (~50000x).
+# At the 10 eV end point and the 21.5 eV knot that term is only -2.8e-16 and
+# 2.7e-15, so the wider bound there cannot hide a violation either.
+JUMP_CASES = ("ar", "ne", "synthetic")
+
+
 @pytest.mark.unit
-@pytest.mark.parametrize("name", ["ar", "ne", "synthetic"])
+@pytest.mark.parametrize("name", JUMP_CASES)
 def test_jump_and_endpoint_follow_upstream_convention(name: str) -> None:
     g = _golden(name)
     mask = (g["eval_kind"] == 2) | (g["eval_kind"] == 3)
     assert np.any(g["eval_kind"] == 2)
-    out = kk_real_spectrum(g["eval_ev"][mask], *_args(g))
-    assert np.isfinite(out).all()
-    np.testing.assert_allclose(out, g["f1_kk_pp"][mask], rtol=1e-10)
+    energy = g["eval_ev"][mask]
+    seg, coeffs, rel = _args(g)
+    out = kk_real_spectrum(energy, seg, coeffs, rel)
+    assert_kk_close(out, g["f1_kk_pp"][mask], energy, seg, coeffs, rtol=1e-10)
 
 
-# --- evaluation order, chunking, backends ------------------------------------------
+# --- evaluation order, chunking ------------------------------------------
 
 
 @pytest.mark.unit
-def test_unsorted_duplicate_energies(backend_name: str) -> None:
+def test_unsorted_duplicate_energies() -> None:
     g = _golden("synthetic")
     energies = g["eval_ev"]
     rng = np.random.default_rng(7)
@@ -327,7 +318,7 @@ def test_unsorted_duplicate_energies(backend_name: str) -> None:
 
 
 @pytest.mark.unit
-def test_chunk_invariance(backend_name: str) -> None:
+def test_chunk_invariance() -> None:
     g = _golden("si")
     energies = g["eval_ev"]
     full = kk_real_spectrum(energies, *_args(g))
@@ -368,6 +359,69 @@ def test_rejects_malformed_inputs(
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    ("eval_ev", "seg_ev", "coeffs", "rel", "message"),
+    [
+        (
+            [0.0],
+            [2.0, 5.0],
+            [[0, 1, 0, 0, 0]],
+            0.0,
+            "eval_ev and seg_ev must be positive",
+        ),
+        (
+            [1.0],
+            [0.0, 5.0],
+            [[0, 1, 0, 0, 0]],
+            0.0,
+            "eval_ev and seg_ev must be positive",
+        ),
+        ([1.0], [2.0, 5.0], [[0, 1, 0, 0, 0]], np.nan, "rel_corr must be finite"),
+        ([np.inf], [2.0, 5.0], [[0, 1, 0, 0, 0]], 0.0, "eval_ev must be finite"),
+        (
+            [[1.0]],
+            [2.0, 5.0],
+            [[0, 1, 0, 0, 0]],
+            0.0,
+            r"eval_ev must be 1-D, got shape \(1, 1\)",
+        ),
+    ],
+)
+def test_legacy_error_messages(eval_ev, seg_ev, coeffs, rel, message) -> None:
+    with pytest.raises(ValueError, match=message):
+        kk_real_spectrum(eval_ev, seg_ev, coeffs, rel)
+
+
+@pytest.mark.unit
+def test_legacy_validation_order_with_several_invalid_inputs() -> None:
+    ok_seg, ok_c = [2.0, 5.0], [[0, 1, 0, 0, 0]]
+    # eval_ev shape precedes everything below it
+    with pytest.raises(ValueError, match="eval_ev must be 1-D"):
+        kk_real_spectrum([[1.0]], [5.0], ok_c, 0.0)
+    # seg shape precedes coeffs shape, which precedes finiteness
+    with pytest.raises(ValueError, match="seg_ev must be 1-D"):
+        kk_real_spectrum([np.nan], [5.0], ok_c, 0.0)
+    with pytest.raises(ValueError, match="coeffs must have shape"):
+        kk_real_spectrum([np.nan], ok_seg, [[0, 0, 0, 0, 0]] * 2, 0.0)
+    # finiteness: eval_ev, then seg_ev, then coeffs, then rel_corr
+    with pytest.raises(ValueError, match="eval_ev must be finite"):
+        kk_real_spectrum([np.nan], [np.nan, 5.0], [[np.nan, 1, 0, 0, 0]], np.nan)
+    with pytest.raises(ValueError, match="seg_ev must be finite"):
+        kk_real_spectrum([1.0], [np.nan, 5.0], [[np.nan, 1, 0, 0, 0]], np.nan)
+    with pytest.raises(ValueError, match="coeffs must be finite"):
+        kk_real_spectrum([1.0], ok_seg, [[np.nan, 1, 0, 0, 0]], np.nan)
+    # finiteness (all arrays) precedes positivity precedes ordering precedes chunk_size
+    with pytest.raises(ValueError, match="rel_corr must be finite"):
+        kk_real_spectrum([0.0], [5.0, 2.0], ok_c, np.inf, chunk_size=0)
+    with pytest.raises(ValueError, match="must be positive"):
+        kk_real_spectrum([0.0], [5.0, 2.0], ok_c, 0.0, chunk_size=0)
+    with pytest.raises(ValueError, match="strictly increasing"):
+        kk_real_spectrum([1.0], [5.0, 2.0], ok_c, 0.0, chunk_size=0)
+    with pytest.raises(ValueError, match="chunk_size"):
+        kk_real_spectrum([1.0], ok_seg, ok_c, 0.0, chunk_size=0)
+
+
+@pytest.mark.unit
 def test_empty_eval_returns_empty() -> None:
     g = _golden("synthetic")
     out = kk_real_spectrum(np.array([]), *_args(g))
@@ -376,17 +430,7 @@ def test_empty_eval_returns_empty() -> None:
 
 
 @pytest.mark.unit
-def test_jax_numpy_parity(jax_backend) -> None:
-    g = _golden("au")
-    jax_out = kk_real_spectrum(g["eval_ev"], *_args(g))
-    set_backend("numpy")
-    np_out = kk_real_spectrum(g["eval_ev"], *_args(g))
-    assert_kk_close(jax_out, np_out, g["eval_ev"], g["seg_ev"], g["coeffs"], rtol=1e-8)
-
-
-@pytest.mark.unit
-def test_kernel_jits_without_tracer_error(jax_backend) -> None:
-    jax = jax_backend
+def test_kernel_jits_without_tracer_error() -> None:
     g = _golden("synthetic")
     jitted = jax.jit(kk_piecewise_poly)
     out = np.asarray(jitted(g["eval_ev"], *_args(g)))
@@ -395,8 +439,7 @@ def test_kernel_jits_without_tracer_error(jax_backend) -> None:
 
 
 @pytest.mark.unit
-def test_float32_inputs_give_float64_output(jax_backend) -> None:
-    jax = jax_backend
+def test_float32_inputs_give_float64_output(x64_restored) -> None:
     g = _golden("synthetic")
     e32 = g["eval_ev"].astype(np.float32)
     s32 = g["seg_ev"].astype(np.float32)
@@ -412,15 +455,6 @@ def test_float32_inputs_give_float64_output(jax_backend) -> None:
         float(np.float32(g["rel_corr"])),
     )
     np.testing.assert_allclose(out, expected, rtol=1e-12)
-
-
-@pytest.mark.unit
-def test_set_backend_clears_kk_cache(jax_backend) -> None:
-    g = _golden("synthetic")
-    kk_real_spectrum(g["eval_ev"], *_args(g))
-    assert transform._jit_cache
-    set_backend("numpy")
-    assert not transform._jit_cache
 
 
 @pytest.mark.unit

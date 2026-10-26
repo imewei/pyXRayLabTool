@@ -113,6 +113,32 @@ class KKComputation:
     """CXRO f1 per formula unit (electrons) at ``cxro_energy_kev``, shape (k,)."""
 
 
+def warm_up_kk(
+    formula: str = "SiO2",
+    energies_kev: ArrayLike | None = None,
+    refine_tolerance: float = 0.01,
+) -> None:
+    """Precompile the programs of the KK tab's Compute click (no Qt, safe in a worker).
+
+    Runs the same public call the tab makes (``kk_calculate_real`` with an
+    explicit energy grid), once without and once with refinement, so whatever
+    buckets that call uses are the ones compiled. Best effort: a failure is
+    logged, never raised, because nothing the user asked for depends on it.
+    """
+    from xraylabtool.kk import kk_calculate_real
+    from xraylabtool.kk._device import ensure_x64, worker_guard
+
+    ensure_x64()
+    try:
+        with worker_guard():
+            kk_calculate_real(formula, energies_kev=energies_kev)
+            kk_calculate_real(
+                formula, energies_kev=energies_kev, refine_tolerance=refine_tolerance
+            )
+    except Exception:
+        logger.warning("kk warm-up failed", exc_info=True)
+
+
 def compute_kk(
     formula: str,
     nearedge_path: str | None,
@@ -157,7 +183,11 @@ def compute_kk(
         If near-edge arguments are inconsistent.
     """
     from xraylabtool.kk import kk_calculate_real, load_nearedge
+    from xraylabtool.kk._device import ensure_x64, worker_guard
 
+    # Worker threads start with whatever the process configured; x64 is a
+    # precondition of the float64 pipeline.
+    ensure_x64()
     if energy_unit not in ("eV", "keV"):
         raise ValueError(f"energy_unit must be 'eV' or 'keV', got {energy_unit!r}")
     scale = EV_TO_KEV if energy_unit == "eV" else 1.0
@@ -181,14 +211,16 @@ def compute_kk(
             "refine": refine_tolerance,
         },
     )
-    result = kk_calculate_real(
-        formula,
-        energies_kev=energies_kev,
-        nearedge=nearedge,
-        input_type=cast("InputType | None", input_type),
-        merge_points_kev=merge_kev,
-        refine_tolerance=refine_tolerance,
-    )
+    # The guard (a no-op outside tests) is thread-local: this worker opens its own.
+    with worker_guard():
+        result = kk_calculate_real(
+            formula,
+            energies_kev=energies_kev,
+            nearedge=nearedge,
+            input_type=cast("InputType | None", input_type),
+            merge_points_kev=merge_kev,
+            refine_tolerance=refine_tolerance,
+        )
     in_range = (result.energy_kev >= TABULATED_MIN_KEV) & (
         result.energy_kev <= TABULATED_MAX_KEV
     )

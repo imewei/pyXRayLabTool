@@ -33,8 +33,8 @@ requirements:
     - mendeleev >=1.1.0
     - tqdm >=4.67.1
     - psutil >=7.1.3
-    - jax >=0.8.0
-    - jaxlib >=0.8.0
+    - jax >=0.12.0.1
+    - jaxlib >=0.12.0.1
     - interpax >=0.3.0
     - pyside6 >=6.10.1
     - pyqtgraph >=0.13.7

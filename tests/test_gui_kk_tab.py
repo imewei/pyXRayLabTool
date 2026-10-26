@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import dataclasses
 import os
 import time
 from typing import Any
@@ -228,6 +229,27 @@ def test_invalid_inputs_are_reported_without_a_worker(
     message = win.toast.show_toast.call_args.args[0]
     assert needle.lower() in message.lower()
     assert win.toast.show_toast.call_args.args[1] == "error"
+
+
+def test_exhausted_refinement_shows_a_warning_toast(
+    app: QApplication, win: Any
+) -> None:
+    _small_run(win)
+    win.kk_run_btn.click()
+    _wait_for_worker(app, win)
+    win.toast.show_toast.reset_mock()
+    exhausted = dataclasses.replace(
+        win.kk_result,
+        result=dataclasses.replace(win.kk_result.result, refine_exhausted=True),
+    )
+    win._on_kk_finished(exhausted)
+    assert win.kk_result is exhausted  # the curve and table are still shown
+    message, kind = win.toast.show_toast.call_args.args
+    assert kind == "warning"
+    assert "refinement stopped" in message
+    assert "refinement stopped" in win.status_bar.currentMessage()
+    kinds = [c.args[1] for c in win.toast.show_toast.call_args_list]
+    assert "success" not in kinds
 
 
 def test_worker_error_shows_toast_not_crash(app: QApplication, win: Any) -> None:

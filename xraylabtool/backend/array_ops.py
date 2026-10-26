@@ -308,12 +308,6 @@ def set_backend(name: str) -> None:
         _jit_cache.clear()
     except ImportError:
         pass
-    try:
-        from xraylabtool.kk.transform import _jit_cache as _kk_jit_cache
-
-        _kk_jit_cache.clear()
-    except ImportError:
-        pass
 
 
 class _OpsProxy:
@@ -336,27 +330,3 @@ class _OpsProxy:
 
 
 ops = _OpsProxy()
-
-
-def ensure_float64(x: Any) -> Array:
-    """Cast ``x`` to float64 on the active backend.
-
-    Under JAX, 64-bit mode is enabled first: with ``jax_enable_x64`` off,
-    ``jnp.asarray`` would silently downcast to float32 (and JAX may have been
-    reconfigured since :class:`JaxBackend` was constructed).
-
-    Parameters
-    ----------
-    x : array_like
-        Input of any real dtype.
-
-    Returns
-    -------
-    Array
-        ``x`` as a float64 array of the active backend.
-    """
-    if ops.is_jax():
-        import jax
-
-        jax.config.update("jax_enable_x64", True)
-    return ops.asarray(x, dtype=ops.float64)

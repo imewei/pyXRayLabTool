@@ -117,6 +117,9 @@ class TestCodeQuality(BaseUnitTest):
             f"Missing docstrings in critical modules: {critical_missing[:5]}"
         )
 
+    # Physical unit symbols (eV, keV, ...) look like camelCase but are not identifiers.
+    UNIT_SYMBOLS = frozenset({"eV", "keV", "meV", "MeV", "GeV", "kHz", "MHz", "GHz"})
+
     def _check_naming_conventions(self):
         """Check for naming convention violations."""
         violations = []
@@ -127,7 +130,11 @@ class TestCodeQuality(BaseUnitTest):
                     content = f.read()
 
                 # Check for CamelCase variable names (should be snake_case)
-                camel_case_vars = re.findall(r"\b[a-z]+[A-Z][a-zA-Z]*\b", content)
+                camel_case_vars = [
+                    var
+                    for var in re.findall(r"\b[a-z]+[A-Z][a-zA-Z]*\b", content)
+                    if var not in self.UNIT_SYMBOLS
+                ]
                 if camel_case_vars:
                     violations.extend(
                         [f"{py_file}: {var}" for var in camel_case_vars[:3]]

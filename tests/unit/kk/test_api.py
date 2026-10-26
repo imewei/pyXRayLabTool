@@ -15,7 +15,6 @@ import pytest
 
 from tests.fixtures.kk_rounding import assert_kk_close
 from xraylabtool import kk
-from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
 from xraylabtool.exceptions import EnergyError, FormulaError, ValidationError
 from xraylabtool.kk import api, kk_calculate_real, result
 from xraylabtool.kk.result import KKResult
@@ -48,7 +47,13 @@ def test_default_grid_clipped_to_0p03_30_kev_and_logged(
     assert_kk_close(res.f1, golden_f1, res.energy_kev * 1000.0, seg, coeffs, rtol=1e-10)
     np.testing.assert_allclose(res.f2, golden_f2, rtol=1e-12)
 
-    records = [r for r in kk_log.records if r.name == "xraylabtool.kk"]
+    # the runtime line is logged once per process, so it is in this call's
+    # records only when this test happens to run first
+    records = [
+        r
+        for r in kk_log.records
+        if r.name == "xraylabtool.kk" and not r.getMessage().startswith("kk runtime:")
+    ]
     assert len(records) == 1
     assert records[0].levelno == logging.INFO
     message = records[0].getMessage()
@@ -179,19 +184,11 @@ def test_energies_are_copied_not_aliased() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("backend", ["numpy", "jax"])
-def test_backend_is_recorded_and_chunk_size_does_not_matter(backend: str) -> None:
-    if backend == "jax":
-        pytest.importorskip("jax")
-    original = "jax" if isinstance(get_backend(), JaxBackend) else "numpy"
-    set_backend(backend)
-    try:
-        energies = np.geomspace(0.03, 30.0, 40)
-        full = kk_calculate_real("SiO2", energies_kev=energies)
-        chunked = kk_calculate_real("SiO2", energies_kev=energies, chunk_size=7)
-    finally:
-        set_backend(original)
-    assert full.backend == backend
+def test_backend_is_jax_and_chunk_size_does_not_matter() -> None:
+    energies = np.geomspace(0.03, 30.0, 40)
+    full = kk_calculate_real("SiO2", energies_kev=energies)
+    chunked = kk_calculate_real("SiO2", energies_kev=energies, chunk_size=7)
+    assert full.backend == chunked.backend == "jax"
     seg, coeffs = compound_spectrum(*parse_formula("SiO2"))
     assert_kk_close(chunked.f1, full.f1, energies * 1000.0, seg, coeffs, rtol=1e-12)
 
@@ -216,6 +213,7 @@ def test_kk_result_is_frozen() -> None:
         "n_refined_points",
         "backend",
         "nearedge_scaled_kev_f2",
+        "refine_exhausted",
     ]
 
 

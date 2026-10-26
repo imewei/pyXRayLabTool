@@ -47,6 +47,42 @@ def test_single_element_is_the_elemental_table_scaled_by_count() -> None:
     assert np.array_equal(coeffs, 3.0 * db.im_coeffs(79))
 
 
+def _numpy_assembly(zs: list[int], counts: list[float]) -> np.ndarray:
+    """Upstream's assembly: separate multiply then add, elements in order."""
+    db = load_asf()
+    seg = np.unique(np.concatenate([db.energy_ev(z) for z in zs]))
+    acc = np.zeros((seg.size - 1, 5))
+    for z, count in zip(zs, counts, strict=True):
+        idx = np.searchsorted(db.energy_ev(z), seg[:-1], side="right") - 1
+        acc = acc + count * db.im_coeffs(z)[idx]
+    return acc
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("symbols", "zs", "counts"),
+    [
+        (["Si", "O"], [14, 8], [1.0, 2.0]),
+        (["Fe", "Ni", "Cr", "O"], [26, 28, 24, 8], [0.7, 1.3, 2.9, 3.1]),
+        (["C", "H", "O", "N"], [6, 1, 8, 7], [8.3, 7.7, 2.1, 0.9]),
+    ],
+)
+def test_compound_coefficients_round_like_a_separate_multiply_and_add(
+    symbols, zs, counts
+) -> None:
+    """Bit-exact on CPU: the assembly barrier forbids an FMA contraction of ``acc + n * c``."""
+    _, coeffs = compound_spectrum(symbols, counts)
+    assert np.array_equal(coeffs, _numpy_assembly(zs, counts))
+
+
+@pytest.mark.unit
+def test_compound_coefficients_equal_the_pre_jax_baseline() -> None:
+    with np.load(GOLDEN / "sio2.npz") as g:
+        seg, coeffs = compound_spectrum(["Si", "O"], [1.0, 2.0])
+        assert np.array_equal(seg, g["seg_ev"])
+        assert np.array_equal(coeffs, g["coeffs"])
+
+
 @pytest.mark.unit
 def test_element_order_does_not_change_the_result() -> None:
     a = compound_spectrum(["Si", "O"], [1.0, 2.0])

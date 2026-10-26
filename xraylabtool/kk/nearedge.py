@@ -18,22 +18,31 @@ data, flat end points or non-finite values raise
 ``inf`` or silently wrong coefficients).
 
 Energies are in eV throughout this module (the tabulated coefficients are in
-eV). This module is host-side NumPy.
+eV). Loading, validation and merge-point resolution are host-side NumPy; the
+numerical part (:func:`to_asf_scale_device`, :func:`merge_device`) is pure
+``jax.numpy`` and stays on the device, with :func:`raise_or_log` turning its
+status pytree into the data errors and the D6 warning on the host.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 import math
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, NamedTuple
 
+import jax
+import jax.numpy as jnp
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 
 from xraylabtool import constants
 from xraylabtool.exceptions import DataFileError, NearEdgeDataError, ValidationError
-from xraylabtool.kk.spectrum import _real_float64, evaluate_f2
+from xraylabtool.kk import _device
+from xraylabtool.kk._device import Spectrum
+from xraylabtool.kk._shapes import bucket, bucket_pow2
+from xraylabtool.kk.spectrum import _real_float64, _union_knots, evaluate_f2_device
 from xraylabtool.logging_utils import get_logger
 
 if TYPE_CHECKING:
@@ -56,6 +65,29 @@ _HC_EV_M = constants.SPEED_OF_LIGHT * constants.PLANCK / constants.ELEMENT_CHARG
 # by 1e6 or more. Real pre-edge to post-edge steps are percent to orders of
 # magnitude.
 _MIN_RELATIVE_STEP = 1e-6
+
+# Data whose largest magnitude is below this are rescaled by a power of two
+# before they reach the device: XLA flushes subnormals (inputs and results),
+# which would turn the tiny differences of such data into zeros.
+_TINY_PEAK = 2.0**-500
+
+
+def value_exponent(values: NDArray[np.float64]) -> int:
+    """Power-of-two exponent that brings tiny near-edge ``values`` to order one.
+
+    ``0`` (no rescaling, bit-identical results) unless the largest finite
+    magnitude is below ``2**-500``. Multiplying by ``2**exponent`` is exact,
+    and every later step (conversion, the affine normalisation of the merge)
+    is homogeneous in the values, so the merged spectrum does not depend on it.
+    """
+    finite = np.abs(values[np.isfinite(values)])
+    peak = float(finite.max()) if finite.size else 0.0
+    return -int(np.frexp(peak)[1]) if 0.0 < peak < _TINY_PEAK else 0
+
+
+def _rescaled(values: NDArray[np.float64], exponent: int) -> NDArray[np.float64]:
+    """``values * 2**exponent`` (exact); ``values`` itself when ``exponent`` is 0."""
+    return np.ldexp(values, exponent) if exponent else values
 
 
 # A merge point within this relative distance of a range end is that end: the
@@ -281,6 +313,34 @@ def _check_positive(name: str, value: float | None) -> float | None:
     return float(value)
 
 
+def _asf_scale_arguments(
+    input_type: InputType, density: float | None, formula_mass: float | None
+) -> tuple[str, float | None, float | None]:
+    """Validated ``(kind, density, formula_mass)`` of :func:`to_asf_scale`.
+
+    ``beta`` input falls back to a density of 1 g/cm3 and a formula mass of
+    100 g/mol (each logged at INFO); the other kinds ignore both.
+    """
+    kind = input_type.lower() if isinstance(input_type, str) else input_type
+    if kind not in _INPUT_TYPES:
+        raise ValidationError(
+            f"input_type must be one of {', '.join(_INPUT_TYPES)}",
+            "input_type",
+            input_type,
+        )
+    density = _check_positive("density", density)
+    formula_mass = _check_positive("formula_mass", formula_mass)
+
+    if kind == "beta":
+        if density is None:
+            logger.info("beta input: assuming a mass density of 1 g/cm3")
+            density = 1.0
+        if formula_mass is None:
+            logger.info("beta input: assuming a formula mass of 100 g/mol")
+            formula_mass = 100.0
+    return kind, density, formula_mass
+
+
 def to_asf_scale(
     spec: NearEdgeSpectrum,
     input_type: InputType,
@@ -325,7 +385,10 @@ def to_asf_scale(
     :func:`merge_spectra` rescales the data to the tabulated f2 at the merge
     points, so a constant factor (the absolute scale of ``nexafs`` data, the
     density and formula mass of ``beta`` data) drops out of the merged
-    spectrum; only the shape of the measured curve matters.
+    spectrum; only the shape of the measured curve matters. Data whose
+    largest magnitude is below ``2**-500`` are scaled by an exact power of two
+    for the device calculation (XLA flushes subnormals) and the result is
+    scaled back, so the outcome does not depend on the absolute scale.
 
     References
     ----------
@@ -344,56 +407,172 @@ def to_asf_scale(
     >>> bool(out.values[1] / out.values[0] > 2.0)  # E * mu: ratio 2 * 290/280
     True
     """
-    kind = input_type.lower() if isinstance(input_type, str) else input_type
-    if kind not in _INPUT_TYPES:
-        raise ValidationError(
-            f"input_type must be one of {', '.join(_INPUT_TYPES)}",
-            "input_type",
-            input_type,
-        )
-    density = _check_positive("density", density)
-    formula_mass = _check_positive("formula_mass", formula_mass)
+    kind, density, formula_mass = _asf_scale_arguments(
+        input_type, density, formula_mass
+    )
 
     energy, values = spec.energy_ev, spec.values
-    with np.errstate(all="ignore"):
-        if kind in _NEXAFS_TYPES:
-            converted = energy * values / (2.0 * constants.THOMPSON * _HC_EV_M)
-        elif kind == "beta":
-            if density is None:
-                logger.info("beta input: assuming a mass density of 1 g/cm3")
-                density = 1.0
-            if formula_mass is None:
-                logger.info("beta input: assuming a formula mass of 100 g/mol")
-                formula_mass = 100.0
-            number_density = density * constants.AVOGADRO / formula_mass
-            converted = (
-                1.0e-6
-                * values
-                * 2.0
-                * np.pi
-                * energy**2
-                / (number_density * constants.THOMPSON * _HC_EV_M**2)
-            )
-        else:
-            converted = values.copy()
-    return NearEdgeSpectrum(energy, converted)
+    exponent = value_exponent(values)
+    values = _rescaled(values, exponent)
+    pad = bucket_pow2(energy.size) - energy.size
+    _device.ensure_x64()
+    # The beta scalars travel in the same single upload (a Python float passed
+    # to the jitted function would be an implicit transfer).
+    e_d, v_d, density_d, mass_d = _device.upload(
+        (
+            np.concatenate([energy, np.ones(pad)]),
+            np.concatenate([values, np.ones(pad)]),
+            None if density is None else np.float64(density),
+            None if formula_mass is None else np.float64(formula_mass),
+        )
+    )
+    converted = _device.fetch(
+        to_asf_scale_device(e_d, v_d, kind, density=density_d, formula_mass=mass_d)
+    )
+    out = np.asarray(converted[: energy.size])
+    return NearEdgeSpectrum(energy, _rescaled(out, -exponent))
 
 
-class _Merged(NamedTuple):
-    seg_ev: NDArray[np.float64]
-    coeffs: NDArray[np.float64]
-    scaled: NDArray[np.float64]
-    merge_points_ev: tuple[float, float]
+@partial(jax.jit, static_argnames="input_type")
+def to_asf_scale_device(
+    energy_ev: jax.Array,
+    values: jax.Array,
+    input_type: str,
+    *,
+    density: float | jax.Array | None = None,
+    formula_mass: float | jax.Array | None = None,
+) -> jax.Array:
+    """Convert near-edge absorption values to the f2 scale on the device.
+
+    Device counterpart of :func:`to_asf_scale`: the same formulas, element by
+    element, so padded entries do not affect real ones. The host wrapper owns
+    the argument validation and the INFO log of the ``beta`` defaults; invalid
+    arithmetic (overflow) yields ``inf`` and is reported by the host wrapper.
+
+    Parameters
+    ----------
+    energy_ev : jax.Array
+        Photon energies in eV (float64), any 1-D length.
+    values : jax.Array
+        Absorption values in the units of ``input_type``, same shape.
+    input_type : {"nexafs", "photoabsorption", "xanes", "beta", "asf"}
+        Static (a different value compiles a separate program); see
+        :func:`to_asf_scale`.
+    density : float or jax.Array, optional
+        Mass density in g/cm^3, ``"beta"`` only. Default 1. Pass a device
+        scalar inside a transfer-guarded region (a Python float is an
+        implicit transfer).
+    formula_mass : float or jax.Array, optional
+        Formula mass in g/mol, ``"beta"`` only. Default 100; same note.
+
+    Returns
+    -------
+    jax.Array
+        Values on the f2 scale, same shape as ``values``.
+
+    Raises
+    ------
+    ValueError
+        If ``input_type`` is not one of the supported kinds (at trace time).
+
+    References
+    ----------
+    Upstream ``kkcalc.data.convert_NEXAFS_to_ASF`` and ``convert_Beta_to_ASF``
+    with the package constants; design spec §6 (``2026-10-25-kk-jax-first-design.md``).
+    """
+    if input_type in _NEXAFS_TYPES:
+        return energy_ev * values / (2.0 * constants.THOMPSON * _HC_EV_M)
+    if input_type == "beta":
+        density = 1.0 if density is None else density
+        formula_mass = 100.0 if formula_mass is None else formula_mass
+        number_density = density * constants.AVOGADRO / formula_mass
+        return (
+            1.0e-6
+            * values
+            * 2.0
+            * jnp.pi
+            * energy_ev**2
+            / (number_density * constants.THOMPSON * _HC_EV_M**2)
+        )
+    if input_type == "asf":
+        return values
+    raise ValueError(f"input_type must be one of {', '.join(_INPUT_TYPES)}")
+
+
+class MergeStatus(NamedTuple):
+    """Scalars the host needs to raise or log after a device merge.
+
+    All fields are device scalars (NumPy scalars after
+    :func:`~xraylabtool.kk._device.fetch_status`); padded near-edge entries
+    take no part in any of them.
+
+    Attributes
+    ----------
+    n_segments : int32
+        True segment count of the merged spectrum.
+    v_low, v_high : float
+        Measured near-edge values at the two merge points.
+    a_low, a_high : float
+        Tabulated f2 at the two merge points.
+    measured_step, tabulated_step : float
+        ``v_high - v_low`` and ``a_high - a_low``.
+    nonfinite : bool
+        Any normalised near-edge value is not finite.
+    n_negative : int32
+        Normalised values below zero strictly inside the merge window.
+    f2_min : float
+        Their minimum over the window (``inf`` when the window holds none).
+    n_inside : int32
+        Near-edge points strictly inside the merge window.
+
+    References
+    ----------
+    Design spec §6 (``2026-10-25-kk-jax-first-design.md``).
+    """
+
+    n_segments: jax.Array
+    v_low: jax.Array
+    v_high: jax.Array
+    a_low: jax.Array
+    a_high: jax.Array
+    measured_step: jax.Array
+    tabulated_step: jax.Array
+    nonfinite: jax.Array
+    n_negative: jax.Array
+    f2_min: jax.Array
+    n_inside: jax.Array
+
+
+class MergeResult(NamedTuple):
+    """Output of :func:`merge_device`.
+
+    Attributes
+    ----------
+    spectrum : Spectrum
+        Merged table at the requested capacity.
+    scaled_f2 : jax.Array, shape (m,)
+        The full normalised near-edge curve, including the points outside the
+        replaced window; entries past the true count are ``0``.
+    used_points_ev : jax.Array, shape (2,)
+        The ``(low, high)`` merge points the splice used.
+    status : MergeStatus
+        Everything :func:`raise_or_log` needs.
+    """
+
+    spectrum: Spectrum
+    scaled_f2: jax.Array
+    used_points_ev: jax.Array
+    status: MergeStatus
 
 
 def _resolve_merge_points(
     spec: NearEdgeSpectrum,
-    seg_ev: NDArray[np.float64],
+    tab_lo: float,
+    tab_hi: float,
     merge_points_ev: Sequence[float] | None,
 ) -> tuple[float, float]:
-    """Validated ``(low, high)`` merge points in eV."""
+    """Validated ``(low, high)`` merge points in eV inside the tabulated range."""
     data_lo, data_hi = float(spec.energy_ev[0]), float(spec.energy_ev[-1])
-    tab_lo, tab_hi = float(seg_ev[0]), float(seg_ev[-1])
     if data_hi <= tab_lo or data_lo >= tab_hi:
         raise NearEdgeDataError(
             f"Near-edge data (parsed as {_fmt_range(data_lo, data_hi)}) do not "
@@ -433,31 +612,213 @@ def _resolve_merge_points(
     return low, high
 
 
-def _merge(
-    spec: NearEdgeSpectrum,
-    seg_ev: ArrayLike,
-    coeffs: ArrayLike,
-    merge_points_ev: Sequence[float] | None,
-) -> _Merged:
-    """Implementation of :func:`merge_spectra`, also returning the scaled data."""
-    try:
-        seg = _real_float64("seg_ev", seg_ev)
-        coef = _real_float64("coeffs", coeffs)
-    except ValueError as exc:
-        raise ValidationError(str(exc), "seg_ev/coeffs") from exc
-    if seg.ndim != 1 or seg.size < 2 or coef.shape != (seg.size - 1, 5):
-        raise ValidationError(
-            "seg_ev must have shape (n+1,) and coeffs shape (n, 5), got "
-            f"{seg.shape} and {coef.shape}"
-        )
-    low, high = _resolve_merge_points(spec, seg, merge_points_ev)
-    energy, values = spec.energy_ev, spec.values
+def _interp(x: jax.Array, xp: jax.Array, fp: jax.Array, n: jax.Array) -> jax.Array:
+    """``numpy.interp`` over the first ``n`` entries of ``xp`` (padding must be ``+inf``).
 
-    points = np.array([low, high])
-    v_low, v_high = (float(x) for x in np.interp(points, energy, values))
-    a_low, a_high = (float(x) for x in evaluate_f2(points, seg, coef))
+    Same arithmetic as NumPy (``slope * (x - xp[j]) + fp[j]``, the product
+    pinned so XLA cannot fuse it), constant outside the data, and ``fp[j]``
+    exactly on a knot (an overflowing slope times a zero offset would be NaN).
+    NumPy's NaN fallback (retry from the right knot) is not reproduced: off a
+    knot an overflowing slope gives ``±inf``, never NaN, and that is reported
+    by the status.
+    """
+    j = jnp.clip(jnp.searchsorted(xp, x, side="right") - 1, 0, jnp.maximum(n - 2, 0))
+    slope = (fp[j + 1] - fp[j]) / (xp[j + 1] - xp[j])
+    inner = jnp.where(
+        x == xp[j], fp[j], jax.lax.optimization_barrier(slope * (x - xp[j])) + fp[j]
+    )
+    last = jnp.maximum(n - 1, 0)
+    return jnp.where(x >= xp[last], fp[last], jnp.where(x < xp[0], fp[0], inner))
+
+
+def _spliced_coeffs(
+    spec: Spectrum,
+    seg_out: jax.Array,
+    n_out: jax.Array,
+    window: tuple[jax.Array, jax.Array, jax.Array, jax.Array],
+    knot_energy: jax.Array,
+    knot_f2: jax.Array,
+) -> jax.Array:
+    """Coefficients of the merged table for the segments of ``seg_out``.
+
+    The source of each segment is chosen by its lower boundary (right
+    continuous, clamped to the last real segment): inside ``[low, high)`` the
+    piecewise-linear near-edge piece between its two knots, elsewhere the
+    tabulated polynomial that starts at or below the boundary. A midpoint
+    would pick the wrong polynomial for adjacent representable floats.
+    """
+    low, high, a_low, a_high = window
+    lower, upper = seg_out[:-1], seg_out[1:]
+    tab = spec.coeffs[
+        jnp.clip(
+            jnp.searchsorted(spec.seg_ev, lower, side="right") - 1,
+            0,
+            spec.n_segments - 1,
+        )
+    ]
+
+    def height(x: jax.Array) -> jax.Array:
+        k = jnp.clip(jnp.searchsorted(knot_energy, x), 0, knot_energy.shape[0] - 1)
+        return jnp.where(x == low, a_low, jnp.where(x == high, a_high, knot_f2[k]))
+
+    h_lower, h_upper = height(lower), height(upper)
+    slope = (h_upper - h_lower) / (upper - lower)
+    # The barrier keeps slope * E from fusing with the subtraction (FMA).
+    offset = h_lower - jax.lax.optimization_barrier(slope * lower)
+    linear = jnp.zeros((lower.shape[0], 5)).at[:, 0].set(slope).at[:, 1].set(offset)
+    coeffs = jnp.where(((lower >= low) & (lower < high))[:, None], linear, tab)
+    return jnp.where((jnp.arange(lower.shape[0]) < n_out)[:, None], coeffs, 0.0)
+
+
+@partial(jax.jit, static_argnames="capacity")
+def merge_device(
+    spec: Spectrum,
+    ne_energy_ev: jax.Array,
+    ne_f2: jax.Array,
+    n_ne: jax.Array,
+    low_ev: float | jax.Array,
+    high_ev: float | jax.Array,
+    *,
+    capacity: int,
+) -> MergeResult:
+    """Normalise near-edge data to the tabulated f2 and splice it in, on the device.
+
+    Device counterpart of :func:`merge_spectra` (the merge points are
+    already resolved and snapped by the host). Between ``low_ev`` and
+    ``high_ev`` the tabulated segments are replaced by the piecewise-linear
+    curve through the normalised near-edge points; outside they are copied
+    unchanged. No data check is raised here: the flatness and finiteness
+    conditions are returned in :class:`MergeStatus` for :func:`raise_or_log`,
+    and computed without trapping on invalid arithmetic.
+
+    Parameters
+    ----------
+    spec : Spectrum
+        Tabulated table (``n`` true segments).
+    ne_energy_ev : jax.Array, shape (m,)
+        Near-edge energies in eV, strictly increasing over the first ``n_ne``
+        entries; the rest is padding and is masked.
+    ne_f2 : jax.Array, shape (m,)
+        Near-edge values on the f2 scale (:func:`to_asf_scale_device`).
+    n_ne : jax.Array
+        Number of real near-edge points (int scalar, at least 2).
+    low_ev, high_ev : float or jax.Array
+        Merge points, ``low_ev < high_ev``. Inside a
+        ``jax.transfer_guard("disallow_explicit")`` region they must already be
+        device scalars: converting a Python float is an implicit transfer.
+    capacity : int
+        Static output segment capacity; use
+        ``bucket(n_segments_upper_bound + n_near_edge + 2)``, a smaller value
+        silently truncates the knot union.
+
+    Returns
+    -------
+    MergeResult
+        Merged :class:`~xraylabtool.kk.Spectrum` at ``capacity``, the full
+        normalised near-edge curve, the merge points used and the status.
+
+    Notes
+    -----
+    Candidate knots are the real tabulated knots outside ``[low, high]``,
+    ``low``, the near-edge energies strictly inside the window and ``high``;
+    every excluded or padded entry is sent to ``+inf`` before the union, so
+    the result does not depend on ``capacity`` or on the padding. The products
+    that feed sums are pinned with ``jax.lax.optimization_barrier`` so the
+    rounding is that of the NumPy reference rather than an FMA's.
+
+    References
+    ----------
+    B. Watts, Opt. Express 22(19), 23628 (2014): normalisation of the
+    near-edge data to the tabulated scattering factors; design spec §6
+    (``2026-10-25-kk-jax-first-design.md``).
+    """
+    low = jnp.asarray(low_ev, dtype=jnp.float64)
+    high = jnp.asarray(high_ev, dtype=jnp.float64)
+    valid = jnp.arange(ne_energy_ev.shape[0]) < n_ne
+    energy = jnp.where(valid, ne_energy_ev, jnp.inf)
+    values = jnp.where(valid, ne_f2, 0.0)
+
+    points = jnp.stack([low, high])
+    v_low, v_high = _interp(points, energy, values, n_ne)
+    a_low, a_high = evaluate_f2_device(points, spec)
     step = v_high - v_low
-    if not abs(step) > _MIN_RELATIVE_STEP * max(abs(v_low), abs(v_high)):
+    tab_step = a_high - a_low
+    scaled = jax.lax.optimization_barrier((values - v_low) * (tab_step / step)) + a_low
+    scaled = jnp.where(valid, scaled, 0.0)
+
+    inside = valid & (energy > low) & (energy < high)
+    kept = (jnp.arange(spec.seg_ev.shape[0]) <= spec.n_segments) & (
+        (spec.seg_ev < low) | (spec.seg_ev > high)
+    )
+    candidates = jnp.concatenate(
+        [
+            jnp.where(kept, spec.seg_ev, jnp.inf),
+            jnp.where(inside, energy, jnp.inf),
+            points,
+        ]
+    )
+    union, n_knots = _union_knots(candidates, capacity + 1)
+    pos = jnp.arange(capacity + 1)
+    last = union[jnp.maximum(n_knots - 1, 0)]
+    seg_out = jnp.where(pos < n_knots, union, last * (pos - n_knots + 2))
+    n_out = n_knots - 1
+
+    coeffs = _spliced_coeffs(
+        spec, seg_out, n_out, (low, high, a_low, a_high), energy, scaled
+    )
+    negative = inside & (scaled < 0.0)
+    status = MergeStatus(
+        n_segments=n_out,
+        v_low=v_low,
+        v_high=v_high,
+        a_low=a_low,
+        a_high=a_high,
+        measured_step=step,
+        tabulated_step=tab_step,
+        nonfinite=~jnp.all(jnp.isfinite(scaled) | ~valid),
+        n_negative=jnp.sum(negative, dtype=jnp.int32),
+        f2_min=jnp.min(jnp.where(inside, scaled, jnp.inf)),
+        n_inside=jnp.sum(inside, dtype=jnp.int32),
+    )
+    return MergeResult(Spectrum(seg_out, coeffs, n_out), scaled, points, status)
+
+
+def raise_or_log(
+    status: MergeStatus, low: float, high: float, exponent: int = 0
+) -> None:
+    """Raise or log what a device merge reported (host side).
+
+    Parameters
+    ----------
+    status : MergeStatus
+        The fetched status (NumPy scalars, see
+        :func:`~xraylabtool.kk._device.fetch_status`).
+    low, high : float
+        The merge points in eV, for the messages.
+    exponent : int, default 0
+        The :func:`value_exponent` the values were rescaled by before the
+        merge; the reported end-point values are shown unscaled.
+
+    Raises
+    ------
+    NearEdgeDataError
+        If the near-edge values at the merge points are (nearly) equal, the
+        tabulated f2 is equal there, or a normalised value is not finite.
+
+    Notes
+    -----
+    Normalised values below zero inside the window are kept and logged at
+    WARNING (count, window size and minimum), never clipped.
+
+    References
+    ----------
+    Design spec §1 and §6 (``2026-10-25-kk-jax-first-design.md``).
+    """
+    v_low, v_high = float(status.v_low), float(status.v_high)
+    if not abs(float(status.measured_step)) > _MIN_RELATIVE_STEP * max(
+        abs(v_low), abs(v_high)
+    ):
+        v_low, v_high = math.ldexp(v_low, -exponent), math.ldexp(v_high, -exponent)
         raise NearEdgeDataError(
             f"Near-edge data have flat endpoints: the values at the merge points {low:g} "
             f"and {high:g} eV ({v_low:.6g}, {v_high:.6g}) differ by less than "
@@ -465,52 +826,48 @@ def _merge(
             "normalised to the tabulated f2. Choose merge points on the "
             "pre-edge and post-edge."
         )
-    tab_step = a_high - a_low
-    if not abs(tab_step) > 1e-12 * max(abs(a_low), abs(a_high)):
+    a_low, a_high = float(status.a_low), float(status.a_high)
+    if not abs(float(status.tabulated_step)) > 1e-12 * max(abs(a_low), abs(a_high)):
         raise NearEdgeDataError(
             f"The tabulated f2 is equal at the merge points {low:g} and "
             f"{high:g} eV ({a_low:.6g}, {a_high:.6g}); the near-edge data "
             "cannot be normalised. Choose merge points on either side of the edge."
         )
-
-    with np.errstate(all="ignore"):
-        scaled = (values - v_low) * (tab_step / step) + a_low
-    if not np.isfinite(scaled).all():
+    if bool(status.nonfinite):
         raise NearEdgeDataError(
             "Near-edge data are not finite after normalisation to the "
             "tabulated f2 (values too large for the merge-point step)"
         )
-
-    inside = (energy > low) & (energy < high)
-    negative = scaled[inside] < 0.0
-    if negative.any():
+    if int(status.n_negative):
         logger.warning(
             "%d of %d near-edge points inside the merge window are negative "
             "after normalisation to the tabulated f2 (minimum %.6g); kept "
             "unchanged, not clipped",
-            int(negative.sum()),
-            int(inside.sum()),
-            float(scaled[inside].min()),
+            int(status.n_negative),
+            int(status.n_inside),
+            float(status.f2_min),
         )
 
-    # Piecewise-linear near-edge segments between the merge points.
-    knots = np.concatenate(([low], energy[inside], [high]))
-    heights = np.concatenate(([a_low], scaled[inside], [a_high]))
-    slope = np.diff(heights) / np.diff(knots)
-    linear = np.zeros((knots.size - 1, 5))
-    linear[:, 0] = slope
-    linear[:, 1] = heights[:-1] - slope * knots[:-1]
 
-    n_left = int(np.searchsorted(seg, low, side="left"))  # knots below `low`
-    n_right = int(np.searchsorted(seg, high, side="right"))  # knots <= `high`
-    full_ev = np.concatenate((seg[:n_left], knots, seg[n_right:]))
-    if n_right < seg.size:
-        # Tabulated polynomial that continues above the last merge point.
-        tail = coef[n_right - 1 : n_right]
-        full_coeffs = np.vstack((coef[:n_left], linear, tail, coef[n_right:]))
-    else:  # high is the last tabulated edge: no segment above it
-        full_coeffs = np.vstack((coef[:n_left], linear))
-    return _Merged(full_ev, full_coeffs, scaled, (low, high))
+def _padded_table(
+    seg: NDArray[np.float64], coef: NDArray[np.float64], capacity: int
+) -> Spectrum:
+    """NumPy-leaved padded table without the positivity and finiteness checks.
+
+    The merge accepts non-positive leading edges; the
+    last edge is always positive because a merge point lies inside the range,
+    so the usual pad edges ``x_n (1 + k)`` are increasing, and finite for any
+    physical edge (they overflow to ``inf`` only if the last edge exceeds about
+    ``1.8e308 / (capacity + 1)``, far outside the 10 eV-500 keV tables).
+    """
+    k = np.arange(1, capacity - coef.shape[0] + 1)
+    last = seg[-1]
+    pad_ev = last * (1.0 + k)
+    return Spectrum(
+        np.concatenate([seg, pad_ev]),  # type: ignore[arg-type]
+        np.concatenate([coef, np.zeros((k.size, 5))]),  # type: ignore[arg-type]
+        np.int32(coef.shape[0]),  # type: ignore[arg-type]
+    )
 
 
 def merge_spectra(
@@ -562,6 +919,8 @@ def merge_spectra(
     ValidationError
         If ``seg_ev`` and ``coeffs`` do not have shapes ``(n+1,)`` and
         ``(n, 5)``, or are complex.
+    ValueError
+        If ``seg_ev`` is not finite or not strictly increasing.
 
     Notes
     -----
@@ -591,5 +950,57 @@ def merge_spectra(
     >>> bool({290.0, 300.0} <= set(merged.tolist()))
     True
     """
-    merged = _merge(spec, seg_ev, coeffs, merge_points_ev)
-    return merged.seg_ev, merged.coeffs
+    try:
+        seg = _real_float64("seg_ev", seg_ev)
+        coef = _real_float64("coeffs", coeffs)
+    except ValueError as exc:
+        raise ValidationError(str(exc), "seg_ev/coeffs") from exc
+    if seg.ndim != 1 or seg.size < 2 or coef.shape != (seg.size - 1, 5):
+        raise ValidationError(
+            "seg_ev must have shape (n+1,) and coeffs shape (n, 5), got "
+            f"{seg.shape} and {coef.shape}"
+        )
+    low, high = _resolve_merge_points(
+        spec, float(seg[0]), float(seg[-1]), merge_points_ev
+    )
+    # Edges only need to be finite and increasing (not positive); the
+    # coefficients are not checked here.
+    if not np.isfinite(seg).all():
+        raise ValueError("seg_ev must be finite")
+    if (np.diff(seg) <= 0).any():
+        raise ValueError("seg_ev must be strictly increasing")
+    table = _padded_table(seg, coef, bucket(coef.shape[0]))
+
+    energy, values = spec.energy_ev, spec.values
+    exponent = value_exponent(values)
+    values = _rescaled(values, exponent)
+    n_ne = energy.size
+    pad = bucket_pow2(n_ne) - n_ne
+    _device.ensure_x64()
+    table_d, e_d, v_d, n_d, low_d, high_d = _device.upload(
+        (
+            table,
+            np.concatenate([energy, np.full(pad, energy[-1])]),
+            np.concatenate([values, np.full(pad, values[-1])]),
+            np.int32(n_ne),
+            np.float64(low),
+            np.float64(high),
+        )
+    )
+    result = merge_device(
+        table_d,
+        e_d,
+        v_d,
+        n_d,
+        low_d,
+        high_d,
+        capacity=bucket(coef.shape[0] + n_ne + 2),
+    )
+    raise_or_log(_device.fetch_status(result.status), low, high, exponent)
+    out = _device.fetch(result)
+    n_out = int(out.spectrum.n_segments)
+    _device.check_capacity(n_out, out.spectrum.coeffs.shape[0])
+    return (
+        np.asarray(out.spectrum.seg_ev[: n_out + 1], dtype=np.float64),
+        np.asarray(out.spectrum.coeffs[:n_out], dtype=np.float64),
+    )

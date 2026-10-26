@@ -29,6 +29,13 @@ Equation numbers refer to B. Watts, *Opt. Express* **22**\ (19), 23628 (2014).
    * - ``kk_real_spectrum``
      - Eq. (10)
      - Validated, chunked wrapper of ``kk_piecewise_poly`` (eV).
+   * - ``kk_f1``
+     - Eq. (10)
+     - Device-level f1 of a padded ``Spectrum`` (eV); ``jit``/``vmap``/``grad``
+       compatible.
+   * - ``Spectrum``
+     - Eq. (8)
+     - Padded piecewise-polynomial f2 table, a JAX pytree (eV).
    * - ``relativistic_correction``
      - Eq. (9)
      - Z* of a formula unit.
@@ -56,6 +63,10 @@ Equation numbers refer to B. Watts, *Opt. Express* **22**\ (19), 23628 (2014).
    * - ``kk_calculate_real``, ``KKResult``
      - steps 1-6
      - High-level entry point (keV) and its result.
+   * - ``warm_up``
+     - not in the paper
+     - Precompiles the default device programs for given formulas (the GUI
+       warms its own Compute call the same way; see :doc:`../guides/kk_guide`).
    * - ``calculate_properties_from_factors``
      - not in the paper
      - ``xraylabtool.calculators.core``: δ, β and derived quantities from
@@ -83,7 +94,7 @@ Result
    :undoc-members:
    :show-inheritance:
    :exclude-members: formula, energy_kev, f1, f2, relativistic_correction, merge_points_kev,
-      n_refined_points, backend, nearedge_scaled_kev_f2
+      n_refined_points, backend, nearedge_scaled_kev_f2, refine_exhausted
 
 Transform kernel
 ----------------
@@ -92,6 +103,12 @@ Transform kernel
    :members:
    :undoc-members:
    :show-inheritance:
+
+Padded spectrum
+---------------
+
+.. autoclass:: xraylabtool.kk.Spectrum
+   :members:
 
 Compound spectrum
 -----------------
@@ -108,6 +125,8 @@ Near-edge data
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: n_segments, nonfinite, n_negative, f2_min, n_inside, spectrum,
+      scaled_f2, used_points_ev, status
 
 Refinement
 ----------
@@ -125,7 +144,7 @@ Database
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: symbols, mass
+   :exclude-members: symbols, mass, knots, coeffs, n_knots
 
 Optical properties from f1 and f2
 ---------------------------------

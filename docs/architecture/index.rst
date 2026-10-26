@@ -12,3 +12,4 @@ Design decisions and architectural documentation for XRayLabTool.
    002-adr-pyqtgraph-vs-matplotlib
    003-adr-dtype-policy
    004-adr-host-device-transfers
+   005-adr-kk-jax-only

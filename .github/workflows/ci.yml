@@ -222,7 +222,8 @@ jobs:
     needs: [change-detection, lint]
     if: needs.change-detection.outputs.should-run-tests == 'true' && !cancelled() && needs.lint.result != 'cancelled'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 12
+    # The kk suite (JAX compiles) takes ~16 min on windows-latest; 12 cancelled it at 81%.
+    timeout-minutes: 25
     strategy:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
@@ -323,7 +324,7 @@ jobs:
         # Execute tests with optimal configuration
         # Note: --benchmark-disable prevents pytest-benchmark warning when xdist is active
         # Ignore GUI tests (require PySide6 which is only installed on Ubuntu for smoke test)
-        IGNORE_GUI="--ignore=tests/test_gui_progress.py --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py --ignore=tests/unit/test_calculation_worker.py --ignore=tests/unit/test_kk_plot.py --ignore=tests/test_gui_kk_tab.py"
+        IGNORE_GUI="--ignore=tests/test_gui_progress.py --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py --ignore=tests/unit/test_calculation_worker.py --ignore=tests/unit/test_kk_plot.py --ignore=tests/test_gui_kk_tab.py --ignore=tests/test_gui_kk_worker_end_to_end.py"
 
         if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.python-version }}" == "3.13" ]]; then
           # Primary test run - decide coverage strategy
@@ -413,13 +414,13 @@ jobs:
         QT_QPA_PLATFORM: offscreen
       run: |
         # Run GUI-dependent tests in a separate process to avoid QApplication segfaults
-        pytest tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py -v --tb=short --timeout=30
+        pytest tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py tests/test_gui_kk_worker_end_to_end.py -v --tb=short --timeout=60
 
     - name: Backend compatibility test (JAX)
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
       continue-on-error: true  # JAX is optional
       run: |
-        uv pip install --system "jax[cpu]>=0.9.0" "interpax>=0.3.0"
+        uv pip install --system "jax[cpu]>=0.12.0.1" "interpax>=0.3.0"
         python -c "
         from xraylabtool.backend import set_backend
         set_backend('jax')

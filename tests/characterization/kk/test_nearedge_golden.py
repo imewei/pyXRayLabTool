@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 
 from tests.fixtures.kk_rounding import assert_kk_close
-from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
 from xraylabtool.kk import kk_calculate_real
 from xraylabtool.kk.nearedge import load_nearedge, merge_spectra, to_asf_scale
 from xraylabtool.kk.spectrum import compound_spectrum
@@ -26,24 +25,14 @@ EXAMPLE = HERE / "nearedge_example.txt"
 #   merged knots: identical (max |diff| 0.0 eV);
 #   merged coefficients: max |diff| / column scale 6.8e-16 (max relative 3.9e-12);
 #   f2 at the default grid: max relative error 1.8e-14;
-#   f1 at the default grid: max relative error 3.3e-12 (NumPy), 6.2e-12 (JAX),
-#     at most 5.2x (NumPy) / 5.7x (JAX) the Task 3 rounding scale;
-#   f1 at the golden eval points: 8.4e-14 (NumPy), 3.4e-9 (JAX, XLA fusion).
+#   f1 at the default grid: max relative error 6.2e-12, at most 5.7x the
+#     Task 3 rounding scale;
+#   f1 at the golden eval points: 3.4e-9 (XLA fusion).
 # Bounds: coefficients 1e-12, f2 1e-12, f1 as in the other end-to-end goldens
-# (rtol 1e-10 NumPy / 1e-8 JAX plus the rounding allowance).
+# (rtol 1e-8 plus the rounding allowance).
 COEFF_ATOL = 1e-12
-F1_RTOL = {"numpy": 1e-10, "jax": 1e-8}
+F1_RTOL = 1e-8
 F2_RTOL = 1e-12
-
-
-@pytest.fixture(params=["numpy", "jax"])
-def backend_name(request: pytest.FixtureRequest):
-    if request.param == "jax":
-        pytest.importorskip("jax")
-    original = "jax" if isinstance(get_backend(), JaxBackend) else "numpy"
-    set_backend(request.param)
-    yield request.param
-    set_backend(original)
 
 
 def _load_golden() -> dict[str, np.ndarray]:
@@ -73,7 +62,7 @@ def test_merged_spectrum_matches_upstream_golden() -> None:
 
 
 @pytest.mark.unit
-def test_nearedge_result_matches_upstream_golden(backend_name: str) -> None:
+def test_nearedge_result_matches_upstream_golden() -> None:
     g = _load_golden()
     mp_kev = tuple(float(x) / 1000.0 for x in g["merge_points"])
     res = kk_calculate_real(
@@ -84,7 +73,7 @@ def test_nearedge_result_matches_upstream_golden(backend_name: str) -> None:
     )
     keep = (g["energy_ev"] >= 30.0) & (g["energy_ev"] <= 30000.0)
     energy_ev = g["energy_ev"][keep]
-    assert res.backend == backend_name
+    assert res.backend == "jax"
     assert res.merge_points_kev == mp_kev
     np.testing.assert_allclose(res.energy_kev * 1000.0, energy_ev, rtol=1e-15)
     assert np.isfinite(res.f1).all()
@@ -95,7 +84,7 @@ def test_nearedge_result_matches_upstream_golden(backend_name: str) -> None:
         energy_ev,
         g["seg_ev"],
         g["coeffs"],
-        rtol=F1_RTOL[backend_name],
+        rtol=F1_RTOL,
     )
     assert res.nearedge_scaled_kev_f2 is not None
     assert res.nearedge_scaled_kev_f2[0].shape == (
@@ -104,7 +93,7 @@ def test_nearedge_result_matches_upstream_golden(backend_name: str) -> None:
 
 
 @pytest.mark.unit
-def test_kernel_on_merged_spectrum_matches_golden_f1_points(backend_name: str) -> None:
+def test_kernel_on_merged_spectrum_matches_golden_f1_points() -> None:
     g = _load_golden()
     seg, coeffs = _merged(g)
     f1 = kk_real_spectrum(g["eval_ev"], seg, coeffs, float(g["rel_corr"]))
@@ -114,5 +103,5 @@ def test_kernel_on_merged_spectrum_matches_golden_f1_points(backend_name: str) -
         g["eval_ev"],
         g["seg_ev"],
         g["coeffs"],
-        rtol=F1_RTOL[backend_name],
+        rtol=F1_RTOL,
     )

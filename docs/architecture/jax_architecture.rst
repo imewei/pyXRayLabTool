@@ -44,6 +44,14 @@ NumPy vs JAX
    y_compiled = sin_jit(x_jax)  # Computed and cached
 
 
+**The Kramers-Kronig package is JAX-only.** ``xraylabtool.kk`` has no NumPy
+twin: on CPU the single ``jax.numpy`` kernel is 5-14 times faster than the
+removed NumPy implementation at every size measured (m = 100 to 100 000
+energies), so ADR-001's premise that NumPy is faster on CPU for small arrays
+does not hold there. ``set_backend()`` does not affect ``kk``; see
+:doc:`005-adr-kk-jax-only` for the table and the consequences.
+
+
 Performance Benefits
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -280,6 +288,30 @@ Compilation in XRayLabTool
    result = calculate_single_material_properties("Si", 8.0, 2.33)
    # ~0.02 ms (no recompilation)
 
+**Kramers-Kronig programs and shape buckets:**
+
+``xraylabtool.kk`` compiles only for *bucketed* shapes: segment tables are
+padded to a geometric capacity ladder and energy counts to a power of two on
+CPU (the fine bucket ladder in equal blocks on accelerators), so a
+default refined ``SiO2`` run compiles five top-level programs (``_assemble``,
+``_evaluate``, ``_first_pass``, ``_refine_pass``, ``_finalize``) and a second
+call with other values but the same buckets compiles none. Two helpers cut the
+cold start:
+
+.. code-block:: python
+
+   from xraylabtool.kk import warm_up
+
+   warm_up(("SiO2",))  # compiles the default and refined (0.01) programs
+
+The GUI warms the programs of its own default Compute click on an idle worker
+after the window is shown (through the public ``kk_calculate_real``, with the
+tab's explicit energy grid); the library never warms up by itself. The ``xraylabtool kk`` command and the GUI launcher also enable JAX's
+persistent compile cache (``xraylabtool/jax`` under the OS user-cache
+directory, compile-time threshold 0) unless ``jax_compilation_cache_dir`` is
+already configured or ``XRAYLABTOOL_NO_JAX_CACHE=1`` is set. The library never
+enables it.
+
 
 Data Flow
 ~~~~~~~~~
@@ -302,6 +334,23 @@ Data Flow
    # Output: JAX arrays (NumPy compatible)
    result.critical_angle_degrees  # jax.Array (shape: (1,))
    result.attenuation_length_cm   # jax.Array (shape: (1,))
+
+**Kramers-Kronig data flow (device-resident):**
+
+.. code-block:: text
+
+   host: validate formula, energies, near-edge arguments; pick buckets
+   |-> upload   (one transfer of every input, padded to its bucket)
+   |-> device: assemble compound spectrum, merge near-edge data
+   |-> fetch_status  (one small status pytree; errors raised on the host)
+   |-> device: f1/f2 on the output grid
+   |-> [refinement] device pass -> fetch_status (one per pass)
+   \-> fetch  (one download of the final arrays) -> KKResult (NumPy)
+
+Between the upload and the final download no array crosses the host/device
+boundary implicitly; the tests run that region under
+``jax.transfer_guard("disallow_explicit")`` and count the three boundary
+helpers in ``xraylabtool.kk._device``.
 
 
 Memory Management
@@ -328,6 +377,14 @@ JAX vs NumPy memory semantics:
 - No memory leaks (immutability prevents issues)
 - Minimal memory overhead (lazy evaluation)
 - Transparent memory management (automatic)
+
+**Kramers-Kronig padding:** a ``Spectrum`` of ``n`` segments is stored at a
+capacity ``N >= n`` with zero-coefficient pad segments on knots
+``x_n * (1 + k)``, which contribute exactly nothing to the transform. Memory is
+bounded by ``chunk_size`` (energies per block, an upper bound; the default
+depends on the platform: cache-sized blocks of about 2 MiB per float64
+temporary on a CPU, one block or blocks of about 32 MiB on an accelerator), and the true counts are traced int32 leaves so
+different-sized spectra of one capacity share a compiled program.
 
 
 GPU Acceleration
@@ -359,6 +416,12 @@ GPU Acceleration
    # Force GPU
    with jax.default_device(jax.devices("gpu")[0]):
        result = calculate(...)
+
+**Kramers-Kronig on a GPU:** the kk pipeline runs on the default JAX device
+with the same code as on CPU. CI has no GPU, so ``scripts/kk_gpu_check.py``
+(run by hand on the CUDA machine) repeats the oracle, additivity, transfer
+budget (guard live on the device), padding invariance and benchmark checks and
+exits 1 on a miss.
 
 
 Type System
@@ -417,6 +480,11 @@ For advanced users:
    # Environment variables
    JAX_DISABLE_JIT=1 python script.py  # Debug without JIT
    JAX_PLATFORMS=cpu python script.py  # Force CPU
+   XRAYLABTOOL_NO_JAX_CACHE=1 xraylabtool kk Si  # no persistent compile cache
+
+``set_backend("numpy")`` is ignored by ``xraylabtool.kk``; the kk pipeline is
+always float64 JAX (x64 is established at every public entry, not only at
+import).
 
 
 Common Gotchas & Solutions

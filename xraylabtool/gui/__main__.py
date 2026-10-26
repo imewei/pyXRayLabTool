@@ -44,6 +44,10 @@ def main(argv: list[str] | None = None) -> None:
         "QT_LOGGING_RULES", "*.debug=false;*.info=false;qt.qpa.*=false"
     )
 
+    from xraylabtool.kk._device import enable_persistent_cache
+
+    enable_persistent_cache()
+
     app = QApplication(sys.argv if argv is None else [sys.argv[0], *argv])
 
     # Initialize theme manager (handles styling and persistence) and apply
@@ -54,6 +58,9 @@ def main(argv: list[str] | None = None) -> None:
 
     window = MainWindow(theme_manager=theme_manager)
     window.showMaximized()
+    if not args.test_launch:
+        # Once the event loop is running, so the window is painted first.
+        QTimer.singleShot(0, window.start_kk_warm_up)
 
     if args.test_launch:
         # Close shortly after showing to allow CI smoke tests without hanging

@@ -289,10 +289,15 @@ Eq. (8) (D1), so it cannot reproduce that test, and no such claim is made.
 
 - *Upstream parity.* Against golden outputs of kkcalc at the pinned commit
   (Si, Au, SiO\ :sub:`2`, Ar, Ne, a synthetic spectrum, and polystyrene with
-  its upstream near-edge example), the NumPy backend agrees to 1.2e-12
-  relative or better. The jitted JAX kernel rounds differently, so its
-  tolerance has a rounding-scale term. The worst case is 6.0e-5 absolute (Au
-  at 13.1 eV, :math:`f_1 = -0.0204`).
+  its upstream near-edge example), the JAX kernel (the only implementation)
+  agrees with f2 to 1e-12 relative (measured 4.3e-16) and with f1 to a
+  relative tolerance of 1e-8 plus 32 times the rounding scale of the
+  closed-form sum (the largest difference seen on the transform goldens is 2.1
+  times that scale, Au at 13.1 eV). The
+  fused XLA expressions round differently from upstream's NumPy, which is why
+  the tolerance has a rounding-scale term and why the JAX floor is
+  ``>=0.12.0.1`` (the release the tolerances were measured on). The worst case
+  is 6.0e-5 absolute (Au at 13.1 eV, :math:`f_1 = -0.0204`).
 - *Independent quadrature.* Each of the five basis terms on its own matches
   Cauchy principal-value quadrature to 8.4e-16 relative. A four-interval
   spectrum with all twenty coefficients nonzero matches to 7.8e-15. A

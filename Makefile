@@ -57,7 +57,7 @@ NO_COV := --no-cov
 # GUI/Qt tests segfault when split across xdist workers (native Qt state + worker
 # threads from the threaded smoke test corrupt the process running another GUI
 # test). Like CI, exclude them from the parallel run and execute them serially.
-GUI_TESTS := tests/test_gui_smoke.py tests/test_gui_progress.py tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py
+GUI_TESTS := tests/test_gui_smoke.py tests/test_gui_progress.py tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py tests/test_gui_kk_worker_end_to_end.py
 GUI_IGNORE := $(addprefix --ignore=,$(GUI_TESTS))
 
 # Extra coverage options for the serial GUI run, which closes the combined report.
@@ -219,7 +219,7 @@ test-characterization:
 
 test-gui:
 	@echo "$(YELLOW)Running GUI tests serially...$(NC)"
-	$(PYTEST) $(NO_COV) $(GUI_TESTS) --timeout=30
+	$(PYTEST) $(NO_COV) $(GUI_TESTS) --timeout=60
 	@echo "$(GREEN)✅ GUI tests completed$(NC)"
 
 # Performance and optimization tests
