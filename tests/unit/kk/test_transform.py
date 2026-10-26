@@ -275,28 +275,28 @@ def test_gradient_at_continuous_knot_is_finite() -> None:
     assert np.isfinite(grads).all()
 
 
-# Bound = rtol 1e-10 + ATOL. The NumPy-era bound was rtol=1e-10, atol=0 for all
-# three. On JAX-CPU Ne at its 10 eV end point drifts by 7.6e-9 from the NumPy
-# golden (XLA reassociates the cancelling log terms; the NumPy default backend
-# used to mask it), so Ne gets atol=5e-8. Only the 500 keV end point
-# discriminates D5: keeping the dropped boundary log would add a finite part of
-# about 5.0e-5 to f1 there, against a bound of about 5e-8 + 1e-10*|f1| (about
-# 1000x margin). At the 10 eV end point that term is only -2.8e-16 and at the
-# 21.5 eV knot 2.7e-15, so the widened atol cannot hide a violation there either.
-JUMP_ATOL = {"ar": 0.0, "ne": 5e-8, "synthetic": 0.0}
+# Bound = rtol 1e-10 + K x the rounding scale of the closed-form sum
+# (tests/fixtures/kk_rounding.py), not a flat atol: the cancelling log terms
+# round differently with the CPU's vector ``log`` (Ne at 10 eV drifts by 7.6e-9
+# from the NumPy golden here, Ar at its jump knot by 1e-8 on the CI runner), and
+# the scale is what bounds that. It stays tightest where the test discriminates
+# D5: at the 500 keV end point of Ne the bound is about 1e-9, while keeping the
+# dropped boundary log would add a finite part of about 5.0e-5 to f1 (~50000x).
+# At the 10 eV end point and the 21.5 eV knot that term is only -2.8e-16 and
+# 2.7e-15, so the wider bound there cannot hide a violation either.
+JUMP_CASES = ("ar", "ne", "synthetic")
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("name", sorted(JUMP_ATOL))
+@pytest.mark.parametrize("name", JUMP_CASES)
 def test_jump_and_endpoint_follow_upstream_convention(name: str) -> None:
     g = _golden(name)
     mask = (g["eval_kind"] == 2) | (g["eval_kind"] == 3)
     assert np.any(g["eval_kind"] == 2)
-    out = kk_real_spectrum(g["eval_ev"][mask], *_args(g))
-    assert np.isfinite(out).all()
-    np.testing.assert_allclose(
-        out, g["f1_kk_pp"][mask], rtol=1e-10, atol=JUMP_ATOL[name]
-    )
+    energy = g["eval_ev"][mask]
+    seg, coeffs, rel = _args(g)
+    out = kk_real_spectrum(energy, seg, coeffs, rel)
+    assert_kk_close(out, g["f1_kk_pp"][mask], energy, seg, coeffs, rtol=1e-10)
 
 
 # --- evaluation order, chunking ------------------------------------------
