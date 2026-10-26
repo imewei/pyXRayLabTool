@@ -122,7 +122,7 @@ Registered markers (`--strict-markers`; an unregistered one is a collection erro
 
 - `--cov` is in pytest `addopts`, so every run measures coverage; pass `--no-cov` for single-test runs.
 - `filterwarnings = error`: a new warning fails the test.
-- GUI tests (`test_gui_smoke.py`, `test_gui_progress.py`, `unit/test_gui_widgets.py`, `unit/test_calculation_worker.py`) run serially, outside xdist; the Makefile ignores them in the parallel pass.
+- GUI tests (`test_gui_smoke.py`, `test_gui_progress.py`, `test_gui_kk_tab.py`, `unit/test_gui_widgets.py`, `unit/test_calculation_worker.py`, `unit/test_kk_plot.py`) run serially, outside xdist; the Makefile (`GUI_TESTS`) and `.github/workflows/ci.yml` (`IGNORE_GUI`) exclude them from the parallel pass, so add a new GUI test file to both lists.
 - ruff is pinned to the same version in `.pre-commit-config.yaml`, `.github/workflows/{ci,security}.yml` and `uv.lock`; bump all four together.
 - A version bump touches ~10 places; run `python scripts/check_version.py` (also a pre-commit hook; `--expect X.Y.Z` for a release).
 - `mypy --strict` is clean locally (`untyped_calls_exclude = ["jax"]`); CI's mypy step is advisory.
