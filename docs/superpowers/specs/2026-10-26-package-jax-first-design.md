@@ -58,7 +58,7 @@ CLI cold start (median of 5, `uv run xraylabtool …`): `calc SiO2 -e 10 -d 2.2`
 host and 3.30 s on this GPU host; `--version` 0.87 s and 1.27 s. On a GPU host today's backend
 auto-select imports JAX and initializes CUDA even for `--version`.
 
-Other facts the design rests on: 93 element tables of 433 to 449 points each, 29.3 to 30 000 eV,
+Other facts the design rests on: 92 element tables (93 files: `C.nff` and `c.nff` both exist) of 433 to 449 points each, 29.3 to 30 000 eV,
 so the five padded arrays (x, f1, f2 and two slope arrays) are 1.7 MB in float64; `import jax`
 costs 0.73 s and the first tiny jit 0.22 s; `ProcessPoolExecutor` is used only in
 `data_handling/batch_processing.py`; 21 `set_backend(` call sites in 4 test files.
@@ -127,6 +127,8 @@ intended (auto-marked by `tests/conftest.py`).
 | `backend/interpolation.py` | `InterpolationFactory` (SciPy or JAX) | `JaxPchipInterpolator` + `_pchip_slopes` only (already on this branch) |
 | `kk/_device.py`, `kk/_shapes.py` | generic runtime helpers inside kk | generic part promoted to `backend/runtime.py`, `backend/shapes.py`; kk re-imports (§3) |
 | `calculators/cache.py` | per-element interpolators, Python dict caches | resident `ScatteringTables` + thin compatibility shims |
+| `data_handling/atomic_cache.py`, `calculators/scattering_data.py` | complex128 `get_scattering_factors`, placeholder `AtomicScatteringFactor`, cmath `CrystalStructure` | read the resident tables; `CrystalStructure` and `AtomicScatteringFactor` moved to `jnp` (§8) |
+| `constants.py`, `utils.py` conversions | NumPy/Python floats; `critical_angle_degrees` raises for ≤ 0 | pure `jnp` primitives in `_physics.py`; the raising wrappers keep their messages (§10) |
 | `calculators/kernels.py` | two kernels via `ops`, lazy jit per backend | removed; replaced by `calculators/optics.py` pure functions |
 | `calculators/core.py` | Python loop over elements, NumPy glue, host `isfinite` sync | host validation/encode, one program call, `XRayResult` build |
 | `data_handling/batch_processing.py` | chunks, Process/Thread pools | chunks of materials, `vmap` blocks on device |
@@ -139,22 +141,31 @@ intended (auto-marked by `tests/conftest.py`).
 
 Host: parse the formula (`parse_formula`, now `lru_cache`d), validate inputs (the
 trust boundary: types, finiteness, 0.03 to 30 keV, positive density), compute the
-per-material scalars `molecular_weight`, `number_of_electrons`, `electron_density`
-as Python floats exactly as today (same summation order, so they stay bit-identical),
+per-material scalars `molecular_weight` and `number_of_electrons` as Python floats
+exactly as today (same summation order, so they stay bit-identical); `electron_density`
+is computed on the device from `rho`, `mw`, `n_electrons` with today's expression and
+operation order (it must be a function of `rho` for `grad`, §5), so it is covered by the
+`rtol=1e-12` goldens rather than being bit-identical,
 and encode `z_idx` (int32) and `counts` (float64). One `runtime.upload` of the tuple
 `(z_idx[F,K], counts[F,K], mw[F], rho[F], energies_keV[M])`. One compiled program.
 One `runtime.fetch` of `{"out": (F, 9, M), "ok": (F,)}`. Host slices off padding and
 builds `XRayResult` (rows of the one downloaded buffer; the energy array is a fresh
 copy, never an alias of the caller's data). The device-only region runs under
 `jax.transfer_guard("disallow_explicit")` in tests; budgets are asserted from the
-`runtime` counters (≤ 1 upload call, ≤ 1 fetch call per public call).
+`runtime` counters: ≤ 1 upload call and ≤ 1 fetch call per **device program call**, which
+is one per public call for single-material functions and one per `F`-block for batches
+(§3, §7).
 
 ### 2. Resident scattering tables and the shipped data
 
 `xraylabtool/data/scattering_tables.npz` holds `x, f1, f2, d1, d2` as `[Z, N]`
-float64 (`N` = 449), `n[Z]` int32 and `symbols[Z]`. `scripts/gen_scattering_tables.py`
-builds it from the `.nff` files (which stay the source of truth) using the package's
-own `_pchip_slopes`, so there is one slope implementation. Padding past `n[z]` uses
+float64 (`Z` = 92 elements, `N` = 449, the longest `.nff` table, derived by the
+generator), `n[Z]` int32 and `symbols[Z]` in atomic-number order. The data directory
+holds 93 files because `C.nff` and `c.nff` both exist; the generator applies the same
+rule as `scattering_data._AVAILABLE_ELEMENTS` (capitalise, dedupe) and fails if the two
+files differ in content. `scripts/gen_scattering_tables.py` builds the npz from the
+`.nff` files (which stay the source of truth) using the package's own `_pchip_slopes`,
+so there is one slope implementation. Padding past `n[z]` uses
 strictly increasing dummy knots `x_n·(1+k)`, values equal to the last value, slopes
 0, so a padded row evaluates exactly like the unpadded one on `[x[0], x[n-1]]`.
 `ScatteringTables` is a registered pytree (`x, f1, f2, d1, d2, n`). `load_tables()`
@@ -166,6 +177,11 @@ row's slopes to SciPy `PchipInterpolator` at 1e-12.
 
 ### 3. Shape buckets and shared runtime
 
+Importing `backend.runtime` or `backend.shapes` has **no side effect**: no `ensure_x64()`
+call, no cache enabling, no device query; `backend/__init__.py` imports neither of them
+(JAX stays out of `import xraylabtool`). The `kk` modules keep their own import-time
+`ensure_x64()` (kk is lazy and JAX-only, ADR-005); core entries call it at first use.
+
 Promote the generic parts of `kk/_device.py` (`ensure_x64`, `enable_persistent_cache`,
 `_user_cache_dir`, `worker_guard`, counters, `upload`, `fetch`, `fetch_status`) to
 `backend/runtime.py` and `bucket`, `bucket_pow2`, `block_for` to `backend/shapes.py`.
@@ -174,7 +190,7 @@ Promote the generic parts of `kk/_device.py` (`ensure_x64`, `enable_persistent_c
 `kk` import paths keep working. Counters live in one module only. Buckets:
 energies `M` use `bucket(m, minimum=64)` (geometric ladder, padded with the last real
 energy so no NaN enters), elements `K` use `bucket_pow2(k, minimum=2)` (2 to 128;
-93 elements max), materials `F` use `bucket_pow2(f, minimum=1)`. Padded material
+92 elements max), materials `F` use `bucket_pow2(f, minimum=1)`. Padded material
 rows are `z=0, counts=0, mw=1, rho=1` (finite, contribute nothing) and are sliced
 away. Large batches run as blocks of `F_block × K × M ≤ budget` (platform-aware, as
 `energy_blocks`); every block reuses the same compiled program.
@@ -192,10 +208,24 @@ Pure functions, x64 as a precondition:
   `_derived_quantities_kernel` and `_properties_from_totals` (including the `1e-30`
   β clamp, the `max(2δ, 0)` critical-angle rule, and `ENERGY_TO_WAVELENGTH_FACTOR`).
 - `optical_properties(tables, z, counts, rho, mw, n_electrons, energy_kev)`: the two
-  above for one material; `jax.vmap` over `(z, counts, rho, mw, n_electrons)` is the
-  batch. Returns the `OpticalProps` pytree (nine per-energy arrays) and the status.
+  above for one material, with `electron_density = 1e6·ρ·N_A·n_electrons/mw` computed
+  inside; `jax.vmap` over `(z, counts, rho, mw, n_electrons)` is the batch. Returns the
+  tuple `(OpticalProps, ok)`: `OpticalProps` is the pytree of the nine per-energy
+  arrays (the `XRayResult` per-energy fields plus `electron_density` as a scalar leaf)
+  and `ok` a scalar bool.
 - Status: `ok = all(isfinite(δ)) & all(isfinite(β))` per material, returned with
   the result in the same fetch.
+
+**Standalone primitives are separate.** The public helpers `calculate_critical_angle`,
+`calculate_attenuation_length`, `calculate_transmission` and
+`calculate_derived_quantities` keep their own semantics, which differ from the
+in-program `derive` rules: today `calculate_critical_angle(-1e-6)` returns `[nan]`
+(δ < 0) and `calculate_attenuation_length(β=0)` returns `[inf]`, whereas `derive` clamps
+β at `1e-30` and applies `max(2δ, 0)`. They are therefore separate small `jnp`
+functions in `calculators/optics.py` (`critical_angle_from_delta`,
+`attenuation_length_from_beta`, `transmission`), not calls into `derive`; goldens pin
+both families, including the NaN/inf edges. `constants.critical_angle_degrees` keeps its
+`ValueError` for δ ≤ 0 in its host wrapper (§10).
 
 `calculate_properties_from_factors` (used by `kk.KKResult.to_xray_result`) runs the
 same `derive` through a second small program that takes supplied f1/f2; one tail.
@@ -203,10 +233,14 @@ same `derive` through a second small program that takes supplied f1/f2; one tail
 ### 5. Public pure device API
 
 `xraylabtool.calculators.optics` exports `ScatteringTables`, `load_tables`,
-`encode_formula(formula) -> (z, counts, mw, n_electrons)`, `OpticalProps` and
-`optical_properties`. They are `jit`/`vmap`/`grad`-compatible (for example
-`jax.grad(lambda rho: optical_properties(...).dispersion.sum())(rho)` equals
-`dispersion/rho`). The `XRayResult` functions are host wrappers over them.
+`encode_formula(formula) -> (z, counts, mw, n_electrons)` (host, NumPy/Python floats),
+`OpticalProps` and `optical_properties`. `optical_properties` is `jit`/`vmap`/`grad`
+-compatible when its array arguments are device arrays and `tables` comes from
+`load_tables()`; it requires x64 (precondition, as in kk). Contract for `grad`: with
+the other arguments fixed, `jax.grad(lambda rho: optical_properties(tables, z, counts,
+rho, mw, ne, e)[0].dispersion.sum())(rho)` equals `dispersion.sum()/rho` to `1e-12`
+(δ is linear in ρ; the NaN-outside-range branch is not differentiated). Gradients
+w.r.t. energy are not part of the contract (PCHIP `searchsorted` is piecewise). The `XRayResult` functions are host wrappers over them.
 `xraylabtool.calculators` re-exports them lazily (no JAX import on `import
 xraylabtool`).
 
@@ -220,13 +254,19 @@ dispersion or absorption coefficients")` after the fetch. Batch and
 valid ones are batched, a per-material failed status is logged with
 `_logger.warning("Failed to process formula", ...)` and skipped, and
 `RuntimeError("Failed to process any formulas successfully")` keeps its condition.
+`calculate_multiple_xray_properties` keeps returning `{}` (not raising) when every
+formula fails, and its result keys follow `unique_result_key` unchanged.
 `calculate_xray_properties` no longer sorts and restores energy order: the program
 is order-independent, so the output follows the input order and equals today's.
 
 ### 7. Batch (`data_handling/batch_processing.py`)
 
 `calculate_batch_properties` groups materials by `K` bucket, runs `F`-blocks through
-the program, and keeps the progress callback per block. `BatchConfig.chunk_size` is
+the program, and keeps the progress callback per block. Contracts preserved from
+today: `process_single_calculation` still warns and returns `None` for a failing item;
+`_process_chunks` result keys stay `f"{formula}@{density:.3f}"` with the `#N` suffix for
+repeats, in input order; `chunk_iterator`, `save_batch_results` and `load_batch_input`
+are untouched. Each `F`-block costs one upload and one fetch (P11 is per block). `BatchConfig.chunk_size` is
 the upper bound of materials per block; `max_workers` and the parallel switches are
 accepted and ignored (logged once at DEBUG) so existing configs keep working;
 `MemoryMonitor` keeps checking host result memory; CSV/Parquet loading and saving stay
@@ -248,7 +288,12 @@ Removed: `ops`, `NumpyBackend`, `JaxBackend`, `ArrayBackend`, `InterpolationFact
 `calculate_derived_quantities` (host arrays in, NumPy out, one program call).
 `calculate_scattering_factors(..., element_data)` accepts `TableInterpolator`
 entries only; an arbitrary callable raises `TypeError` (documented). `KKResult.backend`
-stays `"jax"`. ADR-006 supersedes ADR-001; ADR-003 and ADR-004 apply unchanged.
+stays `"jax"`. Also in scope, because they use `ops` or NumPy physics today:
+`data_handling.atomic_cache.get_scattering_factors` (still returns `complex128` NumPy,
+filled from the resident tables), `scattering_data.AtomicScatteringFactor` (the
+placeholder lookup) and `CrystalStructure.calculate_structure_factor` (`cmath` →
+`jnp`, same results), and the `calculators/core.py` re-exports of the removed kernel
+names, which disappear with a grep of tests and docs. ADR-006 supersedes ADR-001; ADR-003 and ADR-004 apply unchanged.
 
 ### 9. Exemptions (host code by design)
 
@@ -271,8 +316,14 @@ Everything else that produces physics output runs in `jax.numpy`.
 helpers (`smooth_data`, `background_subtraction`, `normalize_intensity`) become pure
 `jnp` functions in `xraylabtool/_physics.py`; the public wrappers validate and convert
 units on the host, call a jitted function (unit strings static) and return a Python
-float or a NumPy array as today. `import xraylabtool` stays JAX-free: `ensure_x64` and
-`import jax` happen at the first compute entry, and the package `__init__` no longer
+float or a NumPy array as today; wrappers that raise today (`critical_angle_degrees`
+for δ ≤ 0, `_check_lattice`) check on the host before the call and keep their messages. `import xraylabtool` stays JAX-free: `utils.py` imports `_physics` (which imports
+`jax` at module top) **inside** each wrapper, never at module import; `calculators/`
+modules import `optics`/`tables` inside the compute functions; the CLI command modules
+(imported at the top of `interfaces/cli/__init__.py`) import `core`, `runtime` and
+`utils` physics only inside their handlers, so `--help`, `--version`, `completion`,
+`formula`, `atomic` and `list` never load JAX. `ensure_x64` and `import jax` happen at
+the first compute entry, and the package `__init__` no longer
 calls `_configure_jax_float64`. CLI `calc`, `batch`, `compare`, `convert`, `bragg`,
 `kk` call `runtime.enable_persistent_cache()` before computing; `--help`,
 `--version`, `completion`, `formula`, `atomic`, `list` never import JAX. The GUI
@@ -294,17 +345,21 @@ warms the core programs for its Compute path on an idle worker (as
 - **Table integrity:** regenerated npz equals shipped; row slopes equal SciPy at 1e-12;
   every row evaluated at its own nodes returns its values exactly.
 - **Padding invariance** (`K`, `M`, `F` buckets): results are bit-exact between a
-  tight and a padded call; block size does not change results (rounding scale via
-  `tests/fixtures/kk_rounding.assert_kk_close` where XLA fusion differs by one ulp).
+  tight and a padded call; block size does not change results. Where XLA fusion may differ by one ulp
+  (batch vs loop, block sizes) the tests use a new generic helper
+  `tests/fixtures/core_rounding.py::assert_ulp_close(actual, expected, ulps=4)`;
+  `assert_kk_close` is KK-specific (its scale comes from the KK pipeline) and is not
+  reused.
 - **Batch equals loop:** `calculate_xray_properties` equals a loop of single calls.
-- **Differentiation:** `grad` w.r.t. density equals `dispersion/rho`; `vmap` over
-  densities equals the batch.
+- **Differentiation:** the §5 `grad` contract (sum of dispersion w.r.t. density equals
+  `dispersion.sum()/rho`); `vmap` over densities equals the batch.
 - **Behaviour parity:** exception types and messages, skip-and-log batch semantics,
   negative f1 near edges kept (δ < 0, critical angle 0), unsorted energies.
 - **Budgets:** transfer counters (≤ 1 upload, ≤ 1 fetch), compile counts (second call
   with the same buckets compiles nothing; a default run compiles ≤ 2 programs),
   `import xraylabtool` and `--help` import no JAX (subprocess `sys.modules` check),
-  no `fork`-based pool remains.
+  no `fork`-based pool remains (an AST test over `xraylabtool/` finds no import of
+  `multiprocessing` and no use of `ProcessPoolExecutor`/`ThreadPoolExecutor`).
 - Existing suites (golden interpolation, characterization, integration, CLI, GUI)
   pass unchanged except the 21 `set_backend` call sites and the backend-dispatch
   tests, which are rewritten (not weakened) for the new design.
@@ -323,7 +378,7 @@ warms the core programs for its Compute path on an idle worker (as
 | P8 | first call incl. compile, no cache, CPU | ≤ 1.0 s | 174 ms | JAX 1398 ms |
 | P9 | CLI `calc` cold, warm persistent cache | CPU host ≤ 2.0 s; GPU host ≤ 3.3 s | | 0.86 s; 3.30 s |
 | P10 | CLI `--version`, `--help` cold | ≤ 0.9 s on both hosts (no JAX import) | | 0.87 s; 1.27 s GPU host |
-| P11 | transfers per public call | ≤ 1 upload, ≤ 1 fetch | | |
+| P11 | transfers per device program call (single material: per public call; batch: per `F`-block) | ≤ 1 upload, ≤ 1 fetch | | |
 | P12 | compiles after warm-up, same buckets | 0 | | |
 | P13 | compiles for a new energy count inside a bucket | 0 | | 16 |
 
@@ -356,6 +411,13 @@ a miss is recorded as a deviation, never silently relaxed.
    ship after the core without blocking it.
 10. **JAX-CPU vs GPU numeric differences** at the ulp level: comparisons use the
     rounding-scale helper, not flat `rtol`, where fusion differs.
+11. **Removal order:** `ops` is imported by `validation/validators.py`,
+    `typing_extensions.py`, `xraylabtool/__init__.py` and `calculators/*`; deleting
+    `array_ops` before those are migrated breaks `import xraylabtool`. The plan migrates
+    them first (Task 2.0).
+12. **Standalone helper semantics** (`calculate_critical_angle`,
+    `calculate_attenuation_length`) differ from the in-program rules; they are kept as
+    separate primitives with their own goldens (§4).
 
 ## Delivery order (each stage ships green)
 
@@ -383,7 +445,7 @@ a miss is recorded as a deviation, never silently relaxed.
 C1. **JAX-only core, no NumPy twin** (the kk precedent), instead of "JAX default with
 NumPy fallback". Reason: Wei's "mandatory"; a twin doubles tests and invites drift.
 C2. **Stacked resident tables with precomputed slopes in a shipped npz** instead of
-per-element interpolators; cold start reads one 1.7 MB file instead of 93 CSVs.
+per-element interpolators; cold start reads one 1.7 MB file instead of 93 `.nff` files.
 C3. **Per-material scalars stay Python floats on the host** (bit-exact with today).
 C4. **No energy sort/restore** in `calculate_xray_properties` (order-independent).
 C5. **`set_backend("numpy")` raises** rather than being silently ignored; `get_backend()`
@@ -400,5 +462,9 @@ real code before they bind.
 C11. **No version bump** in this work; a minor bump (0.5.0) is suggested at release.
 C12. **Energy bucket ladder** is `bucket(m, minimum=64)`; `K` and `F` ladders are
 powers of two. The builder may tune the ladders if P1 to P4 and P12 hold.
+C14. **Review fixes (three-brain, 2026-10-26):** `electron_density` moved on-device so
+`grad` works; standalone derived helpers kept separate; tables are 92 × 449; P11 is
+per program call; a generic `assert_ulp_close` replaces `assert_kk_close`; the
+table-integrity check runs in the test job, not the lint job.
 C13. **Builder check skipped:** Wei opted out of the question round, so no
 fresh-reader pass was run on this document before it was handed over.
