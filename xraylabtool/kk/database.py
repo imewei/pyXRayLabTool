@@ -264,9 +264,15 @@ def _check_z(z: int) -> None:
         raise ValueError(f"atomic number must be an integer in 1..92, got {z}")
 
 
-@cache
+_load_lock = threading.Lock()
+
+
 def load_asf() -> AsfDatabase:
     """Load the vendored ASF database (cached after the first call).
+
+    Single-flight: concurrent first callers share one database object (the
+    device-table cache is keyed on its identity, so two objects would upload
+    the tables twice).
 
     Returns
     -------
@@ -287,6 +293,12 @@ def load_asf() -> AsfDatabase:
     >>> float(db.energy_ev(14)[0])
     10.0
     """
+    with _load_lock:
+        return _load_asf_cached()
+
+
+@cache
+def _load_asf_cached() -> AsfDatabase:
     with np.load(_ASF_PATH, allow_pickle=False) as npz:
         arrays = {
             key: npz[key] for key in ("mass", "E", "E_offsets", "Im", "Im_offsets")

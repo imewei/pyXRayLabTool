@@ -276,3 +276,18 @@ def test_device_tables_concurrent_first_call_uploads_once() -> None:
     finally:
         database._tables_cache.clear()
         database._tables_cache.update(cached)
+
+
+@pytest.mark.unit
+def test_undersized_capacity_reports_the_true_segment_count() -> None:
+    """``n_segments`` is independent of the truncated union, so overflow is visible."""
+    full = _assemble(["Mo", "U"], [1.0, 1.0])
+    true_n = int(full.n_segments)
+    cap = 512
+    assert true_n > cap
+    small = _assemble(["Mo", "U"], [1.0, 1.0], capacity=cap)
+    assert int(small.n_segments) == true_n > cap
+    ok = _assemble(
+        ["Mo", "U"], [1.0, 1.0], capacity=load_asf().compound_capacity([42, 92])
+    )
+    assert int(ok.n_segments) == true_n <= ok.coeffs.shape[0]

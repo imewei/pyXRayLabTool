@@ -13,9 +13,11 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import jax.numpy as jnp
 import numpy as np
 import pytest
 
+from xraylabtool import constants
 from xraylabtool.exceptions import NearEdgeDataError
 from xraylabtool.kk import _device, kk_calculate_real, nearedge
 from xraylabtool.kk._device import Spectrum
@@ -159,6 +161,15 @@ def test_merge_reproduces_goldens() -> None:
         pytest.param(10.0, 50.0, id="both-range-ends"),
         pytest.param(10.0, 38.0, id="low-end-only"),
         pytest.param(22.0, 50.0, id="high-end-only"),
+        pytest.param(
+            float(np.nextafter(20.0, -np.inf)), 30.5, id="low-1ulp-below-knot"
+        ),
+        pytest.param(
+            22.0, float(np.nextafter(40.0, np.inf)), id="high-1ulp-above-knot"
+        ),
+        pytest.param(
+            22.0, float(np.nextafter(40.0, -np.inf)), id="high-1ulp-below-knot"
+        ),
     ],
 )
 def test_window_matches_reference(low: float, high: float) -> None:
@@ -205,7 +216,7 @@ def test_window_touches_range_ends_snaps() -> None:
 def test_adjacent_float_knots_use_lower_boundary() -> None:
     a = float(np.nextafter(1.0, np.inf))
     b = float(np.nextafter(a, np.inf))
-    assert (a + b) / 2 in (a, b)  # a midpoint cannot separate them
+    assert (a + b) / 2 == b  # a midpoint picks the next polynomial
     seg = np.array([a, b, 2.0, 3.0])
     coef = np.zeros((3, 5))
     coef[:, 1] = [10.0, 20.0, 30.0]
@@ -232,10 +243,28 @@ def test_merge_point_on_source_knot() -> None:
     np.testing.assert_allclose(c, ref_c, rtol=1e-13, atol=0)
 
 
+_HUGE = NE_V.copy()
+_HUGE[24] = 1e308
+
+
 @pytest.mark.unit
-def test_merge_bucket_invariant() -> None:
+@pytest.mark.parametrize(
+    ("low", "high", "values"),
+    [
+        pytest.param(22.0, 28.0, NE_V, id="no-knots"),
+        pytest.param(22.0, 38.0, NE_V, id="some-knots"),
+        pytest.param(10.5, 49.5, NE_V, id="all-knots"),
+        pytest.param(10.0, 50.0, NE_V, id="range-ends"),
+        pytest.param(
+            22.0, float(np.nextafter(40.0, np.inf)), NE_V, id="high-1ulp-above-knot"
+        ),
+        pytest.param(float(np.nextafter(20.0, -np.inf)), 30.5, NE_V, id="low-1ulp"),
+        pytest.param(22.0, 38.0, _HUGE, id="non-finite"),
+    ],
+)
+def test_merge_bucket_invariant(low: float, high: float, values: np.ndarray) -> None:
     cap = bucket(SEG.size + NE_E.size + 2)
-    base = _run(SEG, COEFFS, NE_E, NE_V, 22.0, 38.0, capacity=cap)
+    base = _run(SEG, COEFFS, NE_E, values, low, high, capacity=cap)
     up1 = bucket(cap + 1)
     up2 = bucket(up1 + 1)
     assert cap < up1 < up2
@@ -244,10 +273,11 @@ def test_merge_bucket_invariant() -> None:
         {"capacity": up2, "spec_capacity": up1},
         {"capacity": cap, "extra_pad": 64},
     ):
-        other = _run(SEG, COEFFS, NE_E, NE_V, 22.0, 38.0, **kwargs)  # type: ignore[arg-type]
+        other = _run(SEG, COEFFS, NE_E, values, low, high, **kwargs)  # type: ignore[arg-type]
         for x, y in zip(base[2:], other[2:], strict=True):
             np.testing.assert_array_equal(x, y)
-        assert int(other[1].n_segments) == int(base[1].n_segments)
+        for x, y in zip(base[1], other[1], strict=True):
+            np.testing.assert_array_equal(x, y)
 
 
 @pytest.mark.unit
@@ -356,16 +386,140 @@ def test_negative_f2_warning_unchanged(kk_log: pytest.LogCaptureFixture) -> None
     assert not [r for r in kk_log.records if r.levelno >= logging.WARNING]
 
 
+def _explicit_scale(kind: str, e: np.ndarray, v: np.ndarray) -> np.ndarray:
+    """The unit conversions written out from the constants (density 2, mass 60)."""
+    hc = constants.SPEED_OF_LIGHT * constants.PLANCK / constants.ELEMENT_CHARGE
+    if kind in ("nexafs", "photoabsorption", "xanes"):
+        return e * v / (2.0 * constants.THOMPSON * hc)
+    if kind == "beta":
+        number_density = 2.0 * constants.AVOGADRO / 60.0
+        return (
+            1.0e-6
+            * v
+            * 2.0
+            * np.pi
+            * e**2
+            / (number_density * constants.THOMPSON * hc**2)
+        )
+    return v.copy()
+
+
 @pytest.mark.unit
 @pytest.mark.parametrize("kind", ["nexafs", "photoabsorption", "xanes", "beta", "asf"])
-def test_to_asf_scale_device_matches_host(kind: str) -> None:
-    near = nearedge.NearEdgeSpectrum(NE_E, NE_V)
-    host = to_asf_scale(near, kind, density=2.0, formula_mass=60.0)  # type: ignore[arg-type]
+def test_to_asf_scale_device_matches_formulas(kind: str) -> None:
+    expected = _explicit_scale(kind, NE_E, NE_V)
     m = bucket_pow2(NE_E.size)
     e_p = np.concatenate([NE_E, np.ones(m - NE_E.size)])
     v_p = np.concatenate([NE_V, np.ones(m - NE_E.size)])
     e_d, v_d = _device.upload((e_p, v_p))
-    got = _device.fetch(
-        to_asf_scale_device(e_d, v_d, kind, density=2.0, formula_mass=60.0)
+    got = np.asarray(
+        _device.fetch(
+            to_asf_scale_device(e_d, v_d, kind, density=2.0, formula_mass=60.0)
+        )
+    )[: NE_E.size]
+    np.testing.assert_allclose(got, expected, rtol=4e-16, atol=0)
+    host = to_asf_scale(
+        nearedge.NearEdgeSpectrum(NE_E, NE_V),
+        kind,  # type: ignore[arg-type]
+        density=2.0,
+        formula_mass=60.0,
     )
-    np.testing.assert_array_equal(np.asarray(got)[: NE_E.size], host.values)
+    np.testing.assert_array_equal(host.values, got)
+
+
+# Exact-knot interpolation (F2) ------------------------------------------------
+_OVERFLOW_E = np.array([280.0, 280.1, 320.0])
+_OVERFLOW_V = np.array([0.0, 1e308, 1e307])
+
+
+@pytest.mark.unit
+def test_interp_exact_knot_with_overflowing_slope() -> None:
+    xp = jnp.array([280.0, 280.1, 320.0, jnp.inf])
+    fp = jnp.array([0.0, 1e308, 1e307, 0.0])
+    x = jnp.array([280.0, 280.1, 320.0, 300.0])
+    got = np.asarray(nearedge._interp(x, xp, fp, jnp.int32(3)))
+    with np.errstate(all="ignore"):
+        expected = np.interp(np.asarray(x), _OVERFLOW_E, _OVERFLOW_V)
+    np.testing.assert_array_equal(got[:3], [0.0, 1e308, 1e307])
+    np.testing.assert_array_equal(got[:3], expected[:3])
+    assert np.isfinite(got[3])
+
+
+@pytest.mark.unit
+def test_merge_device_exact_knot_with_overflowing_slope() -> None:
+    seg, coef = np.array([270.0, 330.0]), np.array([[1.0, 0, 0, 0, 0]])
+    _, status, _, _, scaled = _run(seg, coef, _OVERFLOW_E, _OVERFLOW_V, 280.0, 320.0)
+    assert float(status.v_low) == 0.0 and float(status.v_high) == 1e307
+    assert not bool(status.nonfinite)
+    np.testing.assert_allclose(scaled, [280.0, 680.0, 320.0], rtol=1e-12)
+
+
+@pytest.mark.unit
+def test_merge_spectra_exact_knot_with_overflowing_slope() -> None:
+    near = nearedge.NearEdgeSpectrum(_OVERFLOW_E, _OVERFLOW_V)
+    seg, coef = np.array([270.0, 330.0]), np.array([[1.0, 0, 0, 0, 0]])
+    ev, c = merge_spectra(near, seg, coef, merge_points_ev=(280.0, 320.0))
+    assert np.isfinite(c).all()
+    np.testing.assert_array_equal(ev, [270.0, 280.0, 280.1, 320.0, 330.0])
+
+
+# Public-wrapper parity with the pre-migration merge (F4) ----------------------
+_LINE = np.array([[1.0, 1.0, 0.0, 0.0, 0.0]] * 2)
+_NEAR = nearedge.NearEdgeSpectrum([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
+
+
+@pytest.mark.unit
+def test_merge_spectra_accepts_non_positive_edges() -> None:
+    ev, c = merge_spectra(
+        _NEAR, np.array([0.0, 2.0, 4.0]), _LINE, merge_points_ev=(1.0, 3.0)
+    )
+    np.testing.assert_array_equal(ev, [0.0, 1.0, 2.0, 3.0, 4.0])
+    ref_ev, ref_c, _ = _reference(
+        np.array([0.0, 2.0, 4.0]), _LINE, _NEAR.energy_ev, _NEAR.values, 1.0, 3.0
+    )
+    np.testing.assert_array_equal(ev, ref_ev)
+    np.testing.assert_allclose(c, ref_c, rtol=1e-13, atol=0)
+
+
+@pytest.mark.unit
+def test_merge_spectra_edge_errors_keep_legacy_type_and_text() -> None:
+    near = nearedge.NearEdgeSpectrum([1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 5.0])
+    with pytest.raises(ValueError, match=r"^seg_ev must be finite$"):
+        merge_spectra(
+            near, np.array([1.0, np.nan, 4.0]), _LINE, merge_points_ev=(1.0, 4.0)
+        )
+    with pytest.raises(ValueError, match=r"^seg_ev must be strictly increasing$"):
+        merge_spectra(
+            near, np.array([1.0, 3.0, 2.0, 5.0]), np.tile(_LINE[0], (3, 1)),
+            merge_points_ev=(1.5, 3.5),
+        )  # fmt: skip
+
+
+@pytest.mark.unit
+def test_merge_spectra_nan_coefficients_raise_the_normalisation_error() -> None:
+    seg, coef = np.array([270.0, 330.0]), np.array([[np.nan, 0, 0, 0, 0]])
+    near = nearedge.NearEdgeSpectrum([280.0, 300.0, 320.0], [0.1, 0.4, 0.8])
+    with pytest.raises(NearEdgeDataError, match="tabulated f2 is equal"):
+        merge_spectra(near, seg, coef, merge_points_ev=(280.0, 320.0))
+
+
+@pytest.mark.unit
+def test_merge_spectra_unchecked_coefficients_away_from_the_merge_points_pass() -> None:
+    # The old merge never looked at coefficients outside the end-point values.
+    seg = np.array([270.0, 290.0, 330.0, 400.0])
+    coef = np.array([[1.0, 0, 0, 0, 0], [1.0, 0, 0, 0, 0], [np.inf, 0, 0, 0, 0]])
+    near = nearedge.NearEdgeSpectrum([280.0, 300.0, 320.0], [0.1, 0.4, 0.8])
+    ev, c = merge_spectra(near, seg, coef, merge_points_ev=(280.0, 320.0))
+    assert not np.isfinite(c).all()
+    assert ev[0] == 270.0 and ev[-1] == 400.0
+
+
+# Undersized capacity is visible (F5) ------------------------------------------
+@pytest.mark.unit
+def test_undersized_merge_capacity_reports_the_true_count() -> None:
+    cap = 3
+    spec = Spectrum.from_numpy(SEG, COEFFS)
+    e_d, v_d = _device.upload((NE_E, NE_V))
+    res = merge_device(spec, e_d, v_d, np.int32(NE_E.size), 22.0, 38.0, capacity=cap)
+    ref_ev, _, _ = _reference(SEG, COEFFS, NE_E, NE_V, 22.0, 38.0)
+    assert int(res.status.n_segments) == ref_ev.size - 1 > cap

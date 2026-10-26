@@ -136,13 +136,19 @@ def compound_spectrum(
 def _union_knots(flat: jax.Array, size: int) -> tuple[jax.Array, jax.Array]:
     """Sorted distinct finite values of ``flat`` in ``size`` slots, and their count.
 
-    Slots past the count hold ``+inf``. The count is that of the finite slots,
-    exact because callers pass a ``size`` that is a host-side upper bound.
-    Swappable primitive: ``jnp.unique(size=…)`` measured faster than sort plus
+    Slots past the count hold ``+inf``. The count is that of the distinct
+    finite values of ``flat`` itself, computed independently of the output
+    allocation, so an undersized ``size`` truncates the output but shows as a
+    count above ``size`` instead of hiding as ``size``. Swappable primitive:
+    ``jnp.unique(size=…)`` for the output measured faster than sort plus
     mask-compaction on CPU (see the Task 2 spike).
     """
     out = jnp.unique(flat, size=size, fill_value=jnp.inf)
-    return out, jnp.sum(jnp.isfinite(out), dtype=jnp.int32)
+    ordered = jnp.sort(flat)
+    distinct = jnp.isfinite(ordered) & jnp.concatenate(
+        [jnp.ones(1, dtype=bool), ordered[1:] != ordered[:-1]]
+    )
+    return out, jnp.sum(distinct, dtype=jnp.int32)
 
 
 @partial(jax.jit, static_argnames="capacity")

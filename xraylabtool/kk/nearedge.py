@@ -40,7 +40,7 @@ from numpy.typing import ArrayLike, NDArray
 from xraylabtool import constants
 from xraylabtool.exceptions import DataFileError, NearEdgeDataError, ValidationError
 from xraylabtool.kk import _device
-from xraylabtool.kk._device import Spectrum, host_spectrum
+from xraylabtool.kk._device import Spectrum
 from xraylabtool.kk._shapes import bucket, bucket_pow2
 from xraylabtool.kk.spectrum import _real_float64, _union_knots, evaluate_f2_device
 from xraylabtool.logging_utils import get_logger
@@ -374,17 +374,18 @@ def to_asf_scale(
     energy, values = spec.energy_ev, spec.values
     pad = bucket_pow2(energy.size) - energy.size
     _device.ensure_x64()
-    e_d, v_d = _device.upload(
-        (np.concatenate([energy, np.ones(pad)]), np.concatenate([values, np.ones(pad)]))
+    # The beta scalars travel in the same single upload (a Python float passed
+    # to the jitted function would be an implicit transfer).
+    e_d, v_d, density_d, mass_d = _device.upload(
+        (
+            np.concatenate([energy, np.ones(pad)]),
+            np.concatenate([values, np.ones(pad)]),
+            None if density is None else np.float64(density),
+            None if formula_mass is None else np.float64(formula_mass),
+        )
     )
     converted = _device.fetch(
-        to_asf_scale_device(
-            e_d,
-            v_d,
-            kind,
-            density=1.0 if density is None else density,
-            formula_mass=100.0 if formula_mass is None else formula_mass,
-        )
+        to_asf_scale_device(e_d, v_d, kind, density=density_d, formula_mass=mass_d)
     )
     return NearEdgeSpectrum(energy, np.asarray(converted[: energy.size]))
 
@@ -395,8 +396,8 @@ def to_asf_scale_device(
     values: jax.Array,
     input_type: str,
     *,
-    density: float | jax.Array = 1.0,
-    formula_mass: float | jax.Array = 100.0,
+    density: float | jax.Array | None = None,
+    formula_mass: float | jax.Array | None = None,
 ) -> jax.Array:
     """Convert near-edge absorption values to the f2 scale on the device.
 
@@ -415,9 +416,11 @@ def to_asf_scale_device(
         Static (a different value compiles a separate program); see
         :func:`to_asf_scale`.
     density : float or jax.Array, optional
-        Mass density in g/cm^3, ``"beta"`` only. Default 1.
+        Mass density in g/cm^3, ``"beta"`` only. Default 1. Pass a device
+        scalar inside a transfer-guarded region (a Python float is an
+        implicit transfer).
     formula_mass : float or jax.Array, optional
-        Formula mass in g/mol, ``"beta"`` only. Default 100.
+        Formula mass in g/mol, ``"beta"`` only. Default 100; same note.
 
     Returns
     -------
@@ -437,6 +440,8 @@ def to_asf_scale_device(
     if input_type in _NEXAFS_TYPES:
         return energy_ev * values / (2.0 * constants.THOMPSON * _HC_EV_M)
     if input_type == "beta":
+        density = 1.0 if density is None else density
+        formula_mass = 100.0 if formula_mass is None else formula_mass
         number_density = density * constants.AVOGADRO / formula_mass
         return (
             1.0e-6
@@ -575,11 +580,17 @@ def _interp(x: jax.Array, xp: jax.Array, fp: jax.Array, n: jax.Array) -> jax.Arr
     """``numpy.interp`` over the first ``n`` entries of ``xp`` (padding must be ``+inf``).
 
     Same arithmetic as NumPy (``slope * (x - xp[j]) + fp[j]``, the product
-    pinned so XLA cannot fuse it), constant outside the data.
+    pinned so XLA cannot fuse it), constant outside the data, and ``fp[j]``
+    exactly on a knot (an overflowing slope times a zero offset would be NaN).
+    NumPy's NaN fallback (retry from the right knot) is not reproduced: off a
+    knot an overflowing slope gives ``±inf``, never NaN, and that is reported
+    by the status.
     """
     j = jnp.clip(jnp.searchsorted(xp, x, side="right") - 1, 0, jnp.maximum(n - 2, 0))
     slope = (fp[j + 1] - fp[j]) / (xp[j + 1] - xp[j])
-    inner = jax.lax.optimization_barrier(slope * (x - xp[j])) + fp[j]
+    inner = jnp.where(
+        x == xp[j], fp[j], jax.lax.optimization_barrier(slope * (x - xp[j])) + fp[j]
+    )
     last = jnp.maximum(n - 1, 0)
     return jnp.where(x >= xp[last], fp[last], jnp.where(x < xp[0], fp[0], inner))
 
@@ -794,6 +805,25 @@ def raise_or_log(status: MergeStatus, low: float, high: float) -> None:
         )
 
 
+def _padded_table(
+    seg: NDArray[np.float64], coef: NDArray[np.float64], capacity: int
+) -> Spectrum:
+    """NumPy-leaved padded table without the positivity and finiteness checks.
+
+    The merge accepts non-positive leading edges (the old behaviour); the
+    last edge is always positive because a merge point lies inside the range,
+    so the usual pad edges ``x_n (1 + k)`` are finite and increasing.
+    """
+    k = np.arange(1, capacity - coef.shape[0] + 1)
+    last = seg[-1]
+    pad_ev = last * (1.0 + k)
+    return Spectrum(
+        np.concatenate([seg, pad_ev]),  # type: ignore[arg-type]
+        np.concatenate([coef, np.zeros((k.size, 5))]),  # type: ignore[arg-type]
+        np.int32(coef.shape[0]),  # type: ignore[arg-type]
+    )
+
+
 def _merge(
     spec: NearEdgeSpectrum,
     seg_ev: ArrayLike,
@@ -812,10 +842,14 @@ def _merge(
             f"{seg.shape} and {coef.shape}"
         )
     low, high = _resolve_merge_points(spec, seg, merge_points_ev)
-    try:
-        table = host_spectrum(seg, coef)
-    except ValueError as exc:
-        raise ValidationError(str(exc), "seg_ev/coeffs") from exc
+    # Same checks, order and types as the pre-migration merge, which got them
+    # from evaluate_f2: edges only need to be finite and increasing (not
+    # positive), and the coefficients are not checked here.
+    if not np.isfinite(seg).all():
+        raise ValueError("seg_ev must be finite")
+    if (np.diff(seg) <= 0).any():
+        raise ValueError("seg_ev must be strictly increasing")
+    table = _padded_table(seg, coef, bucket(coef.shape[0]))
 
     energy, values = spec.energy_ev, spec.values
     n_ne = energy.size

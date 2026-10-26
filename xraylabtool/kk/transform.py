@@ -44,6 +44,13 @@ def _f64(x: Any) -> jax.Array:
     return out
 
 
+@jax.jit
+def _relativistic_correction_device(atomic_numbers: Any, counts: Any) -> jax.Array:
+    """Compiled device expression of Z*, so its constants stay inside the program."""
+    z = _f64(atomic_numbers)
+    return jnp.sum(_f64(counts) * (z - (z / 82.5) ** 2.37))
+
+
 @overload
 def relativistic_correction(
     atomic_numbers: Sequence[int], counts: Sequence[float]
@@ -98,8 +105,8 @@ def relativistic_correction(atomic_numbers: Any, counts: Any) -> float | jax.Arr
             f"{len(atomic_numbers)} and {len(counts)}"
         )
     if isinstance(atomic_numbers, jax.Array) or isinstance(counts, jax.Array):
-        z = _f64(atomic_numbers)
-        return jnp.sum(_f64(counts) * (z - (z / 82.5) ** 2.37))
+        corrected: jax.Array = _relativistic_correction_device(atomic_numbers, counts)
+        return corrected
     correction = 0.0
     for z, n in zip(atomic_numbers, counts, strict=True):
         correction += (z - (z / 82.5) ** 2.37) * n
