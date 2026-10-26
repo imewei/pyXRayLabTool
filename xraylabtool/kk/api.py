@@ -444,8 +444,8 @@ def kk_calculate_real(
     chunk_size : int, optional
         Energies per block of the transform, bounding memory; the result does
         not depend on it beyond rounding. Also used for the refinement
-        midpoints. Default: a cache-sized block, about 2 MiB per float64
-        temporary.
+        midpoints. Default: platform dependent, at most about 2 MiB (CPU) or
+        32 MiB (accelerator) per float64 temporary.
     nearedge : NearEdgeSpectrum, optional
         Measured near-edge absorption data (energies in eV, see
         :func:`~xraylabtool.kk.nearedge.load_nearedge`). It is converted to

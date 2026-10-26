@@ -13,16 +13,23 @@ Design: ``docs/superpowers/specs/2026-10-25-kk-jax-first-design.md`` §3.
 
 from __future__ import annotations
 
+import jax
+
 # Each (block, n_segments) float64 temporary holds at most this many elements
 # (32 MiB), so the largest tensor stays far below 256 MB even with the dozen
 # temporaries the kernel keeps alive at once.
 CHUNK_ELEMENTS = 2**22
 
-# Energy evaluation works on blocks of at most this many (block, n_segments)
+# CPU energy evaluation works on blocks of at most this many (block, n_segments)
 # elements (2 MiB per float64 temporary): small enough to stay cache-resident,
-# which measured fastest on CPU, and fine enough that the energies evaluated
-# beyond the real count are below one block.
+# which measured fastest, and fine enough that the energies evaluated beyond the
+# real count are below one block.
 EVAL_ELEMENTS = 2**18
+
+# On an accelerator a loop trip costs a kernel launch, so energies run as one
+# block when they fit this budget (per float64 temporary) and in few large
+# blocks otherwise.
+ACCELERATOR_EVAL_ELEMENTS = 2**22
 
 _MIN_BUCKET_FLOOR = 64
 
@@ -154,17 +161,35 @@ def block_for(
     return best
 
 
+def _on_cpu() -> bool:
+    """True when the default JAX backend is the host CPU (a static, host-side choice)."""
+    return bool(jax.default_backend() == "cpu")
+
+
 def energy_blocks(chunk_size: int | None, capacity: int, m: int) -> tuple[int, int]:
     """Static ``(block, n_blocks)`` for evaluating ``m`` energies.
 
-    ``m`` is first rounded up to a power of two (``m_b``, no minimum); the
-    block is then :func:`block_for` ``(chunk_size, capacity, m_b)`` with the
+    The rule depends on the default JAX platform, because a loop trip is cheap
+    on a CPU and costs a kernel launch on an accelerator. The kernel evaluates
+    only the blocks that hold a real energy, so padding beyond them costs a
+    predicate test per block.
+
+    **CPU.** ``m`` is rounded up to a power of two (``m_b``, no minimum); the
+    block is :func:`block_for` ``(chunk_size, capacity, m_b)`` with the
     cache-sized budget :data:`EVAL_ELEMENTS`, and ``n_blocks = ⌈m_b / block⌉``.
-    The padded length ``block * n_blocks`` is below ``2m`` plus at most one
-    block and the number of distinct pairs grows only with ``log₂ m`` (times
-    the distinct capacities and chunk sizes in use). The kernel evaluates only
-    the ``⌈m / block⌉`` blocks that hold a real energy, so the work done is
-    below ``m + block`` energies whatever the padded length.
+    The work done is below ``m + block`` energies.
+
+    **Accelerator.** ``m`` is rounded up to the fine :func:`bucket` ladder
+    (``padded``, at most 25 % above ``m``) and the block is :func:`block_for`
+    ``(chunk_size, capacity, padded)`` with the budget
+    :data:`ACCELERATOR_EVAL_ELEMENTS`: a single block of ``padded`` energies
+    when that fits the budget, else blocks of the budget size and
+    ``n_blocks = ⌈padded / block⌉``. The work done is below ``m + block``
+    energies.
+
+    On both platforms the number of distinct pairs grows only with ``log₂ m``
+    (times the distinct capacities and chunk sizes in use) and ``block`` never
+    exceeds ``chunk_size``.
 
     Parameters
     ----------
@@ -187,9 +212,13 @@ def energy_blocks(chunk_size: int | None, capacity: int, m: int) -> tuple[int, i
     Examples
     --------
     >>> from xraylabtool.kk._shapes import energy_blocks
-    >>> energy_blocks(None, 1248, 1000), energy_blocks(7, 1248, 1000)
-    ((128, 8), (4, 256))
+    >>> energy_blocks(7, 1248, 1000)[0]
+    4
     """
-    m_b = bucket_pow2(m, minimum=1)
-    block = block_for(chunk_size, capacity, m_b, EVAL_ELEMENTS)
-    return block, -(-m_b // block)
+    if _on_cpu():
+        m_b = bucket_pow2(m, minimum=1)
+        block = block_for(chunk_size, capacity, m_b, EVAL_ELEMENTS)
+        return block, -(-m_b // block)
+    padded = bucket(m)
+    block = block_for(chunk_size, capacity, padded, ACCELERATOR_EVAL_ELEMENTS)
+    return block, -(-padded // block)

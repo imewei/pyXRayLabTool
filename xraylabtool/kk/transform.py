@@ -281,6 +281,9 @@ def _kk_f1_blocks(
     seg, coeffs = _live_table(spectrum)
     rel = _f64(rel_corr)
     blocks = _f64(padded_energies).reshape(-1, block)
+    if blocks.shape[0] == 1:  # one trip: no loop, no skip test
+        out = kk_piecewise_poly(blocks[0], seg, coeffs, rel)
+        return jnp.where(jnp.arange(out.size) < n_valid, out, 0.0)
     first = jnp.arange(blocks.shape[0]) * block
 
     def one(args: tuple[jax.Array, jax.Array]) -> jax.Array:
@@ -328,13 +331,13 @@ def kk_f1(
     rel_corr : float or jax.Array
         Relativistic correction Z* (see :func:`relativistic_correction`).
     block : int, optional
-        Static upper bound on energies per block; default
-        ``min(2**18 // capacity, m)``, rounded down to a power of two. ``m``
-        is first rounded up to a power of two and the block count follows
-        from it (see :func:`~xraylabtool.kk._shapes.energy_blocks`), so
-        repeated calls share compiled programs, and blocks past the last real
-        energy are skipped, so fewer than ``m`` plus one block of energies
-        are evaluated.
+        Static upper bound on energies per block. The default follows the
+        platform (see :func:`~xraylabtool.kk._shapes.energy_blocks`): on a CPU
+        cache-sized blocks of at most ``2**18 // capacity`` energies, on an
+        accelerator one block of the fine-ladder length when it fits
+        ``2**22 // capacity``, else blocks of that size. Repeated calls share
+        compiled programs, and blocks past the last real energy are skipped,
+        so fewer than ``m`` plus one block of energies are evaluated.
 
     Returns
     -------
@@ -407,8 +410,8 @@ def kk_real_spectrum(
         Relativistic correction Z* (see :func:`relativistic_correction`).
     chunk_size : int, optional
         Upper bound on energies per block (rounded down to a power of two or
-        bucket-ladder value). Default: ``2**18 // capacity``, about 2 MiB per
-        float64 temporary.
+        bucket-ladder value). Default: platform dependent, at most about 2 MiB
+        (CPU) or 32 MiB (accelerator) per float64 temporary.
 
     Returns
     -------
