@@ -13,14 +13,67 @@ B. Watts, Opt. Express 22(19), 23628-23639 (2014), doi:10.1364/OE.22.023628
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
+import threading
+from typing import Any
 
+import jax
 import numpy as np
 from numpy.typing import NDArray
 
+from xraylabtool.kk import _device
+from xraylabtool.kk._shapes import bucket
+
 _ASF_PATH = Path(__file__).resolve().parents[1] / "data" / "kkcalc" / "asf.npz"
+
+
+@dataclass(frozen=True)
+class DeviceTables:
+    """Packed per-element ASF tables resident on the device (a JAX pytree).
+
+    Rows are indexed by ``Z - 1``. Knots beyond an element's last real knot
+    ``x`` are ``x·(1 + k)``, ``k = 1, 2, …`` (finite and strictly increasing,
+    so a ``searchsorted`` over a whole row is well defined) and the matching
+    coefficient rows are exactly zero.
+
+    Attributes
+    ----------
+    knots : jax.Array, shape (92, Kmax)
+        Segment edges in eV, padded as described above.
+    coeffs : jax.Array, shape (92, Kmax - 1, 5)
+        ``a₁, a₀, a₋₁, a₋₂, a₋₃`` per segment, zero past the true length.
+    n_knots : jax.Array, shape (92,)
+        True knot count of each element (int32).
+
+    References
+    ----------
+    Design spec §1 and §5 (``2026-10-25-kk-jax-first-design.md``); the
+    tabulated data are upstream kkcalc's, B. Watts, Opt. Express 22(19),
+    23628 (2014), Eq. (8).
+    """
+
+    knots: jax.Array
+    coeffs: jax.Array
+    n_knots: jax.Array
+
+
+def _flatten_tables(t: DeviceTables) -> tuple[tuple[Any, Any, Any], None]:
+    return (t.knots, t.coeffs, t.n_knots), None
+
+
+def _unflatten_tables(_aux: None, children: tuple[Any, Any, Any]) -> DeviceTables:
+    return DeviceTables(*children)
+
+
+jax.tree_util.register_pytree_node(DeviceTables, _flatten_tables, _unflatten_tables)
+
+# Built lazily, once per (database, default device); the lock makes concurrent
+# first calls single-flight.
+_tables_cache: dict[tuple[int, Any], DeviceTables] = {}
+_tables_lock = threading.Lock()
 
 
 @dataclass(frozen=True)
@@ -120,6 +173,90 @@ class AsfDatabase:
         """
         _check_z(z)
         return self._coeffs[self._coeff_offsets[z - 1] : self._coeff_offsets[z]]
+
+    def compound_capacity(self, z: Sequence[int]) -> int:
+        """Conservative segment capacity for a compound of the elements ``z``.
+
+        The union of the elemental knot sets cannot hold more than
+        ``Σ (nᵢ - 1)`` segments, so this bucketed sum is an upper bound on the
+        true segment count and overflow is excluded by construction.
+
+        Parameters
+        ----------
+        z : sequence of int
+            Atomic numbers (1..92); repeats are allowed.
+
+        Returns
+        -------
+        int
+            ``bucket(Σ (n_knots - 1))``.
+
+        Raises
+        ------
+        ValueError
+            If an atomic number is outside 1..92.
+
+        References
+        ----------
+        Design spec §3 (``2026-10-25-kk-jax-first-design.md``).
+
+        Examples
+        --------
+        >>> from xraylabtool.kk import load_asf
+        >>> load_asf().compound_capacity([14, 8]) >= 512
+        True
+        """
+        total = 0
+        for zi in z:
+            _check_z(zi)
+            total += int(self._energy_offsets[zi] - self._energy_offsets[zi - 1]) - 1
+        return bucket(total)
+
+    def device_tables(self) -> DeviceTables:
+        """Packed ASF tables on the default device, built once and cached.
+
+        The host packing is I/O preparation; the arrays are uploaded in one
+        :func:`~xraylabtool.kk._device.upload`. Construction is single-flight
+        under a lock and the cache is keyed on the default device.
+
+        Returns
+        -------
+        DeviceTables
+            Knots, coefficients and true knot counts of Z = 1..92.
+
+        References
+        ----------
+        Design spec §1 and §5 (``2026-10-25-kk-jax-first-design.md``).
+
+        Examples
+        --------
+        >>> from xraylabtool.kk import load_asf
+        >>> load_asf().device_tables().knots.shape[0]
+        92
+        """
+        _device.ensure_x64()
+        device = jax.config.jax_default_device or jax.devices()[0]
+        key = (id(self), device)
+        with _tables_lock:
+            tables = _tables_cache.get(key)
+            if tables is None:
+                tables = _device.upload(self._pack_host())
+                _tables_cache[key] = tables
+            return tables
+
+    def _pack_host(self) -> DeviceTables:
+        """NumPy-leaved :class:`DeviceTables` following the padding rule."""
+        sizes = np.diff(self._energy_offsets)
+        kmax = int(sizes.max())
+        knots = np.empty((92, kmax))
+        coeffs = np.zeros((92, kmax - 1, 5))
+        for z in range(1, 93):
+            row = self.energy_ev(z)
+            n = row.size
+            knots[z - 1, :n] = row
+            knots[z - 1, n:] = row[-1] * (1.0 + np.arange(1, kmax - n + 1))
+            coeffs[z - 1, : n - 1] = self.im_coeffs(z)
+        return DeviceTables(knots, coeffs, sizes.astype(np.int32))  # type: ignore[arg-type]
 
 
 def _check_z(z: int) -> None:

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from functools import partial
 import math
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, overload
 
 import jax
 import jax.numpy as jnp
@@ -44,9 +44,19 @@ def _f64(x: Any) -> jax.Array:
     return out
 
 
+@overload
 def relativistic_correction(
     atomic_numbers: Sequence[int], counts: Sequence[float]
-) -> float:
+) -> float: ...
+@overload
+def relativistic_correction(
+    atomic_numbers: jax.Array, counts: Sequence[float] | jax.Array
+) -> jax.Array: ...
+@overload
+def relativistic_correction(
+    atomic_numbers: Sequence[int], counts: jax.Array
+) -> jax.Array: ...
+def relativistic_correction(atomic_numbers: Any, counts: Any) -> float | jax.Array:
     """Relativistic correction Z* added to the Kramers-Kronig transform.
 
     Computes ``Σ nᵢ (Zᵢ − (Zᵢ/82.5)^2.37)`` over the elements of a formula
@@ -54,15 +64,18 @@ def relativistic_correction(
 
     Parameters
     ----------
-    atomic_numbers : sequence of int
+    atomic_numbers : sequence of int or jax.Array
         Atomic number Z of each element.
-    counts : sequence of float
-        Number of atoms of each element per formula unit, same length.
+    counts : sequence of float or jax.Array
+        Number of atoms of each element per formula unit, same length. A
+        zero count contributes exactly nothing, so padded element lists work.
 
     Returns
     -------
-    float
-        Z* in electrons per formula unit.
+    float or jax.Array
+        Z* in electrons per formula unit: a ``float`` for sequence input, a
+        float64 scalar array (traceable under ``jit``) when either argument is
+        a JAX array.
 
     Raises
     ------
@@ -84,6 +97,9 @@ def relativistic_correction(
             "atomic_numbers and counts must have the same length, got "
             f"{len(atomic_numbers)} and {len(counts)}"
         )
+    if isinstance(atomic_numbers, jax.Array) or isinstance(counts, jax.Array):
+        z = _f64(atomic_numbers)
+        return jnp.sum(_f64(counts) * (z - (z / 82.5) ** 2.37))
     correction = 0.0
     for z, n in zip(atomic_numbers, counts, strict=True):
         correction += (z - (z / 82.5) ** 2.37) * n
