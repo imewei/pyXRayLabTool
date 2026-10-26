@@ -37,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - `ensure_float64` from `xraylabtool.backend.array_ops` (its only user was `kk`, which now establishes x64 itself) and the NumPy twin of the kk kernel, assembly, merge and refinement.
 
+### Fixed
+- `JaxPchipInterpolator` preserves float64 when x64 is disabled after construction or in a thread-local JAX context, and rejects complex tables instead of discarding their imaginary parts.
+
 ## [0.4.8] - 2026-10-24
 
 ### Added

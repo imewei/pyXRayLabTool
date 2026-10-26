@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+import warnings
+
 import numpy as np
 import pytest
 from scipy.interpolate import PchipInterpolator
@@ -111,8 +114,76 @@ class TestQueryHandling:
         )
 
 
+@pytest.fixture
+def restore_x64() -> Iterator[None]:
+    import jax
+
+    original = jax.config.jax_enable_x64
+    yield
+    jax.config.update("jax_enable_x64", original)
+
+
+@pytest.mark.unit
+@pytest.mark.usefixtures("restore_x64")
+class TestPrecision:
+    x = np.array([1.0, 1.0 + 1e-8, 1.0 + 2e-8])
+    y = np.array([0.0, 1.0, 2.0])
+    q = np.array([1.0 + 0.5e-8, 1.0 + 1.5e-8, 1.0 + 2e-8])
+
+    def test_cached_interpolator_after_x64_is_disabled(self) -> None:
+        import jax
+
+        interp = JaxPchipInterpolator(self.x, self.y)
+        interp(self.q).block_until_ready()
+        jax.config.update("jax_enable_x64", False)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            out = interp(self.q)
+
+        assert out.dtype == np.float64
+        np.testing.assert_allclose(out, _scipy(self.x, self.y)(self.q), rtol=1e-12)
+        assert caught == []
+        assert not jax.config.jax_enable_x64
+
+    @pytest.mark.parametrize("construct_inside", [False, True])
+    def test_disabled_thread_local_context(self, construct_inside: bool) -> None:
+        import jax
+
+        interp = None if construct_inside else JaxPchipInterpolator(self.x, self.y)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with jax.enable_x64(False):
+                if interp is None:
+                    interp = JaxPchipInterpolator(self.x, self.y)
+                out = interp(self.q)
+                assert not jax.config.jax_enable_x64
+
+        assert interp.x.dtype == np.float64
+        assert interp.y.dtype == np.float64
+        assert interp.d.dtype == np.float64
+        assert out.dtype == np.float64
+        np.testing.assert_allclose(out, _scipy(self.x, self.y)(self.q), rtol=1e-12)
+        assert caught == []
+
+
 @pytest.mark.unit
 class TestValidation:
+    @pytest.mark.parametrize(
+        ("x", "y"),
+        [
+            (np.array([1.0 + 1j, 2.0 + 1j]), np.array([1.0, 2.0])),
+            (np.array([1.0, 2.0]), np.array([1.0 + 1j, 2.0 + 1j])),
+            (np.array([1.0 + 0j, 2.0 + 0j]), np.array([1.0, 2.0])),
+            (np.array([1.0, 2.0]), np.array([complex(1.0, np.inf), 2.0])),
+        ],
+    )
+    def test_rejects_complex_tables(self, x: np.ndarray, y: np.ndarray) -> None:
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            with pytest.raises(ValueError, match="real"):
+                JaxPchipInterpolator(x, y)
+
     @pytest.mark.parametrize(
         ("x", "y"),
         [

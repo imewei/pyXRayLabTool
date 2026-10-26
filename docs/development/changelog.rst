@@ -55,6 +55,7 @@ Unreleased
 
 **Fixed**
 
+- ``JaxPchipInterpolator`` preserves float64 when x64 is disabled after construction or in a thread-local JAX context, and rejects complex tables instead of discarding their imaginary parts.
 - GUI: table headers no longer render uppercase, which turned δ, β and μ into Δ, B and M.
 - GUI: the single-material plot now spans the energy-wavelength converter row and, with the multi-material plot, resizes to fit its panel instead of being forced to 720 px; the scrollbar remains for windows too short to fit it.
 - GUI: toast notifications are sized after their stylesheet is applied, so the message is no longer clipped ("calculation do…").

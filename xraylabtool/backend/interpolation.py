@@ -90,7 +90,12 @@ class JaxPchipInterpolator:
     ------
     ValueError
         If ``x`` and ``y`` are not 1-D of equal length ``>= 2``, contain
-        non-finite values, or ``x`` is not strictly increasing.
+        complex or non-finite values, or ``x`` is not strictly increasing.
+
+    Notes
+    -----
+    Construction and evaluation use local x64 scopes so another caller's
+    disabled-x64 setting cannot reduce the interpolation precision.
     """
 
     def __init__(self, x: Any, y: Any) -> None:
@@ -99,8 +104,12 @@ class JaxPchipInterpolator:
 
         # Without x64 jnp.asarray would silently truncate the tables to float32.
         jax.config.update("jax_enable_x64", True)
-        x_np = np.asarray(x, dtype=np.float64)
-        y_np = np.asarray(y, dtype=np.float64)
+        x_np = np.asarray(x)
+        y_np = np.asarray(y)
+        if np.iscomplexobj(x_np) or np.iscomplexobj(y_np):
+            raise ValueError("x and y must contain real values")
+        x_np = np.asarray(x_np, dtype=np.float64)
+        y_np = np.asarray(y_np, dtype=np.float64)
         if x_np.ndim != 1 or x_np.shape != y_np.shape or x_np.shape[0] < 2:
             raise ValueError("x and y must be 1-D arrays of equal length >= 2")
         if not (np.isfinite(x_np).all() and np.isfinite(y_np).all()):
@@ -108,16 +117,21 @@ class JaxPchipInterpolator:
         if not (np.diff(x_np) > 0).all():
             raise ValueError("x must be strictly increasing")
 
-        self.x = jnp.asarray(x_np)
-        self.y = jnp.asarray(y_np)
-        self.d = _pchip_slopes(self.x, self.y)
+        # A caller's thread-local x64 setting overrides the global default.
+        with jax.enable_x64(True):
+            self.x = jnp.asarray(x_np, dtype=jnp.float64)
+            self.y = jnp.asarray(y_np, dtype=jnp.float64)
+            self.d = _pchip_slopes(self.x, self.y)
 
     def __call__(self, xq: Any) -> Any:
+        import jax
         import jax.numpy as jnp
 
-        return _jit_pchip_eval()(
-            self.x, self.y, self.d, jnp.asarray(xq, dtype=jnp.float64)
-        )
+        # Cached tables may be queried after another caller disables x64.
+        with jax.enable_x64(True):
+            return _jit_pchip_eval()(
+                self.x, self.y, self.d, jnp.asarray(xq, dtype=jnp.float64)
+            )
 
 
 class InterpolationFactory:
