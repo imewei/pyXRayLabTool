@@ -34,14 +34,14 @@ Analyzing the data flow through the codebase:
 With a naive JAX migration, transfers would occur at every boundary:
 
 ```
-[LOAD: numpy] -> HOST-DEVICE -> [CACHE: jax?] -> [INTERPOLATE: interpax on jax]
+[LOAD: numpy] -> HOST-DEVICE -> [CACHE: jax?] -> [INTERPOLATE: JaxPchipInterpolator on jax]
   -> [COMPUTE: jax jit] -> DEVICE-HOST -> [RESULT: XRayResult(numpy)]
   -> [PLOT: pyqtgraph takes numpy] / [EXPORT: pandas takes numpy]
 ```
 
 **Critical transfer points identified:**
 
-1. **Interpolator input:** Energy values (numpy) -> interpolator (scipy/interpax)
+1. **Interpolator input:** Energy values (numpy) -> interpolator (scipy / JaxPchipInterpolator)
 2. **Interpolator output:** f1/f2 values -> scattering factor calculation
 3. **Scattering factors -> derived quantities:** Should be zero-copy within JAX
 4. **Computation result -> XRayResult:** JAX arrays -> numpy for storage
@@ -71,7 +71,7 @@ These are small arrays. The transfer overhead matters not because of data size, 
 |----------|-----------|--------|
 | File loading (.nff data) | Disk -> Host (numpy) | **Keep as numpy.** File I/O is inherently host-side. |
 | Scattering data cache | Host -> Device | **Convert once at cache time.** `jnp.array(numpy_data)` when caching interpolator inputs. |
-| Interpolator creation | Host -> Device | **Convert interpolator coefficients to JAX at creation time.** interpax stores coefficients as JAX arrays. |
+| Interpolator creation | Host -> Device | **Convert interpolator coefficients to JAX at creation time.** `JaxPchipInterpolator` stores its nodes and slopes as JAX arrays. |
 | Energy input from user | Host -> Device | **Single `jnp.asarray()` at the entry point** of `calculate_single_material_properties()`. |
 | Computation pipeline | Device -> Device | **Zero transfers.** All ops (`calculate_scattering_factors`, `calculate_derived_quantities`) stay in JAX. |
 | XRayResult construction | Device -> Host | **Single bulk transfer.** Convert all result arrays to numpy in `XRayResult.__post_init__()`. |
@@ -95,7 +95,7 @@ def calculate_single_material_properties(formula, energy_keV, density):
     wavelength = ENERGY_TO_WAVELENGTH_FACTOR / energy_kev  # JAX scalar / JAX array
     energy_ev = energy_kev * 1000.0
 
-    # Interpolation (interpax, device-side)
+    # Interpolation (JaxPchipInterpolator, device-side)
     f1_values = f1_interp(energy_ev)  # JAX array in, JAX array out
 
     # Scattering factors (JIT-compiled, all device-side)

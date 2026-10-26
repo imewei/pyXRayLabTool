@@ -52,7 +52,7 @@ Specifically:
 3. `NumpyBackend` will be the default during migration (zero behavior change), switchable to `JaxBackend` via `set_backend("jax")` or environment variable.
 4. After Phase 2, `JaxBackend` becomes the default with `NumpyBackend` as fallback.
 5. I/O operations (file loading, CSV export, pandas DataFrames) remain NumPy/pandas.
-6. The `PchipInterpolator` dependency is abstracted behind `InterpolationFactory`, allowing scipy and interpax implementations to coexist.
+6. The `PchipInterpolator` dependency is abstracted behind `InterpolationFactory`, allowing the scipy and `JaxPchipInterpolator` (`jax.numpy`) implementations to coexist.
 
 ## Consequences
 
@@ -69,7 +69,7 @@ Specifically:
 - **Learning curve:** Team members need to understand JAX's functional purity constraints (no in-place mutation, no Python control flow in JIT).
 
 ### Risks
-- **interpax maturity:** The PCHIP interpolation adapter depends on interpax for JIT-compatible interpolation. If interpax proves inadequate, fallback to `jax.pure_callback` wrapping scipy (with JIT boundary penalty).
+- **PCHIP parity:** The JAX backend uses an in-tree `jax.numpy` PCHIP (`JaxPchipInterpolator`, Fritsch-Carlson slopes as in SciPy) instead of the `interpax` dependency it first planned; `tests/unit/test_jax_pchip.py` pins it to SciPy at 1e-12.
 - **Numerical equivalence:** JAX's XLA compiler may reorder floating-point operations, producing results that differ at the ~1e-15 level. The golden test suite with 1e-12 tolerance provides a safety net.
 
 ---

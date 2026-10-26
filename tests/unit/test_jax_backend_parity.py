@@ -8,7 +8,10 @@ import numpy as np
 import pytest
 
 from xraylabtool.backend.array_ops import get_backend, set_backend
-from xraylabtool.backend.interpolation import InterpolationFactory
+from xraylabtool.backend.interpolation import (
+    InterpolationFactory,
+    JaxPchipInterpolator,
+)
 from xraylabtool.calculators.core import (
     _convert_energy_input,
     _validate_and_process_energies,
@@ -37,14 +40,13 @@ def restore_numpy_backend():
 @pytest.mark.unit
 @pytest.mark.usefixtures("restore_numpy_backend")
 class TestJaxBackendParity:
-    """The JAX backend (jit kernels + interpax PCHIP) must match NumPy."""
+    """The JAX backend (jit kernels + JaxPchipInterpolator) must match NumPy."""
 
     @pytest.mark.parametrize(
         ("formula", "density"), [("SiO2", 2.2), ("H2O", 1.0), ("Fe2O3", 5.24)]
     )
     def test_jax_matches_numpy(self, formula: str, density: float) -> None:
         pytest.importorskip("jax")
-        pytest.importorskip("interpax")
 
         set_backend("numpy")
         expected = calculate_single_material_properties(formula, ENERGIES_KEV, density)
@@ -60,9 +62,8 @@ class TestJaxBackendParity:
                 err_msg=f"{formula}.{field}",
             )
 
-    def test_pchip_factory_uses_interpax_and_matches_scipy(self) -> None:
+    def test_pchip_factory_uses_jax_pchip_and_matches_scipy(self) -> None:
         pytest.importorskip("jax")
-        interpax = pytest.importorskip("interpax")
 
         x = np.linspace(1.0, 10.0, 12)
         y = np.log(x) + 0.1 * x
@@ -73,7 +74,7 @@ class TestJaxBackendParity:
         set_backend("jax")
         interpolator = InterpolationFactory.create_pchip(x, y)
 
-        assert isinstance(interpolator, interpax.PchipInterpolator)
+        assert isinstance(interpolator, JaxPchipInterpolator)
         np.testing.assert_allclose(
             np.asarray(interpolator(query)), expected, rtol=1e-12
         )

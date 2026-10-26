@@ -789,21 +789,6 @@ wheels = [
 ]
 
 [[package]]
-name = "equinox"
-version = "0.13.8"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jax" },
-    { name = "jaxtyping" },
-    { name = "typing-extensions" },
-    { name = "wadler-lindig" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/19/ff/522336d2f8264f2ad97119710b76e2cddf66145d03a1e89899175d26b192/equinox-0.13.8.tar.gz", hash = "sha256:dd075050018e2dd02e252e9d29d3060f7e67f085622d8d27a8e89e24bb8523db", size = 145257, upload-time = "2026-05-05T10:03:43.258Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ae/d6/69a76c8ccdef14af687c497040292a46e59fc7a0ab24724b60e50ca61030/equinox-0.13.8-py3-none-any.whl", hash = "sha256:ca004348533cc30a63ebe8823d7dd4bb626dce17743d40bbddb89b402ef2a240", size = 185813, upload-time = "2026-05-05T10:03:41.673Z" },
-]
-
-[[package]]
 name = "execnet"
 version = "2.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -977,22 +962,6 @@ wheels = [
 ]
 
 [[package]]
-name = "interpax"
-version = "0.3.16"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "equinox" },
-    { name = "jax" },
-    { name = "jaxkd" },
-    { name = "jaxtyping" },
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c7/09/bba97be44a8e0d6b8df8d721c0494d78076973d9266962c25e7ba8683480/interpax-0.3.16.tar.gz", hash = "sha256:b543e20ae292e13faa6eb16323d891018047dd7e06746fb71c0054d2d8139a2a", size = 66621, upload-time = "2026-10-22T21:56:53.575Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/df/8d/35502ad14f1d8c2283e03dc1362bbfc4408005513afc6179459fb872ae8a/interpax-0.3.16-py3-none-any.whl", hash = "sha256:ed622c18b5b4ef03d1c574eae733571473f7025212366eddd1d9ad6f556d2970", size = 49239, upload-time = "2026-10-22T21:56:51.947Z" },
-]
-
-[[package]]
 name = "jaraco-classes"
 version = "3.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1104,18 +1073,6 @@ wheels = [
 ]
 
 [[package]]
-name = "jaxkd"
-version = "0.1.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jax" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/6b/40de65a682f0212ff13facf0c2a9b1a07e1b0f719906c11b39a9855275b3/jaxkd-0.1.2.tar.gz", hash = "sha256:842e7837450feec39fa03bb6f5369fa4123ec526339dc359bfba7157884b77ec", size = 9414, upload-time = "2025-07-15T11:45:09.193Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/28/31/53a56d0bb104b6726f6d6858304fe7f4fb63fb120112f446ebecae5168c4/jaxkd-0.1.2-py3-none-any.whl", hash = "sha256:63560da791809a6c2cc7f3bf7e9d1509f2d880ba1bb7e6695727e6a41032bd98", size = 11399, upload-time = "2025-07-15T11:45:07.791Z" },
-]
-
-[[package]]
 name = "jaxlib"
 version = "0.12.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1147,18 +1104,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/44/59/78b61a557fa58feee23e7e4ac4c1cec7c4ad5085536ddb22485d6e2e8a8f/jaxlib-0.12.0.1-cp315-cp315t-macosx_11_0_arm64.whl", hash = "sha256:78d16c6d6342cbe8de117f23b5c6d98339e582453221e977920dcbe5e05d72d6", size = 60812353, upload-time = "2026-10-21T21:06:49.984Z" },
     { url = "https://files.pythonhosted.org/packages/b3/b1/76a8e1368610b210684f8d74e24873365af89db0a6a29693f20ee8032ac3/jaxlib-0.12.0.1-cp315-cp315t-manylinux_2_27_aarch64.whl", hash = "sha256:b8435a50e7f09481156ab15a7522e3dd96ee6655f57f494933c5b9ffc6101332", size = 80950599, upload-time = "2026-10-21T21:06:59.918Z" },
     { url = "https://files.pythonhosted.org/packages/d1/71/f3d7e2408ddb179fd517e5c3b6f8722261d04ba6b5aa583f7e4d25535323/jaxlib-0.12.0.1-cp315-cp315t-manylinux_2_27_x86_64.whl", hash = "sha256:085c5196ac9e735a9313dee67a536e70ca09fe61c4ce19e694849509add2ecac", size = 86944972, upload-time = "2026-10-21T21:07:04.98Z" },
-]
-
-[[package]]
-name = "jaxtyping"
-version = "0.3.11"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "wadler-lindig" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/91/c1/091b8852bd7cbf50bd655543c8506033cf4029300c67f8c176c1286879a9/jaxtyping-0.3.11.tar.gz", hash = "sha256:b09c14acf6686feb9e0df5b0d8c6e7c5b6f8d36bf059ee54cd522a186c2ef050", size = 46489, upload-time = "2026-06-13T18:35:23.167Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/38/c66bbdc5047f4776c2bd3e47e5295a350e3fa44d5b8942105e71c2a876a0/jaxtyping-0.3.11-py3-none-any.whl", hash = "sha256:8a4bedc4e3f963fa82df41bd13c7ebc2bad925601eb48614c65798f21329d4e3", size = 56593, upload-time = "2026-06-13T18:35:22.01Z" },
 ]
 
 [[package]]
@@ -3908,15 +3853,6 @@ wheels = [
 ]
 
 [[package]]
-name = "wadler-lindig"
-version = "0.1.8"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ea/bf/4caf1aada6c84eb3fadf9341a90367f436a759692456e1a234d444d428ee/wadler_lindig-0.1.8.tar.gz", hash = "sha256:1a94d51cd26100dda9e430c64539c5b92b9788c87f10db3e1c87503ab814411a", size = 16256, upload-time = "2026-10-25T19:06:02.92Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/0b/b170089cd44848f25dbc9efda08e5aa4a8402d9a13f0d4d0f3d7808be539/wadler_lindig-0.1.8-py3-none-any.whl", hash = "sha256:8671e8c98449ae3f4e4ba720eccd63a502b3983042f8d112b49a9c6be49e8d92", size = 20840, upload-time = "2026-10-25T19:06:01.79Z" },
-]
-
-[[package]]
 name = "wcwidth"
 version = "0.9.4"
 source = { registry = "https://pypi.org/simple" }
@@ -4056,7 +3992,6 @@ dependencies = [
     { name = "build" },
     { name = "doc8" },
     { name = "furo" },
-    { name = "interpax" },
     { name = "jax" },
     { name = "jaxlib" },
     { name = "matplotlib" },
@@ -4113,7 +4048,6 @@ requires-dist = [
     { name = "build", specifier = ">=1.0.0" },
     { name = "doc8", specifier = ">=2.0.0" },
     { name = "furo", specifier = ">=2025.9.25" },
-    { name = "interpax", specifier = ">=0.3.0" },
     { name = "jax", specifier = ">=0.12.0.1" },
     { name = "jax-cuda12-pjrt", marker = "extra == 'gpu-cuda12'", specifier = ">=0.12.0.1" },
     { name = "jax-cuda12-plugin", marker = "extra == 'gpu-cuda12'", specifier = ">=0.12.0.1" },

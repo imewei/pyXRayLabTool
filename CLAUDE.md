@@ -70,7 +70,7 @@ xraylabtool/
 ├── typing_extensions.py  # FloatLike / ArrayLike aliases
 ├── backend/              # NumPy ↔ JAX abstraction
 │   ├── array_ops.py      # get_backend()/set_backend(); auto-selects JAX only on NVIDIA GPU
-│   └── interpolation.py  # InterpolationFactory (scipy PCHIP ↔ interpax)
+│   └── interpolation.py  # InterpolationFactory (scipy PCHIP ↔ jnp JaxPchipInterpolator)
 ├── calculators/          # Core X-ray physics
 │   ├── core.py           # calculate_single_material_properties(), calculate_xray_properties()
 │   ├── xray_result.py    # XRayResult dataclass

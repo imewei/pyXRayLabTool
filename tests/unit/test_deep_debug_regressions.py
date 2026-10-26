@@ -318,8 +318,8 @@ class TestExports:
 class TestBackendState:
     def test_set_backend_rebuilds_interpolators(self) -> None:
         pytest.importorskip("jax")
-        interpax = pytest.importorskip("interpax")
         scipy_interp = pytest.importorskip("scipy.interpolate")
+        from xraylabtool.backend.interpolation import JaxPchipInterpolator
         from xraylabtool.calculators.cache import create_scattering_factor_interpolators
 
         set_backend("numpy")
@@ -327,7 +327,7 @@ class TestBackendState:
         assert isinstance(f1, scipy_interp.PchipInterpolator)
         set_backend("jax")
         f1, _ = create_scattering_factor_interpolators("Si")
-        assert isinstance(f1, interpax.PchipInterpolator)
+        assert isinstance(f1, JaxPchipInterpolator)
         set_backend("numpy")
         f1, _ = create_scattering_factor_interpolators("Si")
         assert isinstance(f1, scipy_interp.PchipInterpolator)

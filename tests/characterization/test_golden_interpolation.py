@@ -1,9 +1,9 @@
 """Characterization tests: PchipInterpolator golden values (P1-C).
 
 This file is the highest-risk characterization test for the JAX migration.
-SciPy's PchipInterpolator will be replaced by interpax (or a custom cubic
-spline).  The values here are the numerical contract that the replacement must
-match.
+SciPy's PchipInterpolator is mirrored on the JAX backend by
+JaxPchipInterpolator.  The values here are the numerical contract that the
+replacement must match.
 
 All values were captured from v0.3.0 by calling the live interpolators and
 recording exact float64 output.  Tolerances are set to atol=1e-10 — tighter
@@ -146,7 +146,7 @@ class TestPchipAu:
     """Golden PCHIP samples for Gold at [100, 1000, 5000, 10000, 20000] eV.
 
     Heavy element data has absorption-edge discontinuities that stress
-    PCHIP's monotonicity preservation — the hardest case for interpax.
+    PCHIP's monotonicity preservation — the hardest case for a re-implementation.
     """
 
     EXPECTED_F1 = np.array(

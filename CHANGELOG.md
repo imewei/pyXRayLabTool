@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/architecture/005-adr-kk-jax-only.md` (with the section "Known deviations from the acceptance gates": CPU refined run 10-20 % slower than the forced-JAX baseline, GPU small-m overhead of 2-4 ms, bare-library GPU cold start 3.7-4.4 s); `jax_architecture` and the kk guide describe the device pipeline.
 
 ### Changed
+- The JAX backend's PCHIP interpolation is an in-tree `jax.numpy` implementation, `backend.interpolation.JaxPchipInterpolator` (SciPy's Fritsch-Carlson slopes, jit-compiled evaluation, NaN outside the table), replacing `interpax`; it matches SciPy's `PchipInterpolator` to float64 round-off.
 - Licence expression is `MIT AND Zlib` in `pyproject.toml` and `conda-recipe/meta.yaml`; `LICENSE-kkcalc.txt` ships in the sdist and wheel.
 - `calculators.core.calculate_properties_from_factors(formula, energy_kev, density, f1_total, f2_total)`: new public helper computing δ, β and the derived quantities from given f1/f2 totals; the lookup path shares its code.
 - `kk_calculate_real(chunk_size=...)`: `bool`, `float` and `str` now raise `ValueError` (a positive integer, including NumPy integers, is required; it is an upper bound on the energies per block).

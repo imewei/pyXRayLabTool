@@ -36,6 +36,7 @@ Unreleased
 
 **Changed**
 
+- The JAX backend's PCHIP interpolation is an in-tree ``jax.numpy`` implementation, ``backend.interpolation.JaxPchipInterpolator`` (SciPy's Fritsch-Carlson slopes, jit-compiled evaluation, NaN outside the table), replacing ``interpax``; it matches SciPy's ``PchipInterpolator`` to float64 round-off.
 - Licence expression is ``MIT AND Zlib`` in ``pyproject.toml`` and ``conda-recipe/meta.yaml``; ``LICENSE-kkcalc.txt`` ships in the sdist and wheel.
 - ``calculators.core.calculate_properties_from_factors(formula, energy_kev, density, f1_total, f2_total)``: new public helper computing δ, β and the derived quantities from given f1/f2 totals; the lookup path shares its code.
 - GUI: the main window opens maximized.
