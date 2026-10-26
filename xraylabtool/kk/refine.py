@@ -389,6 +389,11 @@ def _sliver_split(
 _MIN_TRIP_BLOCK = 64
 
 
+def _trip_size(block: int, cap: int) -> int:
+    """Energies per loop trip: at most ``block`` (the ``chunk_size`` bound)."""
+    return min(block, max(_MIN_TRIP_BLOCK, cap // 32))
+
+
 def _midpoint_f1(
     probe: jax.Array,
     spectrum: Spectrum,
@@ -397,7 +402,9 @@ def _midpoint_f1(
     *,
     block: int,
 ) -> jax.Array:
-    """f1 at the first ``n_active`` entries of ``probe``; the rest is left at zero.
+    """f1 at the first ``n_active`` entries of ``probe`` (whole blocks of them).
+
+    Entries past the last block that holds an active one are left at zero.
 
     The kernel runs over blocks of energies in a loop whose trip count is the
     number of blocks that hold active intervals, so a pass costs in
@@ -408,7 +415,7 @@ def _midpoint_f1(
     trip count, so this is not reverse-differentiable (not needed here).
     """
     cap = probe.shape[0]
-    size = min(block, max(_MIN_TRIP_BLOCK, cap // 32))
+    size = _trip_size(block, cap)
     n_blocks = -(-cap // size)
     padded = jnp.pad(_f64(probe), (0, n_blocks * size - cap), mode="edge")
     seg, coeffs = _live_table(spectrum)

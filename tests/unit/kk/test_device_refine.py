@@ -10,7 +10,7 @@ import jax
 import numpy as np
 import pytest
 
-from tests.fixtures.kk_compiles import kk_programs, record_compiles
+from tests.fixtures.kk_compiles import KK_PROGRAM_NAMES, kk_programs, record_compiles
 from tests.fixtures.kk_rounding import assert_kk_close
 from xraylabtool.kk import _device, kk_calculate_real, refine
 from xraylabtool.kk.refine import _POLE_REL_WIDTH, refine_spectrum
@@ -585,14 +585,49 @@ def test_compile_recorder_sees_a_fresh_function_at_two_shapes() -> None:
 @pytest.mark.unit
 def test_refined_sio2_compiles_few_top_level_programs() -> None:
     jax.clear_caches()
-    logging.getLogger("xraylabtool").setLevel(logging.ERROR)
     with record_compiles() as names:
         first = kk_calculate_real("SiO2", refine_tolerance=0.01)
     programs = kk_programs(names)
     assert first.n_refined_points > 0
     assert 0 < len(programs) <= 6, programs
     assert {"_first_pass", "_refine_pass", "_finalize"} <= set(programs)
+    # A new underscore-named kk program missing from the allow-list fails loudly.
+    assert {n for n in names if n.startswith("_")} <= KK_PROGRAM_NAMES
     with record_compiles() as again:
         second = kk_calculate_real("SiO2", refine_tolerance=0.0099)
     assert second.n_refined_points > 0
     assert kk_programs(again) == []  # same buckets, other values: no compile
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("block", [1, 3, 7, 64, 640, 2048])
+def test_midpoint_loop_never_evaluates_more_than_block_per_call(
+    si, monkeypatch: pytest.MonkeyPatch, block: int
+) -> None:
+    seg, coeffs, rel = si
+    spec = _device.Spectrum.from_numpy(seg, coeffs)
+    probe = np.geomspace(100.0, 20000.0, 200)
+    seen: list[int] = []
+    real = refine.kk_piecewise_poly
+
+    def spy(chunk, *args):
+        seen.append(chunk.shape[0])
+        return real(chunk, *args)
+
+    monkeypatch.setattr(refine, "kk_piecewise_poly", spy)
+    out = np.asarray(
+        refine._midpoint_f1(jax.numpy.asarray(probe), spec, rel, 150, block=block)
+    )
+    assert seen
+    assert max(seen) <= block
+    # Only blocks holding active entries run; the rest stays zero.
+    assert out[-1] == 0
+    # The active prefix agrees with the public kernel.
+    assert_kk_close(
+        out[:150],
+        kk_real_spectrum(probe[:150], seg, coeffs, rel),
+        probe[:150],
+        seg,
+        coeffs,
+        1e-10,
+    )
