@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+import jax
 import pytest
 
 
@@ -15,3 +16,10 @@ def kk_log(caplog: pytest.LogCaptureFixture) -> pytest.LogCaptureFixture:
     caplog.set_level(logging.INFO, logger="xraylabtool")
     yield caplog
     logger.removeHandler(caplog.handler)
+
+
+@pytest.fixture
+def x64_restored():
+    """Restore ``jax_enable_x64`` after a test that switches it off."""
+    yield
+    jax.config.update("jax_enable_x64", True)

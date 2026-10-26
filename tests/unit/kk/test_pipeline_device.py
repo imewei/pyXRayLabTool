@@ -82,13 +82,6 @@ def _passes(caplog: pytest.LogCaptureFixture) -> int:
 
 
 @pytest.fixture
-def x64_restored():
-    """Restore ``jax_enable_x64`` after a test that switches it off."""
-    yield
-    jax.config.update("jax_enable_x64", True)
-
-
-@pytest.fixture
 def backend_restored():
     original = "jax" if isinstance(get_backend(), JaxBackend) else "numpy"
     yield
@@ -741,3 +734,36 @@ def test_single_point_grid_with_refinement(energies: list[float]) -> None:
     unique = np.unique(np.asarray(energies) * 1000.0)
     assert refined.energy_kev.size == unique.size
     np.testing.assert_array_equal(refined.f1, plain.f1[: unique.size])
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("input_type", ["nexafs", "beta"])
+def test_nonfinite_nearedge_conversion_raises(input_type: str) -> None:
+    """Values that overflow the ASF-scale conversion are a data error, not NaN output."""
+    energy = np.linspace(270.0, 330.0, 25)
+    values = np.linspace(0.0, 1e-3, energy.size)
+    values[12] = 1e308  # the conversion to the ASF scale overflows
+    huge = NearEdgeSpectrum(energy, values)
+    with pytest.raises(NearEdgeDataError, match="must be finite"):
+        api.kk_calculate_real("C", nearedge=huge, input_type=input_type)
+
+
+@pytest.mark.unit
+def test_refine_exhausted_is_reported_on_the_result() -> None:
+    """A refinement cut short by ``refine_max_points`` is visible, not only logged."""
+    limited = api.kk_calculate_real("SiO2", refine_tolerance=1e-4, refine_max_points=3)
+    assert limited.refine_exhausted
+    assert limited.n_refined_points == 3
+    assert not api.kk_calculate_real("SiO2").refine_exhausted
+    assert not api.kk_calculate_real("SiO2", refine_tolerance=0.5).refine_exhausted
+
+
+@pytest.mark.unit
+def test_worker_guard_follows_the_environment(monkeypatch) -> None:
+    """The guard is on only when XRAYLABTOOL_TRANSFER_GUARD is set."""
+    monkeypatch.setenv("XRAYLABTOOL_TRANSFER_GUARD", "1")
+    with _device.worker_guard(), pytest.raises(Exception, match=r"[Dd]isallowed"):
+        jax.jit(lambda x: x + 1)(1.0)
+    monkeypatch.delenv("XRAYLABTOOL_TRANSFER_GUARD")
+    with _device.worker_guard():
+        assert float(jax.jit(lambda x: x + 1)(1.0)) == 2.0

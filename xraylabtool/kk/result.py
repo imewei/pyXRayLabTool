@@ -64,6 +64,10 @@ class KKResult:
     nearedge_scaled_kev_f2 : tuple of numpy.ndarray or None
         ``(energy_kev, f2)`` of the near-edge data on the scattering-factor
         scale, on its own energy grid; ``None`` without near-edge data.
+    refine_exhausted : bool
+        ``True`` if adaptive refinement stopped on a limit (``max_passes``,
+        ``max_points`` or float spacing) before every interval met the
+        tolerance; ``False`` when it converged or was not requested.
 
     References
     ----------
@@ -92,6 +96,7 @@ class KKResult:
     nearedge_scaled_kev_f2: tuple[NDArray[np.float64], NDArray[np.float64]] | None = (
         None
     )
+    refine_exhausted: bool = False
 
     def __post_init__(self) -> None:
         energy = _readonly_1d("energy_kev", self.energy_kev)

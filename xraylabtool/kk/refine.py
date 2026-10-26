@@ -396,7 +396,8 @@ _FINE_TRIP = 16
 def _trip_sizes(block: int, cap: int) -> tuple[int, int]:
     """``(coarse, fine)`` energies per loop trip: both at most ``block``.
 
-    ``block`` is the ``chunk_size`` bound; the coarse trip also grows with the
+    ``block`` is the :func:`~xraylabtool.kk._shapes.block_for` size (never above
+    ``chunk_size``); the coarse trip also grows with the
     buffer so a large first pass makes few trips.
     """
     return min(block, max(_COARSE_TRIP, cap // 16)), min(block, _FINE_TRIP)
@@ -660,8 +661,8 @@ def _refine_device(
     """Refinement on device-resident inputs, with no upload and no final download.
 
     The host loop reads one :class:`_PassStatus` per pass (a counted
-    :func:`~xraylabtool.kk._device.fetch_status`), logs the same per-pass
-    DEBUG line as before and re-buckets the active buffer between passes. It
+    :func:`~xraylabtool.kk._device.fetch_status`), logs one per-pass
+    DEBUG line and re-buckets the active buffer between passes. It
     makes no host-to-device transfer, so it may run under
     ``jax.transfer_guard("disallow_explicit")``. The returned arrays stay on
     the device; fetch them once and finish with :func:`_outcome`.
@@ -904,7 +905,7 @@ def refine_spectrum(
         is not a positive integer.
     ValueError
         If ``seg_ev``, ``coeffs`` or ``rel_corr`` are invalid, or
-        ``chunk_size < 1``.
+        ``chunk_size`` is not a positive integer.
 
     Notes
     -----

@@ -35,13 +35,6 @@ def _args(g: dict[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray, float]:
     return g["seg_ev"], g["coeffs"], float(g["rel_corr"])
 
 
-@pytest.fixture
-def x64_restored():
-    """Restore ``jax_enable_x64`` after a test that switches it off."""
-    yield
-    jax.config.update("jax_enable_x64", True)
-
-
 # --- independent references -------------------------------------------------
 
 

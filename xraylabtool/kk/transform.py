@@ -178,7 +178,8 @@ def kk_piecewise_poly(
     non-finite or meaningless values. :func:`kk_real_spectrum` validates.
 
     64-bit mode must be on before tracing (otherwise the float64 casts here
-    truncate to float32); importing :mod:`xraylabtool.kk` enables it and
+    truncate to float32); importing :mod:`xraylabtool.kk.transform` (or touching any lazy
+    ``xraylabtool.kk`` name) enables it and
     :func:`kk_real_spectrum` re-enables it on every call.
 
     The per-segment terms can exceed the result by many orders of magnitude
@@ -444,7 +445,9 @@ def kk_real_spectrum(
         energy or edge is not positive, the edges are not strictly increasing, or
         ``chunk_size < 1``.
     TypeError
-        If ``chunk_size`` is not an integer (a float, even ``2.0``, or nan).
+        If ``chunk_size`` is a non-integer (a float such as ``2.0`` or
+        ``2.5``, or nan) that is not larger than the number of energies; a
+        larger float is clamped to that number first.
 
     References
     ----------
@@ -472,8 +475,8 @@ def kk_real_spectrum(
     m = e.size
     if m == 0:
         return np.empty(0, dtype=np.float64)
-    # As before the migration, the bound is clamped to m first, so a float
-    # only fails when it is below m. index() then rejects 2.5 and nan (the
+    # The bound is clamped to m first, so a float only fails when it is not
+    # above m. index() then rejects 2.5 and nan (the
     # shape helpers' int() would truncate them) with the legacy TypeError.
     chunk_size = None if chunk_size is None else operator.index(min(chunk_size, m))
     host = _device.host_spectrum(seg, c)

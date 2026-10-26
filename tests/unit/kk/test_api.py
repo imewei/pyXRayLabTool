@@ -213,6 +213,7 @@ def test_kk_result_is_frozen() -> None:
         "n_refined_points",
         "backend",
         "nearedge_scaled_kev_f2",
+        "refine_exhausted",
     ]
 
 

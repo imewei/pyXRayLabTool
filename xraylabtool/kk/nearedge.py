@@ -35,7 +35,7 @@ from typing import TYPE_CHECKING, Literal, NamedTuple
 import jax
 import jax.numpy as jnp
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 
 from xraylabtool import constants
 from xraylabtool.exceptions import DataFileError, NearEdgeDataError, ValidationError
@@ -499,13 +499,6 @@ def to_asf_scale_device(
     raise ValueError(f"input_type must be one of {', '.join(_INPUT_TYPES)}")
 
 
-class _Merged(NamedTuple):
-    seg_ev: NDArray[np.float64]
-    coeffs: NDArray[np.float64]
-    scaled: NDArray[np.float64]
-    merge_points_ev: tuple[float, float]
-
-
 class MergeStatus(NamedTuple):
     """Scalars the host needs to raise or log after a device merge.
 
@@ -861,7 +854,7 @@ def _padded_table(
 ) -> Spectrum:
     """NumPy-leaved padded table without the positivity and finiteness checks.
 
-    The merge accepts non-positive leading edges (the old behaviour); the
+    The merge accepts non-positive leading edges; the
     last edge is always positive because a merge point lies inside the range,
     so the usual pad edges ``x_n (1 + k)`` are increasing, and finite for any
     physical edge (they overflow to ``inf`` only if the last edge exceeds about
@@ -874,72 +867,6 @@ def _padded_table(
         np.concatenate([seg, pad_ev]),  # type: ignore[arg-type]
         np.concatenate([coef, np.zeros((k.size, 5))]),  # type: ignore[arg-type]
         np.int32(coef.shape[0]),  # type: ignore[arg-type]
-    )
-
-
-def _merge(
-    spec: NearEdgeSpectrum,
-    seg_ev: ArrayLike,
-    coeffs: ArrayLike,
-    merge_points_ev: Sequence[float] | None,
-) -> _Merged:
-    """Implementation of :func:`merge_spectra`, also returning the scaled data."""
-    try:
-        seg = _real_float64("seg_ev", seg_ev)
-        coef = _real_float64("coeffs", coeffs)
-    except ValueError as exc:
-        raise ValidationError(str(exc), "seg_ev/coeffs") from exc
-    if seg.ndim != 1 or seg.size < 2 or coef.shape != (seg.size - 1, 5):
-        raise ValidationError(
-            "seg_ev must have shape (n+1,) and coeffs shape (n, 5), got "
-            f"{seg.shape} and {coef.shape}"
-        )
-    low, high = _resolve_merge_points(
-        spec, float(seg[0]), float(seg[-1]), merge_points_ev
-    )
-    # Same checks, order and types as the pre-migration merge, which got them
-    # from evaluate_f2: edges only need to be finite and increasing (not
-    # positive), and the coefficients are not checked here.
-    if not np.isfinite(seg).all():
-        raise ValueError("seg_ev must be finite")
-    if (np.diff(seg) <= 0).any():
-        raise ValueError("seg_ev must be strictly increasing")
-    table = _padded_table(seg, coef, bucket(coef.shape[0]))
-
-    energy, values = spec.energy_ev, spec.values
-    exponent = value_exponent(values)
-    values = _rescaled(values, exponent)
-    n_ne = energy.size
-    pad = bucket_pow2(n_ne) - n_ne
-    _device.ensure_x64()
-    table_d, e_d, v_d, n_d, low_d, high_d = _device.upload(
-        (
-            table,
-            np.concatenate([energy, np.full(pad, energy[-1])]),
-            np.concatenate([values, np.full(pad, values[-1])]),
-            np.int32(n_ne),
-            np.float64(low),
-            np.float64(high),
-        )
-    )
-    result = merge_device(
-        table_d,
-        e_d,
-        v_d,
-        n_d,
-        low_d,
-        high_d,
-        capacity=bucket(coef.shape[0] + n_ne + 2),
-    )
-    raise_or_log(_device.fetch_status(result.status), low, high, exponent)
-    out = _device.fetch(result)
-    n_out = int(out.spectrum.n_segments)
-    _device.check_capacity(n_out, out.spectrum.coeffs.shape[0])
-    return _Merged(
-        np.asarray(out.spectrum.seg_ev[: n_out + 1], dtype=np.float64),
-        np.asarray(out.spectrum.coeffs[:n_out], dtype=np.float64),
-        np.asarray(out.scaled_f2[:n_ne], dtype=np.float64),
-        (low, high),
     )
 
 
@@ -992,6 +919,8 @@ def merge_spectra(
     ValidationError
         If ``seg_ev`` and ``coeffs`` do not have shapes ``(n+1,)`` and
         ``(n, 5)``, or are complex.
+    ValueError
+        If ``seg_ev`` is not finite or not strictly increasing.
 
     Notes
     -----
@@ -1021,5 +950,57 @@ def merge_spectra(
     >>> bool({290.0, 300.0} <= set(merged.tolist()))
     True
     """
-    merged = _merge(spec, seg_ev, coeffs, merge_points_ev)
-    return merged.seg_ev, merged.coeffs
+    try:
+        seg = _real_float64("seg_ev", seg_ev)
+        coef = _real_float64("coeffs", coeffs)
+    except ValueError as exc:
+        raise ValidationError(str(exc), "seg_ev/coeffs") from exc
+    if seg.ndim != 1 or seg.size < 2 or coef.shape != (seg.size - 1, 5):
+        raise ValidationError(
+            "seg_ev must have shape (n+1,) and coeffs shape (n, 5), got "
+            f"{seg.shape} and {coef.shape}"
+        )
+    low, high = _resolve_merge_points(
+        spec, float(seg[0]), float(seg[-1]), merge_points_ev
+    )
+    # Edges only need to be finite and increasing (not positive); the
+    # coefficients are not checked here.
+    if not np.isfinite(seg).all():
+        raise ValueError("seg_ev must be finite")
+    if (np.diff(seg) <= 0).any():
+        raise ValueError("seg_ev must be strictly increasing")
+    table = _padded_table(seg, coef, bucket(coef.shape[0]))
+
+    energy, values = spec.energy_ev, spec.values
+    exponent = value_exponent(values)
+    values = _rescaled(values, exponent)
+    n_ne = energy.size
+    pad = bucket_pow2(n_ne) - n_ne
+    _device.ensure_x64()
+    table_d, e_d, v_d, n_d, low_d, high_d = _device.upload(
+        (
+            table,
+            np.concatenate([energy, np.full(pad, energy[-1])]),
+            np.concatenate([values, np.full(pad, values[-1])]),
+            np.int32(n_ne),
+            np.float64(low),
+            np.float64(high),
+        )
+    )
+    result = merge_device(
+        table_d,
+        e_d,
+        v_d,
+        n_d,
+        low_d,
+        high_d,
+        capacity=bucket(coef.shape[0] + n_ne + 2),
+    )
+    raise_or_log(_device.fetch_status(result.status), low, high, exponent)
+    out = _device.fetch(result)
+    n_out = int(out.spectrum.n_segments)
+    _device.check_capacity(n_out, out.spectrum.coeffs.shape[0])
+    return (
+        np.asarray(out.spectrum.seg_ev[: n_out + 1], dtype=np.float64),
+        np.asarray(out.spectrum.coeffs[:n_out], dtype=np.float64),
+    )

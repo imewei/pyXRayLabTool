@@ -37,13 +37,6 @@ def _eval(case: dict[str, np.ndarray], capacity: int, energy: np.ndarray) -> np.
     return out
 
 
-@pytest.fixture
-def x64_restored():
-    """Restore ``jax_enable_x64`` after a test that switches it off."""
-    yield
-    jax.config.update("jax_enable_x64", True)
-
-
 # --- (a) padding is algebraically neutral ------------------------------------
 
 

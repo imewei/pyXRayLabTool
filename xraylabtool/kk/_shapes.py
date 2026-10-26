@@ -48,7 +48,7 @@ def bucket(n: int, minimum: int = 512) -> int:
         True size (non-negative).
     minimum : int, default 512
         First rung of the ladder; a multiple of 8 and at least 64 (the
-        recurrence stalls below that).
+        recurrence stalls at 24 and below; 64 is a conservative floor).
 
     Returns
     -------

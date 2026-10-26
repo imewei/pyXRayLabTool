@@ -30,6 +30,7 @@ Unreleased
 - ``xraylabtool.kk.Spectrum`` (padded piecewise-polynomial f2 table, a JAX pytree) and ``xraylabtool.kk.kk_f1``: ``jit``/``vmap``/``grad``-compatible device-level f1.
 - ``xraylabtool.kk.warm_up(formulas=("SiO2",), refine_tolerance=0.01)`` precompiles the default programs. The GUI warms the programs of its own Compute click on an idle worker; the CLI never warms up.
 - The ``xraylabtool kk`` command and the GUI launcher enable JAX's persistent compile cache under the OS user-cache directory (``xraylabtool/jax``, compile-time threshold 0) unless ``jax_compilation_cache_dir`` is already set or ``XRAYLABTOOL_NO_JAX_CACHE=1``; the library never enables it.
+- ``KKResult.refine_exhausted`` (default ``False``) is ``True`` when adaptive refinement stopped on ``refine_max_passes``, ``refine_max_points`` or float spacing before every interval met the tolerance; the ``kk`` CLI prints a warning then.
 - ``scripts/kk_gpu_check.py``: manual GPU gate (oracle, additivity, transfer budget with the guard live, padding invariance, f2 at the Si edge, benchmark) for the CUDA machine.
 - ``docs/architecture/005-adr-kk-jax-only.md`` (with the section "Known deviations from the acceptance gates": CPU refined run 10-20 % slower than the forced-JAX baseline, GPU small-m overhead of 2-4 ms, bare-library GPU cold start 3.7-4.4 s); ``jax_architecture`` and the kk guide describe the device pipeline.
 

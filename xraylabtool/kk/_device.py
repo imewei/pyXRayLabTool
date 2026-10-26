@@ -211,7 +211,7 @@ def validated_arrays(
     """Host validation of a segment table: float64 ``(seg_ev, coeffs)`` or ``ValueError``.
 
     With ``eval_ev`` (already float64) and ``rel_corr`` it also checks those, in
-    the order and with the messages of the pre-migration ``kk_real_spectrum``:
+    the order and with the messages that ``kk_real_spectrum`` documents:
     conversions, shapes (``eval_ev``, ``seg_ev``, ``coeffs``), finiteness
     (``eval_ev``, ``seg_ev``, ``coeffs``, ``rel_corr``), positivity, ordering.
     """

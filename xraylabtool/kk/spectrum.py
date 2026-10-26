@@ -155,7 +155,7 @@ def _union_knots(flat: jax.Array, size: int) -> tuple[jax.Array, jax.Array]:
     allocation, so an undersized ``size`` truncates the output but shows as a
     count above ``size`` instead of hiding as ``size``. Swappable primitive:
     ``jnp.unique(size=…)`` for the output measured faster than sort plus
-    mask-compaction on CPU (see the Task 2 spike).
+    mask-compaction on CPU.
     """
     out = jnp.unique(flat, size=size, fill_value=jnp.inf)
     ordered = jnp.sort(flat)

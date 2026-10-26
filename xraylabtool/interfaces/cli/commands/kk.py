@@ -103,6 +103,12 @@ def cmd_kk(args: Any) -> int:
         )
         if args.refine is not None:
             print(f"Refinement added {result.n_refined_points} points", file=sys.stderr)
+            if result.refine_exhausted:
+                print(
+                    "Warning: refinement stopped on a limit before every "
+                    f"interval met the tolerance ({args.refine:g})",
+                    file=sys.stderr,
+                )
 
         text = _format_output(result, output_format)
         if args.output:

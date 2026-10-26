@@ -218,7 +218,7 @@ def _near_edge_call(
     merge_points_kev: tuple[float, float] | None,
     tab_range: tuple[float, float],
 ) -> _NearEdgeCall:
-    """Validate the near-edge arguments (same order and errors as before the pipeline)."""
+    """Validate the near-edge arguments (merge points, then input type, then overlap)."""
     given_ev = _merge_points_ev(merge_points_kev)
     kind, density, formula_mass = _asf_scale_arguments(input_type, None, None)
     low, high = _resolve_merge_points(nearedge, *tab_range, given_ev)
@@ -234,7 +234,7 @@ def _explicit_energies(
     """Validated ``(energy_kev, energy_ev, deferred_error)`` of explicit energies.
 
     With near-edge data a bad grid does not raise yet: a data error in the
-    merge outranks it (as it did before the pipeline moved to the device), so
+    merge outranks it, so
     the error is returned and a one-point stand-in grid is used. Under
     refinement the grid is made unique in eV, keeping the first keV value of
     each group, because ``refine_spectrum`` needs a strictly increasing grid.
@@ -611,9 +611,10 @@ def kk_calculate_real(
     dev = _device.upload(_host_inputs(plan, block_shape, refine))
     assembled = _assemble(
         tables,
-        # the output grid does not enter assembly; leaving it in the pytree
-        # would recompile _assemble for every energy-length bucket
-        dev._replace(energies_ev=None),
+        # neither the output grid nor the refinement knobs enter assembly;
+        # leaving them in the pytree would recompile _assemble per
+        # energy-length bucket and per refined/unrefined mode
+        dev._replace(energies_ev=None, tolerance=None, max_points=None),
         capacity=plan.capacity,
         merge_capacity=plan.final_capacity,
         input_type=None if plan.near is None else plan.near.kind,
@@ -637,6 +638,7 @@ def kk_calculate_real(
     )
 
     n_refined = 0
+    exhausted = False
     if refine is None:
         grid_h, f1_h, f2_h, scaled = _device.fetch(
             (None if plan.explicit else grid_ev, f1_d, f2_d, assembled.scaled_f2)
@@ -665,6 +667,7 @@ def kk_calculate_real(
         arrays_h, scaled = _device.fetch((arrays, assembled.scaled_f2))
         refined = _outcome(arrays_h, info, refine[0])
         f1, f2, n_refined = refined.f1, refined.f2, refined.n_added
+        exhausted = refined.exhausted
         energy_kev = refined.energy_ev / KEV_TO_EV
         if plan.explicit:
             # Requested energies keep their exact keV value; only midpoints convert.
@@ -679,6 +682,7 @@ def kk_calculate_real(
         relativistic_correction=plan.rel_corr,
         merge_points_kev=used_merge_kev,
         n_refined_points=n_refined,
+        refine_exhausted=exhausted,
         backend="jax",
         nearedge_scaled_kev_f2=None
         if plan.near is None
