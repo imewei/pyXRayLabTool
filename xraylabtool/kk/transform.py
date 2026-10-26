@@ -465,17 +465,17 @@ def kk_real_spectrum(
     e = _real_float64("eval_ev", eval_ev)
     seg, c = _device.validated_arrays(seg_ev, coeffs, e, rel_corr)
     rel = float(rel_corr)
-    if chunk_size is not None:
-        if chunk_size < 1:
-            raise ValueError(f"chunk_size must be >= 1, got {chunk_size}")
-        # Integers (NumPy's too) only: the shape helpers' int() would truncate
-        # 2.5 and `min` ignores nan. index() keeps the legacy TypeError text.
-        chunk_size = operator.index(chunk_size)
+    if chunk_size is not None and chunk_size < 1:
+        raise ValueError(f"chunk_size must be >= 1, got {chunk_size}")
 
     ensure_x64()
     m = e.size
     if m == 0:
         return np.empty(0, dtype=np.float64)
+    # As before the migration, the bound is clamped to m first, so a float
+    # only fails when it is below m. index() then rejects 2.5 and nan (the
+    # shape helpers' int() would truncate them) with the legacy TypeError.
+    chunk_size = None if chunk_size is None else operator.index(min(chunk_size, m))
     host = _device.host_spectrum(seg, c)
     block, n_blocks = energy_blocks(chunk_size, host.coeffs.shape[0], m)
     # Pad with a real energy (never 0, which would divide by zero).

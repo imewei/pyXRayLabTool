@@ -267,6 +267,21 @@ def test_real_spectrum_rejects_unusable_chunk_size(chunk_size, error, match) -> 
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    ("chunk_size", "m"),
+    [(1e6, 2), (np.float64(5.0), 2), (3.0, 0)],
+)
+def test_real_spectrum_clamps_chunk_size_to_m_before_the_integer_check(
+    chunk_size, m
+) -> None:
+    """Parity with the pre-migration order: only a float below m is an error."""
+    out = kk_real_spectrum(
+        [1.5, 2.0][:m], [1.0, 4.0], np.zeros((1, 5)), 1.0, chunk_size=chunk_size
+    )
+    assert out.shape == (m,)
+
+
+@pytest.mark.unit
 @pytest.mark.parametrize("make", [np.int64, np.int32, int, bool])
 def test_real_spectrum_accepts_integer_chunk_sizes(make) -> None:
     args = ([1.5, 2.0, 2.5, 3.0], [1.0, 4.0], np.zeros((1, 5)), 1.0)
