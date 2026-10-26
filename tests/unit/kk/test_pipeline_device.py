@@ -25,7 +25,15 @@ import pytest
 from tests.fixtures.kk_compiles import kk_programs, numerical_programs, record_compiles
 from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
 from xraylabtool.exceptions import CalculationError, NearEdgeDataError
-from xraylabtool.kk import _device, api, database, nearedge, refine, transform
+from xraylabtool.kk import (
+    _device,
+    _shapes,
+    api,
+    database,
+    nearedge,
+    refine,
+    transform,
+)
 from xraylabtool.kk._device import Spectrum
 from xraylabtool.kk.nearedge import NearEdgeSpectrum
 
@@ -303,6 +311,34 @@ def test_kernel_evaluates_only_blocks_holding_real_energies(
     assert len(calls) == 2
     assert np.all(np.asarray(out)[50:] == 0.0)
     assert np.all(np.isfinite(np.asarray(out)[:50]))
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {
+            "energies_kev": np.geomspace(0.05, 29.0, 3100)
+        },  # two blocks on an accelerator
+        {"energies_kev": np.geomspace(0.05, 29.0, 3100), "chunk_size": 500},
+        {},
+        {"refine_tolerance": 0.05},
+    ],
+    ids=["explicit-3100", "chunk-500", "default-grid", "refined"],
+)
+def test_accelerator_block_rule_gives_the_same_result(
+    kwargs: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The GPU shape path (fine-ladder blocks) runs in CI by forcing the predicate."""
+    cpu = api.kk_calculate_real("SiO2", **kwargs)
+    chunk, m = kwargs.get("chunk_size"), cpu.energy_kev.size
+    cpu_shape = _shapes.energy_blocks(chunk, 1248, m)
+    monkeypatch.setattr(_shapes, "_on_cpu", lambda: False)
+    assert _shapes.energy_blocks(chunk, 1248, m) != cpu_shape
+    accelerator = api.kk_calculate_real("SiO2", **kwargs)
+    np.testing.assert_array_equal(accelerator.energy_kev, cpu.energy_kev)
+    np.testing.assert_allclose(accelerator.f1, cpu.f1, rtol=1e-12, atol=1e-11)
+    np.testing.assert_array_equal(accelerator.f2, cpu.f2)
 
 
 _BUDGET_SCRIPT = """

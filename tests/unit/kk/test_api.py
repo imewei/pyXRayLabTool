@@ -47,7 +47,13 @@ def test_default_grid_clipped_to_0p03_30_kev_and_logged(
     assert_kk_close(res.f1, golden_f1, res.energy_kev * 1000.0, seg, coeffs, rtol=1e-10)
     np.testing.assert_allclose(res.f2, golden_f2, rtol=1e-12)
 
-    records = [r for r in kk_log.records if r.name == "xraylabtool.kk"]
+    # the runtime line is logged once per process, so it is in this call's
+    # records only when this test happens to run first
+    records = [
+        r
+        for r in kk_log.records
+        if r.name == "xraylabtool.kk" and not r.getMessage().startswith("kk runtime:")
+    ]
     assert len(records) == 1
     assert records[0].levelno == logging.INFO
     message = records[0].getMessage()

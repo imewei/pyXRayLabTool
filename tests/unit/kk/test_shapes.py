@@ -117,9 +117,13 @@ def test_energy_blocks_padded_length_is_bounded(
     block, n_blocks = energy_blocks(chunk, 1248, m)
     padded = block * n_blocks
     assert padded >= m
-    # CPU: power-of-two m_b < 2m; accelerator: fine ladder <= max(512, 1.25 m)
-    bound = 2 * m if platform == "cpu" else max(512, 1.25 * m)
-    assert padded < bound + block
+    # CPU: power-of-two m_b < 2m plus a block; accelerator: fine ladder, measured
+    # worst case padded / m = 1.262 over m = 512..2e5 (equal blocks, no second
+    # mostly-empty block just above the budget)
+    if platform == "cpu":
+        assert padded < 2 * m + block
+    else:
+        assert padded <= max(512, 1.27 * m)
     assert chunk is None or block <= chunk
     assert block * 1248 <= max(_budget(platform), 1248)
     if chunk == 7 and m >= 7:
@@ -158,10 +162,28 @@ def test_energy_blocks_accelerator_runs_one_fine_block_when_it_fits(
         pytest.skip("accelerator rule")
     assert energy_blocks(None, 1248, 1000) == (1000, 1)
     assert energy_blocks(None, 1248, 3000) == (3024, 1)
-    # beyond the 2**22-element budget: blocks of the budget size, 34 live of 36
-    assert energy_blocks(None, 1248, 100_000) == (3024, 36)
+    # just above the 3024-energy budget block: two equal blocks, not 2 x 3024
+    assert energy_blocks(None, 1248, 3100) == (1888, 2)
+    # beyond the 2**22-element budget: equal blocks below the budget block
+    assert energy_blocks(None, 1248, 10_000) == (2880, 4)
+    assert energy_blocks(None, 1248, 100_000) == (2976, 36)
     # a requested chunk_size is an upper bound on the block
     assert energy_blocks(100, 1248, 1000)[0] <= 100
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("capacity", [512, 1248, 3000])
+@pytest.mark.parametrize("chunk", [None, 7, 512])
+def test_energy_blocks_accelerator_waste_is_bounded_for_every_m(
+    capacity: int, chunk: int | None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No cliff above the budget block: padded and live work stay within 27 % of m."""
+    monkeypatch.setattr(_shapes, "_on_cpu", lambda: False)
+    for m in range(512, 200_001, 7):
+        block, n_blocks = energy_blocks(chunk, capacity, m)
+        assert block * n_blocks <= 1.27 * m
+        assert -(-m // block) * block <= 1.27 * m
+        assert chunk is None or block <= chunk
 
 
 @pytest.mark.unit
@@ -172,7 +194,7 @@ def test_energy_blocks_have_few_distinct_shapes(platform: str) -> None:
         assert len(pairs) == 16  # one per power of two m_b = 1 .. 32768
         assert len(capped) == 16
     else:
-        assert len(pairs) == 15  # one per fine-ladder value
+        assert len(pairs) == 18  # one per fine-ladder value
         assert len(capped) == 18
 
 

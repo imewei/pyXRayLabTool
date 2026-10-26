@@ -180,12 +180,14 @@ def energy_blocks(chunk_size: int | None, capacity: int, m: int) -> tuple[int, i
     The work done is below ``m + block`` energies.
 
     **Accelerator.** ``m`` is rounded up to the fine :func:`bucket` ladder
-    (``padded``, at most 25 % above ``m``) and the block is :func:`block_for`
-    ``(chunk_size, capacity, padded)`` with the budget
-    :data:`ACCELERATOR_EVAL_ELEMENTS`: a single block of ``padded`` energies
-    when that fits the budget, else blocks of the budget size and
-    ``n_blocks = ⌈padded / block⌉``. The work done is below ``m + block``
-    energies.
+    (``padded``, at most 25 % above ``m``). The largest block is
+    :func:`block_for` ``(chunk_size, capacity, padded)`` with the budget
+    :data:`ACCELERATOR_EVAL_ELEMENTS`; ``n_blocks = ⌈padded / largest⌉`` and the
+    blocks are made equal, ``block = ⌈padded / n_blocks⌉`` rounded up to a
+    multiple of 8 (and kept at most ``largest``). One block when ``padded``
+    fits the budget, and never a second, mostly empty block just above it.
+    The padded length is below ``padded + 8 n_blocks`` and the work done below
+    ``m + block`` energies.
 
     On both platforms the number of distinct pairs grows only with ``log₂ m``
     (times the distinct capacities and chunk sizes in use) and ``block`` never
@@ -220,5 +222,8 @@ def energy_blocks(chunk_size: int | None, capacity: int, m: int) -> tuple[int, i
         block = block_for(chunk_size, capacity, m_b, EVAL_ELEMENTS)
         return block, -(-m_b // block)
     padded = bucket(m)
-    block = block_for(chunk_size, capacity, padded, ACCELERATOR_EVAL_ELEMENTS)
-    return block, -(-padded // block)
+    largest = block_for(chunk_size, capacity, padded, ACCELERATOR_EVAL_ELEMENTS)
+    n_blocks = -(-padded // largest)
+    equal = -(-padded // n_blocks)
+    even = -(-equal // 8) * 8  # equal blocks, a multiple of 8
+    return min(largest, even), n_blocks

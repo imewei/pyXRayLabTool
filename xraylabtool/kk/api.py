@@ -687,9 +687,10 @@ def warm_up(
     when ``refine_tolerance`` is given (the tolerance decides which active
     buckets the refinement visits), so later calls with the same buckets
     compile nothing. Idempotent; returns after the results are on the host,
-    i.e. after everything is compiled and executed. Only the GUI calls it
-    (on an idle worker); the CLI does not, so a one-shot call never pays for
-    formulas it was not asked for.
+    i.e. after everything is compiled and executed. The GUI does not call it: it
+    warms the programs of its own Compute click on an idle worker
+    (``gui.services.warm_up_kk``). The CLI never warms up, so a one-shot call
+    never pays for formulas it was not asked for.
 
     Parameters
     ----------
