@@ -222,7 +222,8 @@ jobs:
     needs: [change-detection, lint]
     if: needs.change-detection.outputs.should-run-tests == 'true' && !cancelled() && needs.lint.result != 'cancelled'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 12
+    # The kk suite (JAX compiles) takes ~16 min on windows-latest; 12 cancelled it at 81%.
+    timeout-minutes: 25
     strategy:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
