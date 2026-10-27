@@ -1,4 +1,4 @@
-"""The package starts no process or thread pool and never imports ``multiprocessing``.
+"""The package starts no pool and imports neither ``multiprocessing`` nor ``concurrent``.
 
 Batches run as device ``F``-blocks (spec section 7). Forking after JAX has started
 threads can deadlock, so no pool may exist anywhere in ``xraylabtool/``. The GUI's
@@ -20,18 +20,19 @@ import xraylabtool
 POOLS = {"ProcessPoolExecutor", "ThreadPoolExecutor"}
 
 
+def _banned_module(name: str) -> bool:
+    """``multiprocessing`` and ``concurrent`` (``concurrent.futures``) in any form."""
+    return name.split(".", maxsplit=1)[0] in {"multiprocessing", "concurrent"}
+
+
 def forbidden(source: str) -> list[str]:
     """What in ``source`` imports ``multiprocessing`` or names a pool executor."""
     found = []
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Import):
-            found += [
-                f"import {a.name}"
-                for a in node.names
-                if a.name.split(".")[0] == "multiprocessing"
-            ]
+            found += [f"import {a.name}" for a in node.names if _banned_module(a.name)]
         elif isinstance(node, ast.ImportFrom):
-            if (node.module or "").split(".")[0] == "multiprocessing":
+            if _banned_module(node.module or ""):
                 found.append(f"from {node.module} import ...")
             found += [f"import {a.name}" for a in node.names if a.name in POOLS]
         elif isinstance(node, ast.Attribute) and node.attr in POOLS:
@@ -52,6 +53,10 @@ def forbidden(source: str) -> list[str]:
         "from concurrent.futures import ThreadPoolExecutor as T",
         "import concurrent.futures\nconcurrent.futures.ProcessPoolExecutor(2)",
         "from concurrent import futures\nfutures.ThreadPoolExecutor(2)",
+        "import concurrent.futures",
+        "import concurrent.futures as cf",
+        "from concurrent import futures",
+        "from concurrent.futures import as_completed",
         "def f(ex=ThreadPoolExecutor):\n    return ex",
     ],
 )
