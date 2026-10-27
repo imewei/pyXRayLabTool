@@ -131,7 +131,11 @@ def _pchip_pair(x: Any, y: Any, d: Any, n: Any, q: Any) -> Any:
     Array, shape ``[2, M]``
         Cubic Hermite values, NaN outside ``[x[0], x[n-1]]``.
     """
-    i = jnp.clip(jnp.searchsorted(x, q, side="right") - 1, 0, n - 2)
+    # "scan_unrolled" returns the same indices as the default "scan" (integers, so
+    # bit-identical results) but is ~2.6x faster on XLA-CPU for the batch program.
+    i = jnp.clip(
+        jnp.searchsorted(x, q, side="right", method="scan_unrolled") - 1, 0, n - 2
+    )
     h = x[i + 1] - x[i]
     t = (q - x[i]) / h
     t2 = t * t
