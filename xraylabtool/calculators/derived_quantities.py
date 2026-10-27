@@ -33,7 +33,9 @@ def _map(fn: Any, *arrays: Any) -> Any:
 
     out = host.run_map(fn, *arrays)
     # ``[()]`` turns a 0-d result into a NumPy scalar and leaves arrays alone.
-    return out[()] if isinstance(out, np.ndarray) else out
+    if isinstance(out, tuple):
+        return tuple(o[()] for o in out)
+    return out[()]
 
 
 def calculate_critical_angle(dispersion_delta: np.ndarray) -> np.ndarray:
@@ -161,8 +163,8 @@ def calculate_scattering_factors(
 
     Mathematical Background:
     The dispersion and absorption coefficients are calculated using:
-    - δ = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f1ᵢ) / M  # noqa: RUF002
-    - β = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f2ᵢ) / M  # noqa: RUF002
+    - δ = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f1ᵢ) / M
+    - β = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f2ᵢ) / M
 
     Where:
     - λ: X-ray wavelength
@@ -186,6 +188,7 @@ def calculate_scattering_factors(
             np.zeros(n_energies),
         )
 
+    rows: list[int] = []
     for _count, f1_interp, f2_interp in element_data:
         if not (
             isinstance(f1_interp, TableInterpolator)
@@ -200,12 +203,13 @@ def calculate_scattering_factors(
             raise ValueError(
                 "each entry needs the f1 and f2 interpolators of one element"
             )
+        rows.append(f1_interp.z)
 
     from xraylabtool.calculators import host
 
     factor = SCATTERING_FACTOR * mass_density / molecular_weight
     got = host.run_scattering(
-        [entry[1].z for entry in element_data],  # type: ignore[attr-defined]
+        rows,
         [float(entry[0]) for entry in element_data],
         energy_ev,
         wavelength,

@@ -111,19 +111,19 @@ def _smart_cache_warming(formula: str) -> None:
     """
     Smart cache warming for the first calculation.
 
-    ``calculators.warm_up`` loads the resident scattering tables and precompiles
-    the default-bucket device programs, so the first call of a formula with up
-    to two elements and 64 energies compiles nothing. A failure propagates: the
-    calculation itself would fail the same way.
+    Loads the resident scattering tables (one upload, once per process or after
+    :func:`clear_scattering_factor_cache`) and nothing else, so the first call
+    keeps the one-upload-one-fetch budget of every call and compiles only the
+    program it needs. ``calculators.warm_up`` stays an explicit public helper.
 
     Args:
-        formula: Chemical formula of the pending calculation (the programs are
-            warmed for the default ``SiO2`` buckets whatever it is)
+        formula: Chemical formula of the pending calculation (unused: the tables
+            hold every element)
     """
     del formula
-    from xraylabtool.calculators.core import warm_up
+    from xraylabtool.calculators.tables import load_tables
 
-    warm_up(("SiO2",))
+    load_tables()
 
     global _CACHE_WARMED
     _CACHE_WARMED = True

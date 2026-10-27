@@ -209,12 +209,17 @@ class AtomicScatteringFactor:
             Array of scattering factor values
         """
         # Placeholder implementation
-        import jax
-        import jax.numpy as jnp
-
         from xraylabtool.calculators import host
 
-        return np.array(host.execute(jax.jit(jnp.ones_like), np.asarray(q_values)))
+        return np.array(host.execute(_ones_like_program(), np.asarray(q_values)))
+
+
+@functools.cache
+def _ones_like_program() -> Any:
+    import jax
+    import jax.numpy as jnp
+
+    return jax.jit(jnp.ones_like)
 
 
 @functools.cache

@@ -539,7 +539,9 @@ class FastAtomicDataProvider:
         f1_interp, _ = create_scattering_factor_interpolators(element)
 
         # Interpolate f1 and f2 values from the resident tables
-        f1_values, f2_values = host.run_rows(f1_interp.z, energies_ev)
+        f1_flat, f2_flat = host.run_rows(f1_interp.z, energies_ev.ravel())
+        f1_values = f1_flat.reshape(energies_arr.shape)
+        f2_values = f2_flat.reshape(energies_arr.shape)
 
         # Combine into complex array
         complex_factors = f1_values + 1j * f2_values

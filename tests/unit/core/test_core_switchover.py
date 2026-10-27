@@ -182,6 +182,15 @@ def test_the_first_call_after_a_cache_clear_runs_the_smart_warm_up():
     assert cache._CACHE_WARMED
 
 
+def test_the_first_call_after_a_cache_clear_keeps_the_one_upload_one_fetch_budget():
+    """The hidden warm-up only loads the resident tables (R14), nothing else."""
+    clear_scattering_factor_cache()
+    table_spent = _budget(tables_module.load_tables)
+    clear_scattering_factor_cache()
+    cold = _budget(lambda: calculate_single_material_properties("SiO2", ENERGIES, 2.2))
+    assert cold == (table_spent[0] + 1, table_spent[1] + 1)
+
+
 def test_core_modules_do_not_use_the_backend_twin():
     for relative in (
         "calculators/core.py",

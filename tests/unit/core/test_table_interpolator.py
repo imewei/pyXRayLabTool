@@ -224,6 +224,36 @@ def test_atomic_provider_fills_complex128_from_the_tables_in_one_program_call():
     )
 
 
+@pytest.mark.parametrize(
+    "energies",
+    [8.0, np.array(8.0), [8.0, 9.0], E_KEV, np.array([[8.0, 9.0]]), np.ones((2, 3))],
+    ids=["float", "0d", "list", "1d", "2d_row", "2d_grid"],
+)
+def test_atomic_provider_keeps_the_shape_of_its_energies(energies):
+    out = get_atomic_data_provider().get_scattering_factors("Si", energies)
+    shape = np.asarray(energies).shape
+    assert isinstance(out, np.ndarray)
+    assert out.dtype == np.complex128
+    assert out.shape == shape
+    f1, f2 = create_scattering_factor_interpolators("Si")
+    ev = np.asarray(energies, dtype=np.float64) * 1000.0
+    np.testing.assert_allclose(
+        out, np.asarray(f1(ev)) + 1j * np.asarray(f2(ev)), rtol=1e-14
+    )
+
+
+def test_scattering_length_density_of_scalars_returns_floats():
+    from xraylabtool.calculators.derived_quantities import (
+        calculate_scattering_length_density,
+    )
+
+    real_sld, imag_sld = calculate_scattering_length_density(1.5e-6, 2.5e-8, 1.54)
+    assert isinstance(real_sld, np.floating)
+    assert isinstance(imag_sld, np.floating)
+    assert real_sld == pytest.approx(2 * np.pi * 1.5e-6 / 1.54**2, rel=1e-14)
+    assert imag_sld == pytest.approx(2 * np.pi * 2.5e-8 / 1.54**2, rel=1e-14)
+
+
 def test_atomic_provider_unknown_element_keeps_its_error():
     provider = get_atomic_data_provider()
     with pytest.raises(FileNotFoundError):
