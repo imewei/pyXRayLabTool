@@ -229,10 +229,11 @@ def derive(
     """Optical properties from count-weighted f1/f2 totals.
 
     Copies ``core._properties_from_totals`` and the derived-quantity kernel:
-    δ = (λ²·S·ρ)·(f1/M), β likewise with f2, with ``S = SCATTERING_FACTOR``. The
-    legacy ``λ²·(S·ρ/M)`` is reassociated so that no intermediate is subnormal for
-    a huge ``M`` (XLA flushes subnormals to zero): ``f1/M`` and ``λ²·S·ρ`` stay O(1)
-    and O(1e-6) whenever the result is representable.
+    δ = ((λ²·S·ρ)·f1)/M, β likewise with f2, with ``S = SCATTERING_FACTOR``. The
+    legacy ``λ²·(S·ρ/M)·f`` is reassociated so that the division by ``M`` comes
+    last: the product ``(λ²·S·ρ)·f`` is normal whenever the result is, so neither
+    a huge ``M`` (``S·ρ/M`` or ``f/M`` subnormal, flushed to zero by XLA) nor a
+    tiny ``f`` underflows an intermediate.
 
     Parameters
     ----------
@@ -251,8 +252,8 @@ def derive(
     # is one material, which would change the last bit of the SLD and attenuation.
     wavelength = jax.lax.optimization_barrier(ENERGY_TO_WAVELENGTH_FACTOR / energy_kev)
     wave_factor = jnp.square(wavelength) * (SCATTERING_FACTOR * rho)
-    dispersion = wave_factor * (f1_sum / mw)
-    absorption = wave_factor * (f2_sum / mw)
+    dispersion = (wave_factor * f1_sum) / mw
+    absorption = (wave_factor * f2_sum) / mw
     ed, critical, attenuation, re_sld, im_sld = _derived(
         wavelength, dispersion, absorption, rho, mw, n_electrons
     )
@@ -441,7 +442,7 @@ def _scattering_program(
     z, counts = batch
     f = interpolate_f(tables, z, counts, e_ev)
     wave_factor = jnp.square(wavelength) * (SCATTERING_FACTOR * rho)
-    return jnp.stack([wave_factor * (f[0] / mw), wave_factor * (f[1] / mw), f[0], f[1]])
+    return jnp.stack([(wave_factor * f[0]) / mw, (wave_factor * f[1]) / mw, f[0], f[1]])
 
 
 @jax.jit

@@ -265,3 +265,62 @@ def test_standalone_scattering_factors_with_zero_molecular_weight():
         calculate_scattering_factors(
             np.array([8000.0]), np.array([1.5e-10]), 1.0, 0.0, _si()
         )
+
+
+# ---- F4 (T3 review): no underflow from dividing a tiny factor by a huge M first -----
+
+
+def test_tiny_supplied_factors_with_a_large_molecular_weight_do_not_underflow():
+    """``f/M`` is subnormal (9.9e-313) here and XLA flushes it; ``(λ²·S·ρ·f)/M`` is not.
+
+    The pre-switchover NumPy path and commit ``74a5898`` return 6.4356867617241e-303.
+    """
+    res = calculate_properties_from_factors(
+        "H1000000000000", np.array([8.0]), 1e15, np.array([1e-300]), np.array([1e-300])
+    )
+    delta, beta = _exact_reference(
+        [8.0], [1e-300], [1e-300], 1e15, res.molecular_weight_g_mol
+    )
+    assert res.dispersion_delta[0] > 0
+    assert res.absorption_beta[0] > 0
+    np.testing.assert_allclose(res.dispersion_delta, delta, rtol=1e-12)
+    np.testing.assert_allclose(res.absorption_beta, beta, rtol=1e-12)
+
+
+@pytest.mark.parametrize(
+    ("formula", "rho", "f_scale"),
+    [
+        ("H1000", 1e5, 1e-303),
+        ("H10000", 1e15, 1e-303),
+        ("H1" + "0" * 12, 1e15, 1e-302),
+        ("H1" + "0" * 20, 1e15, 1e-290),
+        ("H", 1e5, 1e-303),
+        ("H", 1e-5, 1e-295),
+        ("H1" + "0" * 150, 1.0, 1e150),
+        ("H1" + "0" * 305, 1.0, 1e300),
+    ],
+)
+def test_sweep_points_keep_a_normal_result(formula, rho, f_scale):
+    """Sweep points where the exact δ is a normal float64 (fine grid, ext-fix-T3 report)."""
+    energy = np.array([0.03, 8.0, 30.0])
+    f1 = f_scale * np.array([1.0, 2.0, 3.0])
+    f2 = f_scale * np.array([3.0, 2.0, 1.0])
+    res = calculate_properties_from_factors(formula, energy, rho, f1, f2)
+    delta, beta = _exact_reference(energy, f1, f2, rho, res.molecular_weight_g_mol)
+    assert min(delta.min(), beta.min()) >= 2.2250738585072014e-308  # a normal result
+    np.testing.assert_allclose(res.dispersion_delta, delta, rtol=1e-12)
+    np.testing.assert_allclose(res.absorption_beta, beta, rtol=1e-12)
+
+
+def test_standalone_scattering_factors_keep_a_tiny_result_for_a_large_molecular_weight():
+    energy = np.array([8000.0])
+    wavelength = ENERGY_TO_WAVELENGTH_FACTOR / (energy / 1000.0)
+    mw = 1.008e12
+    dispersion, _, _, _ = calculate_scattering_factors(
+        energy,
+        wavelength,
+        1e15,
+        mw,
+        [(1.0, *create_scattering_factor_interpolators("H"))],
+    )
+    assert dispersion[0] > 0
