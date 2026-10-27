@@ -169,26 +169,24 @@ class TestCalculationSpeedBenchmarks(BasePerformanceTest):
         batch_25_rate = benchmark_results["batch_25"]["materials_per_second"]
         batch_100_rate = benchmark_results["batch_100"]["materials_per_second"]
 
-        # v0.2.5 uses adaptive processing: sequential for <20 items, parallel for >=20 items
-        # Small batches (1-10) should have similar performance due to sequential processing
-        # Larger batches (25+) should benefit from parallelization
-
-        # Small batch performance should be reasonably consistent (within 50% variation)
+        # ADR-006: a batch is one vmapped device program per block, so a call costs
+        # about the same for 1 and for 10 materials and the per-material rate rises
+        # with the batch size. The NumPy-era upper bound (rate within 2x of batch 1)
+        # assumed a sequential per-material cost and no longer applies.
         small_batch_ratio = batch_10_rate / batch_1_rate
-        assert 0.5 <= small_batch_ratio <= 2.0, (
-            f"Small batch processing inconsistent: {batch_10_rate} vs {batch_1_rate} (ratio: {small_batch_ratio:.2f})"
+        assert small_batch_ratio >= 0.5, (
+            f"Small batch processing slower per material than a single call: {batch_10_rate} vs {batch_1_rate} (ratio: {small_batch_ratio:.2f})"
         )
 
         # Large batches should maintain reasonable performance compared to small batches.
-        # JAX backend has higher per-call dispatch overhead, so large batches may show
-        # more relative overhead from thread pool scheduling + XLA dispatch.
+        # One device program per block (no worker pools), so this is a regression guard.
         large_batch_ratio = batch_100_rate / batch_1_rate
         assert large_batch_ratio >= 0.3, (
             f"Large batch processing too slow: {batch_100_rate} vs {batch_1_rate} (ratio: {large_batch_ratio:.2f})"
         )
 
         # Very large batches should maintain reasonable throughput vs medium batches.
-        # Thread pool scheduling overhead can reduce per-material rate at larger sizes.
+        # Larger blocks may pad to a bigger bucket, so the rate is allowed to dip.
         medium_vs_large = batch_100_rate / batch_25_rate
         assert medium_vs_large >= 0.5, (
             f"Large batches not scaling properly: {batch_100_rate} vs {batch_25_rate} (ratio: {medium_vs_large:.2f})"
