@@ -2,23 +2,27 @@
 
 The Task 0 goldens (``tests/characterization/core``) pin the values; this file
 pins what they cannot: the legacy NumPy formulas as an inline oracle over
-lengths on both sides of the shape buckets (padding never changes a result),
-the compile and transfer budgets, scalar-in/scalar-out behaviour and the
-import discipline.
+lengths on both sides of the shape buckets, agreement of the same data at two
+pad widths (masked reductions: equal up to summation order, not bitwise), the
+compile and transfer budgets, scalar-in/scalar-out behaviour and the import
+discipline.
 """
 
 from __future__ import annotations
 
+import functools
 import os
 import subprocess
 import sys
 
+import jax
 import numpy as np
 import pytest
 
 from tests.fixtures.kk_compiles import record_compiles
 from xraylabtool import utils
 from xraylabtool.backend import runtime
+from xraylabtool.calculators import host
 
 PROGRAMS = {
     "smooth_data",
@@ -105,11 +109,14 @@ def test_background_subtraction_matches_the_numpy_formulas(n):
         )
 
 
-def test_series_inside_one_bucket_share_a_compiled_program():
-    utils.smooth_data(None, _signal(40)[1], 5)  # warm
-    utils.normalize_intensity(_signal(40)[1], "area")
+@pytest.mark.parametrize(
+    ("warm", "lengths"), [(40, (1, 7, 40, 64)), (70, (65, 72, 80))]
+)
+def test_series_inside_one_bucket_share_a_compiled_program(warm, lengths):
+    utils.smooth_data(None, _signal(warm)[1], 5)  # warm
+    utils.normalize_intensity(_signal(warm)[1], "area")
     with record_compiles() as names:
-        for n in (1, 7, 40, 64):
+        for n in lengths:
             utils.smooth_data(None, _signal(n)[1], 5)
             utils.normalize_intensity(_signal(n)[1], "area")
     assert _mine(names) == [], names
@@ -161,9 +168,38 @@ def test_arrays_larger_than_one_element_still_fail_in_float():
         utils.energy_to_wavelength(np.array([1.0, 2.0]))
 
 
-def test_signal_helpers_require_one_dimensional_data():
+def test_one_dimensional_only_helpers_reject_other_ranks():
+    grid = np.ones((3, 3))
     with pytest.raises(ValueError, match="one-dimensional"):
-        utils.normalize_intensity(np.ones((3, 3)))
+        utils.normalize_intensity(grid, "area")
+    with pytest.raises(ValueError, match="one-dimensional"):
+        utils.smooth_data(None, grid)
+    with pytest.raises(ValueError, match="one-dimensional"):
+        utils.background_subtraction(None, np.ones((3, 3, 3)))
+
+
+def test_normalize_max_and_standard_are_global_over_any_shape():
+    grid = np.arange(12.0).reshape(3, 4) + 1.0
+    np.testing.assert_allclose(utils.normalize_intensity(grid), grid / grid.max())
+    np.testing.assert_allclose(
+        utils.normalize_intensity(grid, "standard"),
+        (grid - grid.mean()) / grid.std(),
+        rtol=1e-12,
+    )
+    scalar = utils.normalize_intensity(np.array(2.0))
+    assert type(scalar) is np.float64
+    assert scalar == 1.0
+
+
+def test_linear_background_is_column_wise_on_a_2d_array():
+    x = np.linspace(0.0, 3.0, 4)
+    columns = np.c_[np.arange(4.0), np.arange(4.0) ** 2]
+    got = utils.background_subtraction(x, columns)
+    assert got.shape == (4, 2)
+    for k in range(2):
+        np.testing.assert_allclose(
+            got[:, k], utils.background_subtraction(x, columns[:, k])
+        )
 
 
 def test_importing_utils_does_not_import_jax():
@@ -185,3 +221,51 @@ def test_importing_utils_does_not_import_jax():
         check=False,
     )
     assert done.stdout.strip().endswith("OK"), done.stderr[-1500:]
+
+
+def _two_widths(name, series, n, extra=(), **static):
+    """The ``_physics`` program on the first ``n`` samples at two pad widths."""
+    from xraylabtool import _physics
+    from xraylabtool.backend.shapes import bucket
+
+    program = jax.jit(functools.partial(getattr(_physics, name), **static))
+    narrow = bucket(n, minimum=64)
+    outs = []
+    for width in (narrow, bucket(narrow + 1, minimum=64)):
+        padded = [np.concatenate([s[:n], np.full(width - n, s[n - 1])]) for s in series]
+        got = host.execute(lambda dev: program(*dev), (*padded, np.int32(n), *extra))
+        outs.append(got[:n])
+    return outs
+
+
+@pytest.mark.parametrize("n", [20, 50, 150])
+@pytest.mark.parametrize(
+    ("name", "static"),
+    [
+        ("smooth_data", {"window_size": 5}),
+        ("smooth_data", {"window_size": 500}),
+        ("normalize_intensity", {"method": "max"}),
+        ("normalize_intensity", {"method": "area"}),
+        ("normalize_intensity", {"method": "standard"}),
+        ("linear_background", {}),
+    ],
+)
+def test_the_same_data_at_two_pad_widths_agrees_up_to_summation_order(n, name, static):
+    """Masked sums reduce a different number of zeros, so XLA may sum in another order.
+
+    The two widths therefore agree to 1e-10 relative, with an absolute floor of
+    1e-12 of the result's scale for points that sit on the mean (``standard``
+    subtracts two nearly equal numbers there); they are not bit-identical.
+    """
+    _, y = _signal(n)
+    a, b = _two_widths(name, [y], n, **static)
+    np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))
+
+
+def test_the_polynomial_background_at_two_pad_widths_agrees():
+    n = 50
+    x, y = _signal(n)
+    low = int(np.argmin(y))
+    fit = np.polyfit([x[0], x[low], x[-1]], [y[0], y[low], y[-1]], 2)
+    a, b = _two_widths("polynomial_background", [x, y], n, extra=(fit,))
+    np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))

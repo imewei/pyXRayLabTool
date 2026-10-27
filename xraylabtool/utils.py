@@ -284,7 +284,7 @@ def smooth_data(x: ArrayLike, y: ArrayLike, window_size: int = 5) -> np.ndarray:
 
     Args:
         x: x-axis data (not used but kept for consistency)
-        y: y-axis data to smooth
+        y: y-axis data to smooth; must be one-dimensional (``ValueError`` otherwise)
         window_size: Size of smoothing window
 
     Returns:
@@ -334,16 +334,24 @@ def background_subtraction(
     Perform background subtraction on diffraction data.
 
     Args:
-        x: x-axis data
-        y: y-axis data
+        x: x-axis data (used by ``'polynomial'`` only; one-dimensional, same
+            length as ``y``)
+        y: y-axis data. ``'polynomial'`` needs one dimension; ``'linear'`` also
+            accepts an ``(N, k)`` array of ``k`` series in columns and subtracts
+            each column's own line (one device call per column)
         method: Background subtraction method ('linear', 'polynomial')
 
     Returns:
-        Background-subtracted y data
+        Background-subtracted y data, float64, the shape of ``y``
     """
-    y_arr = _series(y)
+    y_arr = np.asarray(y, dtype=np.float64)
     if method not in ("linear", "polynomial"):
         raise ValueError("Method must be 'linear' or 'polynomial'")
+    if method == "linear" and y_arr.ndim == 2 and y_arr.shape[0] > 0:
+        if y_arr.shape[1] == 0:
+            return y_arr.copy()
+        return np.stack([_run_series("linear_background", c) for c in y_arr.T], axis=1)
+    y_arr = _series(y_arr)
     if y_arr.size == 0:
         raise IndexError("index 0 is out of bounds for axis 0 with size 0")
     if method == "linear":
@@ -366,20 +374,27 @@ def normalize_intensity(y: ArrayLike, method: str = "max") -> np.ndarray:
     Normalize intensity data.
 
     Args:
-        y: Intensity data
+        y: Intensity data. ``'max'`` and ``'standard'`` accept any shape (global
+            maximum, mean and standard deviation) and a 0-d input; ``'area'``
+            needs one dimension (``ValueError`` otherwise)
         method: Normalization method ('max', 'area', 'standard')
 
     Returns:
-        Normalized intensity data
+        Normalized intensity data, float64, the shape of ``y`` (a NumPy scalar
+        for a 0-d input)
     """
-    y_arr = _series(y)
+    y_arr = np.asarray(y, dtype=np.float64)
     if method not in ("max", "area", "standard"):
         raise ValueError("Method must be 'max', 'area', or 'standard'")
+    if method == "area":
+        y_arr = _series(y_arr)
     if y_arr.size == 0 and method == "max":
         raise ValueError(
             "zero-size array to reduction operation maximum which has no identity"
         )
-    return _run_series("normalize_intensity", y_arr, method=method)
+    out = _run_series("normalize_intensity", y_arr.ravel(), method=method)
+    out = out.reshape(y_arr.shape)
+    return out[()] if out.ndim == 0 else out
 
 
 def progress_bar(iterable: Any, desc: str = "Processing") -> Any | Iterator[Any]:

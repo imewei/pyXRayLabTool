@@ -9,7 +9,10 @@ caller ran :func:`xraylabtool.backend.runtime.ensure_x64`); ``units``,
 
 Unit conversion, Bragg and lattice formulas are elementwise. The signal helpers
 take a series padded to a shape bucket plus its true length ``n``; indices and
-reductions are masked so padding never changes a result.
+reductions are masked, so padding only changes a result through the order in
+which XLA sums the masked terms (about 1e-16 relative, 1e-11 at points sitting on
+the mean for ``standard``). A given length always maps to one bucket, so results
+are deterministic.
 
 This module imports ``jax`` at the top, so ``utils.py`` imports it inside each
 wrapper. Host by design (spec section 9): ``find_peaks``, ``progress_bar``,

@@ -109,12 +109,12 @@ def warm_up_core(formula: str = "SiO2") -> None:
     with up to 64 energies compiles nothing. Best effort: a failure is logged,
     never raised, because nothing the user asked for depends on it.
     """
-    from xraylabtool.backend.runtime import ensure_x64, worker_guard
-    from xraylabtool.calculators.core import warm_up
-    from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
-
-    ensure_x64()
     try:
+        from xraylabtool.backend.runtime import ensure_x64, worker_guard
+        from xraylabtool.calculators.core import warm_up
+        from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
+
+        ensure_x64()
         with worker_guard():
             warm_up((formula,))
             energy_to_wavelength(8.0)

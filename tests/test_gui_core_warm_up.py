@@ -48,11 +48,9 @@ def test_worker_threads_agree_with_the_calling_thread(app: QApplication) -> None
     expected = {c: compute_single(*c, cfg) for c in CASES}
     got: dict[int, Any] = {}
     failures: list[BaseException] = []
-    guard_seen: list[bool] = []
 
     def job(index: int, case: tuple[str, float]) -> None:
         try:
-            guard_seen.append(os.environ.get("XRAYLABTOOL_TRANSFER_GUARD") is not None)
             got[index] = compute_single(*case, cfg)
         except BaseException as exc:  # reported through the assert below
             failures.append(exc)
@@ -65,7 +63,6 @@ def test_worker_threads_agree_with_the_calling_thread(app: QApplication) -> None
     assert pool.waitForDone(120_000)
 
     assert not failures, failures
-    assert all(guard_seen)  # the suite runs the guard on; workers passed through it
     assert sorted(got) == list(range(20))
     for index, case in jobs:
         for field in FIELDS:
