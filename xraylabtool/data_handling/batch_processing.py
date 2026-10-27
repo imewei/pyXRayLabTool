@@ -188,14 +188,21 @@ def process_batch_chunk(
     for i, (_formula, energies, _density) in enumerate(chunk):
         by_energies.setdefault(np.asarray(energies).tobytes(), []).append(i)
     for members in by_energies.values():
+        counted = 0
+
+        def count(n: int) -> None:
+            nonlocal counted
+            counted += n
+            if update is not None:
+                update(n)
+
         outcomes = _calculate_materials(
             [chunk[i][0] for i in members],
             [chunk[i][2] for i in members],
             chunk[members[0]][1],
             max_block=config.chunk_size,
-            on_block=update,
+            on_block=count,
         )
-        failed = 0
         for i, outcome in zip(members, outcomes, strict=True):
             formula = chunk[i][0]
             if isinstance(outcome, Exception):
@@ -203,11 +210,12 @@ def process_batch_chunk(
                     f"Failed to process formula '{formula}': {outcome}", stacklevel=2
                 )
                 ordered[i] = (formula, None)
-                failed += 1
             else:
                 ordered[i] = (formula, _xray_result_from_properties(outcome))
-        if update is not None and failed:
-            update(failed)
+        # Blocks counted every material that reached the device (finite or not);
+        # the rest failed the host screening and never ran.
+        if update is not None and counted < len(members):
+            update(len(members) - counted)
         if not memory_monitor.check_memory():
             memory_monitor.force_gc()
     return ordered

@@ -161,7 +161,7 @@ def run_optical_blocks(
     Materials are grouped by element bucket ``K`` (so a one-element material is
     never padded to a six-element one) and each group is cut into blocks of
     :func:`~xraylabtool.backend.shapes.block_for` materials, so every block
-    keeps ``F·K·M`` within the memory budget; blocks of one group share a shape
+    keeps the padded ``F·K·M`` within the memory budget; blocks of one group share a shape
     (up to the last, smaller one) and so one compiled program.
     Each block costs one upload and one fetch; its rows are written back to the
     positions of the input, so the output order equals the input order.
@@ -198,6 +198,10 @@ def run_optical_blocks(
         # ``block_for`` rounds down, so ask for the padded count: a group that fits
         # the memory budget is one block, a larger one is cut at the budget.
         block = block_for(None, k_pad * m_pad, bucket_pow2(len(members)))
+        # A ladder rung (640, 800, ...) would be padded up to the next power of two
+        # by run_optical and exceed the budget, so floor to the power of two; a cap
+        # below it then pads to at most that power of two.
+        block = 1 << (block.bit_length() - 1)
         if max_block is not None:
             block = min(block, max_block)
         for start in range(0, len(members), block):

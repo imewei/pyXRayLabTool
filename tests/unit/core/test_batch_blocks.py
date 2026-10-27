@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+import functools
 import logging
 from typing import Any
 
@@ -18,7 +19,8 @@ import pytest
 
 from tests.fixtures.core_rounding import assert_ulp_close
 from tests.fixtures.kk_compiles import record_compiles
-from xraylabtool.backend import runtime
+from xraylabtool.backend import runtime, shapes
+from xraylabtool.backend.shapes import bucket, bucket_pow2
 from xraylabtool.calculators import core, host, optics
 from xraylabtool.calculators.core import (
     calculate_multiple_xray_properties,
@@ -313,3 +315,85 @@ def test_max_workers_is_accepted_ignored_and_logged_once_at_debug():
         got = calculate_batch_properties(["SiO2", "Si"], ENERGIES, [2.2, 2.33], config)
     assert list(got) == ["SiO2@2.200", "Si@2.330"]
     assert len([r for r in records if "max_workers" in r.getMessage()]) == 1
+
+
+def test_a_binding_budget_splits_a_group_and_bounds_the_padded_blocks(spy, monkeypatch):
+    """Spec section 3: the padded ``F·K·M`` of every block stays within the budget.
+
+    The default budget is far too large to bind in a unit test, so ``block_for`` is
+    patched to a small ``elements`` (patching ``CHUNK_ELEMENTS`` does nothing: it is a
+    default argument). 700 rows fit the budget at the 64-energy bucket, which makes
+    ``block_for`` return the non-power-of-two rung 640; padding that to 1024 rows
+    would overshoot.
+    """
+    budget = 700 * 2 * 64
+    n = 1000
+    formulas = ["SiO2"] * n
+    densities = [1.0 + i / 1000 for i in range(n)]
+    whole = calculate_xray_properties(formulas, ENERGIES, densities)
+    assert len(spy) == 1
+    spy.clear()
+    monkeypatch.setattr(
+        host, "block_for", functools.partial(shapes.block_for, elements=budget)
+    )
+    split = calculate_xray_properties(formulas, ENERGIES, densities)
+    assert len(spy) > 1
+    assert sum(c["f"] for c in spy) == n
+    for call in spy:
+        assert bucket_pow2(call["f"]) * call["k_bucket"] * bucket(50, 64) <= budget
+    assert list(split) == list(whole)
+    for key, result in whole.items():
+        for name in FIELDS:
+            _same_bits(getattr(split[key], name), getattr(result, name))
+
+
+def test_progress_counts_a_non_finite_item_once():
+    """Screening failure + non-finite device result + good items: total == len(chunk)."""
+
+    class Bar:
+        total = 0
+
+        def update(self, n: int) -> None:
+            self.total += n
+
+    bar = Bar()
+    chunk = [
+        ("SiO2", ENERGIES, 2.2),
+        ("SiO2", ENERGIES, 1e308),  # passes screening, overflows on the device
+        ("Xx999", ENERGIES, 1.0),  # fails screening
+        ("Si", ENERGIES, 2.33),
+    ]
+    with pytest.warns(UserWarning) as caught:
+        got = process_batch_chunk(chunk, BatchConfig(enable_progress=False), bar)
+    texts = [str(w.message) for w in caught if issubclass(w.category, UserWarning)]
+    assert any("Non-finite values" in t for t in texts)
+    assert [r is None for _, r in got] == [False, True, True, False]
+    assert bar.total == len(chunk)
+
+
+def test_comparator_takes_all_materials_from_one_call(spy):
+    from xraylabtool.analysis.comparator import MaterialComparator
+
+    formulas = ["SiO2", "Au", "SiO2", "CaCO3"]
+    densities = [2.2, 19.32, 2.5, 2.71]
+    data = MaterialComparator._calculate_material_data(formulas, densities, [8.0, 12.0])
+    assert list(data) == [f"{f} ({d} g/cm³)" for f, d in zip(formulas, densities)]
+    assert {c["k_bucket"] for c in spy} == {2, 4}
+    assert sum(c["f"] for c in spy) == 4  # no retry loop on success
+    ref = calculate_single_material_properties("SiO2", [8.0, 12.0], 2.5)
+    _same_bits(data["SiO2 (2.5 g/cm³)"].dispersion_delta, ref.dispersion_delta)
+
+
+def test_comparator_fallback_names_the_first_failing_formula():
+    from xraylabtool.analysis.comparator import MaterialComparator
+
+    with pytest.raises(
+        ValueError,
+        match=r"^Failed to calculate properties for Xx9: "
+        r"Failed to process any formulas successfully$",
+    ):
+        MaterialComparator._calculate_material_data(
+            ["SiO2", "Xx9", "Au"], [2.2, 1.0, 19.32], [8.0, 12.0]
+        )
+    with pytest.raises(ValueError, match=r"^Failed to calculate properties for Xx9: "):
+        MaterialComparator._calculate_material_data(["Xx9"], [1.0], [8.0])
