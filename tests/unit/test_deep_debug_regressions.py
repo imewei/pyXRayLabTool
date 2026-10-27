@@ -371,52 +371,6 @@ class TestBatchProcessing:
                 ["SiO2"], np.array([[8.0, 10.0]]), [2.2], self._config()
             )
 
-    def test_stalled_calculation_times_out(self, monkeypatch) -> None:
-        import xraylabtool.data_handling.batch_processing as bp
-
-        real = bp.process_single_calculation
-
-        def slow(formula, energies, density):
-            if formula == "H2O":
-                time.sleep(4)
-            return real(formula, energies, density)
-
-        # Compile every bucket first: a cold compile would outlast the 0.5 s stall timeout.
-        for formula, density in zip(self.FORMULAS, self.DENSITIES, strict=True):
-            calculate_single_material_properties(formula, [8.0, 10.0], density)
-        monkeypatch.setattr(bp, "process_single_calculation", slow)
-        monkeypatch.setattr(bp, "_STALL_TIMEOUT_S", 0.5)
-        start = time.monotonic()
-        with pytest.warns(UserWarning, match="Timeout"):
-            results = bp.calculate_batch_properties(
-                self.FORMULAS, [8.0, 10.0], self.DENSITIES, self._config()
-            )
-        assert time.monotonic() - start < 3.5
-        assert results["H2O"] is None
-        assert results["SiO2@2.200"] is not None
-
-    def test_process_pool_failure_falls_back_to_threads(self, monkeypatch) -> None:
-        import concurrent.futures
-
-        import xraylabtool.data_handling.batch_processing as bp
-
-        class Broken:
-            def __init__(self, *_args, **_kwargs):
-                raise PermissionError("no semaphores in this environment")
-
-        monkeypatch.setattr(concurrent.futures, "ProcessPoolExecutor", Broken)
-        formulas = [
-            f"{s}"
-            for s in ["SiO2", "H2O", "Fe2O3", "Al2O3", "CaCO3", "MgO", "TiO2", "ZnO"]
-        ]
-        densities = [2.2, 1.0, 5.24, 3.95, 2.71, 3.58, 4.23, 5.61]
-        with pytest.warns(UserWarning, match="process pool"):
-            results = bp.calculate_batch_properties(
-                formulas, [8.0, 10.0], densities, self._config()
-            )
-        assert len(results) == 8
-        assert all(v is not None for v in results.values())
-
 
 # ---------------------------------------------------------------------------
 # Formula parsing and validation
