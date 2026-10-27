@@ -33,6 +33,12 @@ Unreleased
 - ``KKResult.refine_exhausted`` (default ``False``) is ``True`` when adaptive refinement stopped on ``refine_max_passes``, ``refine_max_points`` or float spacing before every interval met the tolerance; the ``kk`` CLI prints a warning then.
 - ``scripts/kk_gpu_check.py``: manual GPU gate (oracle, additivity, transfer budget with the guard live, padding invariance, f2 at the Si edge, benchmark) for the CUDA machine.
 - ``docs/architecture/005-adr-kk-jax-only.md`` (with the section "Known deviations from the acceptance gates": CPU refined run 10-20 % slower than the forced-JAX baseline, GPU small-m overhead of 2-4 ms, bare-library GPU cold start 3.7-4.4 s); ``jax_architecture`` and the kk guide describe the device pipeline.
+- ``xraylabtool.calculators.optics``: the pure ``jax.numpy`` device programs behind the calculators, ``optical_properties`` and ``OpticalProps`` (``jit``/``vmap``/``grad``-compatible, x64 precondition), ``interpolate_f``, ``derive``, ``encode_formula``, and the standalone primitives ``critical_angle_from_delta``, ``attenuation_length_from_beta`` and ``transmission``.
+- ``xraylabtool.calculators.tables`` (``ScatteringTables``, ``load_tables``) and ``xraylabtool/data/scattering_tables.npz``: the f1, f2 and PCHIP slopes of the 92 elements as one ``[92, 449]`` float64 table, uploaded to the device once and passed to the programs as an argument. ``scripts/gen_scattering_tables.py`` builds it from the ``.nff`` files and ``--check`` (run in the CI test job) fails on drift.
+- ``xraylabtool.backend.runtime`` (``ensure_x64``, ``enable_persistent_cache``, ``worker_guard``, counted ``upload``/``fetch``/``fetch_status``) and ``xraylabtool.backend.shapes`` (``bucket``, ``bucket_pow2``, ``block_for``), promoted from ``kk`` (which re-exports them); importing either has no side effect.
+- ``xraylabtool.warm_up(formulas=("SiO2",))``: public, explicit precompile of the default core programs (nothing warms up implicitly).
+- ``scripts/core_bench.py`` (CPU gates P1 to P4, P8 to P10, P12, P13) and the frozen golden outputs under ``tests/characterization/core/`` (generated from the NumPy path before it was deleted; ``rtol=1e-12``).
+- ``docs/architecture/006-adr-core-jax-only.md`` (supersedes ADR-001; the gate table is provisional until measured on a quiet host) and an updated ADR-004. The ``utils`` physics helpers on ``jnp``, the ``convert``/``bragg`` wiring and the GUI warm-up of the core programs follow in a second PR.
 
 **Changed**
 
@@ -48,10 +54,19 @@ Unreleased
 - Minimum JAX is ``>=0.12.0.1`` (``pyproject.toml``, ``uv.lock``): the golden tolerances were measured on it, and releases 0.8.0 to 0.12.0 differ in the last digits of fused XLA expressions.
 - ``tests/test_code_quality.py::test_naming_conventions`` ignores physical unit symbols (``eV``, ``keV``, ...) in its camelCase check; the threshold is unchanged.
 - ``docs/api/kk.rst`` no longer documents ``MergeStatus``, ``MergeResult`` and ``DeviceTables`` fields twice (duplicate-object warnings).
+- **Breaking (suggested release 0.5.0, no version bump here):** the core calculators are one JAX float64 implementation with no NumPy twin (ADR-006). A public call does host validation, one upload, one compiled program and one download; shapes are padded to buckets so a repeat call compiles nothing. Results equal the previous NumPy path to ``rtol=1e-12``. A small single call on CPU is slower than before (about 0.4 ms against 0.08 ms; GPU about 0.6 ms), batches are faster (about 2x on CPU for 200 and 2000 formulas); the gates are in ADR-006.
+- ``calculate_xray_properties``, ``calculate_multiple_xray_properties``, ``calculate_batch_properties`` and the comparator run materials as blocks through one device program (a ``vmap`` over materials). ``calculate_xray_properties`` no longer sorts and restores the energy order: the output follows the input order. ``BatchConfig.max_workers`` and the CLI ``--workers`` are accepted and ignored.
+- ``set_backend("jax")`` returns ``None``; any other name raises ``ValueError("the NumPy backend was removed; see ADR-006")``; ``get_backend()`` returns ``"jax"``.
+- ``import xraylabtool`` no longer sets ``JAX_ENABLE_X64`` or imports JAX; ``runtime.ensure_x64()`` runs at every compute entry. ``--help``, ``--version``, ``completion``, ``formula``, ``atomic`` and ``list`` never import JAX. The ``calc``, ``batch`` and ``compare`` commands enable the persistent compile cache like ``kk`` (``XRAYLABTOOL_NO_JAX_CACHE=1`` opts out).
+- ``calculate_scattering_factors(..., element_data)`` accepts ``TableInterpolator`` entries only (anything else raises ``TypeError``); with a tiny molecular weight it returns the finite value (it returned ``inf``). ``calculate_derived_quantities`` accepts plain lists (it raised ``TypeError``).
+- The first public call after ``clear_scattering_factor_cache()`` only loads the tables; the hidden first-call warm-up is gone (use ``warm_up``).
+- Known limitation: a molecular weight above about 4.5e307 g/mol gives ``delta = beta = 0`` with an accepted status (XLA flushes ``1 / mw`` as a subnormal); a device exception such as out-of-memory aborts the whole batch call, skip-and-log stays per formula.
 
 **Removed**
 
 - ``ensure_float64`` from ``xraylabtool.backend.array_ops`` (its only user was ``kk``, which now establishes x64 itself) and the NumPy twin of the kk kernel, assembly, merge and refinement.
+- ``xraylabtool.backend.ops``, ``NumpyBackend``, ``JaxBackend``, ``ArrayBackend``, ``InterpolationFactory``, ``calculators.kernels`` and ``backend/array_ops.py``; the SciPy PCHIP is no longer used at runtime. ``scripts/gen_core_golden.py`` and ``scripts/gen_kk_prejax_baseline.py`` need the removed path and say which commit to check out.
+- ``ProcessPoolExecutor``, ``ThreadPoolExecutor`` and ``multiprocessing`` from ``xraylabtool/`` (an AST test keeps them out), and the batch chunk stall timeout that only existed for the executors.
 
 **Fixed**
 
