@@ -93,19 +93,17 @@ _logger = get_logger(__name__)
 # =====================================================================================
 
 
-def _validate_single_material_inputs(
-    formula_str: str,
-    energy_kev: FloatLike | ArrayLike,
-    mass_density: FloatLike,
-) -> EnergyArray:
-    """Validate inputs for single material calculation."""
+def _validate_formula_and_density(formula_str: str, mass_density: FloatLike) -> None:
+    """Raise today's ``FormulaError`` / ``ValueError`` for a bad formula or density."""
     if not formula_str or not isinstance(formula_str, str):
         raise FormulaError("Formula must be a non-empty string", formula_str)
 
     if np.any(np.asarray(mass_density) <= 0):
         raise ValueError("Mass density must be positive")
 
-    # Convert and validate energy
+
+def _validate_energies(energy_kev: FloatLike | ArrayLike) -> EnergyArray:
+    """Convert ``energy_kev`` to a new 1-D float64 array; raise ``EnergyError`` if bad."""
     energy_kev = _convert_energy_input(energy_kev)
 
     if energy_kev.size == 0:
@@ -122,6 +120,16 @@ def _validate_single_material_inputs(
     _require_finite_energies(energy_kev)
 
     return energy_kev
+
+
+def _validate_single_material_inputs(
+    formula_str: str,
+    energy_kev: FloatLike | ArrayLike,
+    mass_density: FloatLike,
+) -> EnergyArray:
+    """Validate inputs for single material calculation."""
+    _validate_formula_and_density(formula_str, mass_density)
+    return _validate_energies(energy_kev)
 
 
 def unique_result_key(results: Mapping[str, Any], formula: str, density: float) -> str:
@@ -379,6 +387,93 @@ def _xray_result_from_properties(properties: _MaterialPropertiesDict) -> XRayRes
     )
 
 
+def _calculate_materials(
+    formulas: Sequence[str],
+    densities: Sequence[Any],
+    energy_kev: Any,
+    *,
+    max_block: int | None = None,
+    on_block: Callable[[int], None] | None = None,
+    prevalidated: bool = False,
+) -> list[_MaterialPropertiesDict | Exception]:
+    """Properties of many materials at shared energies as device ``F``-blocks.
+
+    Each formula is screened on the host exactly as the single-material path does
+    (formula, density, energies, parse); the survivors run through
+    :func:`xraylabtool.calculators.host.run_optical_blocks`, one upload and one
+    fetch per block. The outcome of material ``i`` is its properties or the
+    exception that single-material call would have raised (screening failure or
+    a non-finite status); outcomes follow the input order.
+
+    Parameters
+    ----------
+    formulas, densities : sequence
+        One entry per material.
+    energy_kev : array_like
+        Shared energies in keV.
+    max_block : int, optional
+        Upper bound of materials per block.
+    on_block : callable, optional
+        Called with the number of materials after each block.
+    prevalidated : bool, default False
+        ``energy_kev`` is already a validated array (skip the energy check).
+    """
+    from xraylabtool.calculators import cache as _cache_mod
+    from xraylabtool.calculators import host
+
+    if not _cache_mod._CACHE_WARMED and formulas:
+        _smart_cache_warming(formulas[0])
+
+    energies: np.ndarray | None = None
+    energy_error: Exception | None = None
+    try:
+        energies = (
+            np.asarray(energy_kev, dtype=np.float64)
+            if prevalidated
+            else _validate_energies(energy_kev)
+        )
+    except Exception as e:
+        energy_error = e
+
+    outcomes: list[_MaterialPropertiesDict | Exception | None] = [None] * len(formulas)
+    screened: list[int] = []
+    encoded = []
+    values = []
+    for i, (formula, density) in enumerate(zip(formulas, densities, strict=True)):
+        try:
+            _validate_formula_and_density(formula, density)
+            if energy_error is not None:
+                raise energy_error
+            encoded.append(_encode_material(formula))
+            values.append(_density_value(density))
+            screened.append(i)
+        except Exception as e:
+            outcomes[i] = e
+    if screened:
+        assert energies is not None
+        got = host.run_optical_blocks(
+            encoded, values, energies, max_block=max_block, on_block=on_block
+        )
+        for j, i in enumerate(screened):
+            _z, _counts, molecular_weight, number_of_electrons = encoded[j]
+            try:
+                outcomes[i] = _material_properties(
+                    formulas[i],
+                    energies.copy(),
+                    values[j],
+                    molecular_weight,
+                    number_of_electrons,
+                    {
+                        "out": got["out"][j : j + 1],
+                        "electron_density": got["electron_density"][j : j + 1],
+                        "ok": got["ok"][j : j + 1],
+                    },
+                )
+            except ValueError as e:
+                outcomes[i] = e
+    return [o for o in outcomes if o is not None]
+
+
 def calculate_multiple_xray_properties(
     formula_list: list[str],
     energy_kev: FloatLike | ArrayLike,
@@ -405,41 +500,41 @@ def calculate_multiple_xray_properties(
     if not formula_list:
         raise ValueError("Formula list must not be empty")
 
-    # Process each formula
+    # Process all formulas as device F-blocks
     results: dict[str, dict[str, str | float | np.ndarray]] = {}
 
-    for formula, mass_density in zip(formula_list, mass_density_list, strict=False):
-        try:
-            # Calculate properties for this formula
-            result = calculate_single_material_properties(
-                formula, energy_kev, mass_density
-            )
-
-            # Convert XRayResult to dictionary format for backward compatibility
-            result_dict: dict[str, str | float | np.ndarray] = {
-                "formula": result.formula,
-                "molecular_weight": result.molecular_weight_g_mol,
-                "number_of_electrons": result.total_electrons,
-                "mass_density": result.density_g_cm3,
-                "electron_density": result.electron_density_per_ang3,
-                "energy": result.energy_kev,
-                "wavelength": result.wavelength_angstrom,
-                "dispersion": result.dispersion_delta,
-                "absorption": result.absorption_beta,
-                "f1_total": result.scattering_factor_f1,
-                "f2_total": result.scattering_factor_f2,
-                "critical_angle": result.critical_angle_degrees,
-                "attenuation_length": result.attenuation_length_cm,
-                "re_sld": result.real_sld_per_ang2,
-                "im_sld": result.imaginary_sld_per_ang2,
-            }
-            results[unique_result_key(results, formula, mass_density)] = result_dict
-        except Exception as e:
+    outcomes = _calculate_materials(formula_list, mass_density_list, energy_kev)
+    for formula, mass_density, outcome in zip(
+        formula_list, mass_density_list, outcomes, strict=True
+    ):
+        if isinstance(outcome, Exception):
             # Log warning but continue processing other formulas
             _logger.warning(
-                "Failed to process formula", extra={"formula": formula, "error": str(e)}
+                "Failed to process formula",
+                extra={"formula": formula, "error": str(outcome)},
             )
             continue
+        result = _xray_result_from_properties(outcome)
+
+        # Convert XRayResult to dictionary format for backward compatibility
+        result_dict: dict[str, str | float | np.ndarray] = {
+            "formula": result.formula,
+            "molecular_weight": result.molecular_weight_g_mol,
+            "number_of_electrons": result.total_electrons,
+            "mass_density": result.density_g_cm3,
+            "electron_density": result.electron_density_per_ang3,
+            "energy": result.energy_kev,
+            "wavelength": result.wavelength_angstrom,
+            "dispersion": result.dispersion_delta,
+            "absorption": result.absorption_beta,
+            "f1_total": result.scattering_factor_f1,
+            "f2_total": result.scattering_factor_f2,
+            "critical_angle": result.critical_angle_degrees,
+            "attenuation_length": result.attenuation_length_cm,
+            "re_sld": result.real_sld_per_ang2,
+            "im_sld": result.imaginary_sld_per_ang2,
+        }
+        results[unique_result_key(results, formula, mass_density)] = result_dict
 
     return results
 
@@ -726,81 +821,6 @@ def _validate_and_process_energies(energies: Any) -> EnergyArray:
     return energies_array
 
 
-def _restore_energy_order(
-    result: XRayResult, reverse_indices: np.ndarray
-) -> XRayResult:
-    """Restore original energy order in XRayResult."""
-    return XRayResult(
-        formula=result.formula,
-        molecular_weight_g_mol=result.molecular_weight_g_mol,
-        total_electrons=result.total_electrons,
-        density_g_cm3=result.density_g_cm3,
-        electron_density_per_ang3=result.electron_density_per_ang3,
-        energy_kev=result.energy_kev[reverse_indices],
-        wavelength_angstrom=result.wavelength_angstrom[reverse_indices],
-        dispersion_delta=result.dispersion_delta[reverse_indices],
-        absorption_beta=result.absorption_beta[reverse_indices],
-        scattering_factor_f1=result.scattering_factor_f1[reverse_indices],
-        scattering_factor_f2=result.scattering_factor_f2[reverse_indices],
-        critical_angle_degrees=result.critical_angle_degrees[reverse_indices],
-        attenuation_length_cm=result.attenuation_length_cm[reverse_indices],
-        real_sld_per_ang2=result.real_sld_per_ang2[reverse_indices],
-        imaginary_sld_per_ang2=result.imaginary_sld_per_ang2[reverse_indices],
-    )
-
-
-def _create_process_formula_function(
-    sorted_energies: EnergyArray, sort_indices: ArrayLike
-) -> Callable[[tuple[str, float]], tuple[str, XRayResult]]:
-    """Create process formula function with energy sorting logic."""
-
-    def process_formula(
-        formula_density_pair: tuple[str, float],
-    ) -> tuple[str, XRayResult]:
-        formula, density = formula_density_pair
-        try:
-            result = calculate_single_material_properties(
-                formula, sorted_energies, density
-            )
-
-            if not np.array_equal(sort_indices, np.arange(len(sort_indices))):
-                reverse_indices = np.argsort(sort_indices)
-                result = _restore_energy_order(result, reverse_indices)
-
-            return (formula, result)
-        except Exception as e:
-            raise RuntimeError(f"Failed to process formula '{formula}': {e}") from e
-
-    return process_formula
-
-
-def _process_formulas_parallel(
-    formulas: list[str],
-    densities: list[float],
-    process_func: Callable[[tuple[str, float]], tuple[str, XRayResult]],
-) -> dict[str, XRayResult]:
-    """
-    Process formulas with adaptive strategy.
-
-    Uses sequential processing for all batches. Threading is avoided because
-    JAX's JIT-compiled kernels already parallelize at the XLA level.
-    """
-    formula_density_pairs = list(zip(formulas, densities, strict=False))
-    results: dict[str, XRayResult] = {}
-
-    for pair in formula_density_pairs:
-        try:
-            formula_result, xray_result = process_func(pair)
-            results[unique_result_key(results, formula_result, pair[1])] = xray_result
-        except Exception as e:
-            _logger.warning(
-                "Failed to process formula",
-                extra={"formula": pair[0], "error": str(e)},
-            )
-            continue
-    return results
-
-
 def calculate_xray_properties(
     formulas: list[str],
     energies: FloatLike | ArrayLike,
@@ -828,11 +848,23 @@ def calculate_xray_properties(
     _validate_xray_inputs(formulas, densities)
     energies_array = _validate_and_process_energies(energies)
 
-    sort_indices = np.argsort(energies_array)
-    sorted_energies = energies_array[sort_indices]
-
-    process_func = _create_process_formula_function(sorted_energies, sort_indices)
-    results = _process_formulas_parallel(formulas, densities, process_func)
+    results: dict[str, XRayResult] = {}
+    outcomes = _calculate_materials(
+        formulas, densities, energies_array, prevalidated=True
+    )
+    for formula, density, outcome in zip(formulas, densities, outcomes, strict=True):
+        if isinstance(outcome, Exception):
+            _logger.warning(
+                "Failed to process formula",
+                extra={
+                    "formula": formula,
+                    "error": f"Failed to process formula '{formula}': {outcome}",
+                },
+            )
+            continue
+        results[unique_result_key(results, formula, density)] = (
+            _xray_result_from_properties(outcome)
+        )
 
     if not results:
         raise RuntimeError("Failed to process any formulas successfully")

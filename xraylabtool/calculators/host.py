@@ -27,7 +27,7 @@ import jax
 import numpy as np
 
 from xraylabtool.backend import runtime
-from xraylabtool.backend.shapes import bucket, bucket_pow2
+from xraylabtool.backend.shapes import block_for, bucket, bucket_pow2
 from xraylabtool.calculators import optics
 from xraylabtool.calculators.tables import ScatteringTables, load_tables
 
@@ -37,6 +37,7 @@ __all__ = [
     "run_derived",
     "run_map",
     "run_optical",
+    "run_optical_blocks",
     "run_rows",
     "run_scattering",
     "run_tail",
@@ -145,6 +146,71 @@ def run_optical(
         "electron_density": got["electron_density"][:f],
         "ok": got["ok"][:f],
     }
+
+
+def run_optical_blocks(
+    encoded: Sequence[Encoded],
+    densities: Sequence[float],
+    energies: Any,
+    *,
+    max_block: int | None = None,
+    on_block: Callable[[int], None] | None = None,
+) -> dict[str, np.ndarray]:
+    """Run ``_optical_program`` over any number of materials as ``F``-blocks.
+
+    Materials are grouped by element bucket ``K`` (so a one-element material is
+    never padded to a six-element one) and each group is cut into blocks of
+    :func:`~xraylabtool.backend.shapes.block_for` materials, so every block
+    obeys ``F·K·M`` within the memory budget and reuses one compiled program.
+    Each block costs one upload and one fetch; its rows are written back to the
+    positions of the input, so the output order equals the input order.
+
+    Parameters
+    ----------
+    encoded : sequence of tuple
+        ``encode_formula`` results, one per material.
+    densities : sequence of float
+        Mass densities in g/cm³.
+    energies : array_like, shape ``(M,)``
+        keV, shared by all materials.
+    max_block : int, optional
+        Upper bound of materials per block (``BatchConfig.chunk_size``).
+    on_block : callable, optional
+        Called with the number of materials after each block (progress).
+
+    Returns
+    -------
+    dict
+        ``out`` (``[N, 9, M]``), ``electron_density`` and ``ok`` (``[N]``), as
+        :func:`run_optical` but for all ``N`` materials; empty for ``N = 0``.
+    """
+    n = len(encoded)
+    e = np.atleast_1d(np.asarray(energies, dtype=np.float64))
+    m_pad = _width(e.size, None)
+    out = np.empty((n, len(optics.OUT_FIELDS), e.size))
+    electron_density = np.empty(n)
+    ok = np.empty(n, dtype=bool)
+    groups: dict[int, list[int]] = {}
+    for i, (z, *_rest) in enumerate(encoded):
+        groups.setdefault(bucket_pow2(len(z), minimum=2), []).append(i)
+    for k_pad, members in groups.items():
+        block = block_for(max_block, k_pad * m_pad, len(members))
+        for start in range(0, len(members), block):
+            rows = members[start : start + block]
+            got = run_optical(
+                [encoded[i] for i in rows],
+                [densities[i] for i in rows],
+                e,
+                k_bucket=k_pad,
+            )
+            out[rows], electron_density[rows], ok[rows] = (
+                got["out"],
+                got["electron_density"],
+                got["ok"],
+            )
+            if on_block is not None:
+                on_block(len(rows))
+    return {"out": out, "electron_density": electron_density, "ok": ok}
 
 
 def run_tail(
