@@ -37,6 +37,7 @@ __all__ = [
     "device_tables",
     "execute",
     "restrict_to",
+    "run_columns",
     "run_derived",
     "run_map",
     "run_optical",
@@ -462,6 +463,23 @@ def run_series(
     padded = tuple(_pad_last(s, width) for s in series)
     got = execute(lambda dev: _jitted(fn)(*dev), (*padded, np.int32(n), *extra))
     return np.array(got[:n])
+
+
+def run_columns(fn: Callable[..., Any], columns: np.ndarray) -> np.ndarray:
+    """Apply ``fn(padded, n)`` to the series in the columns of ``columns`` (``[N, k]``).
+
+    Rows are padded to the energy bucket and columns to a power of two with edge
+    values (finite, and every column is independent), so one compile serves every
+    shape in the bucket pair; one upload, one fetch. Returns the ``[N, k]`` result.
+    """
+    n, k = columns.shape
+    padded = np.pad(
+        columns,
+        ((0, _width(n, None) - n), (0, bucket_pow2(k, minimum=2) - k)),
+        mode="edge",
+    )
+    got = execute(lambda dev: _jitted(fn)(*dev), (padded, np.int32(n)))
+    return np.array(got[:n, :k])
 
 
 def run_rows(z: int, e_ev: Any) -> np.ndarray:

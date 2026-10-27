@@ -13,7 +13,10 @@ outcome of every intentional change (see the CHANGELOG "Changed" entry):
   polynomial ``x``/``y`` lengths raise ``ValueError`` (legacy ``TypeError`` or a
   NumPy broadcast error / ``IndexError``);
 * ``energy_to_wavelength([10.0])`` still raises ``TypeError``, with NumPy's
-  conversion message instead of the sequence-multiplication one.
+  conversion message instead of the sequence-multiplication one;
+* complex input: Python-complex scalars raise the same ``TypeError`` as before;
+  complex NumPy scalars and arrays (which warned and dropped the imaginary part,
+  or were computed as complex signals) raise ``TypeError`` instead.
 """
 
 from __future__ import annotations
@@ -102,6 +105,34 @@ CASES = [
     ("normalize_intensity", (np.r_[y, np.nan],), {}),
     ("normalize_intensity", (np.zeros(4),), {"method": "standard"}),
     ("normalize_intensity", (y,), {"method": "bad"}),
+    # window types: legacy rejects non-integers (np.ones), unless the window
+    # reaches len(y), where the mean is returned before the kernel is built
+    ("smooth_data", (x, y), {"window_size": 2.9}),
+    ("smooth_data", (x, y), {"window_size": 1.5}),
+    ("smooth_data", (x, y), {"window_size": 3.0}),
+    ("smooth_data", (x, y), {"window_size": True}),
+    ("smooth_data", (x, y), {"window_size": np.int64(5)}),
+    ("smooth_data", (x, y), {"window_size": "5"}),
+    ("smooth_data", (x, y), {"window_size": 9.5}),
+    ("smooth_data", (x, y), {"window_size": 10**12}),
+    # constant data: zero spread, so the standardised signal is undefined
+    ("normalize_intensity", (np.full(17, 0.1),), {"method": "standard"}),
+    # complex input: scalars were rejected by float(), signals were computed
+    ("energy_to_wavelength", (10 + 1j,), {}),
+    ("wavelength_to_energy", (1.5 + 1j,), {}),
+    ("wavelength_to_energy", (np.array(1.5 + 1j),), {}),
+    ("bragg_angle", (3.0, 1.54 + 0j), {}),
+    ("d_spacing_cubic", (1, 1, 1, 5.43 + 1j), {}),
+    ("q_from_angle", (30.0, 1.54 + 1j), {}),
+    ("angle_from_q", (2.0 + 0j, 1.54), {}),
+    ("smooth_data", (x, y + 1j * y), {}),
+    ("background_subtraction", (x, y + 1j * y), {}),
+    ("background_subtraction", (x, y + 1j * y), {"method": "polynomial"}),
+    ("normalize_intensity", (y + 1j * y,), {}),
+    ("normalize_intensity", (y + 1j * y,), {"method": "standard"}),
+    # several series in columns
+    ("background_subtraction", (x, np.c_[y, y**2, np.sin(y), y[::-1], y + 1]), {}),
+    ("background_subtraction", (x, np.c_[y]), {}),
 ]
 
 
@@ -492,6 +523,245 @@ LEGACY = {
     ),
     71: ("ok", "ndarray", "float64", (4,), [nan, nan, nan, nan]),
     72: ("err", "ValueError", "Method must be 'max', 'area', or 'standard'"),
+    73: (
+        "err",
+        "TypeError",
+        "expected a sequence of integers or a single integer, got '2.9'",
+    ),
+    74: (
+        "err",
+        "TypeError",
+        "expected a sequence of integers or a single integer, got '1.5'",
+    ),
+    75: (
+        "err",
+        "TypeError",
+        "expected a sequence of integers or a single integer, got '3.0'",
+    ),
+    76: (
+        "err",
+        "TypeError",
+        "expected a sequence of integers or a single integer, got 'True'",
+    ),
+    77: (
+        "ok",
+        "ndarray",
+        "float64",
+        (8,),
+        [
+            2.8000000000000007,
+            2.5,
+            3.7,
+            3.62,
+            4.42,
+            4.32,
+            4.720000000000001,
+            3.6200000000000006,
+        ],
+    ),
+    78: ("err", "TypeError", "'<' not supported between instances of 'str' and 'int'"),
+    79: ("ok", "ndarray", "float64", (8,), [3.7, 3.7, 3.7, 3.7, 3.7, 3.7, 3.7, 3.7]),
+    80: ("ok", "ndarray", "float64", (8,), [3.7, 3.7, 3.7, 3.7, 3.7, 3.7, 3.7, 3.7]),
+    81: (
+        "ok",
+        "ndarray",
+        "float64",
+        (17,),
+        [
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+        ],
+    ),
+    82: (
+        "err",
+        "TypeError",
+        "float() argument must be a string or a real number, not 'complex'",
+    ),
+    83: (
+        "err",
+        "TypeError",
+        "float() argument must be a string or a real number, not 'complex'",
+    ),
+    84: ("ok", "float", 5.722346384689766),
+    85: (
+        "err",
+        "TypeError",
+        "'<=' not supported between instances of 'complex' and 'int'",
+    ),
+    86: (
+        "err",
+        "TypeError",
+        "float() argument must be a string or a real number, not 'complex'",
+    ),
+    87: ("ok", "float", 1.4855619604732884),
+    88: (
+        "err",
+        "TypeError",
+        "'>' not supported between instances of 'complex' and 'int'",
+    ),
+    89: (
+        "ok",
+        "ndarray",
+        "complex128",
+        (8,),
+        [
+            (2.8000000000000007 + 2.8000000000000007j),
+            (2.5 + 2.5j),
+            (3.7 + 3.7j),
+            (3.62 + 3.62j),
+            (4.42 + 4.42j),
+            (4.32 + 4.32j),
+            (4.720000000000001 + 4.720000000000001j),
+            (3.6200000000000006 + 3.6200000000000006j),
+        ],
+    ),
+    90: (
+        "ok",
+        "ndarray",
+        "complex128",
+        (8,),
+        [
+            0j,
+            (-2.0714285714285716 - 2.0714285714285716j),
+            (0.8571428571428572 + 0.8571428571428572j),
+            (-1.7142857142857144 - 1.7142857142857144j),
+            (5.714285714285714 + 5.714285714285714j),
+            (-0.7571428571428571 - 0.7571428571428571j),
+            (1.5714285714285716 + 1.5714285714285716j),
+            0j,
+        ],
+    ),
+    91: (
+        "ok",
+        "ndarray",
+        "complex128",
+        (8,),
+        [
+            (-2.220446049250313e-15 - 2.220446049250313e-15j),
+            0j,
+            (4.309523809523811 + 4.309523809523811j),
+            (2.428571428571431 + 2.428571428571431j),
+            (9.85714285714286 + 9.85714285714286j),
+            (2.6952380952380954 + 2.6952380952380954j),
+            (3.642857142857143 + 3.642857142857143j),
+            (-3.552713678800501e-15 - 3.552713678800501e-15j),
+        ],
+    ),
+    92: (
+        "ok",
+        "ndarray",
+        "complex128",
+        (8,),
+        [
+            (0.3333333333333333 + 0.3333333333333333j),
+            (0.1111111111111111 + 0.1111111111111111j),
+            (0.4444444444444444 + 0.4444444444444444j),
+            (0.16666666666666666 + 0.16666666666666666j),
+            (1 + 1j),
+            (0.28888888888888886 + 0.28888888888888886j),
+            (0.5555555555555556 + 0.5555555555555556j),
+            (0.38888888888888884 + 0.38888888888888884j),
+        ],
+    ),
+    93: (
+        "ok",
+        "ndarray",
+        "complex128",
+        (8,),
+        [
+            (-0.2116842987590401 + 0.9072184232530288j),
+            (-0.816496580927726 + 0.30240614108434294j),
+            (0.09072184232530282 + 1.2096245643373718j),
+            (-0.6652935103855545 + 0.4536092116265144j),
+            (1.6027525477470175 + 2.7216552697590863j),
+            (-0.33264675519277725 + 0.7862559668192917j),
+            (0.3931279834096458 + 1.5120307054217146j),
+            (-0.06048122821686864 + 1.0584214937952003j),
+        ],
+    ),
+    94: (
+        "ok",
+        "ndarray",
+        "float64",
+        (8, 5),
+        [
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [
+                -2.0714285714285716,
+                -8.464285714285714,
+                0.7706228675693846,
+                1.5714285714285716,
+                -2.071428571428571,
+            ],
+            [
+                0.8571428571428572,
+                6.071428571428571,
+                -0.7573787217250848,
+                -0.7571428571428571,
+                0.8571428571428568,
+            ],
+            [
+                -1.7142857142857144,
+                -8.142857142857142,
+                1.0671906510082532,
+                5.714285714285714,
+                -1.7142857142857144,
+            ],
+            [
+                5.714285714285714,
+                70.14285714285714,
+                0.5520860404673106,
+                -1.7142857142857144,
+                5.714285714285714,
+            ],
+            [
+                -0.7571428571428571,
+                -4.5614285714285705,
+                0.7257408178683734,
+                0.8571428571428572,
+                -0.7571428571428567,
+            ],
+            [
+                1.5714285714285716,
+                13.214285714285715,
+                -0.6784129377948739,
+                -2.0714285714285716,
+                1.5714285714285712,
+            ],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+        ],
+    ),
+    95: (
+        "ok",
+        "ndarray",
+        "float64",
+        (8, 1),
+        [
+            [0.0],
+            [-2.0714285714285716],
+            [0.8571428571428572],
+            [-1.7142857142857144],
+            [5.714285714285714],
+            [-0.7571428571428571],
+            [1.5714285714285716],
+            [0.0],
+        ],
+    ),
 }
 
 DEPARTURES = {
@@ -539,6 +809,21 @@ DEPARTURES = {
         ],
     ),
     68: ("err", "ValueError", "Signal data must be one-dimensional"),
+    84: (
+        "err",
+        "TypeError",
+        "float() argument must be a string or a real number, not 'ndarray'",
+    ),
+    87: (
+        "err",
+        "TypeError",
+        "float() argument must be a string or a real number, not 'complex'",
+    ),
+    89: ("err", "TypeError", "complex signal data is not supported"),
+    90: ("err", "TypeError", "complex signal data is not supported"),
+    91: ("err", "TypeError", "complex signal data is not supported"),
+    92: ("err", "TypeError", "complex signal data is not supported"),
+    93: ("err", "TypeError", "complex signal data is not supported"),
 }
 
 

@@ -39,6 +39,7 @@ __all__ = [
     "d_spacing_tetragonal",
     "energy_to_wavelength",
     "linear_background",
+    "linear_background_columns",
     "normalize_intensity",
     "polynomial_background",
     "q_from_angle",
@@ -109,6 +110,11 @@ def angle_from_q(q: jax.Array, wavelength: jax.Array) -> jax.Array:
     return 2 * jnp.degrees(jnp.arcsin((q * wavelength) / (4 * jnp.pi)))
 
 
+def _origin(y: jax.Array) -> jax.Array:
+    """The first sample, or 0 when it is not finite (so NaN/inf stay local)."""
+    return jnp.where(jnp.isfinite(y[0]), y[0], 0.0)
+
+
 def smooth_data(y: jax.Array, n: jax.Array, *, window_size: int) -> jax.Array:
     """Moving average with edge replication over the first ``n`` samples of ``y``.
 
@@ -117,11 +123,15 @@ def smooth_data(y: jax.Array, n: jax.Array, *, window_size: int) -> jax.Array:
     """
     size = y.shape[0]
     half = window_size // 2
+    # Work on the offsets from the first sample: a constant series stays exactly
+    # constant and a large offset does not swamp the variation in the sums.
+    first = _origin(y)
+    shifted = y - first
     index = jnp.clip(jnp.arange(size + 2 * half) - half, 0, n - 1)
     kernel = jnp.ones(window_size, dtype=y.dtype) / window_size
-    moving = jnp.convolve(y[index], kernel, mode="valid")[:size]
-    mean = jnp.sum(jnp.where(jnp.arange(size) < n, y, 0.0)) / n
-    return jnp.where(window_size >= n, mean, moving)
+    moving = jnp.convolve(shifted[index], kernel, mode="valid")[:size]
+    mean = jnp.sum(jnp.where(jnp.arange(size) < n, shifted, 0.0)) / n
+    return first + jnp.where(window_size >= n, mean, moving)
 
 
 def linear_background(y: jax.Array, n: jax.Array) -> jax.Array:
@@ -132,6 +142,10 @@ def linear_background(y: jax.Array, n: jax.Array) -> jax.Array:
     # The barrier keeps XLA from fusing the multiply and add into one rounding.
     ramp = lax.optimization_barrier(position * step) + y[0]
     return y - jnp.where(position == last, y[last], ramp)
+
+
+# One series per column: ``y`` is ``[width, columns]``, ``n`` the true row count.
+linear_background_columns = jax.vmap(linear_background, in_axes=(1, None), out_axes=1)
 
 
 def polynomial_background(
@@ -157,6 +171,10 @@ def normalize_intensity(y: jax.Array, n: jax.Array, *, method: str) -> jax.Array
     if method == "area":
         pair = jnp.where(live[1:], (y[1:] + y[:-1]) / 2.0, 0.0)
         return y / jnp.sum(pair)
-    mean = jnp.sum(jnp.where(live, y, 0.0)) / n
-    std = jnp.sqrt(jnp.sum(jnp.where(live, (y - mean) ** 2, 0.0)) / n)
-    return (y - mean) / std
+    # Deviations from the first sample: a constant series has exactly zero
+    # deviation (0/0 = nan, as NumPy) and a large offset does not cancel the sums.
+    shifted = y - _origin(y)
+    mean = jnp.sum(jnp.where(live, shifted, 0.0)) / n
+    deviation = shifted - mean
+    std = jnp.sqrt(jnp.sum(jnp.where(live, deviation**2, 0.0)) / n)
+    return deviation / std

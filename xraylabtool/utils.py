@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from functools import cache, lru_cache, partial
+import operator
 import re
 from typing import TYPE_CHECKING, Any, NoReturn
 
@@ -47,14 +48,36 @@ def _map(name: str, *arrays: Any, **static: Any) -> np.ndarray:
     """Run an elementwise ``_physics`` function on host arrays (broadcast shape out)."""
     from xraylabtool.calculators.host import run_map
 
+    for value in arrays:
+        if np.iscomplexobj(value):
+            # Python's own message for float(complex), which is what a complex
+            # scalar raised before; NumPy would cast and warn instead.
+            raise TypeError(
+                "float() argument must be a string or a real number, "
+                f"not {type(value).__name__!r}"
+            )
     return run_map(_program(name, **static), *arrays)  # type: ignore[no-any-return]
 
 
+def _real(y: ArrayLike) -> np.ndarray:
+    """``y`` as a float64 array; complex data is rejected, never cast."""
+    y_arr = np.asarray(y)
+    if np.iscomplexobj(y_arr):
+        raise TypeError("complex signal data is not supported")
+    return np.asarray(y_arr, dtype=np.float64)
+
+
 def _series(y: ArrayLike) -> np.ndarray:
-    y_arr = np.asarray(y, dtype=np.float64)
+    y_arr = _real(y)
     if y_arr.ndim != 1:
         raise ValueError("Signal data must be one-dimensional")
     return y_arr
+
+
+def _run_columns(name: str, columns: np.ndarray) -> np.ndarray:
+    from xraylabtool.calculators.host import run_columns
+
+    return run_columns(_program(name), columns)
 
 
 def _run_series(
@@ -293,7 +316,27 @@ def smooth_data(x: ArrayLike, y: ArrayLike, window_size: int = 5) -> np.ndarray:
     if window_size < 1:
         raise ValueError("Window size must be at least 1")
 
-    return _run_series("smooth_data", _series(y), window_size=int(window_size))
+    y_arr = _series(y)
+    if window_size >= y_arr.size:
+        # The mean, whatever the type of the window (as before). Every such window
+        # runs the same program, so its static size is the bucket, not the value.
+        from xraylabtool.backend.shapes import bucket
+
+        window = bucket(y_arr.size, minimum=64)
+    else:
+        # Integers only, as np.ones() accepted: not 2.9, 3.0 or True.
+        if isinstance(window_size, bool | np.bool_):
+            window = None
+        else:
+            try:
+                window = operator.index(window_size)
+            except TypeError:
+                window = None
+        if window is None:
+            raise TypeError(
+                f"expected a sequence of integers or a single integer, got '{window_size}'"
+            )
+    return _run_series("smooth_data", y_arr, window_size=window)
 
 
 def find_peaks(
@@ -338,19 +381,19 @@ def background_subtraction(
             length as ``y``)
         y: y-axis data. ``'polynomial'`` needs one dimension; ``'linear'`` also
             accepts an ``(N, k)`` array of ``k`` series in columns and subtracts
-            each column's own line (one device call per column)
+            each column's own line (one device call)
         method: Background subtraction method ('linear', 'polynomial')
 
     Returns:
         Background-subtracted y data, float64, the shape of ``y``
     """
-    y_arr = np.asarray(y, dtype=np.float64)
+    y_arr = _real(y)
     if method not in ("linear", "polynomial"):
         raise ValueError("Method must be 'linear' or 'polynomial'")
     if method == "linear" and y_arr.ndim == 2 and y_arr.shape[0] > 0:
         if y_arr.shape[1] == 0:
             return y_arr.copy()
-        return np.stack([_run_series("linear_background", c) for c in y_arr.T], axis=1)
+        return _run_columns("linear_background_columns", y_arr)
     y_arr = _series(y_arr)
     if y_arr.size == 0:
         raise IndexError("index 0 is out of bounds for axis 0 with size 0")
@@ -383,7 +426,7 @@ def normalize_intensity(y: ArrayLike, method: str = "max") -> np.ndarray:
         Normalized intensity data, float64, the shape of ``y`` (a NumPy scalar
         for a 0-d input)
     """
-    y_arr = np.asarray(y, dtype=np.float64)
+    y_arr = _real(y)
     if method not in ("max", "area", "standard"):
         raise ValueError("Method must be 'max', 'area', or 'standard'")
     if method == "area":

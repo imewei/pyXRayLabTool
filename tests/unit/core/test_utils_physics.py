@@ -269,3 +269,132 @@ def test_the_polynomial_background_at_two_pad_widths_agrees():
     fit = np.polyfit([x[0], x[low], x[-1]], [y[0], y[low], y[-1]], 2)
     a, b = _two_widths("polynomial_background", [x, y], n, extra=(fit,))
     np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))
+
+
+# --- numerically stable reductions (external review F1) ---------------------
+
+
+def _offset_signal(n: int, seed: int) -> np.ndarray:
+    return 1e6 + 1e-8 * np.random.default_rng(seed).normal(size=n)
+
+
+def test_standard_normalisation_of_offset_data_matches_an_accurate_reference():
+    """A 1e6 offset swamps a 1e-8 spread: one-pass sums lose it, shifted sums do not.
+
+    NumPy itself loses about 1 % here (its mean is rounded at 1e-10), so the
+    reference sums the exact offsets from the first sample with ``math.fsum``.
+    """
+    import math
+
+    y = _offset_signal(17, 1)
+    d = y - y[0]
+    mean = math.fsum(d) / d.size
+    dev = d - mean
+    expected = dev / math.sqrt(math.fsum(dev**2) / d.size)
+    np.testing.assert_allclose(
+        utils.normalize_intensity(y, "standard"), expected, rtol=1e-10, atol=1e-12
+    )
+
+
+def test_standard_normalisation_of_offset_data_agrees_across_pad_widths():
+    y = _offset_signal(50, 0)
+    a, b = _two_widths("normalize_intensity", [y], 50, method="standard")
+    np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))
+
+
+def test_a_constant_series_is_exactly_constant_after_smoothing():
+    y = np.full(30, 0.1)
+    for window in (3, 7, 100):
+        np.testing.assert_array_equal(utils.smooth_data(None, y, window), y)
+
+
+def test_smoothing_offset_data_agrees_across_pad_widths():
+    y = _offset_signal(50, 2)
+    a, b = _two_widths("smooth_data", [y], 50, window_size=5)
+    np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))
+
+
+# --- complex input is rejected, never cast (external review F2) --------------
+
+_COMPLEX_CALLS = {
+    "energy_to_wavelength": lambda c: utils.energy_to_wavelength(c(10.0)),
+    "wavelength_to_energy": lambda c: utils.wavelength_to_energy(c(1.5)),
+    "bragg_angle_d": lambda c: utils.bragg_angle(c(3.0), 1.54),
+    "bragg_angle_wavelength": lambda c: utils.bragg_angle(3.0, c(1.54)),
+    "d_spacing_cubic": lambda c: utils.d_spacing_cubic(1, 1, 1, c(5.4)),
+    "d_spacing_tetragonal": lambda c: utils.d_spacing_tetragonal(1, 0, 1, 4.0, c(6.0)),
+    "d_spacing_orthorhombic": lambda c: utils.d_spacing_orthorhombic(
+        1, 1, 1, 4.0, 5.0, c(6.0)
+    ),
+    "q_from_angle": lambda c: utils.q_from_angle(c(30.0), 1.54),
+    "angle_from_q": lambda c: utils.angle_from_q(c(2.0), 1.54),
+}
+_COMPLEX_SIGNAL_CALLS = {
+    "smooth_data": lambda z: utils.smooth_data(None, z),
+    "background_subtraction_linear": lambda z: utils.background_subtraction(None, z),
+    "background_subtraction_polynomial": lambda z: utils.background_subtraction(
+        np.arange(z.size, dtype=float), z, "polynomial"
+    ),
+    "background_subtraction_x": lambda z: utils.background_subtraction(
+        z, z.real, "polynomial"
+    ),
+    "normalize_max": utils.normalize_intensity,
+    "normalize_area": lambda z: utils.normalize_intensity(z, "area"),
+    "normalize_standard": lambda z: utils.normalize_intensity(z, "standard"),
+}
+
+
+@pytest.mark.parametrize("name", sorted(_COMPLEX_CALLS))
+@pytest.mark.parametrize(
+    "make", [complex, np.complex128, lambda v: np.array(complex(v))]
+)
+def test_complex_scalars_raise_type_error_without_a_warning(name, make):
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # a ComplexWarning would be a different failure
+        with pytest.raises(TypeError):
+            _COMPLEX_CALLS[name](lambda v: make(v + 1j))
+
+
+@pytest.mark.parametrize("name", sorted(_COMPLEX_SIGNAL_CALLS))
+def test_complex_signals_raise_type_error_without_a_warning(name):
+    import warnings
+
+    z = np.arange(1.0, 9.0) + 1j * np.arange(8.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with pytest.raises(TypeError, match="complex signal data"):
+            _COMPLEX_SIGNAL_CALLS[name](z)
+
+
+# --- multi-column linear background in one call (external review F3) ----------
+
+
+@pytest.mark.parametrize("columns", [1, 3, 5])
+def test_multi_column_background_is_one_upload_and_one_fetch(columns):
+    y = np.arange(40.0)[:, None] ** np.arange(1, columns + 1) + 3.0
+    utils.background_subtraction(None, y)  # warm
+    before = runtime.thread_transfer_counts()
+    got = utils.background_subtraction(None, y)
+    after = runtime.thread_transfer_counts()
+    assert {k: after[k] - before[k] for k in ("upload", "fetch")} == {
+        "upload": 1,
+        "fetch": 1,
+    }
+    assert got.shape == y.shape
+    for k in range(columns):
+        np.testing.assert_allclose(
+            got[:, k], y[:, k] - np.linspace(y[0, k], y[-1, k], 40), atol=1e-9
+        )
+
+
+def test_multi_column_background_compiles_once_per_shape_bucket():
+    def column_stack(rows, columns):
+        return np.arange(float(rows))[:, None] ** np.arange(1, columns + 1) + 1.0
+
+    utils.background_subtraction(None, column_stack(50, 3))  # warm: 64 rows, 4 columns
+    with record_compiles() as names:
+        utils.background_subtraction(None, column_stack(40, 4))
+        utils.background_subtraction(None, column_stack(64, 3))
+    assert not [n for n in names if "background" in n], names
