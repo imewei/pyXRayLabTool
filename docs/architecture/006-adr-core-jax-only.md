@@ -219,6 +219,12 @@ one block (changes the grouping design); neither is applied.
   `x * (1 / m)` and `1 / m` is flushed as a subnormal. It is physically
   unreachable and parked; a status guard (fail when `1 / mw` is subnormal) is
   the fix if wanted.
+- A single material whose own padded `K x M` exceeds the block budget (about
+  9 or more distinct elements at roughly 300k energies, or 65 or more at 40k)
+  runs as one `F = 1` block, up to about 1.3x over the planning bound. The budget
+  is a conservative bound on `F`; splitting one material would need a second
+  program call per public call, which the transfer contract (one upload and one
+  fetch per call) forbids.
 - A device exception (for example out-of-memory) aborts the whole
   `calculate_xray_properties` or batch call. Skip-and-log is per formula only
   (spec section 6); the `F`-block budget makes device failures unlikely.

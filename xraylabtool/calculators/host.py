@@ -200,6 +200,11 @@ def run_optical_blocks(
     for k_pad, members in groups.items():
         # ``block_for`` rounds down, so ask for the padded count: a group that fits
         # the memory budget is one block, a larger one is cut at the budget.
+        # Exception to the budget: ``block_for`` never returns less than 1, so one
+        # material whose own ``K·M`` exceeds the budget (>= 9 elements at ~300k
+        # energies, >= 65 at ~40k) still runs as an F=1 block, about 1.3x over the
+        # planning bound. A material cannot be split without a second program call
+        # (spec section 1); see "Known limitations" in ADR-006.
         block = block_for(None, k_pad * m_pad, bucket_pow2(len(members)))
         # A ladder rung (640, 800, ...) would be padded up to the next power of two
         # by run_optical and exceed the budget, so floor to the power of two; a cap
