@@ -43,6 +43,7 @@ __all__ = [
     "run_optical_blocks",
     "run_rows",
     "run_scattering",
+    "run_series",
     "run_tail",
 ]
 
@@ -443,6 +444,24 @@ def run_map(fn: Callable[..., Any], *arrays: Any) -> Any:
         lambda dev: _jitted(fn)(*dev), tuple(_pad_last(a.ravel(), width) for a in flat)
     )
     return jax.tree_util.tree_map(lambda x: np.array(x[:m]).reshape(shape), got)
+
+
+def run_series(
+    fn: Callable[..., Any], *series: np.ndarray, extra: Sequence[Any] = ()
+) -> np.ndarray:
+    """Apply ``fn(*padded, n, *extra)`` to equally long 1-D host arrays on the device.
+
+    Each series is padded to the energy bucket with its last entry (so one compile
+    serves every length in it) and the true length ``n`` is the final argument;
+    ``fn`` masks the padding. Returns the first ``n`` entries of the result.
+    """
+    n = series[0].size
+    if n == 0:
+        return np.empty(0, dtype=np.float64)
+    width = _width(n, None)
+    padded = tuple(_pad_last(s, width) for s in series)
+    got = execute(lambda dev: _jitted(fn)(*dev), (*padded, np.int32(n), *extra))
+    return np.array(got[:n])
 
 
 def run_rows(z: int, e_ev: Any) -> np.ndarray:

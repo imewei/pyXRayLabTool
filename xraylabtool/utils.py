@@ -7,8 +7,8 @@ mathematical operations, and other common tasks in X-ray analysis.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from functools import lru_cache
+from collections.abc import Callable, Iterator
+from functools import cache, lru_cache, partial
 import re
 from typing import TYPE_CHECKING, Any, NoReturn
 
@@ -26,6 +26,43 @@ from xraylabtool.exceptions import AtomicDataError, UnknownElementError
 
 if TYPE_CHECKING:
     from xraylabtool.typing_extensions import ArrayLike, FloatLike
+
+
+# Physics and signal helpers run in jax.numpy (xraylabtool/_physics.py); the
+# wrappers below validate on the host and import _physics inside each call so
+# that `import xraylabtool` stays JAX-free. Host by design (spec section 9):
+# find_peaks, progress_bar, save_processed_data, parse_formula.
+
+
+@cache
+def _program(name: str, **static: Any) -> Callable[..., Any]:
+    """The ``_physics`` function ``name`` with its static arguments bound (cached)."""
+    from xraylabtool import _physics
+
+    fn: Callable[..., Any] = getattr(_physics, name)
+    return partial(fn, **static) if static else fn
+
+
+def _map(name: str, *arrays: Any, **static: Any) -> np.ndarray:
+    """Run an elementwise ``_physics`` function on host arrays (broadcast shape out)."""
+    from xraylabtool.calculators.host import run_map
+
+    return run_map(_program(name, **static), *arrays)  # type: ignore[no-any-return]
+
+
+def _series(y: ArrayLike) -> np.ndarray:
+    y_arr = np.asarray(y, dtype=np.float64)
+    if y_arr.ndim != 1:
+        raise ValueError("Signal data must be one-dimensional")
+    return y_arr
+
+
+def _run_series(
+    name: str, *series: np.ndarray, extra: tuple[Any, ...] = (), **static: Any
+) -> np.ndarray:
+    from xraylabtool.calculators.host import run_series
+
+    return run_series(_program(name, **static), *series, extra=extra)
 
 
 # Module-level constant aliases — computed once at import time.
@@ -95,26 +132,10 @@ def wavelength_to_energy(wavelength: FloatLike, units: str = "angstrom") -> floa
     if not np.all(np.asarray(wavelength) > 0):
         raise ValueError("Wavelength must be positive")
 
-    # Convert wavelength to meters
-    if units == "angstrom":
-        wavelength_m = wavelength * 1e-10
-    elif units == "nm":
-        wavelength_m = wavelength * 1e-9
-    elif units == "m":
-        wavelength_m = wavelength
-    else:
+    if units not in ("angstrom", "nm", "m"):
         raise ValueError("Units must be 'angstrom', 'nm', or 'm'")
 
-    # Get constants explicitly
-    planck_const = get_planck_constant()
-    speed_light = get_speed_of_light()
-    electron_charge = get_electron_charge()
-
-    # Calculate energy using E = hc/λ
-    energy_j = (planck_const * speed_light) / wavelength_m
-    energy_kev = energy_j / (electron_charge * 1000)
-
-    return float(energy_kev)
+    return float(_map("wavelength_to_energy", wavelength, units=units))
 
 
 def energy_to_wavelength(energy: FloatLike, units: str = "angstrom") -> float:
@@ -128,29 +149,12 @@ def energy_to_wavelength(energy: FloatLike, units: str = "angstrom") -> float:
     Returns:
         Wavelength in specified units
     """
-    # Get constants explicitly
-    planck_const = get_planck_constant()
-    speed_light = get_speed_of_light()
-    electron_charge = get_electron_charge()
-
     if not np.all(np.asarray(energy) > 0):
         raise ValueError("Energy must be positive")
-
-    # Convert energy to Joules
-    energy_j = energy * electron_charge * 1000
-
-    # Calculate wavelength using λ = hc/E
-    wavelength_m = (planck_const * speed_light) / energy_j
-
-    # Convert to desired units
-    if units == "angstrom":
-        return float(wavelength_m / 1e-10)
-    elif units == "nm":
-        return float(wavelength_m / 1e-9)
-    elif units == "m":
-        return float(wavelength_m)
-    else:
+    if units not in ("angstrom", "nm", "m"):
         raise ValueError("Units must be 'angstrom', 'nm', or 'm'")
+
+    return float(_map("energy_to_wavelength", energy, units=units))
 
 
 def bragg_angle(d_spacing: FloatLike, wavelength: FloatLike, order: int = 1) -> float:
@@ -177,10 +181,7 @@ def bragg_angle(d_spacing: FloatLike, wavelength: FloatLike, order: int = 1) -> 
     if sin_theta > 1:
         raise ValueError("No diffraction possible for given parameters")
 
-    theta_rad = np.arcsin(sin_theta)
-    theta_deg = np.degrees(theta_rad)
-
-    return float(theta_deg)
+    return float(_map("bragg_angle", d_spacing, wavelength, order))
 
 
 def _check_lattice(h: Any, k: Any, miller_l: Any, *lengths: Any) -> None:
@@ -204,7 +205,7 @@ def d_spacing_cubic(h: int, k: int, miller_l: int, a: FloatLike) -> float:
         d-spacing in Angstroms
     """
     _check_lattice(h, k, miller_l, a)
-    return float(a / np.sqrt(h**2 + k**2 + miller_l**2))
+    return float(_map("d_spacing_cubic", h, k, miller_l, a))
 
 
 def d_spacing_tetragonal(
@@ -222,7 +223,7 @@ def d_spacing_tetragonal(
         d-spacing in Angstroms
     """
     _check_lattice(h, k, miller_l, a, c)
-    return float(1 / np.sqrt((h**2 + k**2) / a**2 + miller_l**2 / c**2))
+    return float(_map("d_spacing_tetragonal", h, k, miller_l, a, c))
 
 
 def d_spacing_orthorhombic(
@@ -239,7 +240,7 @@ def d_spacing_orthorhombic(
         d-spacing in Angstroms
     """
     _check_lattice(h, k, miller_l, a, b, c)
-    return float(1 / np.sqrt(h**2 / a**2 + k**2 / b**2 + miller_l**2 / c**2))
+    return float(_map("d_spacing_orthorhombic", h, k, miller_l, a, b, c))
 
 
 def q_from_angle(two_theta: FloatLike, wavelength: FloatLike) -> float:
@@ -253,9 +254,7 @@ def q_from_angle(two_theta: FloatLike, wavelength: FloatLike) -> float:
     Returns:
         Momentum transfer q in Ų⁻¹
     """
-    theta_rad = np.radians(two_theta / 2)
-    q = (4 * np.pi * np.sin(theta_rad)) / wavelength
-    return float(q)
+    return float(_map("q_from_angle", two_theta, wavelength))
 
 
 def angle_from_q(q: FloatLike, wavelength: FloatLike) -> float:
@@ -274,18 +273,14 @@ def angle_from_q(q: FloatLike, wavelength: FloatLike) -> float:
     if sin_theta > 1:
         raise ValueError("Invalid q value for given wavelength")
 
-    theta_rad = np.arcsin(sin_theta)
-    two_theta_deg = 2 * np.degrees(theta_rad)
-
-    return float(two_theta_deg)
+    return float(_map("angle_from_q", q, wavelength))
 
 
 def smooth_data(x: ArrayLike, y: ArrayLike, window_size: int = 5) -> np.ndarray:
     """
-    Apply moving average smoothing to data using optimized NumPy convolution.
+    Apply moving average smoothing to one-dimensional data (``jax.numpy`` convolution).
 
-    This optimized version uses numpy convolution instead of pandas rolling,
-    providing 3-5x speedup for typical use cases.
+    Edges are replicated; a window of at least ``len(y)`` returns the mean.
 
     Args:
         x: x-axis data (not used but kept for consistency)
@@ -298,22 +293,7 @@ def smooth_data(x: ArrayLike, y: ArrayLike, window_size: int = 5) -> np.ndarray:
     if window_size < 1:
         raise ValueError("Window size must be at least 1")
 
-    # Convert to numpy array for consistent operations
-    y_arr = np.asarray(y)
-
-    if window_size >= len(y_arr):
-        return np.full(len(y_arr), np.mean(y_arr), dtype=np.float64)
-
-    # Use numpy convolution - much faster than pandas rolling
-    kernel = np.ones(window_size, dtype=np.float64) / window_size
-
-    # Handle edge effects with reflection padding
-    half_window = window_size // 2
-    padded_y = np.pad(y_arr, half_window, mode="edge")
-    convolved = np.convolve(padded_y, kernel, mode="valid")
-
-    # Ensure we return exactly the same length as input
-    return convolved[: len(y_arr)]
+    return _run_series("smooth_data", _series(y), window_size=int(window_size))
 
 
 def find_peaks(
@@ -361,25 +341,24 @@ def background_subtraction(
     Returns:
         Background-subtracted y data
     """
-    # Convert to numpy arrays for consistent indexing
-    x_arr = np.asarray(x)
-    y_arr = np.asarray(y)
-
-    if method == "linear":
-        # Linear background between first and last points
-        background = np.linspace(y_arr[0], y_arr[-1], len(y_arr))
-    elif method == "polynomial":
-        # Fit quadratic polynomial using x values
-        # Use endpoints and minimum point for fitting
-        min_idx = np.argmin(y_arr)
-        x_points = np.array([x_arr[0], x_arr[min_idx], x_arr[-1]])
-        y_points = np.array([y_arr[0], y_arr[min_idx], y_arr[-1]])
-        coeffs = np.polyfit(x_points, y_points, 2)
-        background = np.polyval(coeffs, x_arr)
-    else:
+    y_arr = _series(y)
+    if method not in ("linear", "polynomial"):
         raise ValueError("Method must be 'linear' or 'polynomial'")
-
-    return y_arr - background
+    if y_arr.size == 0:
+        raise IndexError("index 0 is out of bounds for axis 0 with size 0")
+    if method == "linear":
+        return _run_series("linear_background", y_arr)
+    x_arr = _series(x)
+    if x_arr.size != y_arr.size:
+        raise ValueError("x and y must have the same length")
+    # shortcut: the 3-point quadratic fit stays on the host (NumPy lstsq). Its
+    # rounding noise is part of the frozen oracle and no jnp solver reproduces it;
+    # the evaluation and the subtraction run on the device.
+    low = int(np.argmin(y_arr))
+    coefficients = np.polyfit(
+        [x_arr[0], x_arr[low], x_arr[-1]], [y_arr[0], y_arr[low], y_arr[-1]], 2
+    )
+    return _run_series("polynomial_background", x_arr, y_arr, extra=(coefficients,))
 
 
 def normalize_intensity(y: ArrayLike, method: str = "max") -> np.ndarray:
@@ -393,17 +372,14 @@ def normalize_intensity(y: ArrayLike, method: str = "max") -> np.ndarray:
     Returns:
         Normalized intensity data
     """
-    # Convert to numpy array for consistent operations
-    y_arr = np.asarray(y)
-
-    if method == "max":
-        return y_arr / float(np.max(y_arr))
-    elif method == "area":
-        return y_arr / float(np.trapezoid(y_arr))
-    elif method == "standard":
-        return (y_arr - float(np.mean(y_arr))) / float(np.std(y_arr))
-    else:
+    y_arr = _series(y)
+    if method not in ("max", "area", "standard"):
         raise ValueError("Method must be 'max', 'area', or 'standard'")
+    if y_arr.size == 0 and method == "max":
+        raise ValueError(
+            "zero-size array to reduction operation maximum which has no identity"
+        )
+    return _run_series("normalize_intensity", y_arr, method=method)
 
 
 def progress_bar(iterable: Any, desc: str = "Processing") -> Any | Iterator[Any]:
