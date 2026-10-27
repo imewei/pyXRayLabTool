@@ -200,6 +200,7 @@ exclude = ["tests*", "docs*", "*.tests*", "*.tests"]
 xraylabtool = [
     "data/AtomicScatteringFactor/*.nff",
     "data/kkcalc/asf.npz",
+    "data/scattering_tables.npz",
     "data/kkcalc/LICENSE-kkcalc.txt",
     "py.typed",  # PEP 561 typing marker
 ]
