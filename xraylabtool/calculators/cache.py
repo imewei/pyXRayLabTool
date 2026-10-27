@@ -148,6 +148,11 @@ def clear_scattering_factor_cache() -> None:
     if tables is not None:
         tables.clear_tables()
 
+    # The per-formula encoding memo of the core path (when core was ever imported)
+    core = sys.modules.get("xraylabtool.calculators.core")
+    if core is not None:
+        core._encode_material.cache_clear()
+
     # Clear LRU caches, including the shared loader that get_bulk_atomic_data wraps
     from xraylabtool.data_handling.atomic_cache import get_bulk_atomic_data_fast
 

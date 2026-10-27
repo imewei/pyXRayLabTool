@@ -11,6 +11,7 @@ public API functions that wire everything together.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np  # Host-side validation and result containers
@@ -98,7 +99,12 @@ def _validate_formula_and_density(formula_str: str, mass_density: FloatLike) -> 
     if not formula_str or not isinstance(formula_str, str):
         raise FormulaError("Formula must be a non-empty string", formula_str)
 
-    if np.any(np.asarray(mass_density) <= 0):
+    # Plain numbers skip the ndarray round trip (the common batch case).
+    if isinstance(mass_density, float | int):
+        non_positive = bool(mass_density <= 0)
+    else:
+        non_positive = bool(np.any(np.asarray(mass_density) <= 0))
+    if non_positive:
         raise ValueError("Mass density must be positive")
 
 
@@ -256,13 +262,16 @@ def _density_value(mass_density: Any) -> float:
     return float(mass_density)
 
 
+@lru_cache(maxsize=4096)
 def _encode_material(formula: str) -> tuple[np.ndarray, np.ndarray, float, float]:
     """``encode_formula`` after the checks and cache effects of the pre-device path.
 
     An unknown symbol raises the atomic-data lookup's ``UnknownElementError``; a
     symbol without a data file (for example ``Pu``) raises the loader's
     ``FileNotFoundError``; every element read fills the element cache that
-    :func:`get_cached_elements` reports.
+    :func:`get_cached_elements` reports. Memoised per formula (failures are not
+    cached, so they raise every time); the arrays are read-only and
+    ``clear_scattering_factor_cache`` clears the memo.
     """
     from xraylabtool.calculators.optics import encode_formula
     from xraylabtool.utils import parse_formula
@@ -271,7 +280,9 @@ def _encode_material(formula: str) -> tuple[np.ndarray, np.ndarray, float, float
     get_bulk_atomic_data(tuple(symbols))
     for symbol in symbols:
         create_scattering_factor_interpolators(symbol)
-    return encode_formula(formula)
+    z, counts, molecular_weight, number_of_electrons = encode_formula(formula)
+    z.flags.writeable = counts.flags.writeable = False
+    return z, counts, molecular_weight, number_of_electrons
 
 
 def _material_properties(
