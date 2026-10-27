@@ -87,7 +87,9 @@ def cmd_compare(args: Any) -> int:
     try:
         # Lazy imports for comparison functionality
         from xraylabtool.analysis import MaterialComparator
+        from xraylabtool.backend.runtime import enable_persistent_cache
 
+        enable_persistent_cache()
         parsed_materials = _parse_materials(args.materials)
         if parsed_materials is None:
             return 1

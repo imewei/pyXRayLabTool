@@ -78,9 +78,9 @@ def cmd_kk(args: Any) -> int:
         output_format = "json" if suffix == ".json" else "csv"
 
     # Lazy imports for this command
+    from xraylabtool.backend.runtime import enable_persistent_cache
     from xraylabtool.exceptions import XRayLabToolError
     from xraylabtool.kk import kk_calculate_real, load_nearedge
-    from xraylabtool.kk._device import enable_persistent_cache
 
     # The CLI never calls warm_up (a one-shot call must not compile formulas it
     # was not asked for); it only lets repeated invocations reuse compiled code.

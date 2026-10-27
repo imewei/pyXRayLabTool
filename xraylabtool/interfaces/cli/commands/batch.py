@@ -106,8 +106,10 @@ def _process_batch_materials(
 ) -> list[dict[str, Any]]:
     """Process all materials and return results with progress tracking."""
     # Import required calculation function
+    from xraylabtool.backend.runtime import enable_persistent_cache
     from xraylabtool.calculators.core import calculate_single_material_properties
 
+    enable_persistent_cache()
     results = []
 
     # Initialize progress tracking and performance monitoring
