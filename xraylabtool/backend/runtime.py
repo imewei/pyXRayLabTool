@@ -79,8 +79,8 @@ def _user_cache_dir(platform: str | None = None) -> Path:
 def enable_persistent_cache() -> bool:
     """Turn on JAX's persistent compile cache in the OS user-cache directory.
 
-    Called by the ``kk`` CLI command and the GUI launcher, never by the
-    library. Does nothing when ``XRAYLABTOOL_NO_JAX_CACHE=1`` or when the user
+    Called by the ``calc``, ``batch``, ``compare`` and ``kk`` CLI commands and
+    the GUI launcher, never by the library. Does nothing when ``XRAYLABTOOL_NO_JAX_CACHE=1`` or when the user
     already set ``jax_compilation_cache_dir``. When it enables the cache it
     also sets ``jax_persistent_cache_min_compile_time_secs`` to 0 (JAX's
     default of 1 s would skip most kk programs) unless the user configured

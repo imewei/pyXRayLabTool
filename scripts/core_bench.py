@@ -382,6 +382,10 @@ def main() -> int:
     parser.add_argument("--worker")
     parser.add_argument("--backend", default="default")
     args = parser.parse_args()
+    if args.cli_only and args.device != "cpu":
+        parser.error(
+            "--cli-only needs --device cpu (the CLI rows are only run by the cpu invocation)"
+        )
     if args.worker:
         worker(args.worker, args.backend)
         return 0
