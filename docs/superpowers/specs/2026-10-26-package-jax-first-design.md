@@ -260,8 +260,12 @@ Pure functions, x64 as a precondition:
   tuple `(OpticalProps, ok)`: `OpticalProps` is the pytree of the nine per-energy
   arrays (the `XRayResult` per-energy fields plus `electron_density` as a scalar leaf)
   and `ok` a scalar bool.
-- Status: `ok = all(isfinite(δ)) & all(isfinite(β))` per material, returned with
-  the result in the same fetch.
+- Status: `ok = all(isfinite(δ)) & all(isfinite(β)) & isfinite(SCATTERING_FACTOR * rho / mw)`
+  per material, returned with the result in the same fetch. Amended in Task 3 (R17,
+  R25): `derive` and the programs form δ and β as `((λ² · SCATTERING_FACTOR · ρ) · f_sum) / mw`
+  (the molecular weight divides last, so no subnormal intermediate appears), and the
+  extra `isfinite` term keeps the legacy failure for a tiny molecular weight, where
+  `SCATTERING_FACTOR · ρ / mw` overflowed.
 
 **Standalone primitives are separate.** The public helpers `calculate_critical_angle`,
 `calculate_attenuation_length` and `calculate_transmission` keep their own semantics,
@@ -319,7 +323,14 @@ repeats, in input order; `chunk_iterator`, `save_batch_results` and `load_batch_
 are untouched. Each `F`-block costs one upload and one fetch (P11 is per block). `BatchConfig.chunk_size` is
 the upper bound of materials per block; `max_workers` and the parallel switches are
 accepted and ignored (logged once at DEBUG) so existing configs keep working;
-`MemoryMonitor` keeps checking host result memory; CSV/Parquet loading and saving stay
+Batch inputs given as lists follow one rule: each item is screened on the host before
+its row is appended, so a bad item never shifts the others. A per-item density that is
+a sequence or array is rejected like any non-number (`calculate_xray_properties` raises
+the up-front `ValueError`, `calculate_multiple_xray_properties` skips and logs the item,
+`calculate_batch_properties` warns and returns `None` for it), and energies are grouped
+by raw `(shape, dtype, bytes)` so items with different energy inputs run in their own
+group and follow their own energies. `calculate_derived_quantities` accepts plain lists
+(the NumPy-era code raised `TypeError`). `MemoryMonitor` keeps checking host result memory; CSV/Parquet loading and saving stay
 on the host. `ProcessPoolExecutor` and `ThreadPoolExecutor` are removed (fork after
 JAX threads exist can deadlock, and `filterwarnings = error` turns the JAX
 `RuntimeWarning` into failures; CI runs Python 3.12 and 3.13 where Linux still forks).
@@ -417,6 +428,10 @@ warms the core programs for its Compute path on an idle worker (as
   tests, which are rewritten (not weakened) for the new design.
 
 ## Acceptance gates (CPU = this machine with `JAX_PLATFORMS=cpu`)
+
+CPU rows run with `JAX_PLATFORMS=cpu`, so on a CUDA machine the cpu-host row is the CPU
+device; the CLI cpu-host rows also hide `nvidia-smi` from `PATH`. GPU rows leave the
+platform unset.
 
 | # | Gate (warm unless stated) | Binding value | Spike | Today |
 |---|---|---|---|---|
