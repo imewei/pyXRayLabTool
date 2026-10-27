@@ -1,21 +1,15 @@
-"""JIT-compiled math kernels and scattering factor calculation functions."""
+"""Legacy math kernels of the NumPy/JAX backend twin; the calculators no longer call them.
 
-# ruff: noqa: RUF002
+The public ``calculate_scattering_factors`` and ``calculate_derived_quantities``
+now live in :mod:`xraylabtool.calculators.derived_quantities` and run on the
+device program.
+"""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from xraylabtool.backend import ops
-
-if TYPE_CHECKING:
-    from xraylabtool.typing_extensions import (
-        EnergyArray,
-        FloatLike,
-        InterpolatorProtocol,
-        OpticalConstantArray,
-        WavelengthArray,
-    )
 
 
 def _scattering_math_kernel(
@@ -103,144 +97,3 @@ def _get_derived_kernel() -> Any:
             )
         return _jit_cache["derived"]
     return _derived_quantities_kernel_raw
-
-
-def calculate_scattering_factors(
-    energy_ev: EnergyArray,
-    wavelength: WavelengthArray,
-    mass_density: FloatLike,
-    molecular_weight: FloatLike,
-    element_data: list[tuple[float, InterpolatorProtocol, InterpolatorProtocol]],
-) -> tuple[
-    OpticalConstantArray,
-    OpticalConstantArray,
-    OpticalConstantArray,
-    OpticalConstantArray,
-]:
-    """
-    Optimized vectorized calculation of X-ray scattering factors and properties.
-
-    This function performs the core calculation of dispersion, absorption, and total
-    scattering factors for a material based on its elemental composition.
-    Interpolation runs in Python; the linear algebra is JIT-compiled when JAX is active.
-
-    Args:
-        energy_ev: X-ray energies in eV (numpy array)
-        wavelength: Corresponding wavelengths in meters (numpy array)
-        mass_density: Material density in g/cm³
-        molecular_weight: Molecular weight in g/mol
-        element_data: List of tuples (count, f1_interp, f2_interp) for each element
-
-    Returns:
-        Tuple of (dispersion, absorption, f1_total, f2_total) arrays
-
-    Mathematical Background:
-    The dispersion and absorption coefficients are calculated using:
-    - δ = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f1ᵢ) / M  # noqa: RUF002
-    - β = (λ²/2π) × rₑ × ρ × Nₐ × (Σᵢ nᵢ × f2ᵢ) / M  # noqa: RUF002
-
-    Where:
-    - λ: X-ray wavelength
-    - rₑ: Thomson scattering length
-    - ρ: Mass density
-    - Nₐ: Avogadro's number
-    - nᵢ: Number of atoms of element i
-    - f1ᵢ, f2ᵢ: Atomic scattering factors for element i
-    - M: Molecular weight
-    """
-    from xraylabtool.constants import SCATTERING_FACTOR
-
-    n_energies = len(energy_ev)
-    n_elements = len(element_data)
-
-    # Handle empty element data case
-    if n_elements == 0:
-        z = ops.zeros(n_energies, dtype=ops.float64)
-        return z, z, z, z
-
-    common_factor = SCATTERING_FACTOR * mass_density / molecular_weight
-    wave_sq = ops.square(wavelength)
-
-    # Evaluate interpolators (Python-side, outside JIT boundary)
-    f1_rows = []
-    f2_rows = []
-    count_list = []
-    for count, f1_interp, f2_interp in element_data:
-        f1_rows.append(ops.asarray(f1_interp(energy_ev), dtype=ops.float64))
-        f2_rows.append(ops.asarray(f2_interp(energy_ev), dtype=ops.float64))
-        count_list.append(float(count))
-
-    f1_matrix = ops.asarray(f1_rows, dtype=ops.float64)
-    f2_matrix = ops.asarray(f2_rows, dtype=ops.float64)
-    counts = ops.asarray(count_list, dtype=ops.float64)
-
-    # Dispatch to JIT-compiled math kernel
-    kernel = _get_scattering_kernel()
-    return kernel(f1_matrix, f2_matrix, counts, wave_sq, common_factor)  # type: ignore[no-any-return]
-
-
-def calculate_derived_quantities(
-    wavelength: WavelengthArray,
-    dispersion: OpticalConstantArray,
-    absorption: OpticalConstantArray,
-    mass_density: FloatLike,
-    molecular_weight: FloatLike,
-    number_of_electrons: FloatLike,
-) -> tuple[
-    float,
-    OpticalConstantArray,
-    OpticalConstantArray,
-    OpticalConstantArray,
-    OpticalConstantArray,
-]:
-    """
-    Calculate derived X-ray optical quantities from dispersion and absorption.
-
-    Args:
-        wavelength: X-ray wavelengths in meters (numpy array)
-        dispersion: Dispersion coefficients δ (numpy array)
-        absorption: Absorption coefficients β (numpy array)
-        mass_density: Material density in g/cm³
-        molecular_weight: Molecular weight in g/mol
-        number_of_electrons: Total electrons per molecule
-
-    Returns:
-        Tuple of (electron_density, critical_angle, attenuation_length, re_sld, im_sld)
-        - electron_density: Electron density in electrons/Å³ (scalar)
-        - critical_angle: Critical angle in degrees (numpy array)
-        - attenuation_length: Attenuation length in cm (numpy array)
-        - re_sld: Real part of SLD in Å⁻² (numpy array)
-        - im_sld: Imaginary part of SLD in Å⁻² (numpy array)
-    """
-    from xraylabtool.constants import AVOGADRO, PI
-
-    # Numerical stability checks must run outside any JIT region because they
-    # branch on concrete array values (ops.any returns a Python bool here).
-    # These guards are intentionally kept as host-side checks.
-    if not ops.all(ops.isfinite(dispersion)) or not ops.all(ops.isfinite(absorption)):
-        raise ValueError(
-            "Non-finite values (NaN or Inf) detected in dispersion or absorption coefficients"
-        )
-
-    # Negative dispersion is physical: near absorption edges f1 can be negative
-    # (anomalous dispersion), so delta < 0 is valid. The kernel reports a critical
-    # angle of 0 there (no total external reflection) and keeps absorption and
-    # attenuation, which remain meaningful.
-
-    # Calculate electron density (electrons per unit volume).
-    electron_density = float(
-        1e6
-        * float(mass_density)
-        / float(molecular_weight)
-        * AVOGADRO
-        * float(number_of_electrons)
-        / 1e30
-    )
-
-    # Dispatch to JIT-compiled math kernel for array computations
-    kernel = _get_derived_kernel()
-    critical_angle, attenuation_length, re_sld, im_sld = kernel(
-        wavelength, dispersion, absorption, PI
-    )
-
-    return electron_density, critical_angle, attenuation_length, re_sld, im_sld

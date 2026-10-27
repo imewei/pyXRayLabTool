@@ -20,6 +20,7 @@ Design: ``docs/superpowers/specs/2026-10-26-package-jax-first-design.md`` §1 an
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+import functools
 from typing import Any
 
 import jax
@@ -31,7 +32,10 @@ from xraylabtool.calculators import optics
 from xraylabtool.calculators.tables import ScatteringTables, load_tables
 
 __all__ = [
+    "device_tables",
+    "execute",
     "run_derived",
+    "run_map",
     "run_optical",
     "run_rows",
     "run_scattering",
@@ -41,14 +45,15 @@ __all__ = [
 Encoded = tuple[np.ndarray, np.ndarray, float, float]
 
 
-def _device_tables() -> ScatteringTables:
+def device_tables() -> ScatteringTables:
+    """The resident tables, checked to be device arrays."""
     tables = load_tables()
     if not all(isinstance(x, jax.Array) for x in jax.tree_util.tree_leaves(tables)):
         raise TypeError("the scattering tables must be device arrays (jax.Array)")
     return tables
 
 
-def _run(program: Callable[[Any], Any], payload: Any) -> Any:
+def execute(program: Callable[[Any], Any], payload: Any) -> Any:
     """Upload ``payload``, run ``program`` on the device tree, fetch the result."""
     runtime.ensure_x64()
     with jax.enable_x64(True):
@@ -130,8 +135,8 @@ def run_optical(
         mw[i], n_electrons[i], rho[i] = mwi, nei, density
     e = np.atleast_1d(np.asarray(energies, dtype=np.float64))
     m = e.size
-    tables = _device_tables()
-    got = _run(
+    tables = device_tables()
+    got = execute(
         lambda dev: optics._optical_program(tables, dev[:5], dev[5]),
         (z, counts, mw, rho, n_electrons, _pad_last(e, _width(m, m_bucket))),
     )
@@ -186,7 +191,7 @@ def run_tail(
         v = np.stack([_pad_last(r, width) for r in v])
         return np.vstack([v, np.zeros((f_pad - f, width))])
 
-    got = _run(
+    got = execute(
         lambda dev: optics._tail_program(
             (dev[0], dev[1], dev[2]), dev[3], dev[4], dev[5]
         ),
@@ -218,8 +223,8 @@ def run_scattering(
     c_pad[: zs.size] = np.asarray(counts, dtype=np.float64)
     e = np.atleast_1d(np.asarray(e_ev, dtype=np.float64))
     width = _width(e.size, None)
-    tables = _device_tables()
-    got = _run(
+    tables = device_tables()
+    got = execute(
         lambda dev: optics._scattering_program(
             tables, (dev[0], dev[1]), dev[2], dev[3], dev[4]
         ),
@@ -231,7 +236,7 @@ def run_scattering(
             np.float64(factor),
         ),
     )
-    return np.asarray(got[:, : e.size])
+    return np.array(got[:, : e.size])
 
 
 def run_derived(
@@ -253,7 +258,7 @@ def run_derived(
     """
     wl = np.atleast_1d(np.asarray(wavelength, dtype=np.float64))
     width = _width(wl.size, None)
-    got = _run(
+    got = execute(
         optics._derived_program,
         (
             _pad_last(wl, width),
@@ -264,15 +269,43 @@ def run_derived(
             np.float64(n_electrons),
         ),
     )
-    return float(got["electron_density"]), np.asarray(got["out"][:, : wl.size])
+    return float(got["electron_density"]), np.array(got["out"][:, : wl.size])
+
+
+@functools.cache
+def _jitted(fn: Callable[..., Any]) -> Callable[..., Any]:
+    return jax.jit(fn)
+
+
+def run_map(fn: Callable[..., Any], *arrays: Any) -> Any:
+    """Apply the elementwise function ``fn`` to host arrays on the device.
+
+    The arrays are broadcast against each other, flattened, padded to the energy
+    bucket (so one compile serves every length in it), run as one jitted call and
+    reshaped to the broadcast shape. ``fn`` may return an array or a tuple of
+    arrays; it must act elementwise.
+
+    Returns
+    -------
+    ndarray or tuple of ndarray
+        Host results with the broadcast shape.
+    """
+    flat = [np.asarray(a, dtype=np.float64) for a in np.broadcast_arrays(*arrays)]
+    shape = flat[0].shape
+    m = flat[0].size
+    width = _width(m, None)
+    got = execute(
+        lambda dev: _jitted(fn)(*dev), tuple(_pad_last(a.ravel(), width) for a in flat)
+    )
+    return jax.tree_util.tree_map(lambda x: np.array(x[:m]).reshape(shape), got)
 
 
 def run_rows(z: int, e_ev: Any) -> np.ndarray:
     """f1 and f2 of table row ``z`` at ``e_ev`` (eV) as a host ``[2, M]`` array."""
     e = np.atleast_1d(np.asarray(e_ev, dtype=np.float64))
-    tables = _device_tables()
-    got = _run(
+    tables = device_tables()
+    got = execute(
         lambda dev: optics._row_program(tables, dev[0], dev[1]),
         (np.int32(z), _pad_last(e, _width(e.size, None))),
     )
-    return np.asarray(got[:, : e.size])
+    return np.array(got[:, : e.size])

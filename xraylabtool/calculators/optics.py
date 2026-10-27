@@ -387,6 +387,15 @@ def _row_program(tables: ScatteringTables, z: Any, q: Any) -> Any:
 
 
 @jax.jit
+def _field_program(tables: ScatteringTables, z: Any, field: Any, q: Any) -> Any:
+    """f1 (``field=0``) or f2 (``field=1``) of table row ``z`` at ``q`` eV.
+
+    Run it inside ``jax.enable_x64(True)``; ``z`` and ``field`` are traced scalars.
+    """
+    return _row_pair(tables, z, q)[field]
+
+
+@jax.jit
 def _scattering_program(
     tables: ScatteringTables, batch: Any, e_ev: Any, wavelength: Any, factor: Any
 ) -> Any:

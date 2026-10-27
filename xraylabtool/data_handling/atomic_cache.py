@@ -526,6 +526,7 @@ class FastAtomicDataProvider:
         ComplexArray
             Complex scattering factors (f1 + if2)
         """
+        from xraylabtool.calculators import host
         from xraylabtool.calculators.core import create_scattering_factor_interpolators
 
         # Convert to numpy array if needed
@@ -534,12 +535,11 @@ class FastAtomicDataProvider:
         # Convert energy from keV to eV for interpolation
         energies_ev = energies_arr * 1000.0
 
-        # Get interpolators for this element
-        f1_interp, f2_interp = create_scattering_factor_interpolators(element)
+        # Validates the element (same errors as before) and gives its table row
+        f1_interp, _ = create_scattering_factor_interpolators(element)
 
-        # Interpolate f1 and f2 values
-        f1_values = f1_interp(energies_ev)
-        f2_values = f2_interp(energies_ev)
+        # Interpolate f1 and f2 values from the resident tables
+        f1_values, f2_values = host.run_rows(f1_interp.z, energies_ev)
 
         # Combine into complex array
         complex_factors = f1_values + 1j * f2_values

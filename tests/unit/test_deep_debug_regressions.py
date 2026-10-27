@@ -19,7 +19,6 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from xraylabtool.backend.array_ops import set_backend
 from xraylabtool.calculators.core import (
     _validate_and_process_energies,
     calculate_multiple_xray_properties,
@@ -34,12 +33,6 @@ DATA_DIR = (
     / "data"
     / "AtomicScatteringFactor"
 )
-
-
-@pytest.fixture
-def numpy_backend_after():
-    yield
-    set_backend("numpy")
 
 
 # ---------------------------------------------------------------------------
@@ -309,35 +302,16 @@ class TestExports:
 
 
 # ---------------------------------------------------------------------------
-# Backend switching and JIT behaviour
+# JIT behaviour
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.unit
-@pytest.mark.usefixtures("numpy_backend_after")
 class TestBackendState:
-    def test_set_backend_rebuilds_interpolators(self) -> None:
-        pytest.importorskip("jax")
-        scipy_interp = pytest.importorskip("scipy.interpolate")
-        from xraylabtool.backend.interpolation import JaxPchipInterpolator
-        from xraylabtool.calculators.cache import create_scattering_factor_interpolators
+    def test_device_program_compiles_once_across_materials(self) -> None:
+        """Density and formula are traced arguments: one compile per bucket."""
+        from xraylabtool.calculators import optics
 
-        set_backend("numpy")
-        f1, _ = create_scattering_factor_interpolators("Si")
-        assert isinstance(f1, scipy_interp.PchipInterpolator)
-        set_backend("jax")
-        f1, _ = create_scattering_factor_interpolators("Si")
-        assert isinstance(f1, JaxPchipInterpolator)
-        set_backend("numpy")
-        f1, _ = create_scattering_factor_interpolators("Si")
-        assert isinstance(f1, scipy_interp.PchipInterpolator)
-
-    def test_scatter_kernel_compiles_once_across_materials(self) -> None:
-        pytest.importorskip("jax")
-        from xraylabtool.calculators import kernels
-
-        set_backend("jax")
-        kernels._jit_cache.clear()
         sizes = []
         for formula, density in [
             ("Si", 2.33),
@@ -346,7 +320,7 @@ class TestBackendState:
             ("Cu", 8.96),
         ]:
             calculate_single_material_properties(formula, [8.0, 10.0], density)
-            sizes.append(kernels._jit_cache["scatter"]._cache_size())
+            sizes.append(optics._optical_program._cache_size())
         assert sizes[-1] == sizes[0], sizes
 
 
@@ -407,6 +381,9 @@ class TestBatchProcessing:
                 time.sleep(4)
             return real(formula, energies, density)
 
+        # Compile every bucket first: a cold compile would outlast the 0.5 s stall timeout.
+        for formula, density in zip(self.FORMULAS, self.DENSITIES, strict=True):
+            calculate_single_material_properties(formula, [8.0, 10.0], density)
         monkeypatch.setattr(bp, "process_single_calculation", slow)
         monkeypatch.setattr(bp, "_STALL_TIMEOUT_S", 0.5)
         start = time.monotonic()

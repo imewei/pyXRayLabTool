@@ -19,7 +19,10 @@ _ENERGIES = np.linspace(1.0, 20.0, 50)
 
 _NO_ENV_PROBE = """
 import numpy as np
+import os
 import xraylabtool
+
+os.environ.pop("JAX_ENABLE_X64", None)  # after the package import, before jax
 import jax
 
 assert not jax.config.jax_enable_x64, "the package must not set x64 at import"
@@ -70,7 +73,7 @@ def test_an_extra_upload_inside_the_program_call_is_rejected():
         return dev
 
     with pytest.raises(RuntimeError, match="1 upload and 1 fetch"):
-        host._run(sneaky, np.ones(2))
+        host.execute(sneaky, np.ones(2))
 
 
 def test_thread_counts_ignore_other_threads():

@@ -16,6 +16,7 @@ from xraylabtool.calculators.core import (
     get_cached_elements,
     is_element_cached,
     load_scattering_factor_data,
+    warm_up,
 )
 from xraylabtool.calculators.derived_quantities import (
     calculate_attenuation_length,
@@ -44,4 +45,5 @@ __all__ = [
     "is_element_cached",
     # Data loading
     "load_scattering_factor_data",
+    "warm_up",
 ]

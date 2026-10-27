@@ -319,6 +319,12 @@ class TestScalabilityBenchmarks:
         sizes = [10, 50, 100, 500, 1000]
         times = []
 
+        # Each energy bucket compiles once per process; time steady state only.
+        for size in sizes:
+            calculate_single_material_properties(
+                formula, np.linspace(5.0, 15.0, size), density
+            )
+
         for size in sizes:
             energies = np.linspace(5.0, 15.0, size)
 

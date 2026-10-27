@@ -104,6 +104,7 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
         "get_cached_elements",
         "is_element_cached",
         "load_scattering_factor_data",
+        "warm_up",
     ]:
         from xraylabtool.calculators import (
             XRayResult,
@@ -116,6 +117,7 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
             get_cached_elements,
             is_element_cached,
             load_scattering_factor_data,
+            warm_up,
         )
 
         globals().update(
@@ -134,6 +136,7 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
                 "get_cached_elements": get_cached_elements,
                 "is_element_cached": is_element_cached,
                 "load_scattering_factor_data": load_scattering_factor_data,
+                "warm_up": warm_up,
             }
         )
         return globals()[name]
@@ -360,6 +363,7 @@ __all__ = [
     # Validation functions
     "validate_energy_range",
     "validation",
+    "warm_up",
     "wavelength_angstrom_to_energy",
     # Utility functions
     "wavelength_to_energy",
