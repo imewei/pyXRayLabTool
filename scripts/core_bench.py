@@ -21,8 +21,8 @@ Backends: ``numpy`` calls ``set_backend("numpy")`` (skipped once the NumPy
 backend is removed), ``jax`` calls ``set_backend("jax")``; after the migration
 both rows collapse into the single JAX-first path. CPU rows set
 ``JAX_PLATFORMS=cpu``; GPU rows leave it unset. The CLI rows are measured with
-``nvidia-smi`` hidden from ``PATH`` ("cpu-host") and with the inherited
-``PATH`` ("gpu-host").
+``nvidia-smi`` hidden from ``PATH`` and ``JAX_PLATFORMS=cpu`` ("cpu-host") and with the
+inherited environment ("gpu-host"). ``--cli-only`` skips the core rows.
 """
 
 # ruff: noqa: PLC0415
@@ -343,7 +343,8 @@ def run_cli_rows(runs: int) -> None:
     exe = Path(sys.executable).parent / "xraylabtool"
     hosts: dict[str, dict[str, str]] = {}
     empty = tempfile.mkdtemp(prefix="core_bench_path_")
-    hosts["cpu-host"] = {**os.environ, "PATH": empty}
+    # JAX-first: a host without a GPU is emulated by hiding nvidia-smi and pinning JAX to the CPU
+    hosts["cpu-host"] = {**os.environ, "PATH": empty, "JAX_PLATFORMS": "cpu"}
     if shutil.which("nvidia-smi"):
         hosts["gpu-host"] = dict(os.environ)
     print(f"\n== CLI cold start, median of {runs} runs (s); exe={exe} ==")
@@ -377,13 +378,15 @@ def main() -> int:
     parser.add_argument("--device", choices=("cpu", "gpu"), default="cpu")
     parser.add_argument("--runs", type=int, default=5)
     parser.add_argument("--skip-cli", action="store_true")
+    parser.add_argument("--cli-only", action="store_true")
     parser.add_argument("--worker")
     parser.add_argument("--backend", default="default")
     args = parser.parse_args()
     if args.worker:
         worker(args.worker, args.backend)
         return 0
-    run_core_rows(args.device, args.runs)
+    if not args.cli_only:
+        run_core_rows(args.device, args.runs)
     if not args.skip_cli and args.device == "cpu":
         run_cli_rows(args.runs)
     return 0
