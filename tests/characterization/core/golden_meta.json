@@ -1,6 +1,6 @@
 {
  "backend": "NumpyBackend",
- "date": "2026-10-27T01:14:51+00:00",
+ "date": "2026-10-27T01:43:12+00:00",
  "family_array_counts": {
   "atomic_provider": 189,
   "chunk_contracts": 252,
@@ -8,6 +8,7 @@
   "crystal_structure": 9,
   "derived_quantities": 15,
   "from_factors": 140,
+  "full_list": 3248,
   "multiple_properties": 344,
   "primitives": 18,
   "scattering_factors": 108,
@@ -27,12 +28,12 @@
   "xray_properties": 728
  },
  "git_branch": "feat/jax-first-core",
- "git_commit": "4c3e2e93a6f6606109cb30574ec7b91da0f2ea0a",
+ "git_commit": "3d03d76abec5dd928460d0341eabeef6cfd763f2",
  "git_dirty": false,
  "rtol": 1e-12,
  "seed": 20261026,
- "total_arrays": 9654,
- "total_bytes": 4712904,
+ "total_arrays": 12902,
+ "total_bytes": 8432328,
  "versions": {
   "jax": "0.12.0.1",
   "mendeleev": "1.3.0",

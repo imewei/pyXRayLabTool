@@ -290,7 +290,7 @@ def _kind(value: Any) -> str:
     if isinstance(value, np.generic):
         return f"numpy.{type(value).__name__}"
     if hasattr(value, "shape") and hasattr(value, "dtype"):
-        return "array"
+        return f"array:{type(value).__module__.split('.')[0]}"
     return type(value).__name__
 
 
@@ -311,13 +311,22 @@ class Recorder:
         self.arrays: dict[str, np.ndarray] = {}
         self.text: dict[str, Any] = {"types": {}, "errors": {}, "facts": {}}
 
-    def put(self, key: str, value: Any) -> None:
-        """Record ``value`` as an array and remember its python type."""
+    def put(self, key: str, value: Any, *, lenient: bool = False) -> None:
+        """Record ``value`` as an array and remember its python type.
+
+        The type facts distinguish ``array:numpy`` from ``array:jaxlib`` so a
+        device array leaking into a result container is caught. ``lenient``
+        (raw kernel and helper outputs, which are backend arrays today and
+        NumPy after the migration) records the generic ``array``.
+        """
         array = np.asarray(value)
         if array.dtype == object:
             raise TypeError(f"{self.family}{SEP}{key}: object arrays are not allowed")
         self.arrays[f"{self.family}{SEP}{key}"] = array
-        self.text["types"][key] = _kind(value)
+        kind = _kind(value)
+        self.text["types"][key] = (
+            "array" if lenient and kind.startswith("array:") else kind
+        )
 
     def put_many(self, key: str, values: Sequence[Any]) -> None:
         """Record a list of homogeneous scalars as one array (``None`` becomes NaN)."""
@@ -382,7 +391,7 @@ class Recorder:
 
 def _user_warnings(caught: Sequence[warnings.WarningMessage]) -> list[str]:
     """Texts of the ``UserWarning`` s the code under test raised (ignores library noise)."""
-    return [str(w.message) for w in caught if w.category is UserWarning]
+    return [str(w.message) for w in caught if issubclass(w.category, UserWarning)]
 
 
 def _jsonable(value: Any) -> Any:
@@ -722,7 +731,7 @@ def fam_derived_quantities(rec: Recorder, inputs: dict[str, np.ndarray]) -> None
             "im_sld",
         )
         for name, value in zip(names, out, strict=True):
-            rec.put(f"{label}{SEP}{name}", value)
+            rec.put(f"{label}{SEP}{name}", value, lenient=True)
     out = calculate_derived_quantities(lam[:1], delta[:1], np.abs(beta[1:2]), 2, 28, 14)
     for name, value in zip(
         (
@@ -735,7 +744,7 @@ def fam_derived_quantities(rec: Recorder, inputs: dict[str, np.ndarray]) -> None
         out,
         strict=True,
     ):
-        rec.put(f"one_point_int_args{SEP}{name}", value)
+        rec.put(f"one_point_int_args{SEP}{name}", value, lenient=True)
     rec.expect_error(
         "delta_nan",
         calculate_derived_quantities,
@@ -788,7 +797,7 @@ def fam_scattering_factors(rec: Recorder, inputs: dict[str, np.ndarray]) -> None
             for name, value in zip(
                 ("dispersion", "absorption", "f1_total", "f2_total"), out, strict=True
             ):
-                rec.put(f"{formula}{SEP}{grid_name}{SEP}{name}", value)
+                rec.put(f"{formula}{SEP}{grid_name}{SEP}{name}", value, lenient=True)
     e_kev = inputs["grid_three"]
     out = calculate_scattering_factors(
         e_kev * 1000.0, ENERGY_TO_WAVELENGTH_FACTOR / e_kev, 2.2, 60.0, []
@@ -796,13 +805,13 @@ def fam_scattering_factors(rec: Recorder, inputs: dict[str, np.ndarray]) -> None
     for name, value in zip(
         ("dispersion", "absorption", "f1_total", "f2_total"), out, strict=True
     ):
-        rec.put(f"no_elements{SEP}{name}", value)
+        rec.put(f"no_elements{SEP}{name}", value, lenient=True)
     # Element-level interpolators themselves (eV in, tabulated f1/f2 out).
     ev = inputs["grid_absedges60"] * 1000.0
     for symbol in ("H", "Fe", "Au", "U"):
         f1_interp, f2_interp = create_scattering_factor_interpolators(symbol)
-        rec.put(f"interp{SEP}{symbol}{SEP}f1", f1_interp(ev))
-        rec.put(f"interp{SEP}{symbol}{SEP}f2", f2_interp(ev))
+        rec.put(f"interp{SEP}{symbol}{SEP}f1", f1_interp(ev), lenient=True)
+        rec.put(f"interp{SEP}{symbol}{SEP}f2", f2_interp(ev), lenient=True)
 
 
 @family
@@ -813,32 +822,43 @@ def fam_primitives(rec: Recorder, inputs: dict[str, np.ndarray]) -> None:
         inputs["prim_wavelength_a"],
         inputs["prim_beta"],
     )
-    rec.put("critical_angle", calculate_critical_angle(delta))
-    rec.put("critical_angle_negative_one", calculate_critical_angle(np.array([-1e-6])))
-    rec.put("critical_angle_zero", calculate_critical_angle(np.array([0.0])))
+    rec.put("critical_angle", calculate_critical_angle(delta), lenient=True)
+    rec.put(
+        "critical_angle_negative_one",
+        calculate_critical_angle(np.array([-1e-6])),
+        lenient=True,
+    )
+    rec.put(
+        "critical_angle_zero", calculate_critical_angle(np.array([0.0])), lenient=True
+    )
     for i, w in enumerate(wl):
         rec.put(
             f"attenuation_length{SEP}wl{i}",
             calculate_attenuation_length(np.full(beta.size, w), beta),
+            lenient=True,
         )
     rec.put(
         "attenuation_length_beta_zero",
         calculate_attenuation_length(np.array([1.0]), np.array([0.0])),
+        lenient=True,
     )
     rec.put(
         "attenuation_length_beta_negative",
         calculate_attenuation_length(np.array([1.0]), np.array([-1e-8])),
+        lenient=True,
     )
     att = inputs["prim_att_length"]
     for thickness in (0.0, 1e-4, 1.0, 10.0):
         rec.put(
-            f"transmission{SEP}t{thickness:g}", calculate_transmission(thickness, att)
+            f"transmission{SEP}t{thickness:g}",
+            calculate_transmission(thickness, att),
+            lenient=True,
         )
     sld = calculate_scattering_length_density(
         delta[:10], np.abs(beta[:10]), np.full(10, 1.5406)
     )
-    rec.put("sld_real", sld[0])
-    rec.put("sld_imag", sld[1])
+    rec.put("sld_real", sld[0], lenient=True)
+    rec.put("sld_imag", sld[1], lenient=True)
 
 
 @family
@@ -1311,3 +1331,39 @@ def fam_chunk_contracts(rec: Recorder, inputs: dict[str, np.ndarray]) -> None:
     }
     for label, args in errors.items():
         rec.expect_error(label, calculate_batch_properties, *args)
+
+
+def _full_list() -> tuple[list[str], list[float]]:
+    """Every golden formula plus a Z sample of single elements (K from 1 to 6)."""
+    pairs = list(FORMULAS) + [
+        (SYMBOLS[z - 1], element_density(z)) for z in range(1, 93, 5)
+    ]
+    return [f for f, _ in pairs], [d for _, d in pairs]
+
+
+@family
+def fam_full_list(rec: Recorder, inputs: dict[str, np.ndarray]) -> None:
+    """Whole formula list over the collections, so mixed-K padding is covered later.
+
+    ``calculate_batch_properties`` runs in chunks of 7 (thread pool, no fork).
+    """
+    formulas, densities = _full_list()
+    energies = inputs["grid_lin200"]
+    results = calculate_xray_properties(formulas, energies, densities)
+    _record_results(rec, "xray_properties", results)
+    results = calculate_xray_properties(formulas, inputs["grid_unsorted200"], densities)
+    _record_results(rec, "xray_properties_unsorted", results)
+    props = calculate_multiple_xray_properties(formulas, energies, densities)
+    rec.fact(f"multiple{SEP}keys", list(props))
+    for key, entry in props.items():
+        for name, value in entry.items():
+            if name == "formula":
+                rec.fact(f"multiple{SEP}{key}{SEP}formula", value)
+            else:
+                rec.put(f"multiple{SEP}{key}{SEP}{name}", value)
+    config = BatchConfig(max_workers=2, chunk_size=7, enable_progress=False)
+    batch = calculate_batch_properties(formulas, energies, densities, config)
+    rec.fact(f"batch_properties{SEP}keys", list(batch))
+    for key, res in batch.items():
+        if res is not None:
+            rec.put_result(f"batch_properties{SEP}{key}", res)

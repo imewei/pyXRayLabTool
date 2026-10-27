@@ -39,7 +39,7 @@ import time
 
 REPO = Path(__file__).resolve().parents[1]
 
-POOL = (  # 2 to 4 elements, mean 2.4: what the NumPy baseline of the spec was built on
+POOL = (  # 2 to 4 elements, mean 2.4; the spec's earlier 17.9 ms NumPy figure came from an ad-hoc scratch pool
     "SiO2",
     "Al2O3",
     "CaCO3",

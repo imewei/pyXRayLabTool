@@ -92,9 +92,10 @@ of the earlier measurement; `cpu-host` hides `nvidia-smi` from `PATH`):
 
 Gate revisions (the rest of the table is confirmed unchanged by these baselines):
 
-- **P3** 18 to 20 ms: the gate is "not slower than the NumPy sequential run", and that run costs
-  20.0 ms with the committed `core_bench.py` pool; the 17.9 ms in the Evidence table came from a
-  scratch pool. The Anti-goal compares against the NumPy row of this script.
+- **P3** and **P4** are relative: "at most the NumPy row measured by `scripts/core_bench.py` on the
+  same host" (200 formulas: 20.0 ms measured; 2000 formulas: 202 ms measured). The 17.9 ms in the
+  Evidence table came from an ad-hoc scratch pool, not the committed one; the Anti-goal uses the
+  same relative form.
 - **P10** `atomic` ≤ 1.3 s, the other commands stay ≤ 0.9 s: `atomic` imports `mendeleev`
   (1.23 s on the cpu-host today), which is not JAX and is out of scope here.
 - P9 and P10 numbers above are for the console script; the earlier `uv run` figures (0.86 s, 3.30 s)
@@ -138,7 +139,8 @@ Gate revisions (the rest of the table is confirmed unchanged by these baselines)
 
 - A silent NumPy fallback or any second implementation of an algorithm.
 - A warm call path slower than today's JAX backend, or a warm batch of 200 formulas
-  slower than today's 17.9 ms NumPy sequential run, or a recompile per material,
+  slower than the NumPy row that `scripts/core_bench.py` measures on the same host (20.0 ms
+  measured), or a recompile per material,
   element count or energy count (within a bucket).
 - `import xraylabtool` (or `--help`, `--version`, `completion`, `formula`, `atomic`,
   `list`) importing JAX.
@@ -414,14 +416,14 @@ warms the core programs for its Compute path on an idle worker (as
 |---|---|---|---|---|
 | P1 | SiO2 ×200 E, CPU | ≤ 0.5 ms | 0.263 ms | NumPy 0.09, JAX 0.86 |
 | P2 | SiO2 ×20 000 E, CPU | ≤ 6 ms | 3.81 ms | NumPy 1.84, JAX 4.86 |
-| P3 | 200 formulas ×200 E, CPU | ≤ 20 ms (≤ NumPy; revised from 18, see Task 0 baselines) | 12.9 ms | NumPy 17.9 (scratch pool) / 20.0 (`core_bench.py`), JAX 176 / 188 |
-| P4 | 2000 formulas ×200 E, CPU | ≤ 200 ms (≤ NumPy) | 165 ms | NumPy 202, JAX 1828 |
+| P3 | 200 formulas ×200 E, CPU | ≤ the NumPy row of `core_bench.py` on the same host (20.0 ms measured) | 12.9 ms | NumPy 17.9 (scratch pool) / 20.0 (`core_bench.py`), JAX 176 / 188 |
+| P4 | 2000 formulas ×200 E, CPU | ≤ the NumPy row of `core_bench.py` on the same host (202 ms measured) | 165 ms | NumPy 202, JAX 1828 |
 | P5 | SiO2 ×200 E, GPU | ≤ 1.5 ms | 0.622 ms | JAX 3.89 |
 | P6 | 200 formulas ×200 E, GPU | ≤ 5 ms | 1.63 ms | JAX 759 |
 | P7 | SiO2 ×20 000 E, GPU | ≤ 2 ms | 0.833 ms | JAX 4.52 |
 | P8 | first call incl. compile, no cache, CPU | ≤ 1.0 s | 174 ms | JAX 1398 ms |
 | P9 | CLI `calc`, `convert`, `bragg` cold, warm persistent cache | CPU host ≤ 2.0 s; GPU host ≤ 3.3 s | | 0.86 s; 3.30 s (`calc`) |
-| P10 | CLI `--version`, `--help`, `formula`, `atomic`, `list`, `completion` cold | ≤ 0.9 s on both hosts (no JAX import); `atomic` ≤ 1.3 s (mendeleev, revised) | | 0.87 s; 1.27 s GPU host (`uv run`); console script 0.35 to 0.41 s (`atomic` 1.23 s) / 1.07 to 1.23 s (`atomic` 1.99 s) |
+| P10 | CLI `--version`, `--help`, `formula`, `atomic`, `list`, `completion` cold | ≤ 0.9 s on both hosts (no JAX import); `atomic` ≤ 1.3 s (mendeleev, revised; about 1.29 s of headroom on the GPU host once the JAX leak is removed, 1.99 s today) | | 0.87 s; 1.27 s GPU host (`uv run`); console script 0.35 to 0.41 s (`atomic` 1.23 s) / 1.07 to 1.23 s (`atomic` 1.99 s) |
 | P11 | transfers per device program call (single material: per public call; batch: per `F`-block) | ≤ 1 upload, ≤ 1 fetch | | |
 | P12 | compiles after warm-up, same buckets | 0 | | |
 | P13 | compiles for a new energy count inside a bucket | 0 | | 16 |
