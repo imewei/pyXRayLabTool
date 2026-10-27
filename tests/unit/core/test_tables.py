@@ -42,7 +42,13 @@ def test_regenerated_equals_shipped(gen, shipped):
     assert sorted(built) == sorted(shipped)
     for key, value in built.items():
         assert value.dtype == shipped[key].dtype, key
-        np.testing.assert_array_equal(value, shipped[key], err_msg=key)
+        if value.dtype.kind == "f":
+            # XLA rounds the slope arithmetic differently across platforms in the last ulps
+            np.testing.assert_allclose(
+                value, shipped[key], rtol=1e-13, atol=0.0, err_msg=key
+            )
+        else:
+            np.testing.assert_array_equal(value, shipped[key], err_msg=key)
 
 
 def test_check_flag_passes_on_the_shipped_file():

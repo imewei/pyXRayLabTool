@@ -155,12 +155,22 @@ def test_golden_files_are_numpy_path_provenance() -> None:
 
 
 def test_inputs_match_builder() -> None:
-    """The case builder still reproduces the stored inputs bit for bit."""
+    """The case builder still reproduces the stored inputs.
+
+    Integer and string inputs match exactly; float inputs are built with libm
+    (``sin``, ``exp``), which differs in the last ulps between platforms, so they
+    match to a few ulps. The goldens are always computed from the stored inputs.
+    """
     built = cases.build_inputs()
     stored = _inputs()
     assert built.keys() == stored.keys()
     for name, value in built.items():
-        assert np.array_equal(value, stored[name], equal_nan=True), name
+        if np.issubdtype(value.dtype, np.floating):
+            np.testing.assert_allclose(
+                value, stored[name], rtol=1e-10, atol=0.0, equal_nan=True, err_msg=name
+            )
+        else:
+            assert np.array_equal(value, stored[name], equal_nan=True), name
 
 
 def test_golden_covers_every_family() -> None:

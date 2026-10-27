@@ -107,7 +107,7 @@ def get_bulk_atomic_data(
     return get_bulk_atomic_data_fast(elements_tuple)
 
 
-def _smart_cache_warming(formula: str) -> None:
+def _smart_cache_warming() -> None:
     """
     Smart cache warming for the first calculation.
 
@@ -115,12 +115,7 @@ def _smart_cache_warming(formula: str) -> None:
     :func:`clear_scattering_factor_cache`) and nothing else, so the first call
     keeps the one-upload-one-fetch budget of every call and compiles only the
     program it needs. ``calculators.warm_up`` stays an explicit public helper.
-
-    Args:
-        formula: Chemical formula of the pending calculation (unused: the tables
-            hold every element)
     """
-    del formula
     from xraylabtool.calculators.tables import load_tables
 
     load_tables()

@@ -3,8 +3,10 @@
 Each wrapper pads its inputs to the shape buckets (so a handful of compiled
 programs serve every call), makes **one** :func:`xraylabtool.backend.runtime.upload`,
 runs one program, makes **one** :func:`xraylabtool.backend.runtime.fetch` and
-slices the padding off. Every call checks the scattering tables are device
-arrays and that it made exactly one upload and one fetch.
+slices the padding off. Every call goes through :func:`execute`, which checks that
+it made exactly one upload and one fetch; the wrappers that read the scattering
+tables (``run_optical``, ``run_scattering``, ``run_rows``) also check they are
+device arrays.
 
 Padded material rows are ``z=0, counts=0, mw=1, rho=1, n_electrons=0`` (finite,
 contribute nothing); padded energies repeat the last real energy so no NaN enters.
@@ -193,9 +195,9 @@ def run_optical_blocks(
     n = len(encoded)
     e = np.atleast_1d(np.asarray(energies, dtype=np.float64))
     m_pad = _width(e.size, None)
-    out = np.empty((n, len(optics.OUT_FIELDS), e.size))
-    electron_density = np.empty(n)
-    ok = np.empty(n, dtype=bool)
+    out = np.zeros((n, len(optics.OUT_FIELDS), e.size))
+    electron_density = np.zeros(n)
+    ok = np.zeros(n, dtype=bool)  # a row no block wrote reads as not ok
     groups: dict[int, list[int]] = {}
     for i, (z, *_rest) in enumerate(encoded):
         groups.setdefault(bucket_pow2(len(z), minimum=2), []).append(i)
@@ -213,6 +215,8 @@ def run_optical_blocks(
         # below it then pads to at most that power of two.
         block = 1 << (block.bit_length() - 1)
         if max_block is not None:
+            if max_block < 1:
+                raise ValueError(f"max_block must be at least 1, got {max_block}")
             block = min(block, max_block)
         for start in range(0, len(members), block):
             rows = members[start : start + block]

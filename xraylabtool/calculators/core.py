@@ -358,9 +358,9 @@ def _properties_from_totals(
 ) -> _MaterialPropertiesDict:
     """Shared tail: δ, β and derived quantities from per-formula f1/f2 totals.
 
-    Used by :func:`calculate_properties_from_factors` (the device program that
-    follows the table lookup of the single-material path); it does no input
-    validation (callers validate).
+    Used by :func:`calculate_properties_from_factors`: one ``host.run_tail`` call
+    (one upload, one fetch) on the supplied totals; it does no input validation
+    (callers validate).
     """
     from xraylabtool.calculators import host
 
@@ -434,7 +434,7 @@ def _calculate_materials(
     from xraylabtool.calculators import host
 
     if not _cache_mod._CACHE_WARMED and formulas:
-        _smart_cache_warming(formulas[0])
+        _smart_cache_warming()
 
     energies: np.ndarray | None = None
     energy_error: Exception | None = None
@@ -465,8 +465,7 @@ def _calculate_materials(
             screened.append(i)
         except Exception as e:
             outcomes[i] = e
-    if screened:
-        assert energies is not None
+    if screened and energies is not None:  # energy_error screens every row out
         got = host.run_optical_blocks(
             encoded, values, energies, max_block=max_block, on_block=on_block
         )
@@ -607,11 +606,11 @@ def calculate_single_material_properties(
     if density is None:
         raise ValueError("density must be provided")
 
-    # Use smart cache warming for faster cold start (only loads required elements)
+    # First call only: load the resident scattering tables (one upload); nothing compiles
     from xraylabtool.calculators import cache as _cache_mod
 
     if not _cache_mod._CACHE_WARMED:
-        _smart_cache_warming(formula)
+        _smart_cache_warming()
 
     # Calculate properties using the existing function
     properties = _calculate_single_material_xray_properties(

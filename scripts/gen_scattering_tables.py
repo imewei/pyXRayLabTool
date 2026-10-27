@@ -109,6 +109,13 @@ def build_tables() -> dict[str, np.ndarray]:
     return {**out, "n": n, "symbols": np.array(symbols, dtype="<U2")}
 
 
+def _same(a: np.ndarray, b: np.ndarray) -> bool:
+    """Exact for integers and text; a few ulps for floats (XLA rounds per platform)."""
+    if a.dtype.kind == "f":
+        return bool(np.allclose(a, b, rtol=1e-13, atol=0.0, equal_nan=True))
+    return bool(np.array_equal(a, b))
+
+
 def _drift(built: dict[str, np.ndarray], shipped: dict[str, np.ndarray]) -> list[str]:
     bad = [k for k in built if k not in shipped]
     bad += [k for k in shipped if k not in built]
@@ -116,7 +123,7 @@ def _drift(built: dict[str, np.ndarray], shipped: dict[str, np.ndarray]) -> list
         if k in shipped and not (
             value.shape == shipped[k].shape
             and value.dtype == shipped[k].dtype
-            and np.array_equal(value, shipped[k])
+            and _same(value, shipped[k])
         ):
             bad.append(k)
     return sorted(set(bad))

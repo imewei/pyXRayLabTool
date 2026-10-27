@@ -54,10 +54,18 @@ class BatchConfig:
 
     def __post_init__(self) -> None:
         """Initialize the configuration after object creation."""
+        if (
+            isinstance(self.chunk_size, bool)
+            or not isinstance(self.chunk_size, int)
+            or self.chunk_size < 1
+        ):
+            raise ValueError(
+                f"chunk_size must be a positive integer, got {self.chunk_size!r}"
+            )
         if self.max_workers is None:
-            # Auto-detect optimal worker count based on system capabilities
+            # max_workers is ignored (batches run as device F-blocks); the default
+            # only keeps code that reads config.max_workers getting an int.
             cpu_count = os.cpu_count() or 1
-            # Use 75% of available CPUs, but cap at 8 for memory efficiency
             self.max_workers = min(max(1, int(cpu_count * 0.75)), 8)
 
         # Adjust memory limit based on available system memory if needed

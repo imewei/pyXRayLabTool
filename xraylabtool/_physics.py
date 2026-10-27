@@ -1,8 +1,9 @@
 """Pure ``jax.numpy`` physics behind the :mod:`xraylabtool.utils` wrappers.
 
 The wrappers in :mod:`xraylabtool.utils` validate on the host, run these
-functions through :func:`xraylabtool.calculators.host.run_map` or
-:func:`xraylabtool.calculators.host.execute` and return Python floats or NumPy
+functions through :func:`xraylabtool.calculators.host.run_map`,
+:func:`~xraylabtool.calculators.host.run_series` or
+:func:`~xraylabtool.calculators.host.run_columns` and return Python floats or NumPy
 arrays. Every function is jit/vmap/grad-compatible and assumes float64 (the
 caller ran :func:`xraylabtool.backend.runtime.ensure_x64`); ``units``,
 ``method`` and ``window_size`` are static (bound with ``functools.partial``).

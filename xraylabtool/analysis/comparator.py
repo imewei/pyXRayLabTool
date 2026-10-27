@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 
 from xraylabtool.calculators.core import calculate_xray_properties
+from xraylabtool.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -106,7 +109,8 @@ class MaterialComparator:
                     formulas=formulas, energies=energies, densities=densities
                 ).values()
             )
-        except Exception:
+        except Exception as e:
+            logger.warning("Bulk calculation failed, retrying per formula: %s", e)
             results = []
         if len(results) != len(formulas):
             results = []
@@ -120,7 +124,7 @@ class MaterialComparator:
                 except Exception as e:
                     raise ValueError(
                         f"Failed to calculate properties for {formula}: {e}"
-                    )
+                    ) from e
         return {
             f"{formula} ({density} g/cm³)": result
             for formula, density, result in zip(

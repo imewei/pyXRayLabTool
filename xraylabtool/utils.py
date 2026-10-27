@@ -275,7 +275,7 @@ def q_from_angle(two_theta: FloatLike, wavelength: FloatLike) -> float:
         wavelength: X-ray wavelength in Angstroms
 
     Returns:
-        Momentum transfer q in Ų⁻¹
+        Momentum transfer q in Å⁻¹
     """
     return float(_map("q_from_angle", two_theta, wavelength))
 
@@ -285,7 +285,7 @@ def angle_from_q(q: FloatLike, wavelength: FloatLike) -> float:
     Calculate scattering angle from momentum transfer q.
 
     Args:
-        q: Momentum transfer in Ų⁻¹
+        q: Momentum transfer in Å⁻¹
         wavelength: X-ray wavelength in Angstroms
 
     Returns:

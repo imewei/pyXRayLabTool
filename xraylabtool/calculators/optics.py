@@ -228,7 +228,8 @@ def derive(
 ) -> OpticalProps:
     """Optical properties from count-weighted f1/f2 totals.
 
-    Copies ``core._properties_from_totals`` and the derived-quantity kernel:
+    Reproduces, operation for operation, the former NumPy
+    ``core._properties_from_totals`` and derived-quantity kernel:
     δ = ((λ²·S·ρ)·f1)/M, β likewise with f2, with ``S = SCATTERING_FACTOR``. The
     legacy ``λ²·(S·ρ/M)·f`` is reassociated so that the division by ``M`` comes
     last: for the physical range, neither a huge ``M`` (``S·ρ/M`` or ``f/M``
