@@ -414,7 +414,6 @@ exclude = [
 "xraylabtool/gui/*.py" = ["PLR0915", "PLR1714", "PLC0415"]
 "xraylabtool/backend/*.py" = ["PLC0415", "PLW0603"]  # Lazy imports and global state are intentional in the backend abstraction layer
 "xraylabtool/calculators/cache.py" = ["PLC0415"]  # Deferred imports to break circular dependency
-"xraylabtool/calculators/kernels.py" = ["PLC0415"]  # Deferred imports for JIT and constants
 "xraylabtool/calculators/scattering_data.py" = ["PLC0415"]  # Deferred imports for cache and pandas
 "xraylabtool/device.py" = ["PLC0415", "SIM105", "S603"]  # Lazy imports for optional JAX; try/except for optional packages; fixed-argv nvcc/nvidia-smi calls
 "scripts/run_type_check.py" = ["PLR0912", "PLR0915"]  # Allow complex functions in type checking script

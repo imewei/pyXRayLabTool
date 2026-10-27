@@ -52,27 +52,6 @@ from xraylabtool.calculators.derived_quantities import (
 from xraylabtool.calculators.derived_quantities import (
     calculate_scattering_factors as calculate_scattering_factors,
 )
-from xraylabtool.calculators.kernels import (
-    _derived_quantities_kernel as _derived_quantities_kernel,
-)
-from xraylabtool.calculators.kernels import (
-    _derived_quantities_kernel_raw as _derived_quantities_kernel_raw,
-)
-from xraylabtool.calculators.kernels import (
-    _get_derived_kernel as _get_derived_kernel,
-)
-from xraylabtool.calculators.kernels import (
-    _get_scattering_kernel as _get_scattering_kernel,
-)
-from xraylabtool.calculators.kernels import (
-    _jit_cache as _jit_cache,
-)
-from xraylabtool.calculators.kernels import (
-    _scattering_math_kernel as _scattering_math_kernel,
-)
-from xraylabtool.calculators.kernels import (
-    _scattering_math_kernel_raw as _scattering_math_kernel_raw,
-)
 from xraylabtool.calculators.scattering_data import (
     _AVAILABLE_ELEMENTS as _AVAILABLE_ELEMENTS,
 )

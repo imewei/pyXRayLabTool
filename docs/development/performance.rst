@@ -8,7 +8,7 @@ Where the time goes
   scattering-factor interpolators are built lazily per element and memoized
   (:mod:`xraylabtool.calculators.cache`).
 - **Per-call work**: formula parsing, interpolation of f1/f2 at the requested energies, and
-  the vectorised δ/β/derived-quantity kernels (:mod:`xraylabtool.calculators.kernels`).
+  the vectorised δ/β/derived-quantity kernels (:mod:`xraylabtool.calculators.optics`).
   Cost scales with the number of energy points, not the number of calls, so pass an energy
   array instead of looping.
 - **Backend**: :mod:`xraylabtool.backend` selects JAX automatically when JAX and an NVIDIA

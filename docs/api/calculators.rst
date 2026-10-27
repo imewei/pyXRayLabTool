@@ -106,10 +106,18 @@ Scattering Data
    :undoc-members:
    :show-inheritance:
 
-Kernels
--------
+Resident Tables
+---------------
 
-.. automodule:: xraylabtool.calculators.kernels
+.. automodule:: xraylabtool.calculators.tables
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Device Programs
+---------------
+
+.. automodule:: xraylabtool.calculators.optics
    :members:
    :undoc-members:
    :show-inheritance:

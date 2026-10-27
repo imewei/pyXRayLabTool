@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 """Freeze the NumPy-path results of the core calculators as golden files.
 
+Historical: this script needs the NumPy backend (``set_backend("numpy")``,
+``xraylabtool.backend.array_ops``), which Task 2C of the JAX-first migration
+removed. It cannot run on this tree; check out commit ``3d03d76abec5``
+(recorded in golden_meta.json) to reproduce the file. Do not change the committed data.
+
 Task 0 of the JAX-first plan. The goldens are the oracle every later stage is
 compared against, so they are generated from the NumPy backend (selected
 explicitly below; on a GPU host the default would otherwise be JAX) and are

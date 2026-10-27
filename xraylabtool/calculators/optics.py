@@ -201,9 +201,9 @@ def _derived(
 ) -> tuple[Any, Any, Any, Any, Any]:
     """Electron density, critical angle, attenuation length and SLDs.
 
-    Copies the legacy ``kernels._derived_quantities_kernel`` and the electron-density
-    expression of ``derived_quantities.calculate_derived_quantities`` operation for operation, including
-    the ``max(2δ, 0)`` critical-angle rule and the ``1e-30`` β clamp.
+    Reproduces the former NumPy derived-quantities kernel and the electron-density
+    expression of ``derived_quantities.calculate_derived_quantities`` operation for
+    operation, including the ``max(2δ, 0)`` critical-angle rule and the ``1e-30`` β clamp.
     """
     electron_density = jnp.asarray(1e6 * rho / mw * AVOGADRO * n_electrons / 1e30)
     critical_angle = jnp.sqrt(jnp.maximum(2.0 * dispersion, 0.0)) * (180.0 / PI)

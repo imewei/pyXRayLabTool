@@ -81,7 +81,7 @@ def worker(case: str, backend: str) -> None:
     import numpy as np
 
     if backend != "default":
-        from xraylabtool.backend.array_ops import set_backend
+        from xraylabtool.backend import set_backend
 
         try:
             set_backend(backend)

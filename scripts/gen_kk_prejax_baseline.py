@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 """Freeze the pre-migration ``xraylabtool.kk`` outputs for the JAX-first migration.
 
+Historical: this script needs the NumPy backend (``set_backend("numpy")``,
+``xraylabtool.backend.array_ops``), which Task 2C of the JAX-first migration
+removed. It cannot run on this tree; check out commit ``1bf56d904500``
+(recorded in the provenance paragraph below) to reproduce the file. Do not change the committed data.
+
 Run once on the unmigrated code (NumPy kernel, forced below) and commit the
 result; later tasks compare the JAX implementation against it::
 

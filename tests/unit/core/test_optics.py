@@ -450,10 +450,6 @@ import xraylabtool
 assert "xraylabtool.calculators.optics" not in sys.modules, "package init imports optics"
 assert "xraylabtool.calculators.tables" not in sys.modules, "package init imports tables"
 
-# Until Task 2.5 the calculators package still imports the legacy ops twin, whose
-# backend auto-select initialises JAX; load it first so the probe isolates optics.
-import xraylabtool.calculators  # noqa: F401
-
 jax.config.update("jax_enable_x64", False)
 from jax._src import xla_bridge
 
