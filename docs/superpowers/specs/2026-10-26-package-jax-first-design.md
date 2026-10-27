@@ -73,31 +73,37 @@ batches call `calculate_xray_properties` with a fixed pool of ten 2- to 4-elemen
 
 | Path | first SiO2 ×200 E | SiO2 ×200 E, warm | SiO2 ×20 000 E, warm | 200 formulas, warm | 2000 formulas, warm |
 |---|---|---|---|---|---|
-| NumPy backend, CPU | 2.16 | 0.084 | 1.67 | 20.0 | 202 |
-| JAX backend today, CPU | 1469 | 0.836 | 6.29 | 188 | 2003 |
-| JAX backend today, GPU | 1957 | 3.90 | 4.68 | 817 | 7361 |
+| NumPy backend, CPU | 1.95 | 0.083 | 1.63 | 19.8 | 198 |
+| JAX backend today, CPU | 1420 | 0.816 | 5.71 | 184 | 1898 |
+| JAX backend today, GPU | 1823 | 3.27 | 3.98 | 728 | 7289 |
 
-First call of the other cases (ms): NumPy 3.97 / 30.2 / 222; JAX CPU 1557 / 2351 / 4212; JAX GPU
-2075 / 3702 / 9928. Compiles in the first call today: 68 (single), 92 (batches). P12 (repeat, same
+First call of the other cases (ms): NumPy 3.85 / 29.6 / 219; JAX CPU 1277 / 2213 / 3952; JAX GPU
+1888 / 3309 / 9813. Compiles in the first call today: 68 (single), 92 (batches). P12 (repeat, same
 shape): 0. P13 (new energy count, 200 to 201 and 201 to 250): 16 each. A new material with the
 same element count compiles 2 programs. Table lengths are not varied by the bench.
 
 CLI and import cold start (median of 5, `.venv/bin/xraylabtool`, so without the `uv run` wrapper
-of the earlier measurement; `cpu-host` hides `nvidia-smi` from `PATH`):
+of the earlier measurement; `cpu-host` hides `nvidia-smi` from `PATH`). Every worker and cold CLI
+run is explicitly uncached (JAX cache variables removed, `XRAYLABTOOL_NO_JAX_CACHE=1`, fresh
+`XDG_CACHE_HOME`); a nonzero exit aborts the bench:
 
 | Host | `import xraylabtool` | calc | convert | bragg | --version | --help | formula | atomic | list | completion |
 |---|---|---|---|---|---|---|---|---|---|---|
-| cpu-host (s) | 0.285, no JAX | 0.351 | 0.378 | 0.361 | 0.378 | 0.346 | 0.378 | 1.231 | 0.411 | 0.353 |
-| gpu-host (s) | 0.984, JAX imported | 3.158 | 1.076 | 1.174 | 1.070 | 1.126 | 1.126 | 1.989 | 1.107 | 1.232 |
+| cpu-host (s) | 0.283, no JAX | 0.357 | 0.347 | 0.338 | 0.361 | 0.350 | 0.344 | 1.141 | 0.349 | 0.338 |
+| gpu-host (s) | 0.759, JAX imported | 2.829 | 1.004 | 1.007 | 0.996 | 1.009 | 1.008 | 1.859 | 0.988 | 0.995 |
+
+P9 warm persistent cache (a dedicated cache directory populated by one run, then reused): cpu-host
+calc/convert/bragg 0.344/0.337/0.346 s, gpu-host 2.838/1.006/0.982 s. They equal the cold rows
+today because `calc`, `convert` and `bragg` do not enable the cache yet.
 
 Gate revisions (the rest of the table is confirmed unchanged by these baselines):
 
 - **P3** and **P4** are relative: "at most the NumPy row measured by `scripts/core_bench.py` on the
-  same host" (200 formulas: 20.0 ms measured; 2000 formulas: 202 ms measured). The 17.9 ms in the
+  same host" (200 formulas: 19.8 ms measured; 2000 formulas: 198 ms measured). The 17.9 ms in the
   Evidence table came from an ad-hoc scratch pool, not the committed one; the Anti-goal uses the
   same relative form.
 - **P10** `atomic` ≤ 1.3 s, the other commands stay ≤ 0.9 s: `atomic` imports `mendeleev`
-  (1.23 s on the cpu-host today), which is not JAX and is out of scope here.
+  (1.14 s on the cpu-host today), which is not JAX and is out of scope here.
 - P9 and P10 numbers above are for the console script; the earlier `uv run` figures (0.86 s, 3.30 s)
   include the wrapper, so compare future runs with this table, not with those.
 
@@ -139,7 +145,7 @@ Gate revisions (the rest of the table is confirmed unchanged by these baselines)
 
 - A silent NumPy fallback or any second implementation of an algorithm.
 - A warm call path slower than today's JAX backend, or a warm batch of 200 formulas
-  slower than the NumPy row that `scripts/core_bench.py` measures on the same host (20.0 ms
+  slower than the NumPy row that `scripts/core_bench.py` measures on the same host (19.8 ms
   measured), or a recompile per material,
   element count or energy count (within a bucket).
 - `import xraylabtool` (or `--help`, `--version`, `completion`, `formula`, `atomic`,
@@ -416,14 +422,14 @@ warms the core programs for its Compute path on an idle worker (as
 |---|---|---|---|---|
 | P1 | SiO2 ×200 E, CPU | ≤ 0.5 ms | 0.263 ms | NumPy 0.09, JAX 0.86 |
 | P2 | SiO2 ×20 000 E, CPU | ≤ 6 ms | 3.81 ms | NumPy 1.84, JAX 4.86 |
-| P3 | 200 formulas ×200 E, CPU | ≤ the NumPy row of `core_bench.py` on the same host (20.0 ms measured) | 12.9 ms | NumPy 17.9 (scratch pool) / 20.0 (`core_bench.py`), JAX 176 / 188 |
-| P4 | 2000 formulas ×200 E, CPU | ≤ the NumPy row of `core_bench.py` on the same host (202 ms measured) | 165 ms | NumPy 202, JAX 1828 |
+| P3 | 200 formulas ×200 E, CPU | ≤ the NumPy row of `core_bench.py` on the same host (19.8 ms measured) | 12.9 ms | NumPy 17.9 (scratch pool) / 19.8 (`core_bench.py`), JAX 176 / 184 |
+| P4 | 2000 formulas ×200 E, CPU | ≤ the NumPy row of `core_bench.py` on the same host (198 ms measured) | 165 ms | NumPy 202, JAX 1828 |
 | P5 | SiO2 ×200 E, GPU | ≤ 1.5 ms | 0.622 ms | JAX 3.89 |
 | P6 | 200 formulas ×200 E, GPU | ≤ 5 ms | 1.63 ms | JAX 759 |
 | P7 | SiO2 ×20 000 E, GPU | ≤ 2 ms | 0.833 ms | JAX 4.52 |
 | P8 | first call incl. compile, no cache, CPU | ≤ 1.0 s | 174 ms | JAX 1398 ms |
 | P9 | CLI `calc`, `convert`, `bragg` cold, warm persistent cache | CPU host ≤ 2.0 s; GPU host ≤ 3.3 s | | 0.86 s; 3.30 s (`calc`) |
-| P10 | CLI `--version`, `--help`, `formula`, `atomic`, `list`, `completion` cold | ≤ 0.9 s on both hosts (no JAX import); `atomic` ≤ 1.3 s (mendeleev, revised; about 1.29 s of headroom on the GPU host once the JAX leak is removed, 1.99 s today) | | 0.87 s; 1.27 s GPU host (`uv run`); console script 0.35 to 0.41 s (`atomic` 1.23 s) / 1.07 to 1.23 s (`atomic` 1.99 s) |
+| P10 | CLI `--version`, `--help`, `formula`, `atomic`, `list`, `completion` cold | ≤ 0.9 s on both hosts (no JAX import); `atomic` ≤ 1.3 s (mendeleev, revised; about 1.29 s of headroom on the GPU host once the JAX leak is removed, 1.86 s today) | | 0.87 s; 1.27 s GPU host (`uv run`); console script 0.34 to 0.36 s (`atomic` 1.14 s) / 0.99 to 1.01 s (`atomic` 1.86 s) |
 | P11 | transfers per device program call (single material: per public call; batch: per `F`-block) | ≤ 1 upload, ≤ 1 fetch | | |
 | P12 | compiles after warm-up, same buckets | 0 | | |
 | P13 | compiles for a new energy count inside a bucket | 0 | | 16 |

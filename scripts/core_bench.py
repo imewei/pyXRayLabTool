@@ -11,7 +11,11 @@ into the spec ("Task 0 baselines") and re-run as the gate after each stage.
 Method: every number is the median of ``--runs`` (default 5) fresh interpreter
 processes. "first" is the first call in the process (includes table loading and
 compilation); "warm" is the median per-call time after that first call. Run it
-on an idle machine; do not run the test suite at the same time.
+on an idle machine; do not run the test suite at the same time. Every worker and
+cold CLI run uses an explicitly uncached environment (JAX cache variables removed,
+``XRAYLABTOOL_NO_JAX_CACHE=1``, a fresh ``XDG_CACHE_HOME``); the "P9 warm persistent
+cache" rows instead populate one dedicated cache directory and then reuse it. A
+command that exits nonzero aborts the run instead of being timed.
 
 Backends: ``numpy`` calls ``set_backend("numpy")`` (skipped once the NumPy
 backend is removed), ``jax`` calls ``set_backend("jax")``; after the migration
@@ -170,17 +174,50 @@ def _compile_counts(events: list[float]) -> dict[str, int]:
     }
 
 
+_CACHE_VARS = (
+    "JAX_COMPILATION_CACHE_DIR",
+    "JAX_ENABLE_COMPILATION_CACHE",
+    "JAX_PERSISTENT_CACHE_MIN_COMPILE_TIME_SECS",
+    "JAX_PERSISTENT_CACHE_MIN_ENTRY_SIZE_BYTES",
+    "JAX_PERSISTENT_CACHE_ENABLE_XLA_CACHES",
+)
+
+
+def cold_env(base: dict[str, str]) -> tuple[dict[str, str], str]:
+    """Return (env, cache_dir): no persistent compile cache, fresh user-cache directory."""
+    env = {k: v for k, v in base.items() if k not in _CACHE_VARS}
+    cache_dir = tempfile.mkdtemp(prefix="core_bench_cache_")
+    env["XRAYLABTOOL_NO_JAX_CACHE"] = "1"
+    env["XDG_CACHE_HOME"] = cache_dir
+    return env, cache_dir
+
+
+def timed_run(argv: list[str], env: dict[str, str]) -> float:
+    """Run ``argv`` and return the wall time in seconds; a nonzero exit is an error."""
+    t0 = time.perf_counter()
+    done = subprocess.run(
+        argv, capture_output=True, text=True, env=env, cwd=REPO, check=False
+    )
+    elapsed = time.perf_counter() - t0
+    if done.returncode != 0:
+        raise RuntimeError(
+            f"{argv} exited with {done.returncode}:\n{done.stderr[-1500:]}"
+        )
+    return elapsed
+
+
 def spawn_case(
     case: str, backend: str, device: str, runs: int
 ) -> dict[str, float] | None:
     """Median over fresh processes; ``None`` if the backend is not available."""
-    env = dict(os.environ)
+    base = dict(os.environ)
     if device == "cpu":
-        env["JAX_PLATFORMS"] = "cpu"
+        base["JAX_PLATFORMS"] = "cpu"
     else:
-        env.pop("JAX_PLATFORMS", None)
+        base.pop("JAX_PLATFORMS", None)
     results = []
     for _ in range(runs):
+        env, cache_dir = cold_env(base)  # P8: first call compiles, no persistent cache
         done = subprocess.run(
             [sys.executable, __file__, "--worker", case, "--backend", backend],
             capture_output=True,
@@ -189,6 +226,7 @@ def spawn_case(
             cwd=REPO,
             check=False,
         )
+        shutil.rmtree(cache_dir, ignore_errors=True)
         lines = [ln for ln in done.stdout.splitlines() if ln.startswith("RESULT=")]
         if done.returncode != 0 or not lines:
             raise RuntimeError(
@@ -240,24 +278,63 @@ def spawn_compile_counts(device: str, runs: int) -> dict[str, float] | None:
     return spawn_case("compiles", "jax", device, runs)
 
 
-def _importtime(env: dict[str, str]) -> tuple[float, bool]:
-    done = subprocess.run(
-        [sys.executable, "-X", "importtime", "-c", "import xraylabtool"],
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
-    )
-    total = 0.0
+def _importtime(env: dict[str, str], runs: int) -> tuple[float, bool]:
+    """Median cumulative ``import xraylabtool`` time (ms) over ``runs`` fresh processes."""
+    totals = []
     saw_jax = False
-    for line in done.stderr.splitlines():
-        m = re.match(r"import time:\s+(\d+)\s+\|\s+(\d+)\s+\|\s+(\S.*)$", line)
-        if not m:
-            continue
-        if m.group(3).strip() == "xraylabtool":
-            total = float(m.group(2)) / 1e3
-        saw_jax = saw_jax or m.group(3).strip() == "jax"
-    return total, saw_jax
+    for _ in range(runs):
+        done = subprocess.run(
+            [sys.executable, "-X", "importtime", "-c", "import xraylabtool"],
+            capture_output=True,
+            text=True,
+            env=env,
+            check=False,
+        )
+        if done.returncode != 0:
+            raise RuntimeError(
+                f"import xraylabtool failed ({done.returncode}):\n{done.stderr[-1500:]}"
+            )
+        total = None
+        for line in done.stderr.splitlines():
+            m = re.match(r"import time:\s+(\d+)\s+\|\s+(\d+)\s+\|\s+(\S.*)$", line)
+            if not m:
+                continue
+            if m.group(3).strip() == "xraylabtool":
+                total = float(m.group(2)) / 1e3
+            saw_jax = saw_jax or m.group(3).strip() == "jax"
+        if total is None:
+            raise RuntimeError("no `xraylabtool` line in the -X importtime output")
+        totals.append(total)
+    return statistics.median(totals), saw_jax
+
+
+def _median_cli(exe: Path, argv: list[str], base: dict[str, str], runs: int) -> float:
+    """Cold CLI time: no persistent compile cache, a fresh user-cache directory per run."""
+    times = []
+    for _ in range(runs):
+        env, cache_dir = cold_env(base)
+        try:
+            times.append(timed_run([str(exe), *argv], env))
+        finally:
+            shutil.rmtree(cache_dir, ignore_errors=True)
+    return statistics.median(times)
+
+
+def _median_cli_warm_cache(
+    exe: Path, argv: list[str], base: dict[str, str], runs: int
+) -> float:
+    """P9 warm mode: populate a dedicated cache directory once, then time reuse of it."""
+    cache_dir = tempfile.mkdtemp(prefix="core_bench_warm_")
+    env = {k: v for k, v in base.items() if k not in _CACHE_VARS}
+    env.pop("XRAYLABTOOL_NO_JAX_CACHE", None)
+    env["XDG_CACHE_HOME"] = cache_dir
+    try:
+        timed_run(
+            [str(exe), *argv], env
+        )  # populates the cache (if the command uses it)
+        return statistics.median(timed_run([str(exe), *argv], env) for _ in range(runs))
+    finally:
+        shutil.rmtree(cache_dir, ignore_errors=True)
 
 
 def run_cli_rows(runs: int) -> None:
@@ -269,28 +346,26 @@ def run_cli_rows(runs: int) -> None:
     if shutil.which("nvidia-smi"):
         hosts["gpu-host"] = dict(os.environ)
     print(f"\n== CLI cold start, median of {runs} runs (s); exe={exe} ==")
-    for label, env in hosts.items():
-        imp, jax_seen = _importtime(env)
-        print(
-            f"[{label}] `import xraylabtool` (-X importtime cumulative): {imp:.0f} ms, jax imported: {jax_seen}"
-        )
-        for group, commands in (("P9", CLI_P9), ("P10", CLI_P10)):
-            cells = []
-            for name, argv in commands.items():
-                times = []
-                for _ in range(runs):
-                    t0 = time.perf_counter()
-                    subprocess.run(
-                        [str(exe), *argv],
-                        capture_output=True,
-                        env=env,
-                        cwd=REPO,
-                        check=False,
-                    )
-                    times.append(time.perf_counter() - t0)
-                cells.append(f"{name}={statistics.median(times):.3f}")
-            print(f"[{label}] {group}: " + "  ".join(cells))
-    shutil.rmtree(empty, ignore_errors=True)
+    try:
+        for label, base in hosts.items():
+            imp, jax_seen = _importtime(base, runs)
+            print(
+                f"[{label}] `import xraylabtool` (-X importtime cumulative, median of "
+                f"{runs}): {imp:.0f} ms, jax imported: {jax_seen}"
+            )
+            for group, commands in (("P9", CLI_P9), ("P10", CLI_P10)):
+                cells = [
+                    f"{name}={_median_cli(exe, argv, base, runs):.3f}"
+                    for name, argv in commands.items()
+                ]
+                print(f"[{label}] {group} cold: " + "  ".join(cells))
+            cells = [
+                f"{name}={_median_cli_warm_cache(exe, argv, base, runs):.3f}"
+                for name, argv in CLI_P9.items()
+            ]
+            print(f"[{label}] P9 warm persistent cache: " + "  ".join(cells))
+    finally:
+        shutil.rmtree(empty, ignore_errors=True)
 
 
 def main() -> int:
