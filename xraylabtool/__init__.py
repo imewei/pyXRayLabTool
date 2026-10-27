@@ -5,7 +5,7 @@ A comprehensive Python package for calculating X-ray optical properties of mater
 with ultra-fast performance, comprehensive CLI tools, and scientific accuracy.
 
 **Key Features:**
-- **Ultra-fast calculations**: 150,000+ calculations/second with 350x speed improvement
+- **JAX-first calculations**: one float64 device program per call, batches run as blocks of materials
 - **CXRO/NIST databases**: Authoritative atomic scattering factor data
 - **Complete Python API**: Full programmatic access with descriptive field names
 - **Powerful CLI**: 8 specialized commands for batch processing and analysis
@@ -20,7 +20,7 @@ with ultra-fast performance, comprehensive CLI tools, and scientific accuracy.
 
 **Main Functions:**
 - :func:`calculate_single_material_properties`: Single material calculations
-- :func:`calculate_xray_properties`: Multiple materials (parallel processing)
+- :func:`calculate_xray_properties`: Multiple materials (one device program per block)
 - :func:`parse_formula`: Chemical formula parsing
 - :func:`energy_to_wavelength`, :func:`wavelength_to_energy`: Unit conversions
 
