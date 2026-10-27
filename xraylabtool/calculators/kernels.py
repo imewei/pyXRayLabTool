@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from xraylabtool.backend import ops
+from xraylabtool.backend.array_ops import ops
 
 
 def _scattering_math_kernel(

@@ -13,9 +13,9 @@ Rules (never loosened; see the spec, section Verification):
 * python return types, exception types and messages, result keys and their
   order, warning text: exact equality.
 
-The tests do not select a backend: they compare whatever the default backend
-is (NumPy on a CPU-only host, JAX on a CUDA host). Set
-``XLT_EXPECT_BACKEND=jax`` (or ``numpy``) to assert which one ran.
+The package is JAX-only, so the tests compare the device programs on whatever
+JAX platform is active (CPU, or the GPU of a CUDA host). Set
+``XLT_EXPECT_BACKEND=cpu`` (or ``gpu``) to assert which platform ran.
 """
 
 from __future__ import annotations
@@ -30,7 +30,6 @@ import numpy as np
 import pytest
 
 from tests.characterization.core import cases
-from xraylabtool.backend.array_ops import get_backend
 
 GOLDEN_DIR = Path(__file__).parent
 SEP = cases.SEP
@@ -60,8 +59,9 @@ def _inputs() -> dict[str, np.ndarray]:
 
 
 def _backend_label() -> str:
-    backend = get_backend()
-    return backend if isinstance(backend, str) else type(backend).__name__
+    import jax
+
+    return f"jax/{jax.default_backend()}"
 
 
 def _structure_problem(got: np.ndarray, expected: np.ndarray) -> str | None:
@@ -139,7 +139,7 @@ def check_family(name: str) -> tuple[list[str], float]:
 
 
 def test_active_backend_label(record_property: Any) -> None:
-    """Print which backend the comparisons below ran on (CPU vs CUDA hosts)."""
+    """Print which JAX platform the comparisons below ran on (CPU vs CUDA hosts)."""
     label = _backend_label()
     record_property("backend", label)
     print(f"\ncore golden comparison backend: {label}")

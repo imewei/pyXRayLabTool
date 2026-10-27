@@ -173,7 +173,7 @@ def test_warm_up_precompiles_the_default_bucket_programs():
     assert [n for n in names if n in {"_optical_program", "_tail_program"}] == []
 
 
-def test_the_first_call_after_a_cache_clear_runs_the_smart_warm_up():
+def test_the_first_call_after_a_cache_clear_only_loads_the_tables():
     from xraylabtool.calculators import cache
 
     clear_scattering_factor_cache()

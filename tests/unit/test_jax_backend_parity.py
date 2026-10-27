@@ -1,24 +1,21 @@
-"""JAX backend parity and scalar-energy fallback tests."""
+"""Golden parity of the device program and scalar-energy fallback tests."""
 
 from __future__ import annotations
 
 from fractions import Fraction
+from pathlib import Path
 
 import numpy as np
 import pytest
 
-from xraylabtool.backend.array_ops import get_backend, set_backend
-from xraylabtool.backend.interpolation import (
-    InterpolationFactory,
-    JaxPchipInterpolator,
-)
+from xraylabtool.backend.interpolation import JaxPchipInterpolator
 from xraylabtool.calculators.core import (
     _convert_energy_input,
     _validate_and_process_energies,
     calculate_single_material_properties,
 )
 
-ENERGIES_KEV = np.array([0.5, 1.0, 5.0, 10.0, 20.0, 29.0])
+GOLDEN_NPZ = Path(__file__).parents[1] / "characterization" / "core" / "golden.npz"
 RESULT_FIELDS = (
     "dispersion_delta",
     "absorption_beta",
@@ -31,52 +28,39 @@ RESULT_FIELDS = (
 )
 
 
-@pytest.fixture
-def restore_numpy_backend():
-    yield
-    set_backend("numpy")
-
-
 @pytest.mark.unit
-@pytest.mark.usefixtures("restore_numpy_backend")
-class TestJaxBackendParity:
-    """The JAX backend (jit kernels + JaxPchipInterpolator) must match NumPy."""
+class TestGoldenParity:
+    """The device program reproduces the frozen NumPy-path goldens (rtol 1e-12)."""
 
-    @pytest.mark.parametrize(
-        ("formula", "density"), [("SiO2", 2.2), ("H2O", 1.0), ("Fe2O3", 5.24)]
-    )
-    def test_jax_matches_numpy(self, formula: str, density: float) -> None:
-        pytest.importorskip("jax")
+    @pytest.mark.parametrize("formula", ["SiO2", "H2O", "Fe2O3"])
+    def test_single_material_matches_the_goldens(self, formula: str) -> None:
+        with np.load(GOLDEN_NPZ, allow_pickle=False) as golden:
+            prefix = f"single_three|{formula}|"
+            energies = golden[prefix + "energy_kev"]
+            density = float(golden[prefix + "density_g_cm3"])
+            expected = {f: golden[prefix + f] for f in RESULT_FIELDS}
 
-        set_backend("numpy")
-        expected = calculate_single_material_properties(formula, ENERGIES_KEV, density)
-        set_backend("jax")
-        assert type(get_backend()).__name__ == "JaxBackend"
-        actual = calculate_single_material_properties(formula, ENERGIES_KEV, density)
+        actual = calculate_single_material_properties(formula, energies, density)
 
         for field in RESULT_FIELDS:
             np.testing.assert_allclose(
                 np.asarray(getattr(actual, field)),
-                np.asarray(getattr(expected, field)),
+                expected[field],
                 rtol=1e-12,
                 err_msg=f"{formula}.{field}",
             )
 
-    def test_pchip_factory_uses_jax_pchip_and_matches_scipy(self) -> None:
-        pytest.importorskip("jax")
+    def test_jax_pchip_matches_scipy(self) -> None:
+        from scipy.interpolate import PchipInterpolator
 
         x = np.linspace(1.0, 10.0, 12)
         y = np.log(x) + 0.1 * x
         query = np.linspace(1.5, 9.5, 25)
 
-        set_backend("numpy")
-        expected = InterpolationFactory.create_pchip(x, y)(query)
-        set_backend("jax")
-        interpolator = InterpolationFactory.create_pchip(x, y)
-
-        assert isinstance(interpolator, JaxPchipInterpolator)
         np.testing.assert_allclose(
-            np.asarray(interpolator(query)), expected, rtol=1e-12
+            np.asarray(JaxPchipInterpolator(x, y)(query)),
+            PchipInterpolator(x, y)(query),
+            rtol=1e-12,
         )
 
 

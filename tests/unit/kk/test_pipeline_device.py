@@ -23,8 +23,7 @@ import numpy as np
 import pytest
 
 from tests.fixtures.kk_compiles import kk_programs, numerical_programs, record_compiles
-from xraylabtool.backend import runtime
-from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
+from xraylabtool.backend import runtime, set_backend
 from xraylabtool.exceptions import CalculationError, NearEdgeDataError
 from xraylabtool.kk import (
     _device,
@@ -80,13 +79,6 @@ def _passes(caplog: pytest.LogCaptureFixture) -> int:
         if record.getMessage().startswith(INFO_PASSES):
             return int(record.getMessage().split(" in ")[1].split(" passes")[0])
     return 0
-
-
-@pytest.fixture
-def backend_restored():
-    original = "jax" if isinstance(get_backend(), JaxBackend) else "numpy"
-    yield
-    set_backend(original)
 
 
 def _subprocess(code: str, timeout: float = 240, **env_extra: str) -> dict:
@@ -466,11 +458,12 @@ def test_backend_field_is_jax() -> None:
 
 
 @pytest.mark.unit
-def test_set_backend_numpy_does_not_affect_kk(backend_restored) -> None:
+def test_set_backend_calls_do_not_affect_kk() -> None:
     energies = np.geomspace(0.05, 20.0, 30)
-    set_backend("jax")
     reference = api.kk_calculate_real("SiO2", energies_kev=energies)
-    set_backend("numpy")
+    set_backend("jax")
+    with pytest.raises(ValueError, match="ADR-006"):
+        set_backend("numpy")
     res = api.kk_calculate_real("SiO2", energies_kev=energies)
     assert res.backend == "jax"
     np.testing.assert_array_equal(res.f1, reference.f1)

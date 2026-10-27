@@ -307,7 +307,7 @@ class TestExports:
 
 
 @pytest.mark.unit
-class TestBackendState:
+class TestDeviceProgramCompilation:
     def test_device_program_compiles_once_across_materials(self) -> None:
         """Density and formula are traced arguments: one compile per bucket."""
         from xraylabtool.calculators import optics
