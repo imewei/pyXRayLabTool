@@ -262,7 +262,8 @@ Pure functions, x64 as a precondition:
   and `ok` a scalar bool.
 - Status: `ok = all(isfinite(δ)) & all(isfinite(β)) & isfinite(SCATTERING_FACTOR * rho / mw)`
   per material, returned with the result in the same fetch. Amended in Task 3 (R17,
-  R25): `derive` and the programs form δ and β as `((λ² · SCATTERING_FACTOR · ρ) · f_sum) / mw`
+  superseded by R25): `derive` and the programs form δ and β as
+  `((λ² · (SCATTERING_FACTOR · ρ)) · f_sum) / mw`
   (the molecular weight divides last, so no subnormal intermediate appears), and the
   extra `isfinite` term keeps the legacy failure for a tiny molecular weight, where
   `SCATTERING_FACTOR · ρ / mw` overflowed.
@@ -322,15 +323,16 @@ today: `process_single_calculation` still warns and returns `None` for a failing
 repeats, in input order; `chunk_iterator`, `save_batch_results` and `load_batch_input`
 are untouched. Each `F`-block costs one upload and one fetch (P11 is per block). `BatchConfig.chunk_size` is
 the upper bound of materials per block; `max_workers` and the parallel switches are
-accepted and ignored (logged once at DEBUG) so existing configs keep working;
+accepted and ignored (logged once at DEBUG) so existing configs keep working.
 Batch inputs given as lists follow one rule: each item is screened on the host before
 its row is appended, so a bad item never shifts the others. A per-item density that is
 a sequence or array is rejected like any non-number (`calculate_xray_properties` raises
 the up-front `ValueError`, `calculate_multiple_xray_properties` skips and logs the item,
-`calculate_batch_properties` warns and returns `None` for it), and energies are grouped
-by raw `(shape, dtype, bytes)` so items with different energy inputs run in their own
-group and follow their own energies. `calculate_derived_quantities` accepts plain lists
-(the NumPy-era code raised `TypeError`). `MemoryMonitor` keeps checking host result memory; CSV/Parquet loading and saving stay
+`calculate_batch_properties` warns and returns `None` for it). `calculate_batch_properties`
+alone has per-item energies: it groups them by raw `(shape, dtype, bytes)`, so items with
+different energy inputs run in their own group and follow their own energies.
+`calculate_derived_quantities` accepts plain lists (the NumPy-era code raised `TypeError`).
+`MemoryMonitor` keeps checking host result memory; CSV/Parquet loading and saving stay
 on the host. `ProcessPoolExecutor` and `ThreadPoolExecutor` are removed (fork after
 JAX threads exist can deadlock, and `filterwarnings = error` turns the JAX
 `RuntimeWarning` into failures; CI runs Python 3.12 and 3.13 where Linux still forks).

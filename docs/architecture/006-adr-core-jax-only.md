@@ -223,7 +223,7 @@ quiet host does not bring the median under 5 ms. A first version of the script
 that kept a CUDA context resident in the parent process while the children were
 timed read 5.3 to 5.5 ms (21 processes, minimum 4.4 ms) and a first-call time
 200 ms shorter; with the parent holding the GPU the driver and clocks stay up
-(the laptop GPU idles at 210 MHz, P8), so that figure does not model a fresh user
+(the laptop GPU idles at 210 MHz, performance state P8), so that figure does not model a fresh user
 process and the script now times first. The spread across processes is wide
 (6.0 to 9.9 ms), and one warm call is mostly host work around a short device
 program. No optimisation was applied in this task. The two options on record are
@@ -257,8 +257,8 @@ evidence, belongs to Wei.
 - `_status` (the device-side `ok` flag) also requires
   `isfinite(SCATTERING_FACTOR * rho / mw)`, which keeps the legacy failure for
   tiny molecular weights. `derive` and the programs compute
-  `(wavelength^2 * SCATTERING_FACTOR * rho) * (f_sum / mw)`, so no subnormal
-  intermediate is formed.
+  `((wavelength^2 * (SCATTERING_FACTOR * rho)) * f_sum) / mw` (the molecular
+  weight divides last, R25), so no subnormal intermediate is formed.
 - `calculate_derived_quantities` now accepts plain lists (the NumPy-era base
   raised `TypeError`).
 - Standalone `calculate_scattering_factors` with a tiny molecular weight

@@ -58,6 +58,10 @@ GPU_GATES_MS = {
     "P7": ("single20k", 2.0, "SiO2 x 20000 E"),
 }
 
+# Program calls (F-blocks) the batch cases must take: the 200 formulas share one K
+# bucket; the mixed-K list spans three (1-2, 3-4 and 5-8 elements).
+EXPECTED_BLOCKS = {"batch 200 formulas": 1, "batch mixed K": 3}
+
 Row = tuple[str, bool, str]
 rows: list[Row] = []
 
@@ -158,12 +162,13 @@ def check_transfers() -> None:
             runtime.reset_transfer_counts()
             call()
             counts = runtime.transfer_counts()
-            n = len(blocks) if name.startswith("batch") else 1
+            n = EXPECTED_BLOCKS.get(name, 1)
             want = {"upload": n, "fetch_status": 0, "fetch": n}
+            seen = len(blocks) if name in EXPECTED_BLOCKS else n
             record(
                 f"P11 transfers {name}",
-                same and counts == want,
-                f"{guard}; counts {counts} (want {want})",
+                same and counts == want and seen == n,
+                f"{guard}; counts {counts} (want {want}); blocks {seen} (want {n})",
             )
     finally:
         host.run_optical = real  # type: ignore[assignment]
@@ -255,7 +260,11 @@ def main() -> int:
         check=False,
     )
     platform, _, device = probe.stdout.strip().partition(" ")
-    if probe.returncode != 0 or platform not in ("gpu", "cuda"):
+    if (
+        probe.returncode != 0
+        or platform not in ("gpu", "cuda")
+        or "cuda" not in device.lower()
+    ):
         print(
             "core_gpu_check.py needs a CUDA device; JAX's default device is "
             f"{device or 'unavailable'} (platform {platform!r}). Run it on the CUDA "

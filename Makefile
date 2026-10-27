@@ -753,7 +753,7 @@ gpu-check:
 
 core-gpu-check:
 	@echo "$(YELLOW)Core GPU gate (manual; run on a quiet CUDA host, outside the sandbox)$(NC)"
-	@$(PYTHON) scripts/core_gpu_check.py
+	@$(PYTHON) scripts/core_gpu_check.py --repeats 7
 
 gpu-diagnose:
 	@echo "$(YELLOW)GPU Diagnostics$(NC)"
