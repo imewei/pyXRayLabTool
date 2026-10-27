@@ -1,6 +1,6 @@
 # ADR-006: The Core Calculators Are JAX-Only
 
-**Status:** ACCEPTED (PR 1 scope: core calculators, resident tables, batch; see "Scope and what follows")
+**Status:** ACCEPTED (core calculators, resident tables, batch, `utils` helpers, CLI and GUI wiring; see "Scope and what follows")
 **Date:** 2026-10-27
 **Deciders:** Wei Chen
 **Supersedes:** ADR-001 (JAX vs NumPy computation backend). ADR-003 (dtype policy) applies unchanged; the transfer policy of ADR-004 is unchanged (its flow diagram was updated to the shipped design).
@@ -118,14 +118,23 @@ Everything else that produces physics output runs in `jax.numpy`.
 
 ## Scope and what follows
 
-This ADR is written for PR 1. In PR 1 the **core calculators, the resident
-tables and batch** are JAX-first. The following are **not yet** done and
-follow in PR 2 (plan Task 4): the `utils` physics and signal helpers on `jnp`
-(`xraylabtool/_physics.py`, still NumPy today), the `convert` and `bragg` CLI
-wiring (persistent cache, P9 for those two commands), and the GUI idle-worker
-warm-up of the core programs with its thread test. Until PR 2 lands, the
-statement "the entire package is JAX-first" is true of the compute path behind
-`calc`, `batch`, `compare` and `kk` and not yet of the `utils` helpers.
+The **core calculators, the resident tables and batch** (PR 1) and the **`utils`
+physics and signal helpers** (PR 2, `xraylabtool/_physics.py`) are JAX-first, so
+the statement "the entire package is JAX-first" holds for every function that
+produces physics output. `convert` and `bragg` enable the persistent compile
+cache like `calc`, and the GUI warms the core programs (and the two conversion
+programs of the Single tab) on an idle worker (`gui.services.warm_up_core`), with
+the compute services under `runtime.worker_guard()` and a `QThreadPool`
+agreement test. The host exemptions of the spec (section 9) stay host:
+`find_peaks`, `progress_bar`, `save_processed_data`, `parse_formula`.
+
+One deliberate host step inside a utility: the three-point quadratic fit of
+`background_subtraction(method="polynomial")` is `numpy.polyfit` on the host.
+The frozen golden contains LAPACK's rounding noise in that fit (the residual at
+the end points is a few ulp, not zero), and no `jax.numpy` solver reproduces it
+(exact rational coefficients differ from NumPy's in the last bits too); the
+Horner evaluation and the subtraction run on the device, with an optimisation
+barrier so XLA does not fuse the multiply and add into an FMA.
 
 ## Accepted: single-call latency relative to NumPy
 
@@ -162,7 +171,7 @@ because the NumPy path was deleted and the row can no longer be re-measured.
 | P6 | 200 formulas x200 E, GPU | at most 5 ms | **5.50 ms best**, 7.6 to 8.9 ms at load 7 to 9 | **open: miss by 0.5 ms under load** |
 | P7 | SiO2 x20 000 E, GPU | at most 2 ms | 1.1 to 1.5 ms | met |
 | P8 | first call incl. compile, CPU | at most 1.0 s | 0.27 s | met |
-| P9 | CLI `calc`, cold / warm persistent cache | CPU host at most 2.0 s, GPU host at most 3.3 s | CPU 1.03 s / 0.90 s, GPU 1.73 s / 1.36 s | met for `calc`; **`convert`, `bragg` pending PR 2** |
+| P9 | CLI `calc`, `convert`, `bragg`, cold / warm persistent cache | CPU host at most 2.0 s, GPU host at most 3.3 s | CPU 1.03 s / 0.90 s, GPU 1.73 s / 1.36 s | met for `calc`; `convert` and `bragg` (warm cache, median of 9 fresh processes): CPU 0.59 s / 0.59 s, GPU 1.06 s / 1.06 s; cold cache CPU 0.86 s / 1.05 s, GPU 1.70 s / 1.47 s (machine loaded by other jobs, provisional) | met |
 | P10 | `--version`, `--help`, `formula`, `list`, `completion` | at most 0.9 s, no JAX | 0.18 to 0.21 s on both hosts | met |
 | P10 | `atomic` (mendeleev import, not JAX) | at most 1.3 s | 0.97 s when quiet, 1.32 s at load 4 | **open: over the gate under load** |
 | P11 | transfers per device program call | at most 1 upload, 1 fetch | asserted from the counters in tests | met |
@@ -172,8 +181,8 @@ because the NumPy path was deleted and the row can no longer be re-measured.
 Also measured: `import xraylabtool` 18 ms with no JAX import; first-call
 compiles 1 (single material) and 2 (batch). Open items to close in 5B, stated
 plainly: P6 reads above its gate under load (best 5.50 ms); P10 `atomic` is
-over its gate under load; P2 had thin headroom in the earlier reading; P9 for
-`convert` and `bragg` waits for PR 2. If a quiet re-measurement still misses
+over its gate under load; P2 had thin headroom in the earlier reading; P9 is met for
+`convert` and `bragg` too. If a quiet re-measurement still misses
 P6, the options are views of one per-item copy for the nine result rows (changes
 the "fresh arrays" semantics of public results) or merging small `K` groups into
 one block (changes the grouping design); neither is applied.

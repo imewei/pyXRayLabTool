@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 XRayLabTool is a Python package for calculating X-ray optical properties of materials using CXRO/NIST atomic scattering factor databases. It provides both a Python API and CLI for synchrotron/X-ray science applications.
 
-- **JAX-first**: the core calculators, the resident scattering tables and batch run as one `jax.numpy` float64 implementation (no NumPy twin, ADR-006); `utils` physics helpers and the GUI warm-up follow in a second PR
+- **JAX-first**: the core calculators, the resident scattering tables, batch and the `utils` physics/signal helpers (`xraylabtool/_physics.py`) run as one `jax.numpy` float64 implementation (no NumPy twin, ADR-006); the GUI warms the core programs on an idle worker (`gui/services.warm_up_core`)
 - **Python**: >=3.12
 - **Package Manager**: uv (preferred), pip
 - **Version**: See `pyproject.toml` and `xraylabtool/__init__.py`
