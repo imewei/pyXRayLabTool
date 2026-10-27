@@ -466,5 +466,10 @@ C14. **Review fixes (three-brain, 2026-10-26):** `electron_density` moved on-dev
 `grad` works; standalone derived helpers kept separate; tables are 92 × 449; P11 is
 per program call; a generic `assert_ulp_close` replaces `assert_kk_close`; the
 table-integrity check runs in the test job, not the lint job.
+C15. **Confirmed by Wei (2026-10-26, grill round):** C5, C6, C8 and the P1/P5
+deviation are accepted as written. Delivery: Tasks 0 to 3 and 5 ship in one PR stacked
+on `feat/jax-native-pchip`; Task 4 (utilities, CLI/GUI wiring, import discipline,
+cold start) is a follow-up PR. No version bump; 0.5.0 suggested at release.
+Execution: `superpowers:subagent-driven-development`, started only when Wei says go.
 C13. **Builder check skipped:** Wei opted out of the question round, so no
 fresh-reader pass was run on this document before it was handed over.
