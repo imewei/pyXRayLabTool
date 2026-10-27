@@ -416,19 +416,13 @@ jobs:
         # Run GUI-dependent tests in a separate process to avoid QApplication segfaults
         pytest tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py tests/test_gui_kk_worker_end_to_end.py -v --tb=short --timeout=60
 
-    - name: Backend compatibility test (JAX)
+    - name: Scattering tables match the .nff files
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
-      continue-on-error: true  # JAX is optional
+      env:
+        JAX_PLATFORMS: cpu
       run: |
-        uv pip install --system "jax[cpu]>=0.12.0.1"
-        python -c "
-        from xraylabtool.backend import set_backend
-        set_backend('jax')
-        import xraylabtool as xlt
-        result = xlt.calculate_single_material_properties('SiO2', 10.0, 2.2)
-        print(f'JAX backend: delta={result.dispersion_delta[0]:.6e}')
-        print('JAX backend smoke test passed')
-        "
+        # Needs the package (and JAX) installed, so it lives in the test job, not in lint.
+        python scripts/gen_scattering_tables.py --check
 
     - name: Upload test results
       if: always()
