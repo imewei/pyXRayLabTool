@@ -63,6 +63,43 @@ so the five padded arrays (x, f1, f2 and two slope arrays) are 1.7 MB in float64
 costs 0.73 s and the first tiny jit 0.22 s; `ProcessPoolExecutor` is used only in
 `data_handling/batch_processing.py`; 21 `set_backend(` call sites in 4 test files.
 
+## Task 0 baselines (`scripts/core_bench.py`, measured 2026-10-26, idle machine)
+
+Median of 5 fresh processes per cell; commit `4c3e2e9` plus the Task 0 files (no change under
+`xraylabtool/`). Inputs: SiO2 on `linspace(1, 29, 200)` and `linspace(0.05, 29.95, 20000)` keV;
+batches call `calculate_xray_properties` with a fixed pool of ten 2- to 4-element formulas (mean
+2.4 elements) cycled over 200 and 2000 entries, 200 energies. "first" = first call in the process
+(tables, compilation); "warm" = median per call afterwards (ms).
+
+| Path | first SiO2 ×200 E | SiO2 ×200 E, warm | SiO2 ×20 000 E, warm | 200 formulas, warm | 2000 formulas, warm |
+|---|---|---|---|---|---|
+| NumPy backend, CPU | 2.16 | 0.084 | 1.67 | 20.0 | 202 |
+| JAX backend today, CPU | 1469 | 0.836 | 6.29 | 188 | 2003 |
+| JAX backend today, GPU | 1957 | 3.90 | 4.68 | 817 | 7361 |
+
+First call of the other cases (ms): NumPy 3.97 / 30.2 / 222; JAX CPU 1557 / 2351 / 4212; JAX GPU
+2075 / 3702 / 9928. Compiles in the first call today: 68 (single), 92 (batches). P12 (repeat, same
+shape): 0. P13 (new energy count, 200 to 201 and 201 to 250): 16 each. A new material with the
+same element count compiles 2 programs. Table lengths are not varied by the bench.
+
+CLI and import cold start (median of 5, `.venv/bin/xraylabtool`, so without the `uv run` wrapper
+of the earlier measurement; `cpu-host` hides `nvidia-smi` from `PATH`):
+
+| Host | `import xraylabtool` | calc | convert | bragg | --version | --help | formula | atomic | list | completion |
+|---|---|---|---|---|---|---|---|---|---|---|
+| cpu-host (s) | 0.285, no JAX | 0.351 | 0.378 | 0.361 | 0.378 | 0.346 | 0.378 | 1.231 | 0.411 | 0.353 |
+| gpu-host (s) | 0.984, JAX imported | 3.158 | 1.076 | 1.174 | 1.070 | 1.126 | 1.126 | 1.989 | 1.107 | 1.232 |
+
+Gate revisions (the rest of the table is confirmed unchanged by these baselines):
+
+- **P3** 18 to 20 ms: the gate is "not slower than the NumPy sequential run", and that run costs
+  20.0 ms with the committed `core_bench.py` pool; the 17.9 ms in the Evidence table came from a
+  scratch pool. The Anti-goal compares against the NumPy row of this script.
+- **P10** `atomic` ≤ 1.3 s, the other commands stay ≤ 0.9 s: `atomic` imports `mendeleev`
+  (1.23 s on the cpu-host today), which is not JAX and is out of scope here.
+- P9 and P10 numbers above are for the console script; the earlier `uv run` figures (0.86 s, 3.30 s)
+  include the wrapper, so compare future runs with this table, not with those.
+
 ## Goals
 
 1. **One implementation.** All physics in `jax.numpy` float64. No NumPy twin of any
@@ -377,14 +414,14 @@ warms the core programs for its Compute path on an idle worker (as
 |---|---|---|---|---|
 | P1 | SiO2 ×200 E, CPU | ≤ 0.5 ms | 0.263 ms | NumPy 0.09, JAX 0.86 |
 | P2 | SiO2 ×20 000 E, CPU | ≤ 6 ms | 3.81 ms | NumPy 1.84, JAX 4.86 |
-| P3 | 200 formulas ×200 E, CPU | ≤ 18 ms (≤ NumPy) | 12.9 ms | NumPy 17.9, JAX 176 |
+| P3 | 200 formulas ×200 E, CPU | ≤ 20 ms (≤ NumPy; revised from 18, see Task 0 baselines) | 12.9 ms | NumPy 17.9 (scratch pool) / 20.0 (`core_bench.py`), JAX 176 / 188 |
 | P4 | 2000 formulas ×200 E, CPU | ≤ 200 ms (≤ NumPy) | 165 ms | NumPy 202, JAX 1828 |
 | P5 | SiO2 ×200 E, GPU | ≤ 1.5 ms | 0.622 ms | JAX 3.89 |
 | P6 | 200 formulas ×200 E, GPU | ≤ 5 ms | 1.63 ms | JAX 759 |
 | P7 | SiO2 ×20 000 E, GPU | ≤ 2 ms | 0.833 ms | JAX 4.52 |
 | P8 | first call incl. compile, no cache, CPU | ≤ 1.0 s | 174 ms | JAX 1398 ms |
 | P9 | CLI `calc`, `convert`, `bragg` cold, warm persistent cache | CPU host ≤ 2.0 s; GPU host ≤ 3.3 s | | 0.86 s; 3.30 s (`calc`) |
-| P10 | CLI `--version`, `--help`, `formula`, `atomic`, `list`, `completion` cold | ≤ 0.9 s on both hosts (no JAX import) | | 0.87 s; 1.27 s GPU host |
+| P10 | CLI `--version`, `--help`, `formula`, `atomic`, `list`, `completion` cold | ≤ 0.9 s on both hosts (no JAX import); `atomic` ≤ 1.3 s (mendeleev, revised) | | 0.87 s; 1.27 s GPU host (`uv run`); console script 0.35 to 0.41 s (`atomic` 1.23 s) / 1.07 to 1.23 s (`atomic` 1.99 s) |
 | P11 | transfers per device program call (single material: per public call; batch: per `F`-block) | ≤ 1 upload, ≤ 1 fetch | | |
 | P12 | compiles after warm-up, same buckets | 0 | | |
 | P13 | compiles for a new energy count inside a bucket | 0 | | 16 |
