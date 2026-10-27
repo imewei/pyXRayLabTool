@@ -95,14 +95,14 @@ def worker(case: str, backend: str) -> None:
     )
 
     compile_events: list[float] = []
-    if "jax" in sys.modules:
-        import jax.monitoring
+    # Registered unconditionally: the package no longer imports jax before the first call.
+    import jax.monitoring
 
-        def _on_duration(event: str, duration: float, **_: object) -> None:
-            if "backend_compile" in event:
-                compile_events.append(duration)
+    def _on_duration(event: str, duration: float, **_: object) -> None:
+        if "backend_compile" in event:
+            compile_events.append(duration)
 
-        jax.monitoring.register_event_duration_secs_listener(_on_duration)
+    jax.monitoring.register_event_duration_secs_listener(_on_duration)
 
     if case == "compiles":
         print("RESULT=" + json.dumps(_compile_counts(compile_events)))
@@ -161,7 +161,8 @@ def _compile_counts(events: list[float]) -> dict[str, int]:
     calc("SiO2", np.linspace(1.0, 29.0, 201), 2.2)
     new_count = len(events) - base
     base = len(events)
-    calc("SiO2", np.linspace(1.0, 29.0, 250), 2.2)
+    # 216 is the top of the 200/201 bucket (bucket(m, 64)); 250 would cross into the next one.
+    calc("SiO2", np.linspace(1.0, 29.0, 216), 2.2)
     new_count_2 = len(events) - base
     base = len(events)
     calc("Si", np.linspace(1.0, 29.0, 200), 2.33)
@@ -169,7 +170,7 @@ def _compile_counts(events: list[float]) -> dict[str, int]:
     return {
         "p12_same_shape": same,
         "p13_energy_200_to_201": new_count,
-        "p13_energy_201_to_250": new_count_2,
+        "p13_energy_201_to_216": new_count_2,
         "new_material_same_k": new_material,
     }
 
