@@ -107,18 +107,50 @@ def test_slopes_match_scipy_pchip(shipped):
             )
 
 
-def test_rows_return_their_values_at_their_own_nodes(shipped):
-    """A padded row evaluated at its own knots reproduces its values exactly."""
-    from xraylabtool.backend.interpolation import JaxPchipInterpolator
+def _hermite(x, y, d, n, q):
+    """Cubic Hermite from the stored (padded) row, as the device program evaluates it."""
+    i = np.clip(np.searchsorted(x, q, side="right") - 1, 0, n - 2)
+    h = x[i + 1] - x[i]
+    t = (q - x[i]) / h
+    t2 = t * t
+    t3 = t2 * t
+    return (
+        (2 * t3 - 3 * t2 + 1) * y[i]
+        + (t3 - 2 * t2 + t) * h * d[i]
+        + (3 * t2 - 2 * t3) * y[i + 1]
+        + (t3 - t2) * h * d[i + 1]
+    )
 
-    for z in (0, 5, 13, 46, 91):
-        m = int(shipped["n"][z])
+
+def test_padded_rows_evaluate_like_the_unpadded_pchip(shipped):
+    """All 92 rows: a cubic Hermite built from the STORED x, f, d (padding included)
+    equals SciPy's PCHIP on the unpadded row over [x[0], x[n-1]].
+
+    Queries are every knot, every midpoint and 777 uniform points. The bound is
+    rtol 1e-12 plus an absolute 1e-14 of the row's largest |value| (measured
+    worst case: 6e-14 relative at a near-zero value, <1e-14 of the scale).
+    """
+    from scipy.interpolate import PchipInterpolator
+
+    for z, n in enumerate(shipped["n"]):
+        n = int(n)
         x = shipped["x"][z]
-        for f in ("f1", "f2"):
-            row = JaxPchipInterpolator(x, shipped[f][z])  # full padded row
-            np.testing.assert_array_equal(
-                np.asarray(row(x[:m])), shipped[f][z, :m], err_msg=f"{z} {f}"
+        q = np.concatenate(
+            [x[:n], 0.5 * (x[: n - 1] + x[1:n]), np.linspace(x[0], x[n - 1], 777)]
+        )
+        for f, d in (("f1", "d1"), ("f2", "d2")):
+            y = shipped[f][z]
+            ref = PchipInterpolator(x[:n], y[:n])(q)
+            got = _hermite(x, y, shipped[d][z], n, q)
+            np.testing.assert_allclose(
+                got,
+                ref,
+                rtol=1e-12,
+                atol=1e-14 * np.abs(y[:n]).max(),
+                err_msg=f"row {z} {f}",
             )
+            # the knots themselves are reproduced exactly
+            np.testing.assert_array_equal(got[:n], y[:n], err_msg=f"row {z} {f}")
 
 
 # ---------------------------------------------------------------- loader
