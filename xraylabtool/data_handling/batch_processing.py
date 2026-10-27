@@ -7,7 +7,7 @@ of one JAX device program (a ``vmap`` over materials); there are no worker pools
 
 """
 
-from collections.abc import Iterator
+from collections.abc import Hashable, Iterator
 from dataclasses import dataclass
 import gc
 import os
@@ -160,6 +160,20 @@ def process_single_calculation(
         return (formula, None)
 
 
+def _energies_key(index: int, energies: Any) -> Hashable:
+    """Group key: items share a group only if their energy inputs are identical.
+
+    Shape and dtype are part of the key (equal bytes can be a float32 pair and one
+    float64, a real pair and one complex, an ``(8, 1)`` and a ``(1, 2)`` array), and
+    an input NumPy cannot turn into an array stays alone so it fails on its own.
+    """
+    try:
+        array = np.asarray(energies)
+        return (array.shape, array.dtype.str, array.tobytes())
+    except Exception:
+        return ("unarrayable", index)
+
+
 def process_batch_chunk(
     chunk: list[tuple[str, np.ndarray, float]],
     config: BatchConfig,
@@ -184,9 +198,9 @@ def process_batch_chunk(
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
     update = None if progress_bar is None else progress_bar.update
     ordered: list[tuple[str, XRayResult | None]] = [("", None)] * len(chunk)
-    by_energies: dict[bytes, list[int]] = {}
+    by_energies: dict[Hashable, list[int]] = {}
     for i, (_formula, energies, _density) in enumerate(chunk):
-        by_energies.setdefault(np.asarray(energies).tobytes(), []).append(i)
+        by_energies.setdefault(_energies_key(i, energies), []).append(i)
     for members in by_energies.values():
         counted = 0
 

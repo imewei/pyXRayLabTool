@@ -458,8 +458,10 @@ def _calculate_materials(
                 raise energy_error
             material = _encode_material(formula)
             host.check_molecular_weight(density, material[2])
+            value = _density_value(density)
+            # All screening is done: append the parallel rows together.
             encoded.append(material)
-            values.append(_density_value(density))
+            values.append(value)
             screened.append(i)
         except Exception as e:
             outcomes[i] = e
