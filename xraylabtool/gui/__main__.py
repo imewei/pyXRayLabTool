@@ -60,6 +60,7 @@ def main(argv: list[str] | None = None) -> None:
     window.showMaximized()
     if not args.test_launch:
         # Once the event loop is running, so the window is painted first.
+        QTimer.singleShot(0, window.start_core_warm_up)
         QTimer.singleShot(0, window.start_kk_warm_up)
 
     if args.test_launch:

@@ -41,6 +41,8 @@ class EnergyConfig:
 
 
 def compute_single(formula: str, density: float, energy_cfg: EnergyConfig):  # type: ignore[no-untyped-def]
+    from xraylabtool.backend.runtime import worker_guard
+
     energies = energy_cfg.to_array()
     logger.info(
         "Compute single material",
@@ -51,7 +53,8 @@ def compute_single(formula: str, density: float, energy_cfg: EnergyConfig):  # t
             "logspace": energy_cfg.logspace,
         },
     )
-    return calculate_single_material_properties(formula, energies, density)
+    with worker_guard():
+        return calculate_single_material_properties(formula, energies, density)
 
 
 def compute_multiple(  # type: ignore[no-untyped-def]
@@ -60,6 +63,8 @@ def compute_multiple(  # type: ignore[no-untyped-def]
     energy_cfg: EnergyConfig,
     progress_cb: Callable[[int], None] | None = None,
 ):
+    from xraylabtool.backend.runtime import worker_guard
+
     energies = energy_cfg.to_array()
     formulas_list = list(formulas)
     densities_list = list(densities)
@@ -86,11 +91,36 @@ def compute_multiple(  # type: ignore[no-untyped-def]
             while key in results:
                 key = f"{base} #{n}"
                 n += 1
-        results[key] = calculate_single_material_properties(formula, energies, density)
+        with worker_guard():
+            results[key] = calculate_single_material_properties(
+                formula, energies, density
+            )
         if progress_cb:
             pct = int(((idx + 1) / total) * 100)
             progress_cb(pct)
     return results
+
+
+def warm_up_core(formula: str = "SiO2") -> None:
+    """Precompile the core programs of the Compute buttons (no Qt, safe in a worker).
+
+    Runs :func:`xraylabtool.warm_up` for ``formula`` and the two conversion
+    programs behind the Single tab's wavelength/energy fields, so the first click
+    with up to 64 energies compiles nothing. Best effort: a failure is logged,
+    never raised, because nothing the user asked for depends on it.
+    """
+    from xraylabtool.backend.runtime import ensure_x64, worker_guard
+    from xraylabtool.calculators.core import warm_up
+    from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
+
+    ensure_x64()
+    try:
+        with worker_guard():
+            warm_up((formula,))
+            energy_to_wavelength(8.0)
+            wavelength_to_energy(1.5)
+    except Exception:
+        logger.warning("core warm-up failed", exc_info=True)
 
 
 def linear_absorption_cm(inv_length_cm: float | None) -> float | None:

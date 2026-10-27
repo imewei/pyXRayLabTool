@@ -324,7 +324,7 @@ jobs:
         # Execute tests with optimal configuration
         # Note: --benchmark-disable prevents pytest-benchmark warning when xdist is active
         # Ignore GUI tests (require PySide6 which is only installed on Ubuntu for smoke test)
-        IGNORE_GUI="--ignore=tests/test_gui_progress.py --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py --ignore=tests/unit/test_calculation_worker.py --ignore=tests/unit/test_kk_plot.py --ignore=tests/test_gui_kk_tab.py --ignore=tests/test_gui_kk_worker_end_to_end.py"
+        IGNORE_GUI="--ignore=tests/test_gui_progress.py --ignore=tests/test_gui_smoke.py --ignore=tests/unit/test_gui_widgets.py --ignore=tests/unit/test_calculation_worker.py --ignore=tests/unit/test_kk_plot.py --ignore=tests/test_gui_kk_tab.py --ignore=tests/test_gui_kk_worker_end_to_end.py --ignore=tests/test_gui_core_warm_up.py"
 
         if [[ "${{ matrix.os }}" == "ubuntu-latest" && "${{ matrix.python-version }}" == "3.13" ]]; then
           # Primary test run - decide coverage strategy
@@ -414,7 +414,7 @@ jobs:
         QT_QPA_PLATFORM: offscreen
       run: |
         # Run GUI-dependent tests in a separate process to avoid QApplication segfaults
-        pytest tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py tests/test_gui_kk_worker_end_to_end.py -v --tb=short --timeout=60
+        pytest tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py tests/test_gui_kk_worker_end_to_end.py tests/test_gui_core_warm_up.py -v --tb=short --timeout=60
 
     - name: Scattering tables match the .nff files
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'

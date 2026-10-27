@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 from xraylabtool.logging_utils import get_logger
 from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
 
-from ..services import compute_single
+from ..services import compute_single, warm_up_core
 from ..table_formatter import TableFormatter
 from ..widgets.material_form import MaterialInputForm
 from ..widgets.plot_canvas import PlotCanvas
@@ -293,6 +293,19 @@ class SingleTabMixin:
         self._track_worker(worker)
         if self.threadpool is not None:
             self.threadpool.start(worker)
+
+    def start_core_warm_up(self: MainWindowProtocol) -> None:
+        """Precompile the programs of the Compute buttons on an idle thread.
+
+        Called by the launcher once the window is shown, with the formula
+        currently in the Single tab. The worker is not tracked and has no result
+        handlers: it must not touch the window.
+        """
+        if self.threadpool is None:
+            self.threadpool = QThreadPool.globalInstance()
+        if self.threadpool is not None:
+            formula = self.single_form.formula.text().strip() or "SiO2"
+            self.threadpool.start(CalculationWorker(warm_up_core, formula))
 
     def _on_single_finished(self: MainWindowProtocol, result: Any) -> None:
         self.single_form.compute_button.setEnabled(True)

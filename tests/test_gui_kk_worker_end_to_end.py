@@ -205,7 +205,10 @@ def test_launcher_schedules_the_warm_up(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setattr(launcher, "MainWindow", MagicMock(return_value=window))
     with pytest.raises(SystemExit):
         launcher.main([])
-    timer.singleShot.assert_called_once_with(0, window.start_kk_warm_up)
+    assert [c.args for c in timer.singleShot.call_args_list] == [
+        (0, window.start_core_warm_up),
+        (0, window.start_kk_warm_up),
+    ]
 
     timer.reset_mock()
     with pytest.raises(SystemExit):
