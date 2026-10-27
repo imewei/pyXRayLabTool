@@ -157,51 +157,80 @@ barrier so XLA does not fuse the multiply and add into an FMA.
 The mandate trades the NumPy row's small-call latency for one implementation.
 Accepted by Wei on 2026-10-26 (spec C15). A single small call on CPU is slower
 than the removed NumPy path (frozen Task 0 row: 0.083 ms for SiO2 x200 E):
-0.42 to 0.45 ms measured with the device program (about 5x, wider than the 3x
-the design spike suggested), and on GPU 0.60 to 0.71 ms (launch latency). The
-gates P1 (at most 0.5 ms) and P5 (at most 1.5 ms) are met, not waived; they
-bind. The memoised per-formula encoding (commit `3a8abcc`) landed during
-Task 3B as an optimisation for P3 and P6, not as the spec's risk-1 mitigation
-(P1 did not miss). At 20 000 energies NumPy remains faster on CPU
-(1.63 ms against 2.0 to 5.4 ms measured, gate P2 at most 6 ms). In exchange,
-batches are 1.5x to 2.3x faster than the frozen NumPy row on CPU (provisional, see
-below) and the same code runs on GPU.
+0.446 ms measured with the device program (median of 21 fresh processes; about
+5.4x, wider than the 3x the design spike suggested), and on GPU 0.59 to 0.61 ms
+(launch latency). The gates P1 (at most 0.5 ms) and P5 (at most 1.5 ms) are met,
+not waived; they bind, and P1 has 11 % headroom. The memoised per-formula
+encoding (commit `3a8abcc`) landed during Task 3B as an optimisation for P3 and
+P6, not as the spec's risk-1 mitigation (P1 did not miss). At 20 000 energies
+NumPy remains faster on CPU (1.63 ms against 3.56 ms measured, 2.3 to 4.5 ms
+across processes; gate P2 at most 6 ms). In exchange, batches are about 1.8x
+faster than the frozen NumPy row on CPU (P3 11.3 ms against 19.8 ms, P4 111 ms
+against 198 ms) and the same code runs on GPU.
 
-## Gate evidence (to be filled by Task 5B on a quiet host)
+## Gate evidence
 
-**PROVISIONAL.** Every number below was measured on a loaded machine (load
-average 4 to 20 from unrelated Julia jobs) by the task reports
-`task-2c-report.md` and `task-3b-report.md`, CPU runs with `JAX_PLATFORMS=cpu`,
-GPU runs on the RTX 4090 laptop. Task 5B replaces this table with the output of
-`scripts/core_gpu_check.py` on a quiet host. P3 and P4 are relative to the
-frozen NumPy row recorded in the spec's "Task 0 baselines" (19.8 ms, 198 ms),
-because the NumPy path was deleted and the row can no longer be re-measured.
+Authoritative measurement of Task 5B on 2026-10-27, HEAD `bacf45c` plus the
+`core_gpu_check` commits, machine: Linux laptop, RTX 4090 Laptop GPU (16 GB),
+JAX 0.12.0.1, x64. The unrelated Julia jobs that loaded the host earlier in the
+work had finished; every run started after the 1-minute load average had fallen
+below 2.0 (CPU core rows 0.78, 1.99, 1.79; CLI rows 1.04, 1.05; GPU rows 0.86 to
+0.97) with the GPU idle (0 % utilisation, 15 MiB). The load average printed by
+each script run (start and end) is in `task-5b-report.md`; the end values are
+higher because the run itself loads the host. CPU rows run with
+`JAX_PLATFORMS=cpu` (so the "cpu-host" rows use the CPU device even on this CUDA
+machine); GPU rows use the default device. Every number is the median of fresh
+interpreter processes (no persistent compile cache), 21 processes for the CPU
+core rows and for the GPU timings of `core_gpu_check.py`, 14 runs per CLI
+command. P3 and P4 are relative to the frozen NumPy row recorded in the spec's
+"Task 0 baselines" (19.8 ms, 198 ms), because the NumPy path was deleted and the
+row can no longer be re-measured.
 
-| # | Gate | Spec value | Provisional measurement | Status |
+| # | Gate | Spec value | Measured (median, range over processes) | Status |
 |---|---|---|---|---|
-| P1 | SiO2 x200 E, CPU | at most 0.5 ms | 0.42 ms (2C), 0.45 ms (3B) | met |
-| P2 | SiO2 x20 000 E, CPU | at most 6 ms | 5.3 ms (2C, before `dc70f2a`), 2.0 ms (3B, load 2) | met; thin headroom in the 2C reading, re-measure |
-| P3 | 200 formulas x200 E, CPU | at most 19.8 ms | 8.79 ms best (10.2, 12.7 other runs) | met |
-| P4 | 2000 formulas x200 E, CPU | at most 198 ms | 99.3 ms best (110, 133 other runs) | met |
-| P5 | SiO2 x200 E, GPU | at most 1.5 ms | 0.60 to 0.71 ms | met |
-| P6 | 200 formulas x200 E, GPU | at most 5 ms | **5.50 ms best**, 7.6 to 8.9 ms at load 7 to 9 | **open: miss by 0.5 ms under load** |
-| P7 | SiO2 x20 000 E, GPU | at most 2 ms | 1.1 to 1.5 ms | met |
-| P8 | first call incl. compile, CPU | at most 1.0 s | 0.27 s | met |
-| P9 | CLI `calc`, `convert`, `bragg`, cold / warm persistent cache | CPU host at most 2.0 s, GPU host at most 3.3 s | CPU 1.03 s / 0.90 s, GPU 1.73 s / 1.36 s | met for `calc`; `convert` and `bragg` (warm cache, median of 9 fresh processes): CPU 0.59 s / 0.59 s, GPU 1.06 s / 1.06 s; cold cache CPU 0.86 s / 1.05 s, GPU 1.70 s / 1.47 s (machine loaded by other jobs, provisional) | met |
-| P10 | `--version`, `--help`, `formula`, `list`, `completion` | at most 0.9 s, no JAX | 0.18 to 0.21 s on both hosts | met |
-| P10 | `atomic` (mendeleev import, not JAX) | at most 1.3 s | 0.97 s when quiet, 1.32 s at load 4 | **open: over the gate under load** |
-| P11 | transfers per device program call | at most 1 upload, 1 fetch | asserted from the counters in tests | met |
-| P12 | compiles after warm-up, same buckets | 0 | 0 (CPU, GPU) | met |
-| P13 | compiles for a new energy count in a bucket | 0 | 0 (200 to 201, 201 to 216; CPU, GPU) | met |
+| P1 | SiO2 x200 E, CPU | at most 0.5 ms | 0.446 ms (0.416 to 1.11) | met, 11 % headroom |
+| P2 | SiO2 x20 000 E, CPU | at most 6 ms | 3.56 ms (2.31 to 4.46) | met |
+| P3 | 200 formulas x200 E, CPU | at most 19.8 ms | 11.3 ms (9.4 to 17.7) | met |
+| P4 | 2000 formulas x200 E, CPU | at most 198 ms | 111 ms (93.7 to 128) | met |
+| P5 | SiO2 x200 E, GPU | at most 1.5 ms | 0.607 ms (0.594 to 0.618) | met |
+| P6 | 200 formulas x200 E, GPU | at most 5 ms | **7.29 ms (6.03 to 9.90)** | **MISS by 2.3 ms (46 %)**, see below |
+| P7 | SiO2 x20 000 E, GPU | at most 2 ms | 1.70 ms (1.30 to 3.24) | met; thin, single processes reach 3.2 ms |
+| P8 | first call incl. compile, CPU | at most 1.0 s | 0.289 s (0.279 to 0.307) | met |
+| P9 | CLI `calc`, cold / warm persistent cache, CPU host | at most 2.0 s | 0.75 s / 0.61 s | met |
+| P9 | CLI `convert`, cold / warm, CPU host | at most 2.0 s | 0.51 to 0.52 s / 0.47 to 0.48 s | met |
+| P9 | CLI `bragg`, cold / warm, CPU host | at most 2.0 s | 0.50 to 0.52 s / 0.48 s | met |
+| P9 | CLI `calc`, cold / warm, GPU host | at most 3.3 s | 1.29 s / 1.01 s | met |
+| P9 | CLI `convert`, cold / warm, GPU host | at most 3.3 s | 1.02 to 1.05 s / 0.96 to 0.98 s | met |
+| P9 | CLI `bragg`, cold / warm, GPU host | at most 3.3 s | 1.03 to 1.08 s / 0.97 to 1.00 s | met |
+| P10 | `--version`, `--help`, `formula`, `list`, `completion` | at most 0.9 s, no JAX | 0.10 to 0.15 s on both hosts; `import xraylabtool` 15 to 16 ms, no JAX import | met |
+| P10 | `atomic` (mendeleev import, not JAX) | at most 1.3 s | 0.91 s on both hosts (0.90 to 0.95) | met |
+| P11 | transfers per device program call | at most 1 upload, 1 fetch | GPU, guard live: single 1/1, from factors 1/1, batch of 200 (one block) 1/1, mixed-K batch (three blocks) 3/3; CPU asserted by the counters in tests | met |
+| P12 | compiles after warm-up, same buckets | 0 | 0 (CPU 21 processes, GPU 42) | met |
+| P13 | compiles for a new energy count in a bucket | 0 | 0 (200 to 201, 201 to 216; CPU and GPU) | met |
 
-Also measured: `import xraylabtool` 18 ms with no JAX import; first-call
-compiles 1 (single material) and 2 (batch). Open items to close in 5B, stated
-plainly: P6 reads above its gate under load (best 5.50 ms); P10 `atomic` is
-over its gate under load; P2 had thin headroom in the earlier reading; P9 is met for
-`convert` and `bragg` too. If a quiet re-measurement still misses
-P6, the options are views of one per-item copy for the nine result rows (changes
-the "fresh arrays" semantics of public results) or merging small `K` groups into
-one block (changes the grouping design); neither is applied.
+The goldens (`rtol=1e-12`) pass on the GPU for all 24 families (worst relative
+error 2.0e-14, `utils_signal`; the core families stay below 3.6e-15), and the
+four padding-invariance tests are bit-exact on the GPU.
+
+Also measured: first-call compiles 1 (single material) and 2 (batch); GPU first
+call 0.8 s (single) and 1.4 s (batch of 200) in a fresh process.
+
+**P6 is a miss and is recorded as a deviation, not relaxed.** `core_gpu_check.py`
+(three runs of 7 fresh processes, medians 6.92, 7.45 and 7.33 ms) and
+`core_bench.py --device gpu` (two runs of 7, medians 6.89 and 6.65 ms) agree on
+6.6 to 7.5 ms. The earlier "best of 5.50 ms" was a best single reading; the
+quiet host does not bring the median under 5 ms. A first version of the script
+that kept a CUDA context resident in the parent process while the children were
+timed read 5.3 to 5.5 ms (21 processes, minimum 4.4 ms) and a first-call time
+200 ms shorter; with the parent holding the GPU the driver and clocks stay up
+(the laptop GPU idles at 210 MHz, P8), so that figure does not model a fresh user
+process and the script now times first. The spread across processes is wide
+(6.0 to 9.9 ms), and one warm call is mostly host work around a short device
+program. No optimisation was applied in this task. The two options on record are
+views of one per-item copy for the nine result rows (changes the "fresh arrays"
+semantics of public results) and merging small `K` groups into one block (changes
+the grouping design); a decision on either, or on relaxing the gate with this
+evidence, belongs to Wei.
 
 ## Consequences
 
@@ -236,6 +265,8 @@ one block (changes the grouping design); neither is applied.
   returns the finite value (the NumPy-era base returned `inf`).
 - P3 and P4 bind against the frozen NumPy numbers of the spec's Task 0
   baselines (19.8 ms, 198 ms).
+- The spec's "cpu-host" definition is the CPU device: CPU rows run with
+  `JAX_PLATFORMS=cpu`, so a CUDA machine's cpu-host row is the CPU device.
 
 ### Known limitations
 
