@@ -20,8 +20,10 @@ def assert_ulp_close(actual: Any, expected: Any, ulps: int = 4) -> None:
 
     Both arguments are converted to float64 arrays and must have the same shape.
     NaN must sit at the same positions; infinities must be equal (same sign);
-    finite entries are compared in ulps. Where ``expected`` is exactly 0 the
-    bound is ``ulps * 5e-324``, i.e. only 0 (or a denormal) passes.
+    finite entries are compared in ulps: the bound is
+    ``ulps * spacing(max(|actual|, |expected|))``. Where ``expected`` is exactly 0
+    only 0 or one of the smallest ``ulps`` subnormals (multiples of ``5e-324`` up to
+    ``ulps * 5e-324``) passes.
 
     Parameters
     ----------

@@ -72,7 +72,7 @@ class JaxPchipInterpolator:
     """Monotone piecewise-cubic Hermite (PCHIP) interpolator in ``jax.numpy``.
 
     Reproduces ``scipy.interpolate.PchipInterpolator(x, y, extrapolate=False)``
-    to float64 round-off, so the JAX and NumPy backends agree. Queries outside
+    to float64 round-off, so it matches SciPy. Queries outside
     ``[x[0], x[-1]]`` return NaN. Evaluation is jit-compiled and the node
     slopes are computed once at construction.
 

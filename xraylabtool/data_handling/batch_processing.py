@@ -107,15 +107,11 @@ class MemoryMonitor:
             return 0.0
 
     def force_gc(self) -> None:
-        """Force garbage collection and clear caches to free memory."""
-        # Clear module-level caches from core module following existing pattern
-        try:
-            from xraylabtool.calculators.core import clear_scattering_factor_cache
+        """Run garbage collection.
 
-            clear_scattering_factor_cache()
-        except ImportError:
-            pass  # Cache clearing not available, continue with GC only
-
+        The resident scattering tables and the per-formula encoding memo are kept:
+        dropping them would force a table re-upload mid-batch.
+        """
         gc.collect()
 
 
