@@ -14,7 +14,7 @@ Where the time goes
 - **Backend**: everything runs in JAX float64 on JAX's default device (the CPU, or the GPU of a
   CUDA install); there is no NumPy path (ADR-006, :doc:`../architecture/006-adr-core-jax-only`).
   A small single call costs a few tenths of a millisecond (launch latency), more than the
-  removed NumPy path did; batches and large energy grids are where the device program pays off.
+  removed NumPy path did, and on CPU NumPy was also faster at 20 000 energies; batches (and, on a GPU, large energy grids) are where the device program pays off.
 - **Compilation**: shapes are padded to buckets, so a program compiled for one energy count
   serves every count in the same bucket and a repeat call compiles nothing. The first call
   compiles; ``JAX_PLATFORMS=cpu`` selects the CPU device.
@@ -64,7 +64,6 @@ the input (``BatchConfig.chunk_size``, default 100, also the most materials per 
 and watches memory against ``BatchConfig.memory_limit_gb``. There are no worker pools:
 ``BatchConfig.max_workers`` and ``--workers`` are accepted and ignored.
 
-
 .. code-block:: python
 
    from xraylabtool.data_handling.batch_processing import (
@@ -84,7 +83,7 @@ The same path is available from the shell: ``xraylabtool batch materials.csv -o 
 **Warming up**
 
 The first compute call loads the resident tables and compiles the program of its own shape
-buckets. To pay that cost up front, call :func:`xraylabtool.warm_up` (explicit; nothing warms
+buckets. To pay that cost up front, call ``xraylabtool.warm_up`` (explicit; nothing warms
 up behind your back):
 
 .. code-block:: python

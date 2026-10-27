@@ -3,7 +3,7 @@
 **Status:** ACCEPTED (PR 1 scope: core calculators, resident tables, batch; see "Scope and what follows")
 **Date:** 2026-10-27
 **Deciders:** Wei Chen
-**Supersedes:** ADR-001 (JAX vs NumPy computation backend). ADR-003 (dtype policy) and ADR-004 (host-device transfers) apply unchanged.
+**Supersedes:** ADR-001 (JAX vs NumPy computation backend). ADR-003 (dtype policy) applies unchanged; the transfer policy of ADR-004 is unchanged (its flow diagram was updated to the shipped design).
 
 ---
 
@@ -135,10 +135,11 @@ than the removed NumPy path (frozen Task 0 row: 0.083 ms for SiO2 x200 E):
 0.42 to 0.45 ms measured with the device program (about 5x, wider than the 3x
 the design spike suggested), and on GPU 0.60 to 0.71 ms (launch latency). The
 gates P1 (at most 0.5 ms) and P5 (at most 1.5 ms) are met, not waived; they
-bind and the cache-the-encoding mitigation (memoised per-formula encoding,
-commit `3a8abcc`) is already in. At 20 000 energies NumPy remains faster on CPU
+bind. The memoised per-formula encoding (commit `3a8abcc`) landed during
+Task 3B as an optimisation for P3 and P6, not as the spec's risk-1 mitigation
+(P1 did not miss). At 20 000 energies NumPy remains faster on CPU
 (1.63 ms against 2.0 to 5.4 ms measured, gate P2 at most 6 ms). In exchange,
-batches are about 2x faster than the NumPy row on CPU (provisional, see
+batches are 1.5x to 2.3x faster than the frozen NumPy row on CPU (provisional, see
 below) and the same code runs on GPU.
 
 ## Gate evidence (to be filled by Task 5B on a quiet host)

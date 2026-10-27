@@ -71,7 +71,7 @@ batch - Batch Processing
 .. code-block:: bash
 
    xraylabtool batch materials.csv -o results.csv
-   xraylabtool batch large_dataset.csv -o results.json --workers 8 --progress
+   xraylabtool batch large_dataset.csv -o results.json --progress
 
 compare - Multi-Material Comparison
 -----------------------------------

@@ -77,7 +77,7 @@ Usage Example
    )
 
    formulas, densities, _ = load_batch_input("materials.csv")  # formula,density columns
-   config = BatchConfig(max_workers=4, chunk_size=100, enable_progress=True)
+   config = BatchConfig(chunk_size=100, enable_progress=True)  # max_workers is accepted and ignored
 
    results = calculate_batch_properties(formulas, [5.0, 8.0, 10.0], densities, config=config)
    # dict keyed "formula@density", value XRayResult (or None on failure)
