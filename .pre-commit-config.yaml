@@ -16,6 +16,7 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
         args: ['--maxkb=1000']
+        exclude: ^tests/characterization/core/golden\.npz$  # frozen NumPy-path goldens (about 7 MB)
       - id: debug-statements
 
   # Ruff handles linting, import sorting and formatting
