@@ -97,6 +97,7 @@ Calculation Cache
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: element, z, field
 
 Scattering Data
 ---------------
@@ -113,6 +114,7 @@ Resident Tables
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: n, symbols
 
 Device Programs
 ---------------
@@ -121,6 +123,7 @@ Device Programs
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: wavelength, critical_angle, attenuation_length, electron_density, n, symbols
 
 Physics Background
 ------------------

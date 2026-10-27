@@ -12,9 +12,15 @@ import pytest
 pytest.importorskip("sphinx")
 
 ROOT = Path(__file__).resolve().parents[2]
-# Warnings from the new pages or the kk package; other pre-existing warnings
-# (e.g. untracked docs/superpowers/*.md) are not this test's concern.
-KK_WARNING = re.compile(r"kramers_kronig|kk_guide|api/kk\b|xraylabtool[./]kk\b")
+# Warnings from the new pages, the kk package or the JAX-first core pages
+# (calculators/backend API, ADR-006); other pre-existing warnings (e.g.
+# untracked docs/superpowers/*.md) are not this test's concern.
+KK_WARNING = re.compile(
+    r"kramers_kronig|kk_guide|api/kk\b|xraylabtool[./]kk\b"
+    r"|api/calculators|api/backend|006-adr"
+    r"|xraylabtool[./]calculators[./](optics|tables|cache)\b"
+    r"|xraylabtool[./]backend\b"
+)
 
 
 def _sphinx(builder: str, out: Path) -> subprocess.CompletedProcess[str]:
@@ -39,7 +45,14 @@ def test_kk_docs_build_adds_no_warnings(tmp_path: Path) -> None:
         if ("WARNING" in line or "ERROR" in line) and KK_WARNING.search(line)
     ]
     assert kk_lines == []
-    for page in ("physics/kramers_kronig", "api/kk", "guides/kk_guide"):
+    for page in (
+        "physics/kramers_kronig",
+        "api/kk",
+        "guides/kk_guide",
+        "api/calculators",
+        "api/backend",
+        "architecture/006-adr-core-jax-only",
+    ):
         assert (tmp_path / f"{page}.html").is_file(), page
 
 
