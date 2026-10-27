@@ -1,9 +1,10 @@
 # ADR-001: JAX vs NumPy Computation Backend
 
-**Status:** ACCEPTED
+**Status:** SUPERSEDED
 **Date:** 2026-04-06
 **Deciders:** Architecture Team
 **Supersedes:** None
+**Superseded by:** ADR-006 (the core calculators are JAX-only; the NumPy backend, `ops` and `InterpolationFactory` were removed)
 
 ---
 
