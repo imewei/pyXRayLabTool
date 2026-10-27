@@ -30,3 +30,33 @@ def test_backend_lazy_attribute_resolves_after_bare_import() -> None:
     )
     assert done.returncode == 0, done.stderr[-2000:]
     assert done.stdout.strip() == "OK"
+
+
+_OPTICS_PROBE = """
+import sys
+import xraylabtool.calculators as calculators
+
+assert "jax" not in sys.modules, "importing the calculators leaked jax"
+from xraylabtool.calculators import optics
+
+for name in ("OpticalProps", "ScatteringTables", "encode_formula", "load_tables",
+             "optical_properties"):
+    assert getattr(calculators, name) is getattr(optics, name), name
+assert "jax" in sys.modules
+try:
+    calculators.no_such_name
+except AttributeError:
+    print("OK")
+"""
+
+
+def test_calculators_reexport_the_optics_api_lazily() -> None:
+    done = subprocess.run(
+        [sys.executable, "-c", _OPTICS_PROBE],
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert done.returncode == 0, done.stderr[-2000:]
+    assert done.stdout.strip() == "OK"

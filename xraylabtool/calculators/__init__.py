@@ -25,8 +25,30 @@ from xraylabtool.calculators.derived_quantities import (
     calculate_transmission,
 )
 
+_OPTICS_EXPORTS = frozenset(
+    {
+        "OpticalProps",
+        "ScatteringTables",
+        "encode_formula",
+        "load_tables",
+        "optical_properties",
+    }
+)
+
+
+def __getattr__(name: str) -> object:
+    """Resolve the pure device API of :mod:`.optics` on first access (it imports JAX)."""
+    if name in _OPTICS_EXPORTS:
+        from xraylabtool.calculators import optics
+
+        return getattr(optics, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 __all__ = [
     # Core calculation functions
+    "OpticalProps",
+    "ScatteringTables",
     "XRayResult",
     # Derived quantities
     "calculate_attenuation_length",
@@ -41,9 +63,12 @@ __all__ = [
     # Cache management
     "clear_scattering_factor_cache",
     "create_scattering_factor_interpolators",
+    "encode_formula",
     "get_cached_elements",
     "is_element_cached",
     # Data loading
     "load_scattering_factor_data",
+    "load_tables",
+    "optical_properties",
     "warm_up",
 ]
