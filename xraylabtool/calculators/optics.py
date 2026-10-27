@@ -231,9 +231,11 @@ def derive(
     Copies ``core._properties_from_totals`` and the derived-quantity kernel:
     δ = ((λ²·S·ρ)·f1)/M, β likewise with f2, with ``S = SCATTERING_FACTOR``. The
     legacy ``λ²·(S·ρ/M)·f`` is reassociated so that the division by ``M`` comes
-    last: the product ``(λ²·S·ρ)·f`` is normal whenever the result is, so neither
-    a huge ``M`` (``S·ρ/M`` or ``f/M`` subnormal, flushed to zero by XLA) nor a
-    tiny ``f`` underflows an intermediate.
+    last: for the physical range, neither a huge ``M`` (``S·ρ/M`` or ``f/M``
+    subnormal, flushed to zero by XLA) nor a tiny ``f`` underflows an
+    intermediate. At the opposite extreme the product ``(λ²·S·ρ)·f`` can overflow
+    (a factor sum of about 1e300 or more with a large ``ρ``); the status check
+    then reports the non-finite failure instead of returning a zero.
 
     Parameters
     ----------

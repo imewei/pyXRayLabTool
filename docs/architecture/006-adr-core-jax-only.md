@@ -219,8 +219,13 @@ one block (changes the grouping design); neither is applied.
   `x * (1 / m)` and `1 / m` is flushed as a subnormal. It is physically
   unreachable and parked; a status guard (fail when `1 / mw` is subnormal) is
   the fix if wanted.
-- A single material whose own padded `K x M` exceeds the block budget (about
-  9 or more distinct elements at roughly 300k energies, or 65 or more at 40k)
+- The molecular weight is divided out last (`((λ²·S·ρ)·f)/M`), so the product
+  `(λ²·S·ρ)·f` overflows for a factor sum of about 1e300 or more with a large
+  density (for example `"H1" + "0" * 305` at `rho = 1e4`); the status check then
+  raises the non-finite `ValueError` rather than returning a zero. Non-physical
+  and accepted; the `f / M`-first order underflowed at the opposite extreme.
+- A single material whose own padded `K x M` exceeds the block budget (for
+  example 9 distinct elements at roughly 300k energies, or 65 at 40k)
   runs as one `F = 1` block, up to about 1.3x over the planning bound. The budget
   is a conservative bound on `F`; splitting one material would need a second
   program call per public call, which the transfer contract (one upload and one
