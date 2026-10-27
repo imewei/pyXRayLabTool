@@ -280,9 +280,9 @@ def ensure_float64_array(array: ArrayLike) -> EnergyArray:
     EnergyArray
         Converted float64 array
     """
-    from xraylabtool.backend import ops
+    import numpy as np
 
-    return ops.asarray(array, dtype=ops.float64)  # type: ignore[no-any-return]
+    return np.asarray(array, dtype=np.float64)
 
 
 def ensure_complex128_array(array: ArrayLike) -> ComplexArray:
@@ -301,9 +301,7 @@ def ensure_complex128_array(array: ArrayLike) -> ComplexArray:
     """
     import numpy as np
 
-    from xraylabtool.backend import ops
-
-    return ops.asarray(array, dtype=np.complex128)  # type: ignore[no-any-return]
+    return np.asarray(array, dtype=np.complex128)
 
 
 # =============================================================================

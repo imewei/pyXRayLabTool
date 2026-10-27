@@ -72,6 +72,7 @@ from xraylabtool.logging_utils import configure_logging, get_logger, log_environ
 _LAZY_SUBMODULES = frozenset(
     {
         "analysis",
+        "backend",
         "calculators",
         "constants",
         "data_handling",
@@ -307,24 +308,6 @@ def __getattr__(name):  # type: ignore[no-untyped-def]
 # Performance optimization modules (imported on demand to avoid unused
 # import warnings)
 _PERFORMANCE_MODULES_AVAILABLE = True
-
-
-def _configure_jax_float64() -> None:
-    """Enable float64 support in JAX if the JAX backend is active.
-
-    Only imports JAX when it's actually being used (GPU detected) to avoid
-    ~600ms import overhead on CPU-only systems. When JaxBackend is active,
-    float64 is already configured in JaxBackend.__init__.
-    """
-    from xraylabtool.backend.array_ops import JaxBackend, _backend
-
-    if isinstance(_backend, JaxBackend):
-        import jax
-
-        jax.config.update("jax_enable_x64", True)
-
-
-_configure_jax_float64()
 
 __all__ = [
     "AVOGADRO",

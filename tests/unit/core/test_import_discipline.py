@@ -4,11 +4,8 @@ Each case runs in a fresh interpreter and inspects ``sys.modules`` afterwards.
 
 * ``test_no_jax_without_gpu_tools``: ``PATH`` holds no ``nvidia-smi``, which is
   how a CI runner looks. Must pass today.
-* ``test_no_jax_with_gpu_tools``: the inherited ``PATH``. On a GPU host the
-  package init imports ``backend.array_ops``, whose backend auto-select imports
-  JAX when ``nvidia-smi`` exists, so every subcase is a strict ``xfail`` there.
-  Task 2.0 removes the leak and its ``xfail`` marks (one per subcase, so a
-  subcase that still leaks after 2.0 keeps only its own mark).
+* ``test_no_jax_with_gpu_tools``: the inherited ``PATH``; on a GPU host
+  ``nvidia-smi`` exists, which used to make the backend auto-select import JAX.
 """
 
 from __future__ import annotations
@@ -16,7 +13,6 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 
@@ -44,11 +40,6 @@ print("LEAKED=" + json.dumps(leaked))
 """
 
 SUBCASES = ("import", "help", "version")
-GPU_HOST = shutil.which("nvidia-smi") is not None
-_LEAK_REASON = (
-    "package init imports backend.array_ops, whose auto-select imports JAX when "
-    "nvidia-smi exists; removed in Task 2.0"
-)
 
 
 def _leaked_modules(mode: str, env: dict[str, str]) -> list[str]:
@@ -72,17 +63,6 @@ def test_no_jax_without_gpu_tools(mode: str, tmp_path: Path) -> None:
     assert _leaked_modules(mode, env) == []
 
 
-@pytest.mark.parametrize(
-    "mode",
-    [
-        pytest.param(
-            mode,
-            marks=pytest.mark.xfail(
-                condition=GPU_HOST, reason=_LEAK_REASON, strict=True
-            ),
-        )
-        for mode in SUBCASES
-    ],
-)
+@pytest.mark.parametrize("mode", SUBCASES)
 def test_no_jax_with_gpu_tools(mode: str) -> None:
     assert _leaked_modules(mode, dict(os.environ)) == []
