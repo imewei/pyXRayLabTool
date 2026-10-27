@@ -4,7 +4,7 @@ Each case runs ``interfaces.cli.main`` in a fresh interpreter.
 
 * ``formula``, ``atomic``, ``list`` and ``completion`` must finish successfully
   without importing JAX or ``xraylabtool.kk``.
-* ``calc``, ``batch``, ``compare`` and ``kk`` must run successfully and enable the
+* ``calc``, ``batch``, ``compare``, ``convert``, ``bragg`` and ``kk`` must run successfully and enable the
   persistent compile cache in the OS user-cache directory (``XDG_CACHE_HOME``
   points at a temporary directory, so the real cache is never touched), unless
   ``XRAYLABTOOL_NO_JAX_CACHE=1``.
@@ -131,8 +131,18 @@ def _kk_argv(tmp_path: Path) -> list[str]:
     return ["kk", "Si", "--energies", "5,6,7"]
 
 
+def _convert_argv(tmp_path: Path) -> list[str]:
+    return ["convert", "energy", "8.0,10.0", "--to", "wavelength"]
+
+
+def _bragg_argv(tmp_path: Path) -> list[str]:
+    return ["bragg", "-d", "3.14,2.45", "-e", "8.0"]
+
+
 DEVICE_COMMANDS = {
+    "bragg": _bragg_argv,
     "calc": _calc_argv,
+    "convert": _convert_argv,
     "batch": _batch_argv,
     "compare": _compare_argv,
     "kk": _kk_argv,
