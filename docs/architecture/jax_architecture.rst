@@ -19,7 +19,9 @@ JAX is a Python library for numerical computing with:
 3. **Vectorization** - Apply functions across batches with ``vmap()``
 4. **GPU/TPU Support** - Automatic device acceleration
 
-XRayLabTool uses features 1 and 3; features 2 and 4 enable future scientific workflows.
+XRayLabTool uses features 1, 3 and 4. Feature 2 is public for the core as well:
+:func:`xraylabtool.calculators.optics.optical_properties` and ``kk_f1`` are
+``jit``/``vmap``/``grad``-compatible.
 
 NumPy vs JAX
 ~~~~~~~~~~~~
@@ -44,12 +46,17 @@ NumPy vs JAX
    y_compiled = sin_jit(x_jax)  # Computed and cached
 
 
-**The Kramers-Kronig package is JAX-only.** ``xraylabtool.kk`` has no NumPy
-twin: on CPU the single ``jax.numpy`` kernel is 5-14 times faster than the
-removed NumPy implementation at every size measured (m = 100 to 100 000
-energies), so ADR-001's premise that NumPy is faster on CPU for small arrays
-does not hold there. ``set_backend()`` does not affect ``kk``; see
-:doc:`005-adr-kk-jax-only` for the table and the consequences.
+**The core calculators and the Kramers-Kronig package are JAX-only.** Neither
+has a NumPy twin. For ``xraylabtool.kk`` the single ``jax.numpy`` kernel is 5-14
+times faster on CPU than the removed NumPy implementation at every size
+measured (:doc:`005-adr-kk-jax-only`). For the core calculators the old
+JAX backend lost to NumPy because of shape-keyed eager compilation and host
+round trips, not because of JAX; the device program of ADR-006 removes both. A
+small single call is still slower than the removed NumPy path (launch latency),
+which ADR-006 records as accepted; batches are faster. ``set_backend("jax")``
+is a no-op and ``set_backend("numpy")`` raises ``ValueError``; see
+:doc:`006-adr-core-jax-only` for the evidence and :doc:`004-adr-host-device-transfers`
+for the transfer policy.
 
 
 Performance Benefits
@@ -316,24 +323,24 @@ enables it.
 Data Flow
 ~~~~~~~~~
 
-**v0.4.0 data types:**
+**Core calculators data flow (device-resident, ADR-006):**
 
 .. code-block:: text
 
    # User input: Python/NumPy
    formula = "SiO2"  # str
    density = 2.2     # float
-   energy = 8000     # float
+   energy = 8.0      # float, keV
 
-   # Internal: JAX arrays
-   |-> Parse formula -> JAX array of atomic numbers
-   |-> Load atomic data -> JAX arrays
-   |-> JIT compute -> JAX array results
-   \-> Package -> XRayResult with JAX arrays
+   host: validate, parse the formula, encode z_idx / counts / molecular weight
+   |-> upload   (one transfer of the encoded batch and the energies, padded to buckets)
+   |-> device: interpolate f1/f2 from the resident tables, derive delta, beta,
+   |            critical angle, attenuation length, SLD, status flag
+   \-> fetch    (one download of every output) -> XRayResult (NumPy)
 
-   # Output: JAX arrays (NumPy compatible)
-   result.critical_angle_degrees  # jax.Array (shape: (1,))
-   result.attenuation_length_cm   # jax.Array (shape: (1,))
+   # Output: NumPy arrays
+   result.critical_angle_degrees  # numpy.ndarray (shape: (1,))
+   result.attenuation_length_cm   # numpy.ndarray (shape: (1,))
 
 **Kramers-Kronig data flow (device-resident):**
 
@@ -482,9 +489,9 @@ For advanced users:
    JAX_PLATFORMS=cpu python script.py  # Force CPU
    XRAYLABTOOL_NO_JAX_CACHE=1 xraylabtool kk Si  # no persistent compile cache
 
-``set_backend("numpy")`` is ignored by ``xraylabtool.kk``; the kk pipeline is
-always float64 JAX (x64 is established at every public entry, not only at
-import).
+``set_backend("jax")`` is a no-op and ``set_backend("numpy")`` raises
+``ValueError``; the core calculators and ``xraylabtool.kk`` are always float64
+JAX (x64 is established at every public compute entry, not only at import).
 
 
 Common Gotchas & Solutions

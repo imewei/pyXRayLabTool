@@ -12,7 +12,7 @@ XRayLabTool is organized into focused sub-packages:
 - **io_operations**: File operations and export functionality
 - **analysis**: Material comparison and absorption edge detection
 - **gui**: PySide6 desktop application
-- **backend**: NumPy/JAX array backend abstraction
+- **backend**: JAX runtime helpers, shape buckets and the in-tree PCHIP interpolator
 - **kk**: Kramers-Kronig transform of f2 to f1 (kkcalc port, Watts 2014)
 - **utils**: Utility functions and constants
 

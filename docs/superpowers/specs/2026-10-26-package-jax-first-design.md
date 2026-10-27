@@ -83,7 +83,7 @@ shape): 0. P13 (new energy count, 200 to 201 and 201 to 250): 16 each. A new mat
 same element count compiles 2 programs. Table lengths are not varied by the bench.
 
 CLI and import cold start (median of 5, `.venv/bin/xraylabtool`, so without the `uv run` wrapper
-of the earlier measurement; `cpu-host` hides `nvidia-smi` from `PATH`). Every worker and cold CLI
+of the earlier measurement; `cpu-host` hides `nvidia-smi` from `PATH`, which made the NumPy-era backend auto-select pick NumPy on the CPU; it did not pin JAX to the CPU, so these rows are not like-for-like with later rows that set `JAX_PLATFORMS=cpu`). Every worker and cold CLI
 run is explicitly uncached (JAX cache variables removed, `XRAYLABTOOL_NO_JAX_CACHE=1`, fresh
 `XDG_CACHE_HOME`); a nonzero exit aborts the bench:
 

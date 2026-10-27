@@ -84,9 +84,10 @@ Usage Example
 
    save_batch_results(results, "results.csv")
 
-Chunks of 8 or more materials run in a ``ProcessPoolExecutor``; smaller chunks use a
-``ThreadPoolExecutor``. ``BatchConfig.memory_limit_gb`` triggers garbage collection between
-chunks.
+Each chunk runs as blocks of materials through one JAX device program (one upload and one
+fetch per block); there are no process or thread pools, and ``BatchConfig.max_workers`` is
+accepted and ignored. ``BatchConfig.chunk_size`` bounds the materials per block and
+``BatchConfig.memory_limit_gb`` triggers garbage collection between chunks.
 
 Data Sources
 ------------

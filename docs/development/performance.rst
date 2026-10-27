@@ -4,16 +4,20 @@ Performance and Optimization
 Where the time goes
 -------------------
 
-- **Atomic data**: all 92 elements are preloaded into an in-process cache at import;
-  scattering-factor interpolators are built lazily per element and memoized
-  (:mod:`xraylabtool.calculators.cache`).
-- **Per-call work**: formula parsing, interpolation of f1/f2 at the requested energies, and
-  the vectorised δ/β/derived-quantity kernels (:mod:`xraylabtool.calculators.optics`).
-  Cost scales with the number of energy points, not the number of calls, so pass an energy
-  array instead of looping.
-- **Backend**: :mod:`xraylabtool.backend` selects JAX automatically when JAX and an NVIDIA
-  GPU are present, otherwise NumPy. On CPU-only machines NumPy is faster for typical
-  workloads because it avoids XLA dispatch overhead.
+- **Atomic data**: the f1, f2 and PCHIP slopes of all 92 elements are one stacked table
+  (:mod:`xraylabtool.calculators.tables`), read from ``scattering_tables.npz`` and uploaded to
+  the JAX device once per process. It is the only thing the first call has to load.
+- **Per-call work**: formula parsing and validation on the host, then one compiled device
+  program (:mod:`xraylabtool.calculators.optics`) that interpolates f1/f2 and derives δ, β and
+  the derived quantities, with one upload and one download. Cost scales with the number of
+  energy points, not the number of calls, so pass an energy array instead of looping.
+- **Backend**: everything runs in JAX float64 on JAX's default device (the CPU, or the GPU of a
+  CUDA install); there is no NumPy path (ADR-006, :doc:`../architecture/006-adr-core-jax-only`).
+  A small single call costs a few tenths of a millisecond (launch latency), more than the
+  removed NumPy path did; batches and large energy grids are where the device program pays off.
+- **Compilation**: shapes are padded to buckets, so a program compiled for one energy count
+  serves every count in the same bucket and a repeat call compiles nothing. The first call
+  compiles; ``JAX_PLATFORMS=cpu`` selects the CPU device.
 
 Measure before tuning:
 
@@ -46,7 +50,8 @@ Optimization Strategies
 
 **Many materials**
 
-:func:`xraylabtool.calculate_xray_properties` processes materials sequentially and returns
+:func:`xraylabtool.calculate_xray_properties` runs the materials as blocks through one device
+program (grouped by element-count bucket, results in input order) and returns
 ``dict[formula, XRayResult]``:
 
 .. code-block:: python
@@ -55,9 +60,10 @@ Optimization Strategies
 
 For large CSV-driven jobs use
 :func:`xraylabtool.data_handling.batch_processing.calculate_batch_properties`, which chunks
-the input (``BatchConfig.chunk_size``, default 100), runs chunks of 8 or more materials in a
-``ProcessPoolExecutor`` and smaller chunks in a ``ThreadPoolExecutor``, and watches memory
-against ``BatchConfig.memory_limit_gb``:
+the input (``BatchConfig.chunk_size``, default 100, also the most materials per device block)
+and watches memory against ``BatchConfig.memory_limit_gb``. There are no worker pools:
+``BatchConfig.max_workers`` and ``--workers`` are accepted and ignored.
+
 
 .. code-block:: python
 
@@ -69,39 +75,34 @@ against ``BatchConfig.memory_limit_gb``:
    )
 
    formulas, densities, _ = load_batch_input("materials.csv")  # formula,density columns
-   config = BatchConfig(max_workers=8, chunk_size=200, enable_progress=True)
+   config = BatchConfig(chunk_size=200, enable_progress=True)
    results = calculate_batch_properties(formulas, [5.0, 8.0, 10.0], densities, config=config)
    save_batch_results(results, "results.csv")
 
-The same path is available from the shell: ``xraylabtool batch materials.csv -o results.csv --workers 8``.
+The same path is available from the shell: ``xraylabtool batch materials.csv -o results.csv``.
 
-**Cache warming**
+**Warming up**
 
-The element cache is already full after import. What is built lazily is the per-element
-interpolator; warm it for the elements you are about to use:
-
-.. code-block:: python
-
-   from xraylabtool.data_handling.atomic_cache import (
-       get_cache_stats,
-       warm_cache_for_compounds,
-       warm_up_cache,
-   )
-
-   warm_up_cache(["Si", "O", "Al", "Fe"])
-   warm_cache_for_compounds(["SiO2", "Al2O3"])  # adds related elements by compound family
-   print(get_cache_stats())  # {'preloaded_elements': 92, ...}
-
-**JAX backend**
+The first compute call loads the resident tables and compiles the program of its own shape
+buckets. To pay that cost up front, call :func:`xraylabtool.warm_up` (explicit; nothing warms
+up behind your back):
 
 .. code-block:: python
 
-   from xraylabtool.backend import set_backend
+   import xraylabtool as xrt
 
-   set_backend("jax")    # JIT-compiled kernels; first call pays compilation
-   set_backend("numpy")  # default on CPU-only machines
+   xrt.warm_up(("SiO2", "Al2O3"))  # compiles the default programs for these element counts
 
-See :doc:`../architecture/jax_architecture` for when JAX wins and when it does not.
+The CLI and GUI also keep JAX's persistent compile cache, so later processes skip the
+compile (``XRAYLABTOOL_NO_JAX_CACHE=1`` opts out). :func:`xraylabtool.calculators.cache.clear_scattering_factor_cache`
+drops the resident tables and the encoding memo (rarely needed).
+
+**Staying on the device**
+
+:func:`xraylabtool.calculators.optics.optical_properties` is the pure device function behind
+the calculators. It works under ``jax.jit``, ``jax.vmap`` and ``jax.grad`` and avoids the
+host round trip entirely when you already hold device arrays; see
+:doc:`../architecture/jax_architecture`.
 
 Energy grids
 ------------
@@ -122,10 +123,8 @@ Fewer, well-placed points beat dense uniform grids:
 Troubleshooting
 ---------------
 
-- **First call slow**: interpolator construction (and JIT compilation on the JAX backend).
-  Warm the cache or run one throw-away call before timing.
-- **Slow per-call on CPU with JAX**: switch to ``set_backend("numpy")``; JAX only pays off on
-  GPU or for very large energy arrays.
+- **First call slow**: it loads the tables and compiles a program. Call
+  :func:`xraylabtool.warm_up` first, or rely on the persistent compile cache in the CLI and GUI.
+- **Small single calls are slower than before**: a few tenths of a millisecond per call is the
+  launch latency of a device program (ADR-006). Pass energy arrays or batches instead of looping.
 - **Memory growth in batch jobs**: lower ``BatchConfig.chunk_size`` or ``memory_limit_gb``.
-- **Reset interpolators** (rarely needed):
-  :func:`xraylabtool.calculators.cache.clear_scattering_factor_cache`.
