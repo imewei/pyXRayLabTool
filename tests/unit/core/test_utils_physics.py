@@ -302,10 +302,38 @@ def test_standard_normalisation_of_offset_data_agrees_across_pad_widths():
     np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))
 
 
-def test_a_constant_series_is_exactly_constant_after_smoothing():
+def test_a_constant_series_stays_constant_after_smoothing():
     y = np.full(30, 0.1)
-    for window in (3, 7, 100):
-        np.testing.assert_array_equal(utils.smooth_data(None, y, window), y)
+    np.testing.assert_array_equal(utils.smooth_data(None, y, 100), y)  # the mean
+    for window in (3, 7):  # local sums: constant to the last ulp
+        np.testing.assert_allclose(utils.smooth_data(None, y, window), y, rtol=2e-16)
+
+
+def _fraction_moving_average(y: np.ndarray, window: int) -> list:
+    from fractions import Fraction
+
+    half = window // 2
+    exact = [Fraction(float(v)) for v in y]
+    padded = [exact[0]] * half + exact + [exact[-1]] * half
+    return [sum(padded[i : i + window]) / window for i in range(len(y))]
+
+
+@pytest.mark.parametrize(
+    "y",
+    [
+        np.linspace(0.01, 1.0, 120) ** -4,  # SAXS-like tail, range 1e8
+        np.exp(-np.linspace(0.0, 70.0, 300)),  # tail down to 1e-30
+        np.r_[1e10, 5.0 + np.random.default_rng(3).normal(size=100)],
+    ],
+    ids=["q-4", "exp-tail", "bright-first-point"],
+)
+def test_windowed_smoothing_keeps_the_relative_accuracy_of_wide_range_data(y):
+    """Local window sums stay on the raw values: a bright first sample must not
+    round the small ones (a shifted sum lost 1e-8 relative on q**-4)."""
+    got = utils.smooth_data(None, y, 5)
+    exact = _fraction_moving_average(y, 5)
+    worst = max(abs(float(g) - float(e)) / float(e) for g, e in zip(got, exact))
+    assert worst < 1e-12, worst
 
 
 def test_smoothing_offset_data_agrees_across_pad_widths():

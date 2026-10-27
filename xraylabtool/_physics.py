@@ -123,15 +123,16 @@ def smooth_data(y: jax.Array, n: jax.Array, *, window_size: int) -> jax.Array:
     """
     size = y.shape[0]
     half = window_size // 2
-    # Work on the offsets from the first sample: a constant series stays exactly
-    # constant and a large offset does not swamp the variation in the sums.
-    first = _origin(y)
-    shifted = y - first
     index = jnp.clip(jnp.arange(size + 2 * half) - half, 0, n - 1)
     kernel = jnp.ones(window_size, dtype=y.dtype) / window_size
-    moving = jnp.convolve(shifted[index], kernel, mode="valid")[:size]
-    mean = jnp.sum(jnp.where(jnp.arange(size) < n, shifted, 0.0)) / n
-    return first + jnp.where(window_size >= n, mean, moving)
+    # Windowed sums are local, so they stay on the raw values (a shift would round
+    # small values next to a large first sample). The global mean is the one sum
+    # that cancels: it uses offsets from the first sample, which keeps a constant
+    # series exactly constant.
+    moving = jnp.convolve(y[index], kernel, mode="valid")[:size]
+    first = _origin(y)
+    mean = first + jnp.sum(jnp.where(jnp.arange(size) < n, y - first, 0.0)) / n
+    return jnp.where(window_size >= n, mean, moving)
 
 
 def linear_background(y: jax.Array, n: jax.Array) -> jax.Array:
