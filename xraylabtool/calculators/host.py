@@ -161,7 +161,8 @@ def run_optical_blocks(
     Materials are grouped by element bucket ``K`` (so a one-element material is
     never padded to a six-element one) and each group is cut into blocks of
     :func:`~xraylabtool.backend.shapes.block_for` materials, so every block
-    obeys ``F·K·M`` within the memory budget and reuses one compiled program.
+    keeps ``F·K·M`` within the memory budget; blocks of one group share a shape
+    (up to the last, smaller one) and so one compiled program.
     Each block costs one upload and one fetch; its rows are written back to the
     positions of the input, so the output order equals the input order.
 
@@ -194,7 +195,11 @@ def run_optical_blocks(
     for i, (z, *_rest) in enumerate(encoded):
         groups.setdefault(bucket_pow2(len(z), minimum=2), []).append(i)
     for k_pad, members in groups.items():
-        block = block_for(max_block, k_pad * m_pad, len(members))
+        # ``block_for`` rounds down, so ask for the padded count: a group that fits
+        # the memory budget is one block, a larger one is cut at the budget.
+        block = block_for(None, k_pad * m_pad, bucket_pow2(len(members)))
+        if max_block is not None:
+            block = min(block, max_block)
         for start in range(0, len(members), block):
             rows = members[start : start + block]
             got = run_optical(
