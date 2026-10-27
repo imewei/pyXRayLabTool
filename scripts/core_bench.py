@@ -17,9 +17,10 @@ cold CLI run uses an explicitly uncached environment (JAX cache variables remove
 cache" rows instead populate one dedicated cache directory and then reuse it. A
 command that exits nonzero aborts the run instead of being timed.
 
-Backends: ``numpy`` calls ``set_backend("numpy")`` (skipped once the NumPy
-backend is removed), ``jax`` calls ``set_backend("jax")``; after the migration
-both rows collapse into the single JAX-first path. CPU rows set
+Backends: the package is JAX-only (ADR-006). The ``numpy`` row calls
+``set_backend("numpy")``, which raises ``ValueError``, so it prints ``n/a`` (the
+frozen NumPy numbers are in the spec's "Task 0 baselines"); the ``jax`` row calls
+``set_backend("jax")``, a no-op, and is the measurement. CPU rows set
 ``JAX_PLATFORMS=cpu``; GPU rows leave it unset. The CLI rows are measured with
 ``nvidia-smi`` hidden from ``PATH`` and ``JAX_PLATFORMS=cpu`` ("cpu-host") and with the
 inherited environment ("gpu-host"). ``--cli-only`` skips the core rows.
@@ -255,7 +256,10 @@ def spawn_case(
 
 def machine_state() -> str:
     """One-line load average and GPU utilisation, to print beside every measurement."""
-    load = Path("/proc/loadavg").read_text().split()[:3]
+    try:
+        load = [f"{x:.2f}" for x in os.getloadavg()]
+    except (AttributeError, OSError):  # not available on Windows
+        load = ["unavailable"]
     gpu = "no nvidia-smi"
     if smi := shutil.which("nvidia-smi"):
         done = subprocess.run(

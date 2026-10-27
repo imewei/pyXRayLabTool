@@ -205,9 +205,11 @@ def check_padding() -> None:
 def check_bench(repeats: int) -> None:
     import core_bench  # noqa: PLC0415
 
+    warm_compiles = 0.0  # compiles during the timed warm calls, any case, any process
     for gate, (case, limit, label) in GPU_GATES_MS.items():
         runs = core_bench.spawn_runs(case, "default", "gpu", repeats)
         assert runs is not None
+        warm_compiles = max(warm_compiles, *(r["warm_compiles"] for r in runs))
         warm = [r["warm_ms"] for r in runs]
         first = [r["first_ms"] for r in runs]
         med = core_bench.median_of(runs)["warm_ms"]
@@ -225,8 +227,9 @@ def check_bench(repeats: int) -> None:
     worst = {k: max(r[k] for r in runs) for k in runs[0]}
     record(
         "P12 compiles after warm-up, same buckets",
-        worst["p12_same_shape"] == 0,
-        f"max over {repeats} processes: {worst['p12_same_shape']:g} (limit 0)",
+        worst["p12_same_shape"] == 0 and warm_compiles == 0,
+        f"max over {repeats} processes: same-shape probe {worst['p12_same_shape']:g}, "
+        f"timed warm calls {warm_compiles:g} (limit 0)",
     )
     record(
         "P13 compiles for a new energy count in a bucket",
