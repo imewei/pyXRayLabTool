@@ -207,10 +207,10 @@ def timed_run(argv: list[str], env: dict[str, str]) -> float:
     return elapsed
 
 
-def spawn_case(
+def spawn_runs(
     case: str, backend: str, device: str, runs: int
-) -> dict[str, float] | None:
-    """Median over fresh processes; ``None`` if the backend is not available."""
+) -> list[dict[str, float]] | None:
+    """One result dict per fresh process; ``None`` if the backend is not available."""
     base = dict(os.environ)
     if device == "cpu":
         base["JAX_PLATFORMS"] = "cpu"
@@ -237,7 +237,39 @@ def spawn_case(
         if "skipped" in result:
             return None
         results.append(result)
+    return results
+
+
+def median_of(results: list[dict[str, float]]) -> dict[str, float]:
+    """Per-key median of the per-process results."""
     return {k: statistics.median(r[k] for r in results) for k in results[0]}
+
+
+def spawn_case(
+    case: str, backend: str, device: str, runs: int
+) -> dict[str, float] | None:
+    """Median over fresh processes; ``None`` if the backend is not available."""
+    results = spawn_runs(case, backend, device, runs)
+    return None if results is None else median_of(results)
+
+
+def machine_state() -> str:
+    """One-line load average and GPU utilisation, to print beside every measurement."""
+    load = Path("/proc/loadavg").read_text().split()[:3]
+    gpu = "no nvidia-smi"
+    if smi := shutil.which("nvidia-smi"):
+        done = subprocess.run(
+            [
+                smi,
+                "--query-gpu=utilization.gpu,memory.used",
+                "--format=csv,noheader",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        gpu = done.stdout.strip() or f"nvidia-smi exit {done.returncode}"
+    return f"loadavg(1/5/15 min)={'/'.join(load)}  gpu(util, mem)={gpu}"
 
 
 def _fmt(row: dict[str, float] | None, key: str) -> str:
@@ -250,11 +282,15 @@ def run_core_rows(device: str, runs: int) -> None:
     print(
         f"\n== core calculators, device={device}, median of {runs} fresh processes (ms) =="
     )
+    print(f"machine before: {machine_state()}")
     header = "backend".ljust(8) + "".join(f"{CASES[c][0]:>26}" for c in CASES)
     print(header)
     rows: dict[str, dict[str, dict[str, float] | None]] = {}
     for backend in backends:
-        rows[backend] = {c: spawn_case(c, backend, device, runs) for c in CASES}
+        raw = {c: spawn_runs(c, backend, device, runs) for c in CASES}
+        rows[backend] = {
+            c: None if (r := raw[c]) is None else median_of(r) for c in CASES
+        }
         print(
             "first".ljust(8)
             + "".join(f"{_fmt(rows[backend][c], 'first_ms'):>26}" for c in CASES)
@@ -265,14 +301,16 @@ def run_core_rows(device: str, runs: int) -> None:
             + "".join(f"{_fmt(rows[backend][c], 'warm_ms'):>26}" for c in CASES)
             + f"   [{backend}]"
         )
-        if rows[backend]["single200"] is not None:
-            fc = {
-                c: rows[backend][c]["first_compiles"] for c in CASES if rows[backend][c]
-            }  # type: ignore[index]
+        if all(raw.values()):
+            for key in ("first_ms", "warm_ms"):
+                spread = {c: [round(r[key], 3) for r in raw[c] or []] for c in CASES}
+                print(f"         raw {key} per process [{backend}]: {spread}")
+            fc = {c: (rows[backend][c] or {})["first_compiles"] for c in CASES}
             print(f"         compiles in first call: {fc}")
     if "jax" in backends:
         counts = spawn_compile_counts(device, runs)
         print(f"P12/P13 compile counts (jax, {device}): {counts}")
+    print(f"machine after: {machine_state()}")
 
 
 def spawn_compile_counts(device: str, runs: int) -> dict[str, float] | None:
@@ -309,8 +347,10 @@ def _importtime(env: dict[str, str], runs: int) -> tuple[float, bool]:
     return statistics.median(totals), saw_jax
 
 
-def _median_cli(exe: Path, argv: list[str], base: dict[str, str], runs: int) -> float:
-    """Cold CLI time: no persistent compile cache, a fresh user-cache directory per run."""
+def _cli_times(
+    exe: Path, argv: list[str], base: dict[str, str], runs: int
+) -> list[float]:
+    """Cold CLI times: no persistent compile cache, a fresh user-cache directory per run."""
     times = []
     for _ in range(runs):
         env, cache_dir = cold_env(base)
@@ -318,12 +358,17 @@ def _median_cli(exe: Path, argv: list[str], base: dict[str, str], runs: int) -> 
             times.append(timed_run([str(exe), *argv], env))
         finally:
             shutil.rmtree(cache_dir, ignore_errors=True)
-    return statistics.median(times)
+    return times
 
 
-def _median_cli_warm_cache(
+def _cell(name: str, times: list[float]) -> str:
+    """``name=median [min..max]`` in seconds."""
+    return f"{name}={statistics.median(times):.3f} [{min(times):.3f}..{max(times):.3f}]"
+
+
+def _cli_times_warm_cache(
     exe: Path, argv: list[str], base: dict[str, str], runs: int
-) -> float:
+) -> list[float]:
     """P9 warm mode: populate a dedicated cache directory once, then time reuse of it."""
     cache_dir = tempfile.mkdtemp(prefix="core_bench_warm_")
     env = {k: v for k, v in base.items() if k not in _CACHE_VARS}
@@ -333,7 +378,7 @@ def _median_cli_warm_cache(
         timed_run(
             [str(exe), *argv], env
         )  # populates the cache (if the command uses it)
-        return statistics.median(timed_run([str(exe), *argv], env) for _ in range(runs))
+        return [timed_run([str(exe), *argv], env) for _ in range(runs)]
     finally:
         shutil.rmtree(cache_dir, ignore_errors=True)
 
@@ -347,7 +392,8 @@ def run_cli_rows(runs: int) -> None:
     hosts["cpu-host"] = {**os.environ, "PATH": empty, "JAX_PLATFORMS": "cpu"}
     if shutil.which("nvidia-smi"):
         hosts["gpu-host"] = dict(os.environ)
-    print(f"\n== CLI cold start, median of {runs} runs (s); exe={exe} ==")
+    print(f"\n== CLI cold start, median [min..max] of {runs} runs (s); exe={exe} ==")
+    print(f"machine before: {machine_state()}")
     try:
         for label, base in hosts.items():
             imp, jax_seen = _importtime(base, runs)
@@ -357,17 +403,18 @@ def run_cli_rows(runs: int) -> None:
             )
             for group, commands in (("P9", CLI_P9), ("P10", CLI_P10)):
                 cells = [
-                    f"{name}={_median_cli(exe, argv, base, runs):.3f}"
+                    _cell(name, _cli_times(exe, argv, base, runs))
                     for name, argv in commands.items()
                 ]
                 print(f"[{label}] {group} cold: " + "  ".join(cells))
             cells = [
-                f"{name}={_median_cli_warm_cache(exe, argv, base, runs):.3f}"
+                _cell(name, _cli_times_warm_cache(exe, argv, base, runs))
                 for name, argv in CLI_P9.items()
             ]
             print(f"[{label}] P9 warm persistent cache: " + "  ".join(cells))
     finally:
         shutil.rmtree(empty, ignore_errors=True)
+    print(f"machine after: {machine_state()}")
 
 
 def main() -> int:

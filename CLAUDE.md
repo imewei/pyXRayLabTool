@@ -143,6 +143,7 @@ Registered markers (`--strict-markers`; an unregistered one is a collection erro
 - `scripts/run_type_check.py` - Enhanced mypy wrapper
 - `scripts/check_version.py` - Cross-file version consistency check
 - `scripts/gpu_check.py` - JAX/CUDA diagnostics behind `make gpu-check` / `gpu-diagnose`
+- `scripts/core_bench.py` (CPU, fresh-process gate rows P1-P10, P12, P13) and `scripts/core_gpu_check.py` (manual CUDA gate, `make core-gpu-check`: goldens, P5-P7, P11-P13; refuses without a CUDA device)
 - `.pre-commit-config.yaml` - Hooks (ruff, gitleaks, version check); ruff rev must match CI
 
 ## Coding Standards

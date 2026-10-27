@@ -33,7 +33,7 @@ COV_MIN ?= 27
 	perf-baseline perf-compare perf-report \
 	test-install-local test-install-testpypi test-install-pypi \
 	build upload-test upload status info quick-test \
-	install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose
+	install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose core-gpu-check
 
 # Colors for output
 RED=\033[0;31m
@@ -82,6 +82,7 @@ help:
 	@echo "  install-jax-gpu-cuda12  Install with system CUDA 12 (SM >= 5.2)"
 	@echo "  gpu-check               Verify GPU backend, devices, SVD"
 	@echo "  gpu-diagnose            Diagnose common GPU issues"
+	@echo "  core-gpu-check          Manual CUDA gate of the core (goldens, P5-P7, P11-P13); refuses without a GPU"
 	@echo ""
 	@echo "$(YELLOW)🧪 Testing:$(NC)"
 	@echo "  test             Run all tests with coverage (GUI tests run serially)"
@@ -749,6 +750,10 @@ endif
 gpu-check:
 	@echo "$(YELLOW)GPU Verification$(NC)"
 	@$(PYTHON) scripts/gpu_check.py
+
+core-gpu-check:
+	@echo "$(YELLOW)Core GPU gate (manual; run on a quiet CUDA host, outside the sandbox)$(NC)"
+	@$(PYTHON) scripts/core_gpu_check.py
 
 gpu-diagnose:
 	@echo "$(YELLOW)GPU Diagnostics$(NC)"
