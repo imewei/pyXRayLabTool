@@ -119,14 +119,30 @@ Everything else that produces physics output runs in `jax.numpy`.
 ## Scope and what follows
 
 The **core calculators, the resident tables and batch** (PR 1) and the **`utils`
-physics and signal helpers** (PR 2, `xraylabtool/_physics.py`) are JAX-first, so
-the statement "the entire package is JAX-first" holds for every function that
-produces physics output. `convert` and `bragg` enable the persistent compile
-cache like `calc`, and the GUI warms the core programs (and the two conversion
-programs of the Single tab) on an idle worker (`gui.services.warm_up_core`), with
-the compute services under `runtime.worker_guard()` and a `QThreadPool`
-agreement test. The host exemptions of the spec (section 9) stay host:
-`find_peaks`, `progress_bar`, `save_processed_data`, `parse_formula`.
+physics and signal helpers** (PR 2, `xraylabtool/_physics.py`) are JAX-first.
+`convert` and `bragg` enable the persistent compile cache like `calc`, and the
+GUI warms the core programs (and the two conversion programs of the Single tab)
+on an idle worker (`gui.services.warm_up_core`), with the compute services under
+`runtime.worker_guard()` and a `QThreadPool` agreement test.
+
+Host by design, stated plainly so that "JAX-first" is not read as "every number
+is computed on the device":
+
+- spec section 9: `find_peaks`, `progress_bar`, `save_processed_data`,
+  `parse_formula`;
+- the scalar helpers of `constants.py` (`critical_angle_degrees`,
+  `attenuation_length_cm`, `energy_to_wavelength_angstrom`,
+  `wavelength_angstrom_to_energy`): plan step 2.2 ruled that they stay host
+  functions (`math` on Python floats). Spec section 10 lists
+  `critical_angle_degrees` among the `jnp` utilities and section 9 does not list
+  these helpers; the discrepancy is recorded here, the plan ruling stands. The
+  device equivalents are `calculators.optics.critical_angle_from_delta` and
+  `attenuation_length_from_beta`;
+- the three-point fit of the polynomial background (next paragraph).
+
+A first click on the Single tab's Convert fields before the idle warm-up has
+imported JAX runs the conversion on the UI thread and pays the `import jax` and
+the compile (about 1 s) once; afterwards a conversion costs about 125 microseconds.
 
 One deliberate host step inside a utility: the three-point quadratic fit of
 `background_subtraction(method="polynomial")` is `numpy.polyfit` on the host.
