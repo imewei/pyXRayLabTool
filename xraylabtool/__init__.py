@@ -49,15 +49,12 @@ Access via ``xraylabtool`` command with specialized subcommands:
 For complete documentation, visit: https://pyxraylabtool.readthedocs.io
 """
 
-import os as _os
 import sys
 
 if sys.version_info < (3, 12):  # noqa: UP036
     raise ImportError(
         "XRayLabTool requires Python 3.12+; please upgrade your interpreter."
     )
-
-_os.environ.setdefault("JAX_ENABLE_X64", "1")
 
 __version__ = "0.4.8"
 __author__ = "Wei Chen"

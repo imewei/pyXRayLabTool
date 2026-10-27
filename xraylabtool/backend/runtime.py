@@ -31,6 +31,7 @@ __all__ = [
     "fetch",
     "fetch_status",
     "reset_transfer_counts",
+    "thread_transfer_counts",
     "transfer_counts",
     "upload",
     "worker_guard",
@@ -38,6 +39,7 @@ __all__ = [
 
 _counts: dict[str, int] = {"upload": 0, "fetch_status": 0, "fetch": 0}
 _counts_lock = threading.Lock()
+_thread_counts = threading.local()
 
 
 def ensure_x64() -> None:
@@ -139,12 +141,24 @@ def worker_guard() -> AbstractContextManager[Any]:
 def _bump(kind: str) -> None:
     with _counts_lock:
         _counts[kind] += 1
+    mine = _thread_counts.__dict__.setdefault("counts", dict.fromkeys(_counts, 0))
+    mine[kind] += 1
 
 
 def transfer_counts() -> dict[str, int]:
     """Number of boundary calls so far, by kind (``upload``, ``fetch_status``, ``fetch``)."""
     with _counts_lock:
         return dict(_counts)
+
+
+def thread_transfer_counts() -> dict[str, int]:
+    """Boundary calls made by the calling thread so far, by kind.
+
+    Unlike :func:`transfer_counts` it is not disturbed by other threads (GUI
+    workers), so a wrapper can assert its own per-call budget from the difference
+    of two readings. :func:`reset_transfer_counts` does not reset it.
+    """
+    return dict(_thread_counts.__dict__.setdefault("counts", dict.fromkeys(_counts, 0)))
 
 
 def reset_transfer_counts() -> None:

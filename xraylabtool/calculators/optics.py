@@ -146,6 +146,13 @@ def _pchip_pair(x: Any, y: Any, d: Any, n: Any, q: Any) -> Any:
     return jnp.where(inside, value, jnp.nan)
 
 
+def _row_pair(tables: ScatteringTables, zi: Any, q: Any) -> Any:
+    """f1 and f2 of table row ``zi`` at ``q`` (eV), shape ``[2, M]``."""
+    y = jnp.stack([tables.f1[zi], tables.f2[zi]])
+    d = jnp.stack([tables.d1[zi], tables.d2[zi]])
+    return _pchip_pair(tables.x[zi], y, d, tables.n[zi], q)
+
+
 def interpolate_f(tables: ScatteringTables, z: Any, counts: Any, e_ev: Any) -> Any:
     """Count-weighted f1 and f2 sums of a material at ``e_ev``.
 
@@ -168,12 +175,7 @@ def interpolate_f(tables: ScatteringTables, z: Any, counts: Any, e_ev: Any) -> A
         where any real element is outside its table.
     """
 
-    def one(zi: Any) -> Any:
-        y = jnp.stack([tables.f1[zi], tables.f2[zi]])
-        d = jnp.stack([tables.d1[zi], tables.d2[zi]])
-        return _pchip_pair(tables.x[zi], y, d, tables.n[zi], e_ev)
-
-    pairs = jax.vmap(one)(z)  # (K, 2, M)
+    pairs = jax.vmap(lambda zi: _row_pair(tables, zi, e_ev))(z)  # (K, 2, M)
     c = counts[:, None, None]
     weighted = jnp.where(c == 0, 0.0, pairs * c)
     # A left fold over K: a reduce's association tree depends on K, and the padded
@@ -372,6 +374,72 @@ def _tail_program(batch: Any, f1: Any, f2: Any, energies: Any) -> Any:
 
     out, electron_density, ok = jax.vmap(one)(f1, f2, mw, rho, n_electrons)
     return {"out": out, "electron_density": electron_density, "ok": ok}
+
+
+@jax.jit
+def _row_program(tables: ScatteringTables, z: Any, q: Any) -> Any:
+    """f1 (row 0) and f2 (row 1) of table row ``z`` at ``q`` eV, NaN outside the table.
+
+    Run it inside ``jax.enable_x64(True)``. ``z`` is a traced scalar, so every
+    element shares one compiled program per query length.
+    """
+    return _row_pair(tables, z, q)
+
+
+@jax.jit
+def _scattering_program(
+    tables: ScatteringTables, batch: Any, e_ev: Any, wavelength: Any, factor: Any
+) -> Any:
+    """δ, β, f1 and f2 totals of one material at the caller's ``e_ev`` and ``wavelength``.
+
+    Backs ``calculate_scattering_factors``, which takes energy and wavelength as
+    separate arguments. Run it inside ``jax.enable_x64(True)``.
+
+    Parameters
+    ----------
+    batch : tuple
+        ``(z[K], counts[K])``; padding rows use ``z=0, counts=0``.
+    e_ev, wavelength : Array, shape ``[M]``
+        Energies in eV and wavelengths in metres.
+    factor : scalar
+        ``SCATTERING_FACTOR * rho / molecular_weight``.
+
+    Returns
+    -------
+    Array, shape ``[4, M]``
+        Rows δ, β, Σ counts·f1, Σ counts·f2.
+    """
+    z, counts = batch
+    f = interpolate_f(tables, z, counts, e_ev)
+    wave_factor = jnp.square(wavelength) * factor
+    return jnp.stack([wave_factor * f[0], wave_factor * f[1], f[0], f[1]])
+
+
+@jax.jit
+def _derived_program(args: Any) -> Any:
+    """Clamped derived quantities for ``calculate_derived_quantities``.
+
+    Run it inside ``jax.enable_x64(True)``.
+
+    Parameters
+    ----------
+    args : tuple
+        ``(wavelength_m[M], dispersion[M], absorption[M], rho, mw, n_electrons)``.
+
+    Returns
+    -------
+    dict
+        ``{"electron_density": scalar, "out": (4, M)}`` with rows critical angle,
+        attenuation length, real and imaginary SLD.
+    """
+    wavelength, dispersion, absorption, rho, mw, n_electrons = args
+    ed, critical, attenuation, re_sld, im_sld = _derived(
+        wavelength, dispersion, absorption, rho, mw, n_electrons
+    )
+    return {
+        "electron_density": ed,
+        "out": jnp.stack([critical, attenuation, re_sld, im_sld]),
+    }
 
 
 # ---------------------------------------------------------------------------
