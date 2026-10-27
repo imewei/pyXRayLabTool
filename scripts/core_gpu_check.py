@@ -20,6 +20,12 @@ prints one table with a verdict line per gate and exits 1 if any row misses:
 * P12 and P13: compiles after warm-up and for a new energy count inside a
   bucket (``core_bench`` ``compiles`` worker, the JAX compile-event listener).
 
+The timings run first, in fresh processes, before this process touches the device:
+a resident parent CUDA context (it preallocates most of the GPU memory and keeps
+the driver and clocks up) makes the child timings about 1.3 ms faster for P6 and
+shortens the first call by about 200 ms, so a parent that holds the GPU is not a
+faithful model of a fresh user process.
+
 P8 to P10 are CPU-host or CLI gates measured by ``scripts/core_bench.py``. The
 script refuses to run when JAX has no CUDA device. Record the load average
 printed at the start and the end with the numbers.
@@ -31,6 +37,7 @@ import argparse
 from collections.abc import Callable
 import os
 from pathlib import Path
+import subprocess
 import sys
 import traceback
 
@@ -234,25 +241,39 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    device = jax.devices()[0]
-    if device.platform not in ("gpu", "cuda"):
+    # The CUDA probe and the fresh-process timings run before this process touches
+    # the device: a resident parent context (it preallocates most of the GPU
+    # memory) changes the timings of the child processes.
+    probe = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import jax; d = jax.devices()[0]; print(d.platform, d)",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    platform, _, device = probe.stdout.strip().partition(" ")
+    if probe.returncode != 0 or platform not in ("gpu", "cuda"):
         print(
-            f"core_gpu_check.py needs a CUDA device; JAX's default device is {device} "
-            f"(platform {device.platform!r}). Run it on the CUDA machine, outside the "
-            "sandbox, without JAX_PLATFORMS=cpu.",
+            "core_gpu_check.py needs a CUDA device; JAX's default device is "
+            f"{device or 'unavailable'} (platform {platform!r}). Run it on the CUDA "
+            "machine, outside the sandbox, without JAX_PLATFORMS=cpu.\n"
+            + probe.stderr[-500:],
             file=sys.stderr,
         )
         return 2
 
     import core_bench  # noqa: PLC0415
 
-    print(f"jax {jax.__version__}  device {device}  platform {device.platform}")
+    print(f"jax {jax.__version__}  device {device}  platform {platform}")
     print(f"machine before: {core_bench.machine_state()}")
+    if not args.skip_bench:
+        guarded("P5-P7, P12, P13 (fresh processes)", lambda: check_bench(args.repeats))
     guarded("goldens (rtol 1e-12)", check_goldens)
     guarded("P11 transfer budget (guard live)", check_transfers)
     guarded("padding invariance", check_padding)
-    if not args.skip_bench:
-        guarded("P5-P7, P12, P13 (fresh processes)", lambda: check_bench(args.repeats))
     print(f"machine after: {core_bench.machine_state()}")
 
     misses = [r for r in rows if not r[1]]
