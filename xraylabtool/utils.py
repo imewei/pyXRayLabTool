@@ -553,6 +553,15 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
         >>> parse_formula("Ca5(PO4)3OH")
         (['Ca', 'P', 'O', 'H'], [5.0, 3.0, 13.0, 1.0])
     """
+    symbols, counts = _parse_formula_cached(formula_str)
+    return list(symbols), list(counts)
+
+
+@lru_cache(maxsize=1024)
+def _parse_formula_cached(
+    formula_str: str,
+) -> tuple[tuple[str, ...], tuple[float, ...]]:
+    """Cached, immutable result of :func:`parse_formula` (exceptions are not cached)."""
     from xraylabtool.exceptions import FormulaError
 
     if not formula_str or not formula_str.strip():
@@ -581,7 +590,7 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
     if not element_symbols:
         raise FormulaError(f"No elements found in formula: {formula_str}", formula_str)
 
-    return element_symbols, element_counts
+    return tuple(element_symbols), tuple(element_counts)
 
 
 def _convert_atomic_number_to_int(atomic_num: Any) -> int:
