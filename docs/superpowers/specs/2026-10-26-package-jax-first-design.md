@@ -247,7 +247,8 @@ Pure functions, x64 as a precondition:
 - `interpolate_f(tables, z, counts, e_ev)`: gather the rows `tables.x[z]` etc. into
   `(K, N)`, `vmap` over elements a PCHIP that does **one** `searchsorted` per
   `(row, query)` and evaluates f1 and f2 together (Hermite basis shared), NaN outside
-  `[x[0], x[n-1]]`, then `einsum` with `counts`.
+  `[x[0], x[n-1]]`, then a left fold over the K elements with `counts` (`lax.scan`), not an
+  `einsum`, so padding stays bit-exact.
 - `derive(energy_kev, f1_sum, f2_sum, rho, mw, n_electrons)`: wavelength, δ, β from the
   count-weighted f1/f2 totals (the `rho/mw` scattering prefactor needs `rho` and `mw`), then critical angle, attenuation
   length, real and imaginary SLD; the formulas are copied verbatim from
@@ -324,12 +325,16 @@ repeats, in input order; `chunk_iterator`, `save_batch_results` and `load_batch_
 are untouched. Each `F`-block costs one upload and one fetch (P11 is per block). `BatchConfig.chunk_size` is
 the upper bound of materials per block; `max_workers` and the parallel switches are
 accepted and ignored (logged once at DEBUG) so existing configs keep working.
-Batch inputs given as lists follow one rule: each item is screened on the host before
-its row is appended, so a bad item never shifts the others. A per-item density that is
-a sequence or array is rejected like any non-number (`calculate_xray_properties` raises
-the up-front `ValueError`, `calculate_multiple_xray_properties` skips and logs the item,
-`calculate_batch_properties` warns and returns `None` for it). `calculate_batch_properties`
-alone has per-item energies: it groups them by raw `(shape, dtype, bytes)`, so items with
+Batch inputs follow one rule: each item is screened on the host before its row is
+appended, so a bad item never shifts the others. A per-item density that is a
+non-scalar sequence or array (`ndim > 0`) is rejected like any non-number:
+`calculate_xray_properties` raises the up-front `ValueError`,
+`calculate_multiple_xray_properties` skips and logs the item, and
+`calculate_batch_properties` warns and returns `None` for it. A 0-d array density is
+converted with `float()` and accepted by the last two, but `calculate_xray_properties`'
+up-front check rejects it too. The three entry points take one shared energies argument
+(a 2-D list raises `EnergyError`); per-item energies exist only in the chunks of
+`process_batch_chunk`, which groups them by raw `(shape, dtype, bytes)` so items with
 different energy inputs run in their own group and follow their own energies.
 `calculate_derived_quantities` accepts plain lists (the NumPy-era code raised `TypeError`).
 `MemoryMonitor` keeps checking host result memory; CSV/Parquet loading and saving stay
@@ -440,13 +445,13 @@ platform unset.
 | P1 | SiO2 ×200 E, CPU | ≤ 0.5 ms | 0.263 ms | NumPy 0.09, JAX 0.86 |
 | P2 | SiO2 ×20 000 E, CPU | ≤ 6 ms | 3.81 ms | NumPy 1.84, JAX 4.86 |
 | P3 | 200 formulas ×200 E, CPU | ≤ the NumPy row of `core_bench.py` on the same host (19.8 ms measured) | 12.9 ms | NumPy 17.9 (scratch pool) / 19.8 (`core_bench.py`), JAX 176 / 184 |
-| P4 | 2000 formulas ×200 E, CPU | ≤ the NumPy row of `core_bench.py` on the same host (198 ms measured) | 165 ms | NumPy 202, JAX 1828 |
+| P4 | 2000 formulas ×200 E, CPU | ≤ the NumPy row of `core_bench.py` on the same host (198 ms measured) | 165 ms | NumPy 198, JAX 1898 (`core_bench.py`); 202 / 1828 with the spike's scratch pool |
 | P5 | SiO2 ×200 E, GPU | ≤ 1.5 ms | 0.622 ms | JAX 3.89 |
 | P6 | 200 formulas ×200 E, GPU | ≤ 5 ms | 1.63 ms | JAX 759 |
 | P7 | SiO2 ×20 000 E, GPU | ≤ 2 ms | 0.833 ms | JAX 4.52 |
 | P8 | first call incl. compile, no cache, CPU | ≤ 1.0 s | 174 ms | JAX 1398 ms |
 | P9 | CLI `calc`, `convert`, `bragg` cold, warm persistent cache | CPU host ≤ 2.0 s; GPU host ≤ 3.3 s | | 0.86 s; 3.30 s (`calc`) |
-| P10 | CLI `--version`, `--help`, `formula`, `atomic`, `list`, `completion` cold | ≤ 0.9 s on both hosts (no JAX import); `atomic` ≤ 1.3 s (mendeleev, revised; about 1.29 s of headroom on the GPU host once the JAX leak is removed, 1.86 s today) | | 0.87 s; 1.27 s GPU host (`uv run`); console script 0.34 to 0.36 s (`atomic` 1.14 s) / 0.99 to 1.01 s (`atomic` 1.86 s) |
+| P10 | CLI `--version`, `--help`, `formula`, `atomic`, `list`, `completion` cold | ≤ 0.9 s on both hosts (no JAX import); `atomic` ≤ 1.3 s (mendeleev import, not JAX, revised; it read 1.86 s on the GPU host while JAX leaked into the import, 1.14 s on the CPU host) | | 0.87 s; 1.27 s GPU host (`uv run`); console script 0.34 to 0.36 s (`atomic` 1.14 s) / 0.99 to 1.01 s (`atomic` 1.86 s) |
 | P11 | transfers per device program call (single material: per public call; batch: per `F`-block) | ≤ 1 upload, ≤ 1 fetch | | |
 | P12 | compiles after warm-up, same buckets | 0 | | |
 | P13 | compiles for a new energy count inside a bucket | 0 | | 16 |

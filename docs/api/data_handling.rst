@@ -29,7 +29,7 @@ Usage Example
    print(si["atomic_number"], si["atomic_weight"])
 
    print(is_element_preloaded("Si"))        # True; all 92 elements load at import
-   warm_up_cache(["Si", "O", "Al"])          # build interpolators ahead of first use
+   warm_up_cache(["Si", "O", "Al"])          # host atomic metadata only; xraylabtool.warm_up() precompiles
    print(get_cache_stats())
    # {'preloaded_elements': 92, 'runtime_cached_elements': 0, 'total_cached_elements': 92}
 
