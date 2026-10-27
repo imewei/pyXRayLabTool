@@ -225,7 +225,10 @@ def derive(
     """Optical properties from count-weighted f1/f2 totals.
 
     Copies ``core._properties_from_totals`` and the derived-quantity kernel:
-    δ = λ²·(S·ρ/M)·f1, β likewise with f2, with ``S = SCATTERING_FACTOR``.
+    δ = (λ²·S·ρ)·(f1/M), β likewise with f2, with ``S = SCATTERING_FACTOR``. The
+    legacy ``λ²·(S·ρ/M)`` is reassociated so that no intermediate is subnormal for
+    a huge ``M`` (XLA flushes subnormals to zero): ``f1/M`` and ``λ²·S·ρ`` stay O(1)
+    and O(1e-6) whenever the result is representable.
 
     Parameters
     ----------
@@ -243,9 +246,9 @@ def derive(
     # The barrier stops XLA from folding ``(K/E)/x`` into ``K/(E*x)`` when the batch
     # is one material, which would change the last bit of the SLD and attenuation.
     wavelength = jax.lax.optimization_barrier(ENERGY_TO_WAVELENGTH_FACTOR / energy_kev)
-    wave_factor = jnp.square(wavelength) * (SCATTERING_FACTOR * rho / mw)
-    dispersion = wave_factor * f1_sum
-    absorption = wave_factor * f2_sum
+    wave_factor = jnp.square(wavelength) * (SCATTERING_FACTOR * rho)
+    dispersion = wave_factor * (f1_sum / mw)
+    absorption = wave_factor * (f2_sum / mw)
     ed, critical, attenuation, re_sld, im_sld = _derived(
         wavelength, dispersion, absorption, rho, mw, n_electrons
     )
@@ -263,9 +266,17 @@ def derive(
     )
 
 
-def _status(props: OpticalProps) -> Any:
-    """True where δ and β are finite at every energy."""
-    return jnp.isfinite(props.dispersion).all() & jnp.isfinite(props.absorption).all()
+def _status(props: OpticalProps, rho: Any, mw: Any) -> Any:
+    """True where δ and β are finite at every energy.
+
+    The legacy ``S·ρ/M`` overflowed to ``inf`` (hence non-finite δ and β) for a tiny
+    ``M``; δ is now formed without that product, so its finiteness is tested too.
+    """
+    return (
+        jnp.isfinite(props.dispersion).all()
+        & jnp.isfinite(props.absorption).all()
+        & jnp.isfinite(SCATTERING_FACTOR * rho / mw)
+    )
 
 
 def optical_properties(
@@ -298,7 +309,7 @@ def optical_properties(
     -------
     props : OpticalProps
     ok : Array, bool scalar
-        ``all(isfinite(δ)) & all(isfinite(β))``.
+        ``all(isfinite(δ)) & all(isfinite(β))`` and ``S·ρ/M`` finite.
 
     References
     ----------
@@ -309,7 +320,7 @@ def optical_properties(
     e_ev = jax.lax.optimization_barrier(energy_kev * 1000.0)
     f = interpolate_f(tables, z, counts, e_ev)
     props = derive(energy_kev, f[0], f[1], rho, mw, n_electrons)
-    return props, _status(props)
+    return props, _status(props, rho, mw)
 
 
 def _pack(props: OpticalProps) -> Any:
@@ -370,7 +381,7 @@ def _tail_program(batch: Any, f1: Any, f2: Any, energies: Any) -> Any:
 
     def one(f1i: Any, f2i: Any, mwi: Any, rhoi: Any, nei: Any) -> Any:
         props = derive(energies, f1i, f2i, rhoi, mwi, nei)
-        return _pack(props), props.electron_density, _status(props)
+        return _pack(props), props.electron_density, _status(props, rhoi, mwi)
 
     out, electron_density, ok = jax.vmap(one)(f1, f2, mw, rho, n_electrons)
     return {"out": out, "electron_density": electron_density, "ok": ok}
@@ -397,7 +408,12 @@ def _field_program(tables: ScatteringTables, z: Any, field: Any, q: Any) -> Any:
 
 @jax.jit
 def _scattering_program(
-    tables: ScatteringTables, batch: Any, e_ev: Any, wavelength: Any, factor: Any
+    tables: ScatteringTables,
+    batch: Any,
+    e_ev: Any,
+    wavelength: Any,
+    rho: Any,
+    mw: Any,
 ) -> Any:
     """δ, β, f1 and f2 totals of one material at the caller's ``e_ev`` and ``wavelength``.
 
@@ -410,8 +426,8 @@ def _scattering_program(
         ``(z[K], counts[K])``; padding rows use ``z=0, counts=0``.
     e_ev, wavelength : Array, shape ``[M]``
         Energies in eV and wavelengths in metres.
-    factor : scalar
-        ``SCATTERING_FACTOR * rho / molecular_weight``.
+    rho, mw : scalar
+        Density (g/cm³) and molecular weight (g/mol); applied as in :func:`derive`.
 
     Returns
     -------
@@ -420,8 +436,8 @@ def _scattering_program(
     """
     z, counts = batch
     f = interpolate_f(tables, z, counts, e_ev)
-    wave_factor = jnp.square(wavelength) * factor
-    return jnp.stack([wave_factor * f[0], wave_factor * f[1], f[0], f[1]])
+    wave_factor = jnp.square(wavelength) * (SCATTERING_FACTOR * rho)
+    return jnp.stack([wave_factor * (f[0] / mw), wave_factor * (f[1] / mw), f[0], f[1]])
 
 
 @jax.jit

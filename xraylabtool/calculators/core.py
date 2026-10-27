@@ -321,6 +321,7 @@ def _calculate_single_material_xray_properties(
 
     energy_kev = _validate_single_material_inputs(formula_str, energy_kev, mass_density)
     z, counts, molecular_weight, number_of_electrons = _encode_material(formula_str)
+    host.check_molecular_weight(mass_density, molecular_weight)
     density = _density_value(mass_density)
     got = host.run_optical(
         [(z, counts, molecular_weight, number_of_electrons)], [density], energy_kev
@@ -444,7 +445,9 @@ def _calculate_materials(
             _validate_formula_and_density(formula, density)
             if energy_error is not None:
                 raise energy_error
-            encoded.append(_encode_material(formula))
+            material = _encode_material(formula)
+            host.check_molecular_weight(density, material[2])
+            encoded.append(material)
             values.append(_density_value(density))
             screened.append(i)
         except Exception as e:

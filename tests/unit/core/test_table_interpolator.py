@@ -294,8 +294,8 @@ def test_padding_does_not_change_a_bit_of_the_pchip_programs():
     )
     z, counts = [13, 7], [1.0, 2.0]
 
-    short = host.run_scattering(z, counts, e64, wl64, 1.2e-5)
-    long = host.run_scattering(z, counts, e65, wl65, 1.2e-5)
+    short = np.stack(host.run_scattering(z, counts, e64, wl64, 2.2, 60.0))
+    long = np.stack(host.run_scattering(z, counts, e65, wl65, 2.2, 60.0))
     np.testing.assert_array_equal(long[:, :64], short)
 
     np.testing.assert_array_equal(

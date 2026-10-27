@@ -32,8 +32,11 @@ from xraylabtool.calculators import optics
 from xraylabtool.calculators.tables import ScatteringTables, load_tables
 
 __all__ = [
+    "broadcast_shape",
+    "check_molecular_weight",
     "device_tables",
     "execute",
+    "restrict_to",
     "run_derived",
     "run_map",
     "run_optical",
@@ -286,32 +289,94 @@ def run_tail(
     }
 
 
+def broadcast_shape(*shapes: tuple[int, ...]) -> tuple[int, ...]:
+    """Broadcast shape of ``shapes`` with NumPy's own ``ValueError`` on a mismatch.
+
+    The legacy kernels multiplied the operand arrays, so an incompatible pair raised
+    ``operands could not be broadcast together with shapes (a,) (b,)``; multiplying
+    zero-stride views raises the identical error without allocating the operands.
+    """
+    out = np.broadcast_to(np.float64(0.0), shapes[0])
+    for shape in shapes[1:]:
+        out = np.multiply(out, np.broadcast_to(np.float64(0.0), shape))
+    return tuple(np.shape(out))
+
+
+def restrict_to(full: np.ndarray, shape: tuple[int, ...]) -> np.ndarray:
+    """The part of ``full`` that broadcasts to ``shape`` (size-1 axes keep entry 0).
+
+    ``full`` is a result on a broadcast shape whose value does not depend on the axes
+    ``shape`` lacks or has as size 1; the legacy kernels returned it at ``shape``.
+    """
+    pad = (1,) * (full.ndim - len(shape)) + tuple(shape)
+    index = tuple(slice(0, 1) if p == 1 else slice(None) for p in pad)
+    return full[index].reshape(shape)
+
+
+def check_molecular_weight(mass_density: Any, molecular_weight: Any) -> None:
+    """Raise the legacy ``ZeroDivisionError`` for a zero molecular weight.
+
+    The legacy code evaluated ``SCATTERING_FACTOR * mass_density / molecular_weight``
+    on Python numbers, so a formula whose atom counts are all zero raised
+    ``ZeroDivisionError("division by zero")``. A NumPy-scalar or array density gave
+    ``inf`` and the non-finite status instead, which the device program still does.
+    """
+    if molecular_weight == 0 and not isinstance(mass_density, np.generic | np.ndarray):
+        raise ZeroDivisionError("division by zero")
+
+
 def run_scattering(
-    z: Any, counts: Any, e_ev: Any, wavelength: Any, factor: float
-) -> np.ndarray:
-    """Run ``_scattering_program`` for one material; returns ``[4, M]`` (δ, β, f1, f2)."""
+    z: Any,
+    counts: Any,
+    e_ev: Any,
+    wavelength: Any,
+    mass_density: float,
+    molecular_weight: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Run ``_scattering_program`` for one material.
+
+    Returns
+    -------
+    tuple of ndarray
+        ``(dispersion, absorption, f1_total, f2_total)``. Energy and wavelength
+        broadcast as the legacy kernel did (a mismatch raises NumPy's
+        ``ValueError``): δ and β take the broadcast shape, f1 and f2 the shape of
+        ``e_ev``.
+    """
     zs = np.asarray(z, dtype=np.int32)
     k_pad = bucket_pow2(zs.size, minimum=2)
     z_pad = np.zeros(k_pad, dtype=np.int32)
     c_pad = np.zeros(k_pad)
     z_pad[: zs.size] = zs
     c_pad[: zs.size] = np.asarray(counts, dtype=np.float64)
-    e = np.atleast_1d(np.asarray(e_ev, dtype=np.float64))
-    width = _width(e.size, None)
+    e = np.asarray(e_ev, dtype=np.float64)
+    wl = np.asarray(wavelength, dtype=np.float64)
+    shape = broadcast_shape(wl.shape, e.shape)
+    e_flat = np.broadcast_to(e, shape).ravel()
+    wl_flat = np.broadcast_to(wl, shape).ravel()
+    width = _width(e_flat.size, None)
     tables = device_tables()
     got = execute(
         lambda dev: optics._scattering_program(
-            tables, (dev[0], dev[1]), dev[2], dev[3], dev[4]
+            tables, (dev[0], dev[1]), dev[2], dev[3], dev[4], dev[5]
         ),
         (
             z_pad,
             c_pad,
-            _pad_last(e, width),
-            _pad_last(np.atleast_1d(wavelength), width),
-            np.float64(factor),
+            _pad_last(e_flat, width),
+            _pad_last(wl_flat, width),
+            np.float64(mass_density),
+            np.float64(molecular_weight),
         ),
     )
-    return np.array(got[:, : e.size])
+    rows = [np.array(r[: e_flat.size]).reshape(shape) for r in got]
+    dispersion, absorption = rows[0], rows[1]
+    return (
+        dispersion,
+        absorption,
+        restrict_to(rows[2], e.shape),
+        restrict_to(rows[3], e.shape),
+    )
 
 
 def run_derived(

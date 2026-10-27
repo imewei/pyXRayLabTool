@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from xraylabtool.constants import PI, SCATTERING_FACTOR
+from xraylabtool.constants import PI
 
 if TYPE_CHECKING:
     from xraylabtool.typing_extensions import (
@@ -207,16 +207,15 @@ def calculate_scattering_factors(
 
     from xraylabtool.calculators import host
 
-    factor = SCATTERING_FACTOR * mass_density / molecular_weight
-    got = host.run_scattering(
+    host.check_molecular_weight(mass_density, molecular_weight)
+    return host.run_scattering(
         rows,
         [float(entry[0]) for entry in element_data],
         energy_ev,
         wavelength,
-        float(factor),
+        float(mass_density),
+        float(molecular_weight),
     )
-    dispersion, absorption, f1_total, f2_total = (row.copy() for row in got)
-    return dispersion, absorption, f1_total, f2_total
 
 
 def calculate_derived_quantities(
@@ -263,23 +262,35 @@ def calculate_derived_quantities(
     """
     from xraylabtool.calculators import host
 
-    wl, delta, beta = np.broadcast_arrays(
-        *(np.asarray(a, dtype=np.float64) for a in (wavelength, dispersion, absorption))
+    wl, delta, beta = (
+        np.asarray(a, dtype=np.float64) for a in (wavelength, dispersion, absorption)
     )
     # The finiteness guard branches on concrete values, so it stays on the host.
     if not np.isfinite(delta).all() or not np.isfinite(beta).all():
         raise ValueError(
             "Non-finite values (NaN or Inf) detected in dispersion or absorption coefficients"
         )
+    # Each legacy field had the shape of its own arithmetic: the critical angle
+    # follows δ, the attenuation length (λ, β), the real SLD (δ, λ), the imaginary
+    # SLD (β, λ). Taking them in kernel order raises NumPy's own mismatch error.
+    shape_att = host.broadcast_shape(wl.shape, beta.shape)
+    shape_re = host.broadcast_shape(delta.shape, wl.shape)
+    shape_im = host.broadcast_shape(beta.shape, wl.shape)
+    wl_b, delta_b, beta_b = np.broadcast_arrays(wl, delta, beta)
     electron_density, out = host.run_derived(
-        wl.ravel(),
-        delta.ravel(),
-        beta.ravel(),
+        wl_b.ravel(),
+        delta_b.ravel(),
+        beta_b.ravel(),
         float(mass_density),
         float(molecular_weight),
         float(number_of_electrons),
     )
+    full = wl_b.shape
     critical_angle, attenuation_length, re_sld, im_sld = (
-        row.reshape(wl.shape).copy() for row in out
+        # ``[()]`` turns a 0-d result into a NumPy scalar, as the legacy kernel did.
+        host.restrict_to(row.reshape(full), shape).copy()[()]
+        for row, shape in zip(
+            out, (delta.shape, shape_att, shape_re, shape_im), strict=True
+        )
     )
     return electron_density, critical_angle, attenuation_length, re_sld, im_sld
