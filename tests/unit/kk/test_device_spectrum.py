@@ -13,8 +13,9 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from xraylabtool.kk._device import Spectrum, fetch, upload
-from xraylabtool.kk._shapes import _next_bucket, bucket, bucket_pow2
+from xraylabtool.backend.runtime import fetch, upload
+from xraylabtool.backend.shapes import _next_bucket, bucket, bucket_pow2
+from xraylabtool.kk._device import Spectrum
 from xraylabtool.kk.database import DeviceTables, load_asf
 from xraylabtool.kk.spectrum import compound_spectrum_device, evaluate_f2_device
 from xraylabtool.kk.transform import relativistic_correction
@@ -261,8 +262,8 @@ def test_evaluate_f2_device_rounds_like_upstream_at_cancellation() -> None:
 def test_device_tables_concurrent_first_call_uploads_once() -> None:
     from concurrent.futures import ThreadPoolExecutor
 
+    from xraylabtool.backend.runtime import transfer_counts
     from xraylabtool.kk import database
-    from xraylabtool.kk._device import transfer_counts
 
     db = load_asf()
     cached = dict(database._tables_cache)  # restored below

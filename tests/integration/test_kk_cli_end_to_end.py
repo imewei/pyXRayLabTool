@@ -15,8 +15,9 @@ import jax
 import numpy as np
 import pytest
 
+from xraylabtool.backend import runtime
 from xraylabtool.interfaces.cli import main
-from xraylabtool.kk import _device, kk_calculate_real, load_nearedge
+from xraylabtool.kk import kk_calculate_real, load_nearedge
 
 ROOT = Path(__file__).resolve().parents[2]
 EDGE = ROOT / "tests" / "characterization" / "kk" / "nearedge_example.txt"
@@ -194,7 +195,7 @@ def test_cli_writes_the_persistent_compile_cache(
     }
     for name, value in redirect.items():
         monkeypatch.setenv(name, value)
-    cache_dir = _device._user_cache_dir()
+    cache_dir = runtime._user_cache_dir()
     env = {k: v for k, v in os.environ.items() if k != "XRAYLABTOOL_NO_JAX_CACHE"}
     env.update(JAX_PLATFORMS="cpu", PYTHONPATH=str(ROOT))
     done = subprocess.run(

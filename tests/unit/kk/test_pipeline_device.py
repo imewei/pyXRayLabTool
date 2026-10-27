@@ -23,6 +23,7 @@ import numpy as np
 import pytest
 
 from tests.fixtures.kk_compiles import kk_programs, numerical_programs, record_compiles
+from xraylabtool.backend import runtime
 from xraylabtool.backend.array_ops import JaxBackend, get_backend, set_backend
 from xraylabtool.exceptions import CalculationError, NearEdgeDataError
 from xraylabtool.kk import (
@@ -128,9 +129,9 @@ def test_pipeline_under_disallow_explicit_guard(name: str) -> None:
 def test_transfer_budget_warm_call(name: str, kk_log: pytest.LogCaptureFixture) -> None:
     _run(name)  # warm
     kk_log.clear()
-    _device.reset_transfer_counts()
+    runtime.reset_transfer_counts()
     _run(name)
-    counts = _device.transfer_counts()
+    counts = runtime.transfer_counts()
     assert counts == {
         "upload": 1,
         "fetch_status": 1 + _passes(kk_log),
@@ -151,13 +152,16 @@ _CONVERSIONS = (
 _NUMPY_CONVERSIONS = ("asarray", "array", "asanyarray", "ascontiguousarray")
 
 
+_DEVICE_HELPER_MODULES = ("xraylabtool.kk._device", "xraylabtool.backend.runtime")
+
+
 def _outside_device_helpers() -> bool:
-    """True unless the nearest ``xraylabtool`` frame on the stack is ``kk._device``."""
+    """True unless the nearest ``xraylabtool`` frame is ``kk._device`` or ``backend.runtime``."""
     frame = sys._getframe(2)
     while frame is not None:
         module = frame.f_globals.get("__name__", "")
         if module.startswith("xraylabtool"):
-            return module != "xraylabtool.kk._device"
+            return module not in _DEVICE_HELPER_MODULES
         frame = frame.f_back
     return True
 
@@ -226,13 +230,13 @@ def test_jax_array_energies_are_fetched_through_the_counted_helper(
     """A device-array ``energies_kev`` costs one extra, counted input-preparation fetch."""
     grid = np.geomspace(0.05, 20.0, 64)
     expected = api.kk_calculate_real("SiO2", energies_kev=grid)  # warm
-    dev = _device.upload(grid)
+    dev = runtime.upload(grid)
     stray_conversions.clear()
-    _device.reset_transfer_counts()
+    runtime.reset_transfer_counts()
     with jax.transfer_guard("disallow_explicit"):
         result = api.kk_calculate_real("SiO2", energies_kev=dev)
     assert stray_conversions == []
-    assert _device.transfer_counts() == {"upload": 1, "fetch_status": 1, "fetch": 2}
+    assert runtime.transfer_counts() == {"upload": 1, "fetch_status": 1, "fetch": 2}
     np.testing.assert_array_equal(result.f1, expected.f1)
 
 
@@ -252,12 +256,12 @@ def test_conversion_probe_sees_a_stray_conversion(
 @pytest.mark.unit
 def test_cold_table_upload_is_counted_once_and_separately(monkeypatch) -> None:
     monkeypatch.setattr(database, "_tables_cache", {})
-    _device.reset_transfer_counts()
+    runtime.reset_transfer_counts()
     _run("explicit")
-    assert _device.transfer_counts()["upload"] == 2  # tables + inputs
-    _device.reset_transfer_counts()
+    assert runtime.transfer_counts()["upload"] == 2  # tables + inputs
+    runtime.reset_transfer_counts()
     _run("explicit")
-    assert _device.transfer_counts()["upload"] == 1
+    assert runtime.transfer_counts()["upload"] == 1
 
 
 # --- compile budget ----------------------------------------------------------
@@ -550,6 +554,7 @@ _COLD_THREADS_SCRIPT = """
     import jax
     import numpy as np
     from tests.fixtures.kk_compiles import kk_programs, record_compiles
+    from xraylabtool.backend import runtime
     from xraylabtool.kk import _device, database, kk_calculate_real
 
     packs = []
@@ -578,7 +583,7 @@ _COLD_THREADS_SCRIPT = """
     print(json.dumps({
         "errors": errors,
         "packs": len(packs),
-        "uploads": _device.transfer_counts()["upload"],
+        "uploads": runtime.transfer_counts()["upload"],
         "equal": not errors and all(np.array_equal(o.f1, out[0].f1) for o in out),
         "dtype": "" if errors else str(out[0].f1.dtype),
         "kk": sorted(kk_programs(events)),
@@ -786,8 +791,8 @@ def test_refinement_knobs_do_not_recompile_assembly() -> None:
 def test_worker_guard_follows_the_environment(monkeypatch) -> None:
     """The guard is on only when XRAYLABTOOL_TRANSFER_GUARD is set."""
     monkeypatch.setenv("XRAYLABTOOL_TRANSFER_GUARD", "1")
-    with _device.worker_guard(), pytest.raises(Exception, match=r"[Dd]isallowed"):
+    with runtime.worker_guard(), pytest.raises(Exception, match=r"[Dd]isallowed"):
         jax.jit(lambda x: x + 1)(1.0)
     monkeypatch.delenv("XRAYLABTOOL_TRANSFER_GUARD")
-    with _device.worker_guard():
+    with runtime.worker_guard():
         assert float(jax.jit(lambda x: x + 1)(1.0)) == 2.0

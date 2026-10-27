@@ -14,7 +14,7 @@ import pytest
 
 from tests.unit.kk.test_pipeline_device import _subprocess
 from xraylabtool import kk
-from xraylabtool.kk import _device
+from xraylabtool.backend import runtime
 
 _CONFIGS = ("jax_compilation_cache_dir", "jax_persistent_cache_min_compile_time_secs")
 
@@ -72,10 +72,10 @@ def test_cache_helper_enables_and_sets_threshold(
 ) -> None:
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
     monkeypatch.setattr(sys, "platform", "linux")
-    assert _device.enable_persistent_cache() is True
+    assert runtime.enable_persistent_cache() is True
     assert jax.config.jax_compilation_cache_dir == str(tmp_path / "xraylabtool" / "jax")
     assert jax.config.jax_persistent_cache_min_compile_time_secs == 0.0
-    assert _device.enable_persistent_cache() is False  # already configured
+    assert runtime.enable_persistent_cache() is False  # already configured
 
 
 @pytest.mark.unit
@@ -83,13 +83,13 @@ def test_cache_helper_respects_opt_out_and_existing_config(
     cache_config: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("XRAYLABTOOL_NO_JAX_CACHE", "1")
-    assert _device.enable_persistent_cache() is False
+    assert runtime.enable_persistent_cache() is False
     assert jax.config.jax_compilation_cache_dir in (None, "")
 
     monkeypatch.delenv("XRAYLABTOOL_NO_JAX_CACHE")
     jax.config.update("jax_compilation_cache_dir", "/user/chose/this")
     jax.config.update("jax_persistent_cache_min_compile_time_secs", 3.0)
-    assert _device.enable_persistent_cache() is False
+    assert runtime.enable_persistent_cache() is False
     assert jax.config.jax_compilation_cache_dir == "/user/chose/this"
     assert jax.config.jax_persistent_cache_min_compile_time_secs == 3.0
 
@@ -101,7 +101,7 @@ def test_cache_helper_keeps_user_threshold(
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
     monkeypatch.setattr(sys, "platform", "linux")
     jax.config.update("jax_persistent_cache_min_compile_time_secs", 5.0)
-    assert _device.enable_persistent_cache() is True
+    assert runtime.enable_persistent_cache() is True
     assert jax.config.jax_persistent_cache_min_compile_time_secs == 5.0
 
 
@@ -124,7 +124,7 @@ def test_cache_dir_is_os_appropriate(
         monkeypatch.delenv(name, raising=False)
     for name, value in env.items():
         monkeypatch.setenv(name, value)
-    assert _device._user_cache_dir(platform).as_posix().endswith(expected)
+    assert runtime._user_cache_dir(platform).as_posix().endswith(expected)
 
 
 @pytest.mark.unit
