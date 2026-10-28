@@ -66,12 +66,18 @@ is JAX-first and this is mandatory.
    `optical_properties` is `jit`/`vmap`/`grad`-compatible (x64 precondition);
    `d(sum dispersion)/d(rho)` equals `sum dispersion / rho` to 1e-12.
    `xraylabtool.calculators.tables` exports `ScatteringTables`, `load_tables`.
+   The tables also hold `coef`, per-interval power-basis cubics derived at load
+   time, so a lookup is one `searchsorted` and one gather.
 4. **Shape buckets and shared runtime.** `backend/runtime.py`
    (`ensure_x64`, `enable_persistent_cache`, `worker_guard`, `upload`,
    `fetch`, `fetch_status`, counters) and `backend/shapes.py` (`bucket`,
-   `bucket_pow2`, `block_for`) are promoted from `kk` and shared; `kk`
-   re-exports them. Energies `M` use `bucket(m, minimum=64)`, elements `K` and
-   materials `F` use powers of two. Padded rows are `z=0, counts=0, mw=1,
+   `bucket_energy`, `bucket_pow2`, `block_for`) are promoted from `kk` and
+   shared; `kk` re-exports them. Energies `M` use `bucket_energy(m)` (powers
+   of two from 64 to 4096, the 1.25 ladder above: a compile costs 100-300 ms,
+   padding a short axis microseconds, so 7 rungs cover 1-4096 energies instead
+   of 21), elements `K` and materials `F` use powers of two. A call uploads
+   one flat float64 buffer (material rows, then energies; one leaf is ~4x
+   cheaper than six on the CPU). Padded rows are `z=0, counts=0, mw=1,
    rho=1`; padded energies repeat the last real energy. Padding invariance is
    tested bit-exact. Importing `runtime` or `shapes` has no side effect and
    `import xraylabtool` does not import JAX.

@@ -165,13 +165,12 @@ class XRayResult:
 
     def __post_init__(self) -> None:
         """Post-initialization to handle any setup after object creation."""
-        # Only convert if not already a numpy array: these fields are typed as
-        # ndarray for the internal calculation path (which already produces
-        # float64 contiguous arrays), but the dataclass is public API and
-        # external callers may construct it from raw Python lists or scalars.
+        # Convert unless already a float64 ndarray: the internal calculation path
+        # produces those, but the dataclass is public API and external callers may
+        # construct it from raw Python lists, scalars or float32/int arrays.
         for name in self._ARRAY_FIELDS:
             value = getattr(self, name)
-            if not isinstance(value, np.ndarray):
+            if not isinstance(value, np.ndarray) or value.dtype != np.float64:
                 setattr(self, name, np.asarray(value, dtype=np.float64))
 
     # Convenience properties used in docs/notebooks

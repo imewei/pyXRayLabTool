@@ -112,23 +112,24 @@ class OpticalProps:
 # ---------------------------------------------------------------------------
 
 
-def _pchip_pair(x: Any, y: Any, d: Any, n: Any, q: Any) -> Any:
+def _pchip_pair(x: Any, coef: Any, n: Any, q: Any) -> Any:
     """Evaluate f1 and f2 of one padded table row at ``q`` with one ``searchsorted``.
 
     Parameters
     ----------
     x : Array, shape ``[N]``
         Knots (eV), strictly increasing; entries past ``n`` are padding.
-    y, d : Array, shape ``[2, N]``
-        Values and PCHIP node slopes of f1 (row 0) and f2 (row 1).
+    coef : Array, shape ``[N-1, 9]``
+        Row of :attr:`ScatteringTables.coef`: ``x[i]`` and the power-basis
+        cubics of f1 and f2 per interval, fetched with one gather.
     n : Array, int scalar
         Number of real knots.
-    q : Array, shape ``[M]``
+    q : Array, shape ``[M]`` or scalar
         Query energies (eV).
 
     Returns
     -------
-    Array, shape ``[2, M]``
+    Array, shape ``[2, M]`` (``[2]`` for a scalar ``q``)
         Cubic Hermite values, NaN outside ``[x[0], x[n-1]]``.
     """
     # "scan_unrolled" returns the same indices as the default "scan" (integers, so
@@ -136,25 +137,17 @@ def _pchip_pair(x: Any, y: Any, d: Any, n: Any, q: Any) -> Any:
     i = jnp.clip(
         jnp.searchsorted(x, q, side="right", method="scan_unrolled") - 1, 0, n - 2
     )
-    h = x[i + 1] - x[i]
-    t = (q - x[i]) / h
-    t2 = t * t
-    t3 = t2 * t
-    value = (
-        (2 * t3 - 3 * t2 + 1) * y[:, i]
-        + (t3 - 2 * t2 + t) * h * d[:, i]
-        + (3 * t2 - 2 * t3) * y[:, i + 1]
-        + (t3 - t2) * h * d[:, i + 1]
-    )
+    k = coef[i]  # (..., 9): one gather instead of ten; q may be a scalar
+    t = q - k[..., 0]
+    f1 = ((k[..., 4] * t + k[..., 3]) * t + k[..., 2]) * t + k[..., 1]
+    f2 = ((k[..., 8] * t + k[..., 7]) * t + k[..., 6]) * t + k[..., 5]
     inside = (q >= x[0]) & (q <= x[n - 1])
-    return jnp.where(inside, value, jnp.nan)
+    return jnp.where(inside, jnp.stack([f1, f2]), jnp.nan)
 
 
 def _row_pair(tables: ScatteringTables, zi: Any, q: Any) -> Any:
     """f1 and f2 of table row ``zi`` at ``q`` (eV), shape ``[2, M]``."""
-    y = jnp.stack([tables.f1[zi], tables.f2[zi]])
-    d = jnp.stack([tables.d1[zi], tables.d2[zi]])
-    return _pchip_pair(tables.x[zi], y, d, tables.n[zi], q)
+    return _pchip_pair(tables.x[zi], tables.coef[zi], tables.n[zi], q)
 
 
 def interpolate_f(tables: ScatteringTables, z: Any, counts: Any, e_ev: Any) -> Any:
@@ -341,8 +334,8 @@ def _pack(props: OpticalProps) -> Any:
     return jnp.stack([getattr(props, name) for name in OUT_FIELDS])
 
 
-@jax.jit
-def _optical_program(tables: ScatteringTables, batch: Any, energies: Any) -> Any:
+@functools.partial(jax.jit, static_argnums=(2, 3))
+def _optical_program(tables: ScatteringTables, packed: Any, f: int, k: int) -> Any:
     """Optical properties of ``F`` materials at ``M`` shared energies.
 
     Run it inside ``jax.enable_x64(True)``.
@@ -350,10 +343,11 @@ def _optical_program(tables: ScatteringTables, batch: Any, energies: Any) -> Any
     Parameters
     ----------
     tables : ScatteringTables
-    batch : tuple
-        ``(z[F, K], counts[F, K], mw[F], rho[F], n_electrons[F])``.
-    energies : Array, shape ``[M]``
-        keV.
+    packed : Array, float64, shape ``[F·(2K+3) + M]``
+        One upload: ``F`` rows ``z[K] | counts[K] | mw | rho | n_electrons``, then
+        the ``M`` energies (keV).
+    f, k : int
+        Static material and element counts (padded).
 
     Returns
     -------
@@ -361,7 +355,12 @@ def _optical_program(tables: ScatteringTables, batch: Any, energies: Any) -> Any
         ``{"out": (F, 9, M) rows in OUT_FIELDS order, "electron_density": (F,),
         "ok": (F,)}``.
     """
-    z, counts, mw, rho, n_electrons = batch
+    width = 2 * k + 3
+    rows = packed[: f * width].reshape(f, width)
+    energies = packed[f * width :]
+    z = rows[:, :k].astype(jnp.int32)
+    counts = rows[:, k : 2 * k]
+    mw, rho, n_electrons = rows[:, 2 * k], rows[:, 2 * k + 1], rows[:, 2 * k + 2]
 
     def one(zi: Any, ci: Any, mwi: Any, rhoi: Any, nei: Any) -> Any:
         props, ok = optical_properties(tables, zi, ci, rhoi, mwi, nei, energies)

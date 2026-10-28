@@ -114,7 +114,7 @@ Resident Tables
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: n, symbols
+   :exclude-members: n, coef, symbols
 
 Device Programs
 ---------------
@@ -123,7 +123,7 @@ Device Programs
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: wavelength, critical_angle, attenuation_length, electron_density, n, symbols
+   :exclude-members: wavelength, critical_angle, attenuation_length, electron_density, n, coef, symbols
 
 Physics Background
 ------------------

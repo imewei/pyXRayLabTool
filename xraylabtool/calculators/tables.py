@@ -34,7 +34,7 @@ _NPZ = Path(__file__).resolve().parent.parent / "data" / "scattering_tables.npz"
 
 @functools.partial(
     jax.tree_util.register_dataclass,
-    data_fields=["x", "f1", "f2", "d1", "d2", "n"],
+    data_fields=["x", "f1", "f2", "d1", "d2", "n", "coef"],
     meta_fields=["symbols"],
 )
 @dataclasses.dataclass(frozen=True, eq=False)
@@ -50,6 +50,11 @@ class ScatteringTables:
         ``[x[0], x[n-1]]``.
     n : Array, int32, shape ``[Z]``
         Real knots per row.
+    coef : Array, float64, shape ``[Z, N-1, 9]``
+        Per interval ``i`` of each row: ``x[i]`` and the power-basis cubic
+        ``c0 + c1 t + c2 t² + c3 t³`` (``t = e - x[i]``) of f1 (entries 1-4) and
+        f2 (entries 5-8), derived from the knots, values and slopes above so one
+        gather fetches everything an energy needs.
     symbols : tuple of str
         Element symbols (host metadata, not a pytree leaf).
     """
@@ -60,7 +65,23 @@ class ScatteringTables:
     d1: Any
     d2: Any
     n: Any
+    coef: Any
     symbols: tuple[str, ...]
+
+
+def _coefficients(
+    x: np.ndarray, f1: np.ndarray, f2: np.ndarray, d1: np.ndarray, d2: np.ndarray
+) -> np.ndarray:
+    """Per-interval layout of :attr:`ScatteringTables.coef` (plain float64 arithmetic)."""
+    h = x[:, 1:] - x[:, :-1]
+
+    def cubic(y: np.ndarray, d: np.ndarray) -> np.ndarray:
+        delta = (y[:, 1:] - y[:, :-1]) / h
+        c2 = (3.0 * delta - 2.0 * d[:, :-1] - d[:, 1:]) / h
+        c3 = (d[:, :-1] + d[:, 1:] - 2.0 * delta) / (h * h)
+        return np.stack([y[:, :-1], d[:, :-1], c2, c3], axis=-1)
+
+    return np.concatenate([x[:, :-1, None], cubic(f1, d1), cubic(f2, d2)], axis=-1)
 
 
 _lock = threading.Lock()
@@ -119,6 +140,7 @@ def load_tables() -> ScatteringTables:
                     d1=f["d1"],
                     d2=f["d2"],
                     n=f["n"],
+                    coef=_coefficients(f["x"], f["f1"], f["f2"], f["d1"], f["d2"]),
                     symbols=tuple(str(s) for s in f["symbols"]),
                 )
             # Without a local x64 scope device_put would canonicalise to float32.

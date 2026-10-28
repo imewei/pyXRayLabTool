@@ -115,6 +115,12 @@ def _validate_energies(energy_kev: FloatLike | ArrayLike) -> EnergyArray:
     if energy_kev.size == 0:
         raise EnergyError("Energies array cannot be empty", valid_range="0.03-30 keV")
 
+    # One pass for the common valid input (~2 us instead of ~8 us). NaN propagates
+    # through min/max and fails both tests, so NaN, Inf and out-of-range values
+    # fall through to the full checks below and keep their exact errors.
+    if energy_kev.min() >= 0.03 and energy_kev.max() <= 30:
+        return energy_kev
+
     if np.any(energy_kev <= 0):
         raise EnergyError("All energies must be positive", valid_range="0.03-30 keV")
 
@@ -625,20 +631,27 @@ def calculate_single_material_properties(
     return _xray_result_from_properties(properties)
 
 
-def warm_up(formulas: Sequence[str] = ("SiO2",)) -> None:
-    """Precompile the default-bucket device programs for ``formulas``.
+def warm_up(
+    formulas: Sequence[str] = ("SiO2",), energy_counts: Sequence[int] = (1,)
+) -> None:
+    """Precompile the device programs for ``formulas`` and energy counts.
 
     Loads the resident scattering tables, then runs the single-material
     program and the supplied-factor program once per distinct element bucket
-    of ``formulas`` at one material and the smallest energy bucket, so a later
-    ``calculate_single_material_properties`` or
-    ``calculate_properties_from_factors`` call with up to 64 energies compiles
-    nothing.
+    of ``formulas`` and energy bucket of ``energy_counts`` at one material, so
+    a later ``calculate_single_material_properties`` or
+    ``calculate_properties_from_factors`` call whose energy count falls in a
+    warmed bucket (up to 64 energies by default) compiles nothing. A new
+    energy bucket costs a compile of 100-300 ms.
 
     Parameters
     ----------
     formulas : sequence of str, default ("SiO2",)
         Chemical formulas whose element counts select the programs to build.
+    energy_counts : sequence of int, default (1,)
+        Numbers of energies you expect to pass; each selects its bucket
+        (:func:`~xraylabtool.backend.shapes.bucket_energy`: powers of two up to
+        4096).
 
     Raises
     ------
@@ -646,6 +659,8 @@ def warm_up(formulas: Sequence[str] = ("SiO2",)) -> None:
         If a formula cannot be parsed.
     UnknownElementError
         If a formula names an element without tabulated data.
+    ValueError
+        If an energy count is not positive.
 
     References
     ----------
@@ -654,25 +669,36 @@ def warm_up(formulas: Sequence[str] = ("SiO2",)) -> None:
     Examples
     --------
     >>> import xraylabtool as xlt
-    >>> xlt.warm_up(("SiO2",))
+    >>> xlt.warm_up(("SiO2",), energy_counts=(1, 500))
     """
-    from xraylabtool.backend.shapes import bucket_pow2
+    from xraylabtool.backend.shapes import bucket_energy, bucket_pow2
     from xraylabtool.calculators import host
     from xraylabtool.calculators.optics import encode_formula
     from xraylabtool.calculators.tables import load_tables
 
+    if any(int(n) < 1 for n in energy_counts):
+        raise ValueError(f"energy_counts must be positive, got {tuple(energy_counts)}")
     load_tables()
-    seen: set[int] = set()
+    seen: set[tuple[int, int]] = set()
+    tail_widths: set[int] = set()
     for formula in formulas:
         z, counts, molecular_weight, number_of_electrons = encode_formula(formula)
         k = bucket_pow2(len(z), minimum=2)
-        if k in seen:
-            continue
-        seen.add(k)
-        host.run_optical(
-            [(z, counts, molecular_weight, number_of_electrons)], [1.0], [8.0]
-        )
-    host.run_tail([1.0], [1.0], [1.0], [[0.0]], [[0.0]], [8.0])
+        for n in energy_counts:
+            width = bucket_energy(int(n))
+            if (k, width) in seen:
+                continue
+            seen.add((k, width))
+            energies = np.linspace(5.0, 10.0, int(n))
+            host.run_optical(
+                [(z, counts, molecular_weight, number_of_electrons)], [1.0], energies
+            )
+            if width not in tail_widths:
+                tail_widths.add(width)
+                zeros = np.zeros((1, int(n)))
+                host.run_tail([1.0], [1.0], [1.0], zeros, zeros, energies)
+    if not tail_widths:
+        host.run_tail([1.0], [1.0], [1.0], [[0.0]], [[0.0]], [8.0])
 
 
 def calculate_properties_from_factors(

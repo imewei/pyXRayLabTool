@@ -225,7 +225,7 @@ def test_tables_are_a_pytree_without_symbols_leaf(tables_mod):
 
     t = tables_mod.load_tables()
     leaves = jax.tree_util.tree_leaves(t)
-    assert len(leaves) == 6
+    assert len(leaves) == 7
     assert t.symbols[0] == "H"
     assert t.symbols[91] == "U"
     assert len(t.symbols) == 92
@@ -239,3 +239,25 @@ def test_element_index(tables_mod):
     assert tables_mod.element_index("U") == 91
     with pytest.raises(UnknownElementError, match="Unknown element symbol: 'Xx'"):
         tables_mod.element_index("Xx")
+
+
+@pytest.mark.parametrize("symbol", ["H", "C", "Si", "Fe", "Au", "U"])
+def test_packed_coefficients_reproduce_scipy_pchip(tables_mod, symbol):
+    """The per-interval cubics evaluate like SciPy's PCHIP on the real knots (rtol 1e-12)."""
+    from scipy.interpolate import PchipInterpolator
+
+    from xraylabtool.calculators.cache import create_scattering_factor_interpolators
+
+    with np.load(tables_mod._NPZ) as f:
+        z = list(f["symbols"]).index(symbol)
+        n = int(f["n"][z])
+        x, y1, y2 = f["x"][z, :n], f["f1"][z, :n], f["f2"][z, :n]
+    q = np.random.default_rng(0).uniform(x[0], x[-1], 400)
+    got1, got2 = (
+        np.asarray(g(q)) for g in create_scattering_factor_interpolators(symbol)
+    )
+    for got, y in ((got1, y1), (got2, y2)):
+        want = PchipInterpolator(x, y)(q)
+        np.testing.assert_allclose(
+            got, want, rtol=1e-12, atol=1e-12 * np.max(np.abs(y))
+        )

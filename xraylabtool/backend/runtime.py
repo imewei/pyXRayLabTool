@@ -42,11 +42,16 @@ _counts_lock = threading.Lock()
 _thread_counts = threading.local()
 
 
+_cache_opt_in_checked = False
+
+
 def ensure_x64() -> None:
     """Enable 64-bit JAX arrays (a no-op when already on).
 
     Called at every concrete public entry before any upload or trace: with x64
     off a float64 buffer would be canonicalised to float32 inside a later trace.
+    The first call also enables the persistent compile cache when the process
+    sets ``XRAYLABTOOL_JAX_CACHE=1`` (see :func:`enable_persistent_cache`).
 
     References
     ----------
@@ -57,7 +62,13 @@ def ensure_x64() -> None:
     >>> from xraylabtool.backend.runtime import ensure_x64
     >>> ensure_x64()
     """
+    global _cache_opt_in_checked  # noqa: PLW0603
     jax.config.update("jax_enable_x64", True)
+    if not _cache_opt_in_checked:
+        _cache_opt_in_checked = True
+        # Opt-in only: the library never changes global JAX config unasked.
+        if os.environ.get("XRAYLABTOOL_JAX_CACHE") == "1":
+            enable_persistent_cache()
 
 
 _cache_lock = threading.Lock()
@@ -80,7 +91,9 @@ def enable_persistent_cache() -> bool:
     """Turn on JAX's persistent compile cache in the OS user-cache directory.
 
     Called by the ``calc``, ``batch``, ``compare`` and ``kk`` CLI commands and
-    the GUI launcher, never by the library. Does nothing when ``XRAYLABTOOL_NO_JAX_CACHE=1`` or when the user
+    the GUI launcher; the library calls it only when ``XRAYLABTOOL_JAX_CACHE=1``
+    is set (a library must not change the host application's global JAX
+    configuration unasked). Does nothing when ``XRAYLABTOOL_NO_JAX_CACHE=1`` or when the user
     already set ``jax_compilation_cache_dir``. When it enables the cache it
     also sets ``jax_persistent_cache_min_compile_time_secs`` to 0 (JAX's
     default of 1 s would skip most kk programs) unless the user configured

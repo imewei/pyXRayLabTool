@@ -4,7 +4,10 @@ Compiled JAX programs specialise on array shapes, so host wrappers round every
 true size up to one of a few bucket sizes and carry the true count alongside.
 The ladder is a deterministic recurrence (nothing is hard-coded): ``b₀`` is the
 minimum and ``b_{k+1} = 8·⌊1.25·b_k / 8⌋``, so every bucket is a multiple of 8
-and, above the minimum, padding wastes at most 25 %.
+and, above the minimum, padding wastes at most 25 %. The core device programs
+pad the energy axis with :func:`bucket_energy` instead: powers of two up to 4096
+(a compile costs far more than the padded work on a small axis), the same
+ladder above.
 
 Importing this module has no side effect.
 
@@ -23,6 +26,7 @@ __all__ = [
     "EVAL_ELEMENTS",
     "block_for",
     "bucket",
+    "bucket_energy",
     "bucket_pow2",
 ]
 
@@ -43,6 +47,9 @@ EVAL_ELEMENTS = 2**18
 ACCELERATOR_EVAL_ELEMENTS = 2**22
 
 _MIN_BUCKET_FLOOR = 64
+
+# Above this the energy axis is compute-bound, so padding is worth bounding.
+_ENERGY_POW2_LIMIT = 4096
 
 
 def _next_bucket(b: int) -> int:
@@ -92,6 +99,42 @@ def bucket(n: int, minimum: int = 512) -> int:
     while b < n:
         b = _next_bucket(b)
     return b
+
+
+def bucket_energy(n: int) -> int:
+    """Energy-axis bucket of the core programs: coarse when small, fine when large.
+
+    A new bucket is a new compile (hundreds of milliseconds), while padding a
+    short axis costs microseconds, so up to 4096 the rungs are powers of two
+    (at most 7 compiles for the whole range); above, the :func:`bucket` ladder
+    keeps the padding below 25 %.
+
+    Parameters
+    ----------
+    n : int
+        True number of energies (non-negative).
+
+    Returns
+    -------
+    int
+        ``b ≥ max(n, 64)``, a power of two up to 4096 and a ladder rung above.
+
+    Raises
+    ------
+    ValueError
+        If ``n < 0``.
+
+    Examples
+    --------
+    >>> from xraylabtool.backend.shapes import bucket_energy
+    >>> [bucket_energy(n) for n in (1, 64, 65, 500, 4096, 4097)]
+    [64, 64, 128, 512, 4096, 5120]
+    """
+    if n < 0:
+        raise ValueError(f"n must be non-negative, got {n}")
+    if n <= _ENERGY_POW2_LIMIT:
+        return bucket_pow2(n, minimum=_MIN_BUCKET_FLOOR)
+    return bucket(n, minimum=_ENERGY_POW2_LIMIT)
 
 
 def bucket_pow2(n: int, minimum: int = 8) -> int:

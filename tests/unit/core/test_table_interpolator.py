@@ -82,7 +82,7 @@ def test_interpolator_rejects_host_tables(monkeypatch):
     monkeypatch.setattr(
         host,
         "load_tables",
-        lambda: tables_module.ScatteringTables(*(np.zeros(1),) * 6, ()),
+        lambda: tables_module.ScatteringTables(*(np.zeros(1),) * 7, ()),
     )
     with pytest.raises(TypeError, match="device arrays"):
         f1(100.0)

@@ -51,7 +51,7 @@ NumPy twin of any algorithm and no `ops`-proxy dispatch inside `kk`.
 5. **float64 always.** x64 is established at every concrete public entry and
    every worker entry, not only at import.
 6. **Persistent compile cache for the CLI and GUI only.** They call
-   `xraylabtool.kk._device.enable_persistent_cache()`; the library never does.
+   `xraylabtool.kk._device.enable_persistent_cache()`; the library does so only when `XRAYLABTOOL_JAX_CACHE=1` is set.
    `XRAYLABTOOL_NO_JAX_CACHE=1` opts out. The GUI also warms, on an idle
    worker, the programs of its own default Compute click (the public
    `kk_calculate_real` with the tab's explicit grid; `kk.warm_up()` does the
