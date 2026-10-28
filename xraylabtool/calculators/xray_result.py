@@ -170,10 +170,11 @@ class XRayResult:
         # construct it from raw Python lists, scalars or float32/int arrays.
         for name in self._ARRAY_FIELDS:
             value = getattr(self, name)
+            if isinstance(value, np.ndarray) and value.dtype == np.float64:
+                continue  # the hot path: already real float64, nothing to check
             if np.iscomplexobj(value):
                 raise TypeError(f"{name} must be real, got complex values")
-            if not isinstance(value, np.ndarray) or value.dtype != np.float64:
-                setattr(self, name, np.asarray(value, dtype=np.float64))
+            setattr(self, name, np.asarray(value, dtype=np.float64))
 
     # Convenience properties used in docs/notebooks
     @property
