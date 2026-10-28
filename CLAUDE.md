@@ -136,7 +136,7 @@ Registered markers (`--strict-markers`; an unregistered one is a collection erro
 - A version bump touches the 9 sources `scripts/check_version.py` compares (`pyproject.toml`, `xraylabtool/__init__.py`, `uv.lock` root package, `docs/conf.py` x2, the BibTeX in `README.md` and `docs/index.rst`, and the newest heading of both `CHANGELOG.md` and `docs/development/changelog.rst`); also update the `--expect` examples in `scripts/README.md` and `check_version.py`. It is also a pre-commit hook; use `--expect X.Y.Z` for a release.
 - CI runs Linux, macOS and Windows (non-primary legs use `pytest -x`, so one failure hides the rest). Tests must not assume POSIX paths (`/xdg` is relative on Windows), the Linux cache layout (macOS uses `~/Library/Caches`), or exact float equality across different padding shapes.
 - Compile-count tests call `jit.clear_cache()` on the program first (`tests/fixtures/kk_compiles.record_compiles`) so they don't depend on test order.
-- Latency numbers are noisy under host load; compare against `main` with interleaved fresh-process runs (`scripts/core_bench.py`, `benchmarks/perf_benchmarks.py --vs vX.Y.Z`).
+- Latency numbers are noisy under host load; compare against `main` with interleaved fresh-process runs (`scripts/core_bench.py`, `benchmarks/perf_benchmarks.py --vs vX.Y.Z --rounds 10 --stat mean`).
 - `mypy --strict` is clean locally (`untyped_calls_exclude = ["jax"]`); CI's mypy step is advisory.
 - `graphify-out/` tracks only `GRAPH_REPORT.md`, `graph.html`, `graph.json`; the other files are ignored.
 

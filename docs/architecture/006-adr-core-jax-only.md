@@ -261,8 +261,8 @@ evidence, belongs to Wei.
   deleted NumPy path; each carries a note naming the commit to check out.
 - **Break for downstream code.** `set_backend("numpy")`, `ops`,
   `NumpyBackend`, `JaxBackend`, `InterpolationFactory` and `calculators.kernels`
-  are gone and raise or fail to import. The changelog marks it; suggested
-  release 0.5.0 (no version bump in this work).
+  are gone and raise or fail to import. The changelog marks it; released as
+  0.5.0.
 - **Benchmarks.** `scripts/core_bench.py` (CPU) and `scripts/core_gpu_check.py`
   (manual, CUDA) are standalone gates, not collected by pytest. The Task 0
   "cpu-host" rows ran on the CPU through the NumPy backend and are not

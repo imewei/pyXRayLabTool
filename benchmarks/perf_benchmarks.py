@@ -7,7 +7,7 @@ implementation can be compared with the NumPy-era baseline:
     python benchmarks/perf_benchmarks.py                     # current tree
     python benchmarks/perf_benchmarks.py --json out.json     # ... and save rows
     python benchmarks/perf_benchmarks.py --vs v0.4.8         # current vs a tag
-    python benchmarks/perf_benchmarks.py --vs v0.4.8 --rounds 3 \
+    python benchmarks/perf_benchmarks.py --vs v0.4.8 --rounds 10 --stat mean \
         --markdown benchmarks/RESULTS.md --json benchmarks/results_v0.4.8_vs_current.json
 
 ``--baseline-path DIR`` adds DIR to the baseline's ``PYTHONPATH`` only (v0.4.8
@@ -15,8 +15,9 @@ declared ``interpax`` and uses it on a CUDA host: ``uv pip install --target DIR
 --no-deps interpax equinox jaxtyping lineax wadler_lindig jaxkd``).
 ``--vs REF`` extracts REF with ``git archive`` into a temporary directory, runs
 this script once per side per round (alternating sides, one fresh process each,
-``PYTHONPATH`` pointing at the tree) and reports the best median of the rounds
-per row. Set ``JAX_PLATFORMS=cpu`` to pin both sides to the CPU. Rows that only
+``PYTHONPATH`` pointing at the tree) and reports, per row, the best median of the
+rounds (``--stat best``, the default) or the mean of the per-round medians with
+their standard deviation (``--stat mean``). Set ``JAX_PLATFORMS=cpu`` to pin both sides to the CPU. Rows that only
 make sense on one side are skipped there. Run on a quiet host: the load average is
 recorded in the output.
 """
@@ -585,6 +586,26 @@ def _best(runs: list[dict[str, object]]) -> dict[str, object]:
     return {"environment": runs[0]["environment"], "rows": [best[k] for k in order]}
 
 
+def _mean(runs: list[dict[str, object]]) -> dict[str, object]:
+    """Per row, the mean of the per-round medians and their standard deviation."""
+    medians: dict[str, list[dict[str, float]]] = {}
+    for run in runs:
+        for row in run["rows"]:  # type: ignore[attr-defined]
+            medians.setdefault(row["label"], []).append(row)
+    rows = []
+    for rs in medians.values():
+        values = [r["median_ms"] for r in rs]
+        rows.append(
+            {
+                **rs[0],
+                "median_ms": statistics.mean(values),
+                "round_std_ms": statistics.stdev(values) if len(values) > 1 else 0.0,
+                "rounds": len(values),
+            }
+        )
+    return {"environment": runs[0]["environment"], "rows": rows}
+
+
 def compare(base: dict[str, object], new: dict[str, object]) -> list[dict[str, object]]:
     """Join the two sides on the row label; speedup is base median / new median."""
     base_rows = {r["label"]: r for r in base["rows"]}  # type: ignore[attr-defined]
@@ -602,6 +623,8 @@ def compare(base: dict[str, object], new: dict[str, object]) -> list[dict[str, o
                 "label": label,
                 "base_median_ms": b["median_ms"] if b else None,
                 "new_median_ms": n["median_ms"] if n else None,
+                "base_std_ms": b.get("round_std_ms") if b else None,
+                "new_std_ms": n.get("round_std_ms") if n else None,
                 "speedup": speedup,
             }
         )
@@ -617,26 +640,46 @@ def comparison_markdown(
     new: dict[str, object],
     rows: list[dict[str, object]],
     command: str,
+    stat: str = "best",
 ) -> str:
     be, ne = base["environment"], new["environment"]
+    mean = stat == "mean"
+    how = (
+        "Mean of the per-round medians (± is their standard deviation across rounds)"
+        if mean
+        else "Best median"
+    )
+    header = (
+        "| Benchmark | Baseline ms | ± | Current ms | ± | Speedup |"
+        if mean
+        else "| Benchmark | Baseline ms | Current ms | Speedup |"
+    )
     lines = [
         f"# Benchmarks: {be['label']} vs {ne['label']}",  # type: ignore[index]
         "",
-        "Medians in milliseconds; speedup = baseline / current (>1 means the current "
-        f"tree is faster). Best median over alternating rounds, one fresh "
+        "Milliseconds; speedup = baseline / current (>1 means the current "
+        f"tree is faster). {how} over alternating rounds, one fresh "
         "process per side per round. Regenerate with "
         f"`{command}`.",
         "",
-        "| Benchmark | Baseline ms | Current ms | Speedup |",
-        "|---|---:|---:|---:|",
+        header,
+        "|---|" + ("---:|" * (5 if mean else 3)),
     ]
     for r in rows:
         sp = r["speedup"]
-        lines.append(
-            f"| {r['label']} | {_fmt(r['base_median_ms'])} | "  # type: ignore[arg-type]
-            f"{_fmt(r['new_median_ms'])} | "  # type: ignore[arg-type]
-            f"{'n/a' if sp is None else format(sp, '.2f') + 'x'} |"
-        )
+        speedup = "n/a" if sp is None else format(sp, ".2f") + "x"
+        if mean:
+            lines.append(
+                f"| {r['label']} | {_fmt(r['base_median_ms'])} | "  # type: ignore[arg-type]
+                f"{_fmt(r['base_std_ms'], '.2g')} | "  # type: ignore[arg-type]
+                f"{_fmt(r['new_median_ms'])} | "  # type: ignore[arg-type]
+                f"{_fmt(r['new_std_ms'], '.2g')} | {speedup} |"  # type: ignore[arg-type]
+            )
+        else:
+            lines.append(
+                f"| {r['label']} | {_fmt(r['base_median_ms'])} | "  # type: ignore[arg-type]
+                f"{_fmt(r['new_median_ms'])} | {speedup} |"  # type: ignore[arg-type]
+            )
     lines += ["", "## Environment", "", "| | Baseline | Current |", "|---|---|---|"]
     for key in (
         "xraylabtool",
@@ -686,6 +729,12 @@ def main() -> None:
         "--rounds", type=int, default=1, help="rounds per side with --vs"
     )
     parser.add_argument(
+        "--stat",
+        choices=("best", "mean"),
+        default="best",
+        help="aggregate the rounds by best median or by the mean of the medians",
+    )
+    parser.add_argument(
         "--baseline-path",
         default="",
         help="extra PYTHONPATH for the baseline side only (v0.4.8 on a CUDA host "
@@ -703,7 +752,8 @@ def main() -> None:
                 base_runs.append(_run_side(tree, args.vs, args.baseline_path))
                 print(f"round {n + 1}/{args.rounds}: current", file=sys.stderr)
                 new_runs.append(_run_side(REPO, "current"))
-        base, new = _best(base_runs), _best(new_runs)
+        aggregate = _mean if args.stat == "mean" else _best
+        base, new = aggregate(base_runs), aggregate(new_runs)
         rows = compare(base, new)
         _print_comparison(rows)
         if args.markdown:
@@ -712,7 +762,9 @@ def main() -> None:
             )
             if "JAX_PLATFORMS" in os.environ:
                 command = f"JAX_PLATFORMS={os.environ['JAX_PLATFORMS']} {command}"
-            args.markdown.write_text(comparison_markdown(base, new, rows, command))
+            args.markdown.write_text(
+                comparison_markdown(base, new, rows, command, args.stat)
+            )
         if args.json:
             args.json.write_text(
                 json.dumps(

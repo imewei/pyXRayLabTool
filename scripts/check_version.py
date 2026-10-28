@@ -7,7 +7,7 @@ before an install) and exits non-zero on any mismatch.
 
 Usage:
     python scripts/check_version.py              # sources agree with each other
-    python scripts/check_version.py --expect 0.4.8   # ... and equal this release
+    python scripts/check_version.py --expect 0.5.0   # ... and equal this release
     python scripts/check_version.py --installed  # ... and the installed metadata
 """
 
