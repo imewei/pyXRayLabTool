@@ -13,3 +13,4 @@ Design decisions and architectural documentation for XRayLabTool.
    003-adr-dtype-policy
    004-adr-host-device-transfers
    005-adr-kk-jax-only
+   006-adr-core-jax-only

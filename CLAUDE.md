@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 XRayLabTool is a Python package for calculating X-ray optical properties of materials using CXRO/NIST atomic scattering factor databases. It provides both a Python API and CLI for synchrotron/X-ray science applications.
 
+- **JAX-first**: the core calculators, the resident scattering tables, batch and the `utils` physics/signal helpers (`xraylabtool/_physics.py`) run as one `jax.numpy` float64 implementation (no NumPy twin, ADR-006); the GUI warms the core programs on an idle worker (`gui/services.warm_up_core`)
 - **Python**: >=3.12
 - **Package Manager**: uv (preferred), pip
 - **Version**: See `pyproject.toml` and `xraylabtool/__init__.py`
@@ -31,6 +32,8 @@ make test-fast                     # Quick run: no coverage, GUI tests serial
 make claude                        # Format+lint (auto-fix), mypy --strict, tests with coverage floor, perf phase
 make verify                        # Read-only checks (fails on mypy errors and unformatted code)
 make gpu-check                     # JAX backend / CUDA report (scripts/gpu_check.py)
+JAX_PLATFORMS=cpu pytest tests/ --no-cov   # Pin JAX to the CPU (CI has no GPU; every test must pass on CPU and on a CUDA host)
+python scripts/gen_scattering_tables.py --check   # Fails if data/scattering_tables.npz drifted from the .nff files
 ```
 
 ### Code Quality
@@ -68,16 +71,20 @@ xraylabtool/
 ├── device.py             # GPU/CUDA detection, plugin-conflict checks
 ├── logging_utils.py      # Structured logging; XRAYLABTOOL_LOG_* env vars
 ├── typing_extensions.py  # FloatLike / ArrayLike aliases
-├── backend/              # NumPy ↔ JAX abstraction
-│   ├── array_ops.py      # get_backend()/set_backend(); auto-selects JAX only on NVIDIA GPU
-│   └── interpolation.py  # InterpolationFactory (scipy PCHIP ↔ interpax)
+├── backend/              # JAX runtime helpers (the NumPy backend and `ops` were removed, ADR-006)
+│   ├── __init__.py       # set_backend()/get_backend() stubs only: "jax" is a no-op, any other name raises ValueError
+│   ├── runtime.py        # ensure_x64(), enable_persistent_cache(), worker_guard(), counted upload()/fetch()/fetch_status()
+│   ├── shapes.py         # bucket(), bucket_pow2(), block_for(): static-shape buckets that bound compile counts
+│   └── interpolation.py  # JaxPchipInterpolator (in-tree jnp PCHIP, pinned to SciPy at 1e-12)
 ├── calculators/          # Core X-ray physics
 │   ├── core.py           # calculate_single_material_properties(), calculate_xray_properties()
 │   ├── xray_result.py    # XRayResult dataclass
-│   ├── kernels.py        # Vectorised δ/β/derived-quantity kernels
+│   ├── tables.py         # ScatteringTables pytree, load_tables(): the 92 elements' f1/f2/PCHIP slopes, resident on the device
+│   ├── optics.py         # Pure jnp device programs: optical_properties(), derive(), encode_formula() (jit/vmap/grad-compatible)
+│   ├── host.py           # Host wrappers: pad to buckets, one upload, one program, one fetch, slice padding
 │   ├── scattering_data.py# f1/f2 lookup at requested energies
-│   ├── cache.py          # Memoised per-element interpolators
-│   └── derived_quantities.py  # Critical angle, attenuation, SLD
+│   ├── cache.py          # TableInterpolator shims over the resident tables; get_cached_elements(), clear_scattering_factor_cache()
+│   └── derived_quantities.py  # Critical angle, attenuation, SLD, calculate_scattering_factors()/calculate_derived_quantities()
 ├── data_handling/
 │   ├── atomic_cache.py   # 92-element preload, warm_up_cache(), get_cache_stats()
 │   ├── compound_analysis.py  # Compound families, recommended elements for warming
@@ -90,7 +97,8 @@ xraylabtool/
 ├── kk/                   # Kramers-Kronig f2→f1 (kkcalc port, Watts 2014; JAX-only): api, _pipeline, _device, _shapes, transform, spectrum, nearedge, refine, result, database
 ├── io/                   # file_operations.py, data_export.py
 ├── gui/                  # PySide6 app: main_window/ (per-tab mixins incl. kk_tab), widgets/, services.py (Qt-free compute), workers.py, theme_manager.py, style.py
-├── data/AtomicScatteringFactor/  # .nff data files (CXRO)
+├── data/AtomicScatteringFactor/  # .nff data files (CXRO), source of truth for the tables
+├── data/scattering_tables.npz    # Stacked f1/f2/slope tables [92, 449]; rebuild with scripts/gen_scattering_tables.py (--check fails on drift)
 └── data/kkcalc/          # asf.npz (upstream ASF.json, 10 eV-500 keV) + Zlib LICENSE-kkcalc.txt
 ```
 
@@ -99,10 +107,10 @@ xraylabtool/
 1. **Lazy Imports**: `__init__.py` uses `__getattr__` so `import xraylabtool` stays fast; heavy modules load on first attribute access
 2. **XRayResult Dataclass**: All calculations return this with snake_case fields; every per-energy field is an array (index `[0]` for scalars). Legacy CamelCase accessors still work with `DeprecationWarning`
 3. **Argument order**: `calculate_single_material_properties(formula, energy_keV, density)` and `calculate_xray_properties(formulas, energies, densities)` — energy always in keV
-4. **Backend auto-select**: JAX only when JAX is installed *and* an NVIDIA GPU is present; NumPy otherwise. `set_backend()` overrides
-5. **Batch tiers**: `calculate_xray_properties` is sequential; `data_handling.batch_processing.calculate_batch_properties` chunks (default 100) and uses `ProcessPoolExecutor` for chunks ≥ 8 items, `ThreadPoolExecutor` below
-6. **Cache warming**: All 92 elements preload at import; per-element interpolators build lazily — `warm_up_cache()` / `warm_cache_for_compounds()` front-load them
-7. **Kramers-Kronig (`xraylabtool.kk`)**: lazy, not imported by `import xraylabtool`; **kk is JAX-only** (one `jax.numpy` implementation in float64, no NumPy twin; `set_backend()` does not affect it, ADR-005). `kk_calculate_real` is a device-resident pipeline (`_pipeline.py`, `refine.py`; helpers and `Spectrum` in `_device.py`): one upload, one status fetch after assembly/merge, one per refinement pass, one download, over bucketed shapes (`_shapes.py`). Public API in keV, transform in eV; `Spectrum`/`kk_f1` are jit/vmap/grad-compatible. `kk.warm_up()` is public API (precompiles a formula's default and refined programs); the GUI warms its own Compute path on an idle worker via `gui/services.warm_up_kk`, the CLI never warms up; the CLI `kk` command and the GUI launcher enable the persistent compile cache via `_device.enable_persistent_cache()` (`XRAYLABTOOL_NO_JAX_CACHE=1` opts out; the suite sets it in `tests/conftest.py`). Uses its own vendored data (differs from `.nff` for Sc, Mo, Ru, Be, Ti, Si, La, Gd, W); core accepts 10 eV-500 keV, only `KKResult.to_xray_result` enforces 0.03-30 keV. JAX floor `>=0.12.0.1` (golden tolerances are measured on it). `scripts/kk_bench.py` (CPU) and `scripts/kk_gpu_check.py` (manual, CUDA) are standalone gates. Docs: `docs/physics/kramers_kronig.rst` (Eq. 10 a₋₃ sign erratum), `docs/guides/kk_guide.rst`, `docs/architecture/005-adr-kk-jax-only.md`
+4. **JAX-first core (ADR-006)**: one `jax.numpy` float64 implementation on JAX's default device (CPU, or the GPU of a CUDA install); there is no NumPy twin, no `ops` dispatch and no auto-select. `set_backend("jax")` is a no-op, any other name raises `ValueError`, `get_backend()` returns `"jax"`. A public call does host validation, one `runtime.upload`, one compiled program, one `runtime.fetch` (ADR-004); shapes are padded to buckets (`backend/shapes.py`) so compiles stay bounded. `runtime.ensure_x64()` runs at every concrete public compute entry; `import xraylabtool`, `--help`, `--version`, `completion`, `formula`, `atomic`, `list` never import JAX (compute modules import `optics`/`tables`/`runtime` inside functions). `optics.optical_properties` is the public pure device function
+5. **Batch is a `vmap` over materials**: `calculate_xray_properties`, `calculate_multiple_xray_properties`, `data_handling.batch_processing.calculate_batch_properties` and the comparator group materials by element-count bucket and run blocks of materials through the same program (`BatchConfig.chunk_size` bounds the block; `max_workers` is accepted and ignored). There are no process or thread pools anywhere in `xraylabtool/` (an AST test enforces it); output order equals input order; a failing formula is logged and skipped, a device error aborts the call
+6. **Scattering tables and warming**: `data/scattering_tables.npz` is read and uploaded once (`load_tables()`, under a lock) and passed to programs as an argument. The first public call only loads the tables; `xraylabtool.warm_up(formulas=("SiO2",))` is the explicit precompile helper (no hidden warm-up). `cache.py`'s `TableInterpolator` keeps `create_scattering_factor_interpolators()` working as a thin reader of a table row; `data_handling.atomic_cache.warm_up_cache()` front-loads the host atomic metadata only, `warm_cache_for_compounds()` also fills the scattering-cache `TableInterpolator` shims (and the bulk-data cache); neither compiles a program, `xraylabtool.warm_up()` does
+7. **Kramers-Kronig (`xraylabtool.kk`)**: lazy, not imported by `import xraylabtool`; **kk is JAX-only** (one `jax.numpy` implementation in float64, no NumPy twin; `set_backend()` does not affect it, ADR-005). `kk_calculate_real` is a device-resident pipeline (`_pipeline.py`, `refine.py`; helpers and `Spectrum` in `_device.py`): one upload, one status fetch after assembly/merge, one per refinement pass, one download, over bucketed shapes (`_shapes.py`). Public API in keV, transform in eV; `Spectrum`/`kk_f1` are jit/vmap/grad-compatible. `kk.warm_up()` is public API (precompiles a formula's default and refined programs); the GUI warms its own Compute path on an idle worker via `gui/services.warm_up_kk`, the CLI never warms up; the CLI `calc`/`batch`/`compare`/`kk` commands and the GUI launcher enable the persistent compile cache via `runtime.enable_persistent_cache()` (`XRAYLABTOOL_NO_JAX_CACHE=1` opts out; the suite sets it in `tests/conftest.py`). Uses its own vendored data (differs from `.nff` for Sc, Mo, Ru, Be, Ti, Si, La, Gd, W); core accepts 10 eV-500 keV, only `KKResult.to_xray_result` enforces 0.03-30 keV. JAX floor `>=0.12.0.1` (golden tolerances are measured on it). `scripts/kk_bench.py` (CPU) and `scripts/kk_gpu_check.py` (manual, CUDA) are standalone gates. Docs: `docs/physics/kramers_kronig.rst` (Eq. 10 a₋₃ sign erratum), `docs/guides/kk_guide.rst`, `docs/architecture/005-adr-kk-jax-only.md`
 
 ### Test Structure
 
@@ -122,7 +130,7 @@ Registered markers (`--strict-markers`; an unregistered one is a collection erro
 
 - `--cov` is in pytest `addopts`, so every run measures coverage; pass `--no-cov` for single-test runs.
 - `filterwarnings = error`: a new warning fails the test.
-- GUI tests (`test_gui_smoke.py`, `test_gui_progress.py`, `test_gui_kk_tab.py`, `test_gui_kk_worker_end_to_end.py`, `unit/test_gui_widgets.py`, `unit/test_calculation_worker.py`, `unit/test_kk_plot.py`) run serially, outside xdist; the Makefile (`GUI_TESTS`) and `.github/workflows/ci.yml` (`IGNORE_GUI`) exclude them from the parallel pass, so add a new GUI test file to both lists.
+- GUI tests (`test_gui_smoke.py`, `test_gui_progress.py`, `test_gui_kk_tab.py`, `test_gui_kk_worker_end_to_end.py`, `unit/test_gui_widgets.py`, `unit/test_calculation_worker.py`, `unit/test_kk_plot.py`, `test_gui_core_warm_up.py`) run serially, outside xdist; the Makefile (`GUI_TESTS`) and `.github/workflows/ci.yml` (`IGNORE_GUI`) exclude them from the parallel pass, so add a new GUI test file to both lists.
 - ruff is pinned to the same version in `.pre-commit-config.yaml`, `.github/workflows/{ci,security}.yml` and `uv.lock`; bump all four together.
 - A version bump touches ~10 places; run `python scripts/check_version.py` (also a pre-commit hook; `--expect X.Y.Z` for a release).
 - `mypy --strict` is clean locally (`untyped_calls_exclude = ["jax"]`); CI's mypy step is advisory.
@@ -135,6 +143,7 @@ Registered markers (`--strict-markers`; an unregistered one is a collection erro
 - `scripts/run_type_check.py` - Enhanced mypy wrapper
 - `scripts/check_version.py` - Cross-file version consistency check
 - `scripts/gpu_check.py` - JAX/CUDA diagnostics behind `make gpu-check` / `gpu-diagnose`
+- `scripts/core_bench.py` (CPU, fresh-process gate rows P1-P10, P12, P13) and `scripts/core_gpu_check.py` (manual CUDA gate, `make core-gpu-check`: goldens, P5-P7, P11-P13; refuses without a CUDA device)
 - `.pre-commit-config.yaml` - Hooks (ruff, gitleaks, version check); ruff rev must match CI
 
 ## Coding Standards

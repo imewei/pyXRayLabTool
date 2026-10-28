@@ -146,7 +146,7 @@ All energies are in keV.
 .. code-block:: bash
 
    xraylabtool batch materials.csv -o results.csv
-   xraylabtool batch materials.csv -o results.json --workers 8 --progress
+   xraylabtool batch materials.csv -o results.json --progress
 
 **Material Comparison:**
 

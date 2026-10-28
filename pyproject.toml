@@ -103,7 +103,6 @@ dependencies = [
     # GPU users: install gpu_cuda12 or gpu_cuda13 extra (see below)
     "jax>=0.12.0.1",
     "jaxlib>=0.12.0.1",
-    "interpax>=0.3.0",
 
     # Desktop GUI
     "PySide6>=6.10.1",
@@ -201,6 +200,7 @@ exclude = ["tests*", "docs*", "*.tests*", "*.tests"]
 xraylabtool = [
     "data/AtomicScatteringFactor/*.nff",
     "data/kkcalc/asf.npz",
+    "data/scattering_tables.npz",
     "data/kkcalc/LICENSE-kkcalc.txt",
     "py.typed",  # PEP 561 typing marker
 ]
@@ -341,7 +341,6 @@ module = [
     "tqdm.*",
     "jax.*",
     "jaxlib.*",
-    "interpax.*",
 ]
 ignore_missing_imports = true
 
@@ -413,15 +412,14 @@ exclude = [
 "**/data_handling/*.py" = ["PLC0415", "PLW0603", "A002"]  # Lazy imports, module-level caches, parameter names
 "**/io/*.py" = ["PLC0415"]  # Lazy imports in I/O
 "xraylabtool/gui/*.py" = ["PLR0915", "PLR1714", "PLC0415"]
-"xraylabtool/backend/*.py" = ["PLC0415", "PLW0603"]  # Lazy imports and global state are intentional in the backend abstraction layer
+"xraylabtool/backend/*.py" = ["PLC0415"]  # Lazy imports of jax in the runtime helpers
 "xraylabtool/calculators/cache.py" = ["PLC0415"]  # Deferred imports to break circular dependency
-"xraylabtool/calculators/kernels.py" = ["PLC0415"]  # Deferred imports for JIT and constants
 "xraylabtool/calculators/scattering_data.py" = ["PLC0415"]  # Deferred imports for cache and pandas
 "xraylabtool/device.py" = ["PLC0415", "SIM105", "S603"]  # Lazy imports for optional JAX; try/except for optional packages; fixed-argv nvcc/nvidia-smi calls
 "scripts/run_type_check.py" = ["PLR0912", "PLR0915"]  # Allow complex functions in type checking script
 "scripts/test_docs.py" = ["PLR0912", "PLR0915", "S112", "S607"]  # Allow complex functions and subprocess calls in documentation testing script
 "scripts/validate_style_guide.py" = ["PLW2901", "SIM102", "S607", "PLR0912", "PLR0915", "PLC0415"]  # Allow style validation patterns
-"benchmarks/*.py" = ["PLC0415", "PLW1510"]  # Lazy imports and subprocess without check are intentional in benchmark scripts
+"benchmarks/*.py" = ["PLC0415", "PLW1510", "S603", "S607"]  # Lazy imports and subprocess calls (git, tar, this interpreter) are intentional in benchmark scripts
 "docs/**" = ["RUF001", "RUF003", "PLC2401"]  # Greek letters and ×, µ, – are intentional in docs/conf.py and the example notebooks
 
 [tool.ruff.lint.isort]

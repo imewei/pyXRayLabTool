@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 from tests.fixtures.kk_rounding import assert_kk_close
+from xraylabtool.backend import runtime
 from xraylabtool.kk import _device
 from xraylabtool.kk._shapes import bucket
 from xraylabtool.kk.transform import kk_f1, kk_real_spectrum
@@ -308,16 +309,16 @@ def test_spectrum_roundtrip_and_pad_rule() -> None:
 
 @pytest.mark.unit
 def test_transfer_helpers_are_counted() -> None:
-    _device.reset_transfer_counts()
-    tree = _device.upload({"a": np.arange(3.0)})
-    _device.fetch_status(tree)
-    _device.fetch(tree)
-    assert _device.transfer_counts() == {"upload": 1, "fetch_status": 1, "fetch": 1}
-    _device.reset_transfer_counts()
-    assert sum(_device.transfer_counts().values()) == 0
+    runtime.reset_transfer_counts()
+    tree = runtime.upload({"a": np.arange(3.0)})
+    runtime.fetch_status(tree)
+    runtime.fetch(tree)
+    assert runtime.transfer_counts() == {"upload": 1, "fetch_status": 1, "fetch": 1}
+    runtime.reset_transfer_counts()
+    assert sum(runtime.transfer_counts().values()) == 0
     case = _case("SiO2")
     kk_real_spectrum(case["energy"], case["seg"], case["coeffs"], case["rel"])
-    assert _device.transfer_counts() == {"upload": 1, "fetch_status": 0, "fetch": 1}
+    assert runtime.transfer_counts() == {"upload": 1, "fetch_status": 0, "fetch": 1}
 
 
 @pytest.mark.unit

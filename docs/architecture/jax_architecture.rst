@@ -19,7 +19,9 @@ JAX is a Python library for numerical computing with:
 3. **Vectorization** - Apply functions across batches with ``vmap()``
 4. **GPU/TPU Support** - Automatic device acceleration
 
-XRayLabTool uses features 1 and 3; features 2 and 4 enable future scientific workflows.
+XRayLabTool uses features 1, 3 and 4. Feature 2 is public for the core as well:
+:func:`xraylabtool.calculators.optics.optical_properties` and ``kk_f1`` are
+``jit``/``vmap``/``grad``-compatible.
 
 NumPy vs JAX
 ~~~~~~~~~~~~
@@ -44,16 +46,25 @@ NumPy vs JAX
    y_compiled = sin_jit(x_jax)  # Computed and cached
 
 
-**The Kramers-Kronig package is JAX-only.** ``xraylabtool.kk`` has no NumPy
-twin: on CPU the single ``jax.numpy`` kernel is 5-14 times faster than the
-removed NumPy implementation at every size measured (m = 100 to 100 000
-energies), so ADR-001's premise that NumPy is faster on CPU for small arrays
-does not hold there. ``set_backend()`` does not affect ``kk``; see
-:doc:`005-adr-kk-jax-only` for the table and the consequences.
+**The core calculators and the Kramers-Kronig package are JAX-only.** Neither
+has a NumPy twin. For ``xraylabtool.kk`` the single ``jax.numpy`` kernel is 5-14
+times faster on CPU than the removed NumPy implementation at every size
+measured (:doc:`005-adr-kk-jax-only`). For the core calculators the old
+JAX backend lost to NumPy because of shape-keyed eager compilation and host
+round trips, not because of JAX; the device program of ADR-006 removes both. A
+small single call is still slower than the removed NumPy path (launch latency),
+which ADR-006 records as accepted; batches are faster. ``set_backend("jax")``
+is a no-op and ``set_backend("numpy")`` raises ``ValueError``; see
+:doc:`006-adr-core-jax-only` for the evidence and :doc:`004-adr-host-device-transfers`
+for the transfer policy.
 
 
 Performance Benefits
 ~~~~~~~~~~~~~~~~~~~~
+
+The figures and snippets in this section are generic illustrations of JAX, not
+measurements of XRayLabTool; the measured gates and the accepted trade-offs are in
+:doc:`006-adr-core-jax-only`.
 
 **1. JIT Compilation:** 10-100x speedup
 
@@ -92,7 +103,7 @@ Design Philosophy
 JAX adoption strategy for XRayLabTool:
 
 1. **Transparent to users** - API stays the same
-2. **Backward compatible** - v0.3.0 code works unchanged
+2. **Backward compatible** - public names and results are kept (``set_backend("numpy")``, ``ops`` and the worker pools are removed; see the changelog)
 3. **Gradual adoption** - Don't rewrite everything at once
 4. **Future-proof** - Enable autodiff and hardware acceleration later
 
@@ -202,7 +213,9 @@ Future capability (enabled by JAX, not yet used):
 Vectorization with vmap
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Automatic batching - future optimization:
+Automatic batching. XRayLabTool's batch path uses it: ``optics._optical_program``
+is a ``vmap`` of ``optics.optical_properties`` over a block of materials, and
+``host.run_optical_blocks`` runs the blocks (generic illustration below):
 
 .. code-block:: python
 
@@ -219,13 +232,12 @@ Automatic batching - future optimization:
    energies = jnp.array([1.0, 5.0, 8.0, 10.0])  # keV
    results = calculate_batch(energies)  # Compiled as single operation
 
-**Current approach (v0.4.0):**
+**Current approach (ADR-006):**
 
-XRayLabTool manually implements batching, which JAX compiles with JIT.
-
-**Future optimization (v0.5+):**
-
-Use ``vmap()`` for automatic vectorization without manual loops.
+A batch is a ``vmap`` over materials inside one jitted program
+(``optics._optical_program``); ``calculate_xray_properties`` groups the materials by
+element-count bucket and runs blocks of them through that program, one upload and one
+fetch per block.
 
 
 XRayLabTool Implementation
@@ -239,22 +251,21 @@ Architecture Overview
    User Code
       │
       ├─→ API Layer (xraylabtool.__init__)
-      │       └─→ validate inputs
-      │           convert to JAX arrays
+      │       └─→ validate inputs on the host
+      │           one upload (runtime.upload)
       │
       ├─→ Calculation Layer (calculators/)
-      │       └─→ @jax.jit compiled functions
-      │           JAX array operations
+      │       └─→ @jax.jit compiled programs (optics.py, host.py)
+      │           resident scattering tables (tables.py)
       │           physics calculations
       │
       ├─→ Data Layer (data_handling/)
-      │       └─→ atomic data cache
-      │           JAX array storage
-      │           efficient lookups
+      │       └─→ host atomic metadata cache
+      │           batch grouping and blocks
       │
       └─→ Output
           └─→ XRayResult dataclass
-              JAX arrays for properties
+              NumPy ndarrays (one fetch)
 
 
 Compilation in XRayLabTool
@@ -264,17 +275,14 @@ Compilation in XRayLabTool
 
 .. code-block:: python
 
-   # In xraylabtool/calculators/core.py
+   # In xraylabtool/calculators/optics.py (abridged)
    @jax.jit
-   def calculate_refraction_indices(energy, delta, beta):
-       """Core JIT-compiled calculation."""
-       n = 1 - delta - 1j * beta
-       return n
+   def _optical_program(tables, batch, energies):
+       """vmap of optical_properties over a block of F materials at M shared energies."""
+       ...
 
-   @jax.jit
-   def calculate_critical_angle(delta):
-       """JIT-compiled critical angle."""
-       return jnp.sqrt(2 * delta)
+   # xraylabtool/calculators/host.py (run_optical, run_optical_blocks) pads the
+   # inputs to buckets, uploads once, calls the program and fetches once.
 
 **Warm-up pattern:**
 
@@ -282,11 +290,11 @@ Compilation in XRayLabTool
 
    # First call triggers compilation
    result = calculate_single_material_properties("Si", 8.0, 2.33)
-   # ~50 ms (includes JIT compilation for shape/type)
+   # about 0.3 s on a CPU (loads the tables, compiles the program; ADR-006 gate P8)
 
-   # Subsequent calls use cached compilation
+   # Subsequent calls in the same shape bucket compile nothing
    result = calculate_single_material_properties("Si", 8.0, 2.33)
-   # ~0.02 ms (no recompilation)
+   # about 0.45 ms on a CPU (ADR-006 gate P1)
 
 **Kramers-Kronig programs and shape buckets:**
 
@@ -316,24 +324,24 @@ enables it.
 Data Flow
 ~~~~~~~~~
 
-**v0.4.0 data types:**
+**Core calculators data flow (device-resident, ADR-006):**
 
 .. code-block:: text
 
    # User input: Python/NumPy
    formula = "SiO2"  # str
    density = 2.2     # float
-   energy = 8000     # float
+   energy = 8.0      # float, keV
 
-   # Internal: JAX arrays
-   |-> Parse formula -> JAX array of atomic numbers
-   |-> Load atomic data -> JAX arrays
-   |-> JIT compute -> JAX array results
-   \-> Package -> XRayResult with JAX arrays
+   host: validate, parse the formula, encode z_idx / counts / molecular weight
+   |-> upload   (one transfer of the encoded batch and the energies, padded to buckets)
+   |-> device: interpolate f1/f2 from the resident tables, derive delta, beta,
+   |            critical angle, attenuation length, SLD, status flag
+   \-> fetch    (one download of every output) -> XRayResult (NumPy)
 
-   # Output: JAX arrays (NumPy compatible)
-   result.critical_angle_degrees  # jax.Array (shape: (1,))
-   result.attenuation_length_cm   # jax.Array (shape: (1,))
+   # Output: NumPy arrays
+   result.critical_angle_degrees  # numpy.ndarray (shape: (1,))
+   result.attenuation_length_cm   # numpy.ndarray (shape: (1,))
 
 **Kramers-Kronig data flow (device-resident):**
 
@@ -482,9 +490,9 @@ For advanced users:
    JAX_PLATFORMS=cpu python script.py  # Force CPU
    XRAYLABTOOL_NO_JAX_CACHE=1 xraylabtool kk Si  # no persistent compile cache
 
-``set_backend("numpy")`` is ignored by ``xraylabtool.kk``; the kk pipeline is
-always float64 JAX (x64 is established at every public entry, not only at
-import).
+``set_backend("jax")`` is a no-op and ``set_backend("numpy")`` raises
+``ValueError``; the core calculators and ``xraylabtool.kk`` are always float64
+JAX (x64 is established at every public compute entry, not only at import).
 
 
 Common Gotchas & Solutions
@@ -649,6 +657,10 @@ Future Directions
 Potential JAX Features for v0.5+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The snippets below are illustrative sketches. The pure device API
+``xraylabtool.calculators.optics.optical_properties`` is already ``jit``, ``vmap`` and
+``grad`` compatible (ADR-006).
+
 **1. Autodiff for Optimization**
 
 .. code-block:: python
@@ -663,15 +675,11 @@ Potential JAX Features for v0.5+
    gradient = grad(objective)
    optimal_energy = optimize(objective, gradient, initial_guess)
 
-**2. vmap for Automatic Batching**
+**2. vmap for Automatic Batching (shipped)**
 
-.. code-block:: python
-
-   from jax import vmap
-
-   # Auto-vectorize over materials
-   calc_batch = vmap(calculate_single_material_properties, in_axes=(0, 0, None))
-   results = calc_batch(formulas, densities, energy)
+``calculate_xray_properties`` already batches with ``vmap`` over materials inside
+``optics._optical_program``; formulas are encoded on the host first, so the
+host-side calculators themselves are not ``vmap``-able.
 
 **3. Distributed Processing**
 
@@ -697,11 +705,14 @@ Further Reading
 Conclusion
 ----------
 
-JAX modernizes XRayLabTool with:
+JAX is the single implementation of XRayLabTool's core calculators and the
+Kramers-Kronig package (ADR-005, ADR-006):
 
-- **JIT Compilation**: 10-100x speedup with no code changes
-- **GPU Acceleration**: Automatic hardware acceleration
-- **Backward Compatibility**: Existing code works unchanged
-- **Future Capability**: Autodiff and advanced optimization ready
-
-The migration is transparent to users while enabling significant performance improvements and future scientific computing features.
+- **One implementation**: float64 ``jax.numpy`` on JAX's default device, no NumPy twin
+- **Measured trade-offs** (ADR-006): a small single call is slower than the removed
+  NumPy path (about 0.45 ms against 0.08 ms on a CPU), batches are about 1.8x faster
+  on a CPU, and the same code runs on a GPU; first calls compile (about 0.3 s on a CPU)
+- **Same public API**: results equal the NumPy-era results to ``rtol=1e-12``;
+  ``set_backend("numpy")`` and the ``ops`` layer are removed (see the changelog)
+- **Autodiff ready**: ``optics.optical_properties`` is ``jit``, ``vmap`` and ``grad``
+  compatible

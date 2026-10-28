@@ -69,8 +69,11 @@ def cmd_calc(args: Any) -> int:
     """Handle the 'calc' command."""
     try:
         # Lazy imports for this command
+        from xraylabtool.backend.runtime import enable_persistent_cache
         from xraylabtool.calculators.core import calculate_single_material_properties
         from xraylabtool.validation import validate_chemical_formula, validate_density
+
+        enable_persistent_cache()
 
         # Basic validation
         try:

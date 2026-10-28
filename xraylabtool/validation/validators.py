@@ -10,13 +10,10 @@ from __future__ import annotations
 import math
 import numbers
 import re
-from typing import TYPE_CHECKING
 
-from xraylabtool.backend import ops
+import numpy as np
+
 from xraylabtool.exceptions import EnergyError, FormulaError, ValidationError
-
-if TYPE_CHECKING:
-    import numpy as np
 
 
 def validate_energy_range(
@@ -38,37 +35,37 @@ def validate_energy_range(
     Raises:
         EnergyError: If energies are invalid
     """
-    energy_array = ops.asarray(energies)
+    energy_array = np.asarray(energies)
 
     # Check for NaN or infinite values
-    if ops.any(~ops.isfinite(energy_array)):
+    if np.any(~np.isfinite(energy_array)):
         raise EnergyError(
             "Energy values must be finite", valid_range=f"{min_energy}-{max_energy} keV"
         )
 
     # Check for positive values
-    if ops.any(energy_array <= 0):
+    if np.any(energy_array <= 0):
         raise EnergyError(
             "Energy values must be positive",
             valid_range=f"{min_energy}-{max_energy} keV",
         )
 
     # Check energy range
-    if ops.any(energy_array < min_energy):
+    if np.any(energy_array < min_energy):
         raise EnergyError(
             "Energy below minimum allowed value",
             energy=float(energy_array.min()),
             valid_range=f"{min_energy}-{max_energy} keV",
         )
 
-    if ops.any(energy_array > max_energy):
+    if np.any(energy_array > max_energy):
         raise EnergyError(
             "Energy above maximum allowed value",
             energy=float(energy_array.max()),
             valid_range=f"{min_energy}-{max_energy} keV",
         )
 
-    return energy_array  # type: ignore[no-any-return]
+    return energy_array
 
 
 def validate_chemical_formula(formula: str) -> dict[str, float]:

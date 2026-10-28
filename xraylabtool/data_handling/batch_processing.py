@@ -1,13 +1,13 @@
 """
 High-performance batch processing module for X-ray calculations.
 
-This module provides optimized batch processing capabilities with memory management,
-parallel execution, and progress tracking for large-scale X-ray property calculations.
+This module provides batch processing with memory management and progress
+tracking for large-scale X-ray property calculations. Materials run as ``F``-blocks
+of one JAX device program (a ``vmap`` over materials); there are no worker pools.
 
 """
 
-from collections.abc import Iterator
-import concurrent.futures
+from collections.abc import Hashable, Iterator
 from dataclasses import dataclass
 import gc
 import os
@@ -20,10 +20,15 @@ import psutil
 
 from xraylabtool.calculators.core import (
     XRayResult,
+    _calculate_materials,
     _coerce_energy_array,
     _require_finite_energies,
+    _xray_result_from_properties,
     calculate_single_material_properties,
 )
+from xraylabtool.logging_utils import get_logger
+
+_logger = get_logger(__name__)
 
 
 @dataclass
@@ -32,8 +37,10 @@ class BatchConfig:
     Configuration for batch processing operations.
 
     Args:
-        max_workers: Maximum number of parallel workers (default: auto-detect)
-        chunk_size: Number of calculations per chunk (default: 100)
+        max_workers: Accepted and ignored (batches run on the device, not in worker
+            pools); kept so existing configurations keep working
+        chunk_size: Number of calculations per chunk, and the upper bound of
+            materials per device block (default: 100)
         memory_limit_gb: Memory limit in GB before forcing garbage collection
         enable_progress: Whether to show progress bars
         cache_results: Whether to cache intermediate results
@@ -47,10 +54,18 @@ class BatchConfig:
 
     def __post_init__(self) -> None:
         """Initialize the configuration after object creation."""
+        if (
+            isinstance(self.chunk_size, bool)
+            or not isinstance(self.chunk_size, int)
+            or self.chunk_size < 1
+        ):
+            raise ValueError(
+                f"chunk_size must be a positive integer, got {self.chunk_size!r}"
+            )
         if self.max_workers is None:
-            # Auto-detect optimal worker count based on system capabilities
+            # max_workers is ignored (batches run as device F-blocks); the default
+            # only keeps code that reads config.max_workers getting an int.
             cpu_count = os.cpu_count() or 1
-            # Use 75% of available CPUs, but cap at 8 for memory efficiency
             self.max_workers = min(max(1, int(cpu_count * 0.75)), 8)
 
         # Adjust memory limit based on available system memory if needed
@@ -100,15 +115,11 @@ class MemoryMonitor:
             return 0.0
 
     def force_gc(self) -> None:
-        """Force garbage collection and clear caches to free memory."""
-        # Clear module-level caches from core module following existing pattern
-        try:
-            from xraylabtool.calculators.core import clear_scattering_factor_cache
+        """Run garbage collection.
 
-            clear_scattering_factor_cache()
-        except ImportError:
-            pass  # Cache clearing not available, continue with GC only
-
+        The resident scattering tables and the per-formula encoding memo are kept:
+        dropping them would force a table re-upload mid-batch.
+        """
         gc.collect()
 
 
@@ -153,109 +164,79 @@ def process_single_calculation(
         return (formula, None)
 
 
-# A chunk is abandoned (its unfinished items reported as failed) when no calculation
-# completes for this many seconds. Module-level so tests can shorten it.
-_STALL_TIMEOUT_S = 300.0
+def _energies_key(index: int, energies: Any) -> Hashable:
+    """Group key: items share a group only if their energy inputs are identical.
 
-
-def _run_chunk_in_executor(
-    executor: concurrent.futures.Executor,
-    chunk: list[tuple[str, np.ndarray, float]],
-    memory_monitor: MemoryMonitor,
-) -> list[tuple[str, XRayResult | None]]:
-    """Run ``chunk`` on ``executor`` and return results in input order.
-
-    Completion order is nondeterministic; results are placed back by submission
-    index so output (and ``#n`` key suffixes assigned downstream) is reproducible.
-    If no calculation finishes within ``_STALL_TIMEOUT_S`` the unfinished items are
-    reported as failed instead of blocking the batch forever.
+    Shape and dtype are part of the key (equal bytes can be a float32 pair and one
+    float64, a real pair and one complex, an ``(8, 1)`` and a ``(1, 2)`` array), and
+    an input NumPy cannot turn into an array stays alone so it fails on its own.
     """
-    futures = {
-        executor.submit(process_single_calculation, formula, energies, density): i
-        for i, (formula, energies, density) in enumerate(chunk)
-    }
-    ordered: list[tuple[str, XRayResult | None] | None] = [None] * len(chunk)
-    pending = set(futures)
-    stalled = False
     try:
-        while pending:
-            done, pending = concurrent.futures.wait(
-                pending,
-                timeout=_STALL_TIMEOUT_S,
-                return_when=concurrent.futures.FIRST_COMPLETED,
-            )
-            if not done:
-                stalled = True
-                for future in pending:
-                    future.cancel()
-                    formula = chunk[futures[future]][0]
-                    warnings.warn(
-                        f"Timeout processing formula '{formula}'", stacklevel=2
-                    )
-                    ordered[futures[future]] = (formula, None)
-                break
-            for future in done:
-                index = futures[future]
-                formula = chunk[index][0]
-                try:
-                    ordered[index] = future.result()
-                    # Memory management
-                    if not memory_monitor.check_memory():
-                        memory_monitor.force_gc()
-                except Exception as e:
-                    # Use structured error handling following existing exception patterns
-                    warnings.warn(
-                        f"Error processing formula '{formula}': {e}", stacklevel=2
-                    )
-                    ordered[index] = (formula, None)
-    finally:
-        # Do not wait for a stalled worker: it cannot be interrupted, and waiting
-        # would reintroduce the hang the timeout is meant to prevent.
-        executor.shutdown(wait=not stalled, cancel_futures=True)
-
-    return [item for item in ordered if item is not None]
+        array = np.asarray(energies)
+        return (array.shape, array.dtype.str, array.tobytes())
+    except Exception:
+        return ("unarrayable", index)
 
 
 def process_batch_chunk(
-    chunk: list[tuple[str, np.ndarray, float]], config: BatchConfig
+    chunk: list[tuple[str, np.ndarray, float]],
+    config: BatchConfig,
+    progress_bar: Any = None,
 ) -> list[tuple[str, XRayResult | None]]:
     """
-    Process a chunk of calculations in parallel.
+    Process a chunk of calculations as device ``F``-blocks.
 
-    Results are returned in the same order as ``chunk``.
+    Items that share their energies run together (grouped by element bucket, then
+    cut into blocks of at most ``config.chunk_size`` materials); results are
+    returned in the same order as ``chunk``. A failing item warns and yields
+    ``None``, like :func:`process_single_calculation`.
 
     Args:
         chunk: List of (formula, energies, density) tuples
         config: Batch processing configuration
+        progress_bar: Optional object with ``update(n)``, advanced per block
 
     Returns:
         List of (formula, result) tuples
     """
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
+    update = None if progress_bar is None else progress_bar.update
+    ordered: list[tuple[str, XRayResult | None]] = [("", None)] * len(chunk)
+    by_energies: dict[Hashable, list[int]] = {}
+    for i, (_formula, energies, _density) in enumerate(chunk):
+        by_energies.setdefault(_energies_key(i, energies), []).append(i)
+    for members in by_energies.values():
+        counted = 0
 
-    # Choose executor based on batch size: ProcessPoolExecutor gives true
-    # parallelism for CPU-bound work but pays IPC serialisation cost per
-    # task (~0.5 ms for numpy arrays).  Only worth it when per-material
-    # calc time * batch size exceeds the overhead.
-    process_pool_threshold = 8  # switch at 8+ items
-    if len(chunk) >= process_pool_threshold:
-        try:
-            return _run_chunk_in_executor(
-                concurrent.futures.ProcessPoolExecutor(max_workers=config.max_workers),
-                chunk,
-                memory_monitor,
-            )
-        except (OSError, concurrent.futures.process.BrokenProcessPool) as exc:
-            # e.g. PermissionError when semaphores/shared memory are unavailable
-            warnings.warn(
-                f"Could not use a process pool ({exc}); falling back to threads",
-                stacklevel=2,
-            )
-    return _run_chunk_in_executor(
-        concurrent.futures.ThreadPoolExecutor(max_workers=config.max_workers),
-        chunk,
-        memory_monitor,
-    )
+        def count(n: int) -> None:
+            nonlocal counted
+            counted += n
+            if update is not None:
+                update(n)
+
+        outcomes = _calculate_materials(
+            [chunk[i][0] for i in members],
+            [chunk[i][2] for i in members],
+            chunk[members[0]][1],
+            max_block=config.chunk_size,
+            on_block=count,
+        )
+        for i, outcome in zip(members, outcomes, strict=True):
+            formula = chunk[i][0]
+            if isinstance(outcome, Exception):
+                warnings.warn(
+                    f"Failed to process formula '{formula}': {outcome}", stacklevel=2
+                )
+                ordered[i] = (formula, None)
+            else:
+                ordered[i] = (formula, _xray_result_from_properties(outcome))
+        # Blocks counted every material that reached the device (finite or not);
+        # the rest failed the host screening and never ran.
+        if update is not None and counted < len(members):
+            update(len(members) - counted)
+        if not memory_monitor.check_memory():
+            memory_monitor.force_gc()
+    return ordered
 
 
 def _validate_batch_inputs(formulas: list[str], densities: list[float]) -> None:
@@ -306,7 +287,7 @@ def _process_chunks(
     memory_monitor = MemoryMonitor(config.memory_limit_gb)
 
     for chunk in chunk_iterator(calculation_data, config.chunk_size):
-        chunk_results = process_batch_chunk(chunk, config)
+        chunk_results = process_batch_chunk(chunk, config, progress_bar)
 
         for formula, result in chunk_results:
             # Create composite key to preserve formula+density combinations
@@ -329,9 +310,6 @@ def _process_chunks(
                 key = f"{key}#{suffix}"
             all_results[key] = result
 
-        if progress_bar is not None:
-            progress_bar.update(len(chunk))
-
         if not memory_monitor.check_memory():
             memory_monitor.force_gc()
 
@@ -348,7 +326,8 @@ def calculate_batch_properties(
     Calculate X-ray properties for multiple materials with optimized batch processing.
 
     This function processes large batches of calculations efficiently using chunking,
-    parallel processing, and memory management.
+    device ``F``-blocks (one JAX program call per block), and memory management.
+    ``config.max_workers`` is accepted and ignored.
 
     Args:
         formulas: List of chemical formulas
@@ -375,6 +354,10 @@ def calculate_batch_properties(
     if config is None:
         config = BatchConfig()
 
+    _logger.debug(
+        "BatchConfig.max_workers=%s is ignored: batches run as device F-blocks",
+        config.max_workers,
+    )
     _validate_batch_inputs(formulas, densities)
     energies_array = _prepare_energies_array(energies)
 

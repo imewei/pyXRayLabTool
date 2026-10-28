@@ -97,6 +97,7 @@ Calculation Cache
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: element, z, field
 
 Scattering Data
 ---------------
@@ -106,13 +107,23 @@ Scattering Data
    :undoc-members:
    :show-inheritance:
 
-Kernels
--------
+Resident Tables
+---------------
 
-.. automodule:: xraylabtool.calculators.kernels
+.. automodule:: xraylabtool.calculators.tables
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: n, symbols
+
+Device Programs
+---------------
+
+.. automodule:: xraylabtool.calculators.optics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :exclude-members: wavelength, critical_angle, attenuation_length, electron_density, n, symbols
 
 Physics Background
 ------------------

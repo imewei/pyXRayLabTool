@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 
 from xraylabtool import constants
+from xraylabtool.backend import runtime
 from xraylabtool.exceptions import NearEdgeDataError
 from xraylabtool.kk import _device, kk_calculate_real, nearedge
 from xraylabtool.kk._device import Spectrum
@@ -102,10 +103,10 @@ def _run(
     e_p = np.concatenate([e, np.full(m - n_ne, -7.0)])
     v_p = np.concatenate([v, np.full(m - n_ne, np.nan)])
     spec = Spectrum.from_numpy(seg, coef, spec_capacity)
-    e_d, v_d = _device.upload((e_p, v_p))
+    e_d, v_d = runtime.upload((e_p, v_p))
     res = merge_device(spec, e_d, v_d, np.int32(n_ne), low, high, capacity=capacity)
-    status = _device.fetch_status(res.status)
-    out = _device.fetch(res)
+    status = runtime.fetch_status(res.status)
+    out = runtime.fetch(res)
     n = int(out.spectrum.n_segments)
     assert n <= capacity
     assert int(status.n_segments) == n
@@ -411,9 +412,9 @@ def test_to_asf_scale_device_matches_formulas(kind: str) -> None:
     m = bucket_pow2(NE_E.size)
     e_p = np.concatenate([NE_E, np.ones(m - NE_E.size)])
     v_p = np.concatenate([NE_V, np.ones(m - NE_E.size)])
-    e_d, v_d = _device.upload((e_p, v_p))
+    e_d, v_d = runtime.upload((e_p, v_p))
     got = np.asarray(
-        _device.fetch(
+        runtime.fetch(
             to_asf_scale_device(e_d, v_d, kind, density=2.0, formula_mass=60.0)
         )
     )[: NE_E.size]
@@ -519,7 +520,7 @@ def test_merge_spectra_unchecked_coefficients_away_from_the_merge_points_pass() 
 def test_undersized_merge_capacity_reports_the_true_count() -> None:
     cap = 3
     spec = Spectrum.from_numpy(SEG, COEFFS)
-    e_d, v_d = _device.upload((NE_E, NE_V))
+    e_d, v_d = runtime.upload((NE_E, NE_V))
     res = merge_device(spec, e_d, v_d, np.int32(NE_E.size), 22.0, 38.0, capacity=cap)
     ref_ev, _, _ = _reference(SEG, COEFFS, NE_E, NE_V, 22.0, 38.0)
     assert int(res.status.n_segments) == ref_ev.size - 1 > cap

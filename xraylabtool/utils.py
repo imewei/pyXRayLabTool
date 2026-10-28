@@ -7,8 +7,9 @@ mathematical operations, and other common tasks in X-ray analysis.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from functools import lru_cache
+from collections.abc import Callable, Iterator
+from functools import cache, lru_cache, partial
+import operator
 import re
 from typing import TYPE_CHECKING, Any, NoReturn
 
@@ -26,6 +27,65 @@ from xraylabtool.exceptions import AtomicDataError, UnknownElementError
 
 if TYPE_CHECKING:
     from xraylabtool.typing_extensions import ArrayLike, FloatLike
+
+
+# Physics and signal helpers run in jax.numpy (xraylabtool/_physics.py); the
+# wrappers below validate on the host and import _physics inside each call so
+# that `import xraylabtool` stays JAX-free. Host by design (spec section 9):
+# find_peaks, progress_bar, save_processed_data, parse_formula.
+
+
+@cache
+def _program(name: str, **static: Any) -> Callable[..., Any]:
+    """The ``_physics`` function ``name`` with its static arguments bound (cached)."""
+    from xraylabtool import _physics
+
+    fn: Callable[..., Any] = getattr(_physics, name)
+    return partial(fn, **static) if static else fn
+
+
+def _map(name: str, *arrays: Any, **static: Any) -> np.ndarray:
+    """Run an elementwise ``_physics`` function on host arrays (broadcast shape out)."""
+    from xraylabtool.calculators.host import run_map
+
+    for value in arrays:
+        if np.iscomplexobj(value):
+            # Python's own message for float(complex), which is what a complex
+            # scalar raised before; NumPy would cast and warn instead.
+            raise TypeError(
+                "float() argument must be a string or a real number, "
+                f"not {type(value).__name__!r}"
+            )
+    return run_map(_program(name, **static), *arrays)  # type: ignore[no-any-return]
+
+
+def _real(y: ArrayLike) -> np.ndarray:
+    """``y`` as a float64 array; complex data is rejected, never cast."""
+    y_arr = np.asarray(y)
+    if np.iscomplexobj(y_arr):
+        raise TypeError("complex signal data is not supported")
+    return np.asarray(y_arr, dtype=np.float64)
+
+
+def _series(y: ArrayLike) -> np.ndarray:
+    y_arr = _real(y)
+    if y_arr.ndim != 1:
+        raise ValueError("Signal data must be one-dimensional")
+    return y_arr
+
+
+def _run_columns(name: str, columns: np.ndarray) -> np.ndarray:
+    from xraylabtool.calculators.host import run_columns
+
+    return run_columns(_program(name), columns)
+
+
+def _run_series(
+    name: str, *series: np.ndarray, extra: tuple[Any, ...] = (), **static: Any
+) -> np.ndarray:
+    from xraylabtool.calculators.host import run_series
+
+    return run_series(_program(name, **static), *series, extra=extra)
 
 
 # Module-level constant aliases — computed once at import time.
@@ -95,26 +155,10 @@ def wavelength_to_energy(wavelength: FloatLike, units: str = "angstrom") -> floa
     if not np.all(np.asarray(wavelength) > 0):
         raise ValueError("Wavelength must be positive")
 
-    # Convert wavelength to meters
-    if units == "angstrom":
-        wavelength_m = wavelength * 1e-10
-    elif units == "nm":
-        wavelength_m = wavelength * 1e-9
-    elif units == "m":
-        wavelength_m = wavelength
-    else:
+    if units not in ("angstrom", "nm", "m"):
         raise ValueError("Units must be 'angstrom', 'nm', or 'm'")
 
-    # Get constants explicitly
-    planck_const = get_planck_constant()
-    speed_light = get_speed_of_light()
-    electron_charge = get_electron_charge()
-
-    # Calculate energy using E = hc/λ
-    energy_j = (planck_const * speed_light) / wavelength_m
-    energy_kev = energy_j / (electron_charge * 1000)
-
-    return float(energy_kev)
+    return float(_map("wavelength_to_energy", wavelength, units=units))
 
 
 def energy_to_wavelength(energy: FloatLike, units: str = "angstrom") -> float:
@@ -128,29 +172,12 @@ def energy_to_wavelength(energy: FloatLike, units: str = "angstrom") -> float:
     Returns:
         Wavelength in specified units
     """
-    # Get constants explicitly
-    planck_const = get_planck_constant()
-    speed_light = get_speed_of_light()
-    electron_charge = get_electron_charge()
-
     if not np.all(np.asarray(energy) > 0):
         raise ValueError("Energy must be positive")
-
-    # Convert energy to Joules
-    energy_j = energy * electron_charge * 1000
-
-    # Calculate wavelength using λ = hc/E
-    wavelength_m = (planck_const * speed_light) / energy_j
-
-    # Convert to desired units
-    if units == "angstrom":
-        return float(wavelength_m / 1e-10)
-    elif units == "nm":
-        return float(wavelength_m / 1e-9)
-    elif units == "m":
-        return float(wavelength_m)
-    else:
+    if units not in ("angstrom", "nm", "m"):
         raise ValueError("Units must be 'angstrom', 'nm', or 'm'")
+
+    return float(_map("energy_to_wavelength", energy, units=units))
 
 
 def bragg_angle(d_spacing: FloatLike, wavelength: FloatLike, order: int = 1) -> float:
@@ -177,10 +204,7 @@ def bragg_angle(d_spacing: FloatLike, wavelength: FloatLike, order: int = 1) -> 
     if sin_theta > 1:
         raise ValueError("No diffraction possible for given parameters")
 
-    theta_rad = np.arcsin(sin_theta)
-    theta_deg = np.degrees(theta_rad)
-
-    return float(theta_deg)
+    return float(_map("bragg_angle", d_spacing, wavelength, order))
 
 
 def _check_lattice(h: Any, k: Any, miller_l: Any, *lengths: Any) -> None:
@@ -204,7 +228,7 @@ def d_spacing_cubic(h: int, k: int, miller_l: int, a: FloatLike) -> float:
         d-spacing in Angstroms
     """
     _check_lattice(h, k, miller_l, a)
-    return float(a / np.sqrt(h**2 + k**2 + miller_l**2))
+    return float(_map("d_spacing_cubic", h, k, miller_l, a))
 
 
 def d_spacing_tetragonal(
@@ -222,7 +246,7 @@ def d_spacing_tetragonal(
         d-spacing in Angstroms
     """
     _check_lattice(h, k, miller_l, a, c)
-    return float(1 / np.sqrt((h**2 + k**2) / a**2 + miller_l**2 / c**2))
+    return float(_map("d_spacing_tetragonal", h, k, miller_l, a, c))
 
 
 def d_spacing_orthorhombic(
@@ -239,7 +263,7 @@ def d_spacing_orthorhombic(
         d-spacing in Angstroms
     """
     _check_lattice(h, k, miller_l, a, b, c)
-    return float(1 / np.sqrt(h**2 / a**2 + k**2 / b**2 + miller_l**2 / c**2))
+    return float(_map("d_spacing_orthorhombic", h, k, miller_l, a, b, c))
 
 
 def q_from_angle(two_theta: FloatLike, wavelength: FloatLike) -> float:
@@ -251,11 +275,9 @@ def q_from_angle(two_theta: FloatLike, wavelength: FloatLike) -> float:
         wavelength: X-ray wavelength in Angstroms
 
     Returns:
-        Momentum transfer q in Ų⁻¹
+        Momentum transfer q in Å⁻¹
     """
-    theta_rad = np.radians(two_theta / 2)
-    q = (4 * np.pi * np.sin(theta_rad)) / wavelength
-    return float(q)
+    return float(_map("q_from_angle", two_theta, wavelength))
 
 
 def angle_from_q(q: FloatLike, wavelength: FloatLike) -> float:
@@ -263,7 +285,7 @@ def angle_from_q(q: FloatLike, wavelength: FloatLike) -> float:
     Calculate scattering angle from momentum transfer q.
 
     Args:
-        q: Momentum transfer in Ų⁻¹
+        q: Momentum transfer in Å⁻¹
         wavelength: X-ray wavelength in Angstroms
 
     Returns:
@@ -274,22 +296,18 @@ def angle_from_q(q: FloatLike, wavelength: FloatLike) -> float:
     if sin_theta > 1:
         raise ValueError("Invalid q value for given wavelength")
 
-    theta_rad = np.arcsin(sin_theta)
-    two_theta_deg = 2 * np.degrees(theta_rad)
-
-    return float(two_theta_deg)
+    return float(_map("angle_from_q", q, wavelength))
 
 
 def smooth_data(x: ArrayLike, y: ArrayLike, window_size: int = 5) -> np.ndarray:
     """
-    Apply moving average smoothing to data using optimized NumPy convolution.
+    Apply moving average smoothing to one-dimensional data (``jax.numpy`` convolution).
 
-    This optimized version uses numpy convolution instead of pandas rolling,
-    providing 3-5x speedup for typical use cases.
+    Edges are replicated; a window of at least ``len(y)`` returns the mean.
 
     Args:
         x: x-axis data (not used but kept for consistency)
-        y: y-axis data to smooth
+        y: y-axis data to smooth; must be one-dimensional (``ValueError`` otherwise)
         window_size: Size of smoothing window
 
     Returns:
@@ -298,22 +316,27 @@ def smooth_data(x: ArrayLike, y: ArrayLike, window_size: int = 5) -> np.ndarray:
     if window_size < 1:
         raise ValueError("Window size must be at least 1")
 
-    # Convert to numpy array for consistent operations
-    y_arr = np.asarray(y)
+    y_arr = _series(y)
+    if window_size >= y_arr.size:
+        # The mean, whatever the type of the window (as before). Every such window
+        # runs the same program, so its static size is the bucket, not the value.
+        from xraylabtool.backend.shapes import bucket
 
-    if window_size >= len(y_arr):
-        return np.full(len(y_arr), np.mean(y_arr), dtype=np.float64)
-
-    # Use numpy convolution - much faster than pandas rolling
-    kernel = np.ones(window_size, dtype=np.float64) / window_size
-
-    # Handle edge effects with reflection padding
-    half_window = window_size // 2
-    padded_y = np.pad(y_arr, half_window, mode="edge")
-    convolved = np.convolve(padded_y, kernel, mode="valid")
-
-    # Ensure we return exactly the same length as input
-    return convolved[: len(y_arr)]
+        window = bucket(y_arr.size, minimum=64)
+    else:
+        # Integers only, as np.ones() accepted: not 2.9, 3.0 or True.
+        if isinstance(window_size, bool | np.bool_):
+            window = None
+        else:
+            try:
+                window = operator.index(window_size)
+            except TypeError:
+                window = None
+        if window is None:
+            raise TypeError(
+                f"expected a sequence of integers or a single integer, got '{window_size}'"
+            )
+    return _run_series("smooth_data", y_arr, window_size=window)
 
 
 def find_peaks(
@@ -354,32 +377,39 @@ def background_subtraction(
     Perform background subtraction on diffraction data.
 
     Args:
-        x: x-axis data
-        y: y-axis data
+        x: x-axis data (used by ``'polynomial'`` only; one-dimensional, same
+            length as ``y``)
+        y: y-axis data. ``'polynomial'`` needs one dimension; ``'linear'`` also
+            accepts an ``(N, k)`` array of ``k`` series in columns and subtracts
+            each column's own line (one device call)
         method: Background subtraction method ('linear', 'polynomial')
 
     Returns:
-        Background-subtracted y data
+        Background-subtracted y data, float64, the shape of ``y``
     """
-    # Convert to numpy arrays for consistent indexing
-    x_arr = np.asarray(x)
-    y_arr = np.asarray(y)
-
-    if method == "linear":
-        # Linear background between first and last points
-        background = np.linspace(y_arr[0], y_arr[-1], len(y_arr))
-    elif method == "polynomial":
-        # Fit quadratic polynomial using x values
-        # Use endpoints and minimum point for fitting
-        min_idx = np.argmin(y_arr)
-        x_points = np.array([x_arr[0], x_arr[min_idx], x_arr[-1]])
-        y_points = np.array([y_arr[0], y_arr[min_idx], y_arr[-1]])
-        coeffs = np.polyfit(x_points, y_points, 2)
-        background = np.polyval(coeffs, x_arr)
-    else:
+    y_arr = _real(y)
+    if method not in ("linear", "polynomial"):
         raise ValueError("Method must be 'linear' or 'polynomial'")
-
-    return y_arr - background
+    if method == "linear" and y_arr.ndim == 2 and y_arr.shape[0] > 0:
+        if y_arr.shape[1] == 0:
+            return y_arr.copy()
+        return _run_columns("linear_background_columns", y_arr)
+    y_arr = _series(y_arr)
+    if y_arr.size == 0:
+        raise IndexError("index 0 is out of bounds for axis 0 with size 0")
+    if method == "linear":
+        return _run_series("linear_background", y_arr)
+    x_arr = _series(x)
+    if x_arr.size != y_arr.size:
+        raise ValueError("x and y must have the same length")
+    # shortcut: the 3-point quadratic fit stays on the host (NumPy lstsq). Its
+    # rounding noise is part of the frozen oracle and no jnp solver reproduces it;
+    # the evaluation and the subtraction run on the device.
+    low = int(np.argmin(y_arr))
+    coefficients = np.polyfit(
+        [x_arr[0], x_arr[low], x_arr[-1]], [y_arr[0], y_arr[low], y_arr[-1]], 2
+    )
+    return _run_series("polynomial_background", x_arr, y_arr, extra=(coefficients,))
 
 
 def normalize_intensity(y: ArrayLike, method: str = "max") -> np.ndarray:
@@ -387,23 +417,27 @@ def normalize_intensity(y: ArrayLike, method: str = "max") -> np.ndarray:
     Normalize intensity data.
 
     Args:
-        y: Intensity data
+        y: Intensity data. ``'max'`` and ``'standard'`` accept any shape (global
+            maximum, mean and standard deviation) and a 0-d input; ``'area'``
+            needs one dimension (``ValueError`` otherwise)
         method: Normalization method ('max', 'area', 'standard')
 
     Returns:
-        Normalized intensity data
+        Normalized intensity data, float64, the shape of ``y`` (a NumPy scalar
+        for a 0-d input)
     """
-    # Convert to numpy array for consistent operations
-    y_arr = np.asarray(y)
-
-    if method == "max":
-        return y_arr / float(np.max(y_arr))
-    elif method == "area":
-        return y_arr / float(np.trapezoid(y_arr))
-    elif method == "standard":
-        return (y_arr - float(np.mean(y_arr))) / float(np.std(y_arr))
-    else:
+    y_arr = _real(y)
+    if method not in ("max", "area", "standard"):
         raise ValueError("Method must be 'max', 'area', or 'standard'")
+    if method == "area":
+        y_arr = _series(y_arr)
+    if y_arr.size == 0 and method == "max":
+        raise ValueError(
+            "zero-size array to reduction operation maximum which has no identity"
+        )
+    out = _run_series("normalize_intensity", y_arr.ravel(), method=method)
+    out = out.reshape(y_arr.shape)
+    return out[()] if out.ndim == 0 else out
 
 
 def progress_bar(iterable: Any, desc: str = "Processing") -> Any | Iterator[Any]:
@@ -553,6 +587,15 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
         >>> parse_formula("Ca5(PO4)3OH")
         (['Ca', 'P', 'O', 'H'], [5.0, 3.0, 13.0, 1.0])
     """
+    symbols, counts = _parse_formula_cached(formula_str)
+    return list(symbols), list(counts)
+
+
+@lru_cache(maxsize=1024)
+def _parse_formula_cached(
+    formula_str: str,
+) -> tuple[tuple[str, ...], tuple[float, ...]]:
+    """Cached, immutable result of :func:`parse_formula` (exceptions are not cached)."""
     from xraylabtool.exceptions import FormulaError
 
     if not formula_str or not formula_str.strip():
@@ -581,7 +624,7 @@ def parse_formula(formula_str: str) -> tuple[list[str], list[float]]:
     if not element_symbols:
         raise FormulaError(f"No elements found in formula: {formula_str}", formula_str)
 
-    return element_symbols, element_counts
+    return tuple(element_symbols), tuple(element_counts)
 
 
 def _convert_atomic_number_to_int(atomic_num: Any) -> int:

@@ -1,18 +1,28 @@
 Backend
 =======
 
-The backend module provides an abstraction layer for array operations,
-allowing XRayLabTool to run on either NumPy or JAX backends.
+The backend package holds the JAX runtime helpers, the shape buckets that bound
+compile counts, and the in-tree PCHIP interpolator. XRayLabTool runs on JAX only
+(ADR-006); ``set_backend("jax")`` is a no-op, ``set_backend("numpy")`` raises
+``ValueError``, and ``get_backend()`` returns ``"jax"``.
 
 .. automodule:: xraylabtool.backend
    :members:
    :undoc-members:
    :show-inheritance:
 
-Array Operations
-----------------
+Runtime
+-------
 
-.. automodule:: xraylabtool.backend.array_ops
+.. automodule:: xraylabtool.backend.runtime
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Shapes
+------
+
+.. automodule:: xraylabtool.backend.shapes
    :members:
    :undoc-members:
    :show-inheritance:

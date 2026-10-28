@@ -19,7 +19,6 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from xraylabtool.backend.array_ops import set_backend
 from xraylabtool.calculators.core import (
     _validate_and_process_energies,
     calculate_multiple_xray_properties,
@@ -34,12 +33,6 @@ DATA_DIR = (
     / "data"
     / "AtomicScatteringFactor"
 )
-
-
-@pytest.fixture
-def numpy_backend_after():
-    yield
-    set_backend("numpy")
 
 
 # ---------------------------------------------------------------------------
@@ -309,35 +302,16 @@ class TestExports:
 
 
 # ---------------------------------------------------------------------------
-# Backend switching and JIT behaviour
+# JIT behaviour
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.unit
-@pytest.mark.usefixtures("numpy_backend_after")
-class TestBackendState:
-    def test_set_backend_rebuilds_interpolators(self) -> None:
-        pytest.importorskip("jax")
-        interpax = pytest.importorskip("interpax")
-        scipy_interp = pytest.importorskip("scipy.interpolate")
-        from xraylabtool.calculators.cache import create_scattering_factor_interpolators
+class TestDeviceProgramCompilation:
+    def test_device_program_compiles_once_across_materials(self) -> None:
+        """Density and formula are traced arguments: one compile per bucket."""
+        from xraylabtool.calculators import optics
 
-        set_backend("numpy")
-        f1, _ = create_scattering_factor_interpolators("Si")
-        assert isinstance(f1, scipy_interp.PchipInterpolator)
-        set_backend("jax")
-        f1, _ = create_scattering_factor_interpolators("Si")
-        assert isinstance(f1, interpax.PchipInterpolator)
-        set_backend("numpy")
-        f1, _ = create_scattering_factor_interpolators("Si")
-        assert isinstance(f1, scipy_interp.PchipInterpolator)
-
-    def test_scatter_kernel_compiles_once_across_materials(self) -> None:
-        pytest.importorskip("jax")
-        from xraylabtool.calculators import kernels
-
-        set_backend("jax")
-        kernels._jit_cache.clear()
         sizes = []
         for formula, density in [
             ("Si", 2.33),
@@ -346,7 +320,7 @@ class TestBackendState:
             ("Cu", 8.96),
         ]:
             calculate_single_material_properties(formula, [8.0, 10.0], density)
-            sizes.append(kernels._jit_cache["scatter"]._cache_size())
+            sizes.append(optics._optical_program._cache_size())
         assert sizes[-1] == sizes[0], sizes
 
 
@@ -396,49 +370,6 @@ class TestBatchProcessing:
             calculate_batch_properties(
                 ["SiO2"], np.array([[8.0, 10.0]]), [2.2], self._config()
             )
-
-    def test_stalled_calculation_times_out(self, monkeypatch) -> None:
-        import xraylabtool.data_handling.batch_processing as bp
-
-        real = bp.process_single_calculation
-
-        def slow(formula, energies, density):
-            if formula == "H2O":
-                time.sleep(4)
-            return real(formula, energies, density)
-
-        monkeypatch.setattr(bp, "process_single_calculation", slow)
-        monkeypatch.setattr(bp, "_STALL_TIMEOUT_S", 0.5)
-        start = time.monotonic()
-        with pytest.warns(UserWarning, match="Timeout"):
-            results = bp.calculate_batch_properties(
-                self.FORMULAS, [8.0, 10.0], self.DENSITIES, self._config()
-            )
-        assert time.monotonic() - start < 3.5
-        assert results["H2O"] is None
-        assert results["SiO2@2.200"] is not None
-
-    def test_process_pool_failure_falls_back_to_threads(self, monkeypatch) -> None:
-        import concurrent.futures
-
-        import xraylabtool.data_handling.batch_processing as bp
-
-        class Broken:
-            def __init__(self, *_args, **_kwargs):
-                raise PermissionError("no semaphores in this environment")
-
-        monkeypatch.setattr(concurrent.futures, "ProcessPoolExecutor", Broken)
-        formulas = [
-            f"{s}"
-            for s in ["SiO2", "H2O", "Fe2O3", "Al2O3", "CaCO3", "MgO", "TiO2", "ZnO"]
-        ]
-        densities = [2.2, 1.0, 5.24, 3.95, 2.71, 3.58, 4.23, 5.61]
-        with pytest.warns(UserWarning, match="process pool"):
-            results = bp.calculate_batch_properties(
-                formulas, [8.0, 10.0], densities, self._config()
-            )
-        assert len(results) == 8
-        assert all(v is not None for v in results.values())
 
 
 # ---------------------------------------------------------------------------

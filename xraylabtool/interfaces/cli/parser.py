@@ -206,7 +206,7 @@ def add_batch_command(subparsers: Any) -> None:
           # Specific output format
           xraylabtool batch materials.csv -o results.json --format json
 
-          # Parallel processing with 4 workers
+          # --workers is accepted for compatibility and ignored
           xraylabtool batch materials.csv -o results.csv --workers 4
         """),
     )
@@ -227,7 +227,9 @@ def add_batch_command(subparsers: Any) -> None:
     )
 
     parser.add_argument(
-        "--workers", type=int, help="Number of parallel workers (default: auto)"
+        "--workers",
+        type=int,
+        help="Accepted for compatibility and ignored (batches run as device programs)",
     )
 
     parser.add_argument(

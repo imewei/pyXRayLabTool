@@ -260,7 +260,7 @@ class TestDocumentationPatterns(BaseUnitTest):
         if not existing:
             pytest.skip("README.md and CLAUDE.md not found")
 
-        content = "\n".join(path.read_text() for path in existing)
+        content = "\n".join(path.read_text(encoding="utf-8") for path in existing)
 
         # Only lines that start with an import statement are code examples;
         # unanchored matches pick up prose such as "so `import xraylabtool` stays fast".

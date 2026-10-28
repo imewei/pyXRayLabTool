@@ -209,7 +209,7 @@ Performance Requirements
 Tests ensure performance standards:
 
 - **Single calculations**: a few ms with a warm atomic-data cache
-- **Batch processing**: parallel above 20 materials (``ThreadPoolExecutor``)
+- **Batch processing**: blocks of materials run through one JAX device program (no worker pools)
 - **Memory usage**: Reasonable scaling with dataset size
 
 Benchmarking Code
@@ -250,8 +250,8 @@ Coverage Requirements
   the lines a commit changes against the project's coverage. Every touched
   executable line counts, including a line where only a trailing comment was
   removed, so changes to code that CI cannot reach need a test (for example,
-  the JAX backend, which CI exercises only through ``set_backend("jax")`` in
-  ``tests/unit/test_jax_backend_parity.py``).
+  the GPU path of the JAX device programs; CI has no GPU, so it is checked
+  manually with ``scripts/core_gpu_check.py`` and everything else runs on the CPU).
 - **Exception paths**: error conditions should have tests.
 
 Generating Coverage Reports

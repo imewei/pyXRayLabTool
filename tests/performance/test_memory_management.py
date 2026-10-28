@@ -56,28 +56,17 @@ class TestMemoryMonitor:
         monitor = MemoryMonitor(0.001)  # 1MB - very low
         assert not monitor.check_memory()
 
-    def test_force_gc_with_cache_clearing(self):
-        """Test that force_gc clears caches and runs garbage collection."""
-        from xraylabtool.calculators.core import _scattering_factor_cache
+    def test_force_gc_runs_gc_and_keeps_the_resident_tables(self):
+        """force_gc collects garbage without dropping the resident device tables."""
+        from xraylabtool.calculators.tables import load_tables
 
         monitor = MemoryMonitor(4.0)
-
-        # Populate some cache data first
         _ = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
-        _ = xlt.calculate_single_material_properties("Al2O3", 10.0, 3.95)
+        tables = load_tables()
 
-        # Verify cache is populated before clearing
-        assert len(_scattering_factor_cache) > 0, (
-            "Cache should be populated before force_gc"
-        )
-
-        # Force garbage collection and cache clearing
         monitor.force_gc()
 
-        # Verify that caches were actually cleared
-        assert len(_scattering_factor_cache) == 0, (
-            "Scattering factor cache should be empty after force_gc"
-        )
+        assert load_tables() is tables
         # Verify gc.get_count() returns a valid tuple (sanity check that gc ran)
         gc_counts = gc.get_count()
         assert isinstance(gc_counts, tuple) and len(gc_counts) == 3
@@ -232,10 +221,10 @@ class TestBatchProcessingMemoryManagement:
         for formula in formulas:
             _ = xlt.calculate_single_material_properties(formula, 10.0, 2.2)
 
-        # Clear caches through memory monitor
+        # Collect garbage through the memory monitor
         monitor.force_gc()
 
-        # Verify that calculation still works (caches rebuilt as needed)
+        # Verify that calculation still works
         result = xlt.calculate_single_material_properties("SiO2", 10.0, 2.2)
         assert result is not None
         assert result.formula == "SiO2"

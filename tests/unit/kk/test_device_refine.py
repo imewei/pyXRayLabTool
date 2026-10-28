@@ -19,6 +19,7 @@ from tests.fixtures.kk_compiles import (
 )
 from tests.fixtures.kk_probes import REFINE_ORDER_GRID
 from tests.fixtures.kk_rounding import assert_kk_close
+from xraylabtool.backend import runtime
 from xraylabtool.kk import _device, kk_calculate_real, refine
 from xraylabtool.kk.refine import _POLE_REL_WIDTH, refine_spectrum
 from xraylabtool.kk.spectrum import compound_spectrum, evaluate_f2
@@ -433,7 +434,7 @@ def _device_run(table, e, *, min_active, **kwargs):
     max_passes = kwargs.pop("max_passes", 50)
     max_points = kwargs.pop("max_points", 100_000)
     accum_hint = kwargs.pop("accum_hint", None)
-    dev = _device.upload(
+    dev = runtime.upload(
         (
             np.pad(e, (0, pad)),
             np.pad(f1, (0, pad)),
@@ -453,7 +454,7 @@ def _device_run(table, e, *, min_active, **kwargs):
         min_active=min_active,
         accum_hint=accum_hint,
     )
-    return _device.fetch(arrays), info
+    return runtime.fetch(arrays), info
 
 
 @pytest.mark.unit
@@ -522,9 +523,9 @@ def test_one_status_fetch_per_pass(si, dlog) -> None:
     seg, coeffs, rel = si
     f1 = kk_real_spectrum(GRID, seg, coeffs, rel)
     f2 = evaluate_f2(GRID, seg, coeffs)
-    _device.reset_transfer_counts()
+    runtime.reset_transfer_counts()
     refine_spectrum(GRID, f1, f2, seg, coeffs, rel, tolerance=0.05)
-    counts = _device.transfer_counts()
+    counts = runtime.transfer_counts()
     _, (_, passes), _ = _logged(dlog)
     # No assembly status without a pipeline: one upload, one fetch per pass, one final.
     assert passes > 2
@@ -536,7 +537,7 @@ def test_device_loop_runs_under_transfer_guard(si) -> None:
     seg, coeffs, rel = si
     e = GRID
     f1, f2 = kk_real_spectrum(e, seg, coeffs, rel), evaluate_f2(e, seg, coeffs)
-    dev = _device.upload(
+    dev = runtime.upload(
         (
             np.pad(e, (0, 4)),
             np.pad(f1, (0, 4)),
@@ -550,7 +551,7 @@ def test_device_loop_runs_under_transfer_guard(si) -> None:
         arrays, info = refine._refine_device(
             *dev, m=e.size, max_passes=50, max_points=100_000
         )
-    out = _device.fetch(arrays)
+    out = runtime.fetch(arrays)
     assert info.added == 139
     assert out.energy[: info.n_total].size == GRID.size + 139
 

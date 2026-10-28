@@ -319,6 +319,12 @@ class TestScalabilityBenchmarks:
         sizes = [10, 50, 100, 500, 1000]
         times = []
 
+        # Each energy bucket compiles once per process; time steady state only.
+        for size in sizes:
+            calculate_single_material_properties(
+                formula, np.linspace(5.0, 15.0, size), density
+            )
+
         for size in sizes:
             energies = np.linspace(5.0, 15.0, size)
 
@@ -361,6 +367,9 @@ class TestScalabilityBenchmarks:
             formulas = (base_materials * multiplier)[:batch_size]
             densities = (base_densities * multiplier)[:batch_size]
 
+            # Each batch size lands in its own padded bucket (ADR-006); compile the
+            # bucket first so the timing measures the warm call, not the compile (P8).
+            xlt.calculate_xray_properties(formulas, energy, densities)
             with timer() as get_time:
                 xlt.calculate_xray_properties(formulas, energy, densities)
 

@@ -6,14 +6,14 @@
 [![Documentation Status](https://readthedocs.org/projects/pyxraylabtool/badge/?version=latest)](https://pyxraylabtool.readthedocs.io/en/latest/?badge=latest)
 [![CI](https://github.com/imewei/pyXRayLabTool/actions/workflows/ci.yml/badge.svg)](https://github.com/imewei/pyXRayLabTool/actions/workflows/ci.yml)
 
-Ultra-fast Python package and CLI for calculating X-ray optical properties of materials using CXRO/NIST atomic scattering factor data. Supports NumPy and JAX backends for CPU/GPU acceleration.
+Python package and CLI for calculating X-ray optical properties of materials using CXRO/NIST atomic scattering factor data. The calculations are JAX-first (float64) and run on the CPU or an NVIDIA GPU.
 
 ## Installation
 
 ### Using uv (Recommended)
 
 ```bash
-# Core package (NumPy + JAX CPU backends, CLI, GUI)
+# Core package (JAX on CPU, CLI, GUI)
 uv pip install xraylabtool
 
 # NVIDIA GPU acceleration (pick the CUDA major matching your driver)
@@ -105,17 +105,20 @@ Single-material analysis, multi-material comparison and Kramers-Kronig f1 recons
 
 All properties are returned as NumPy arrays in the `XRayResult` dataclass, supporting single energies or energy sweeps.
 
-## Backend Selection
+## JAX Backend
 
-JAX is selected automatically when JAX and an NVIDIA GPU are available; otherwise NumPy.
-Override at runtime:
+All calculations run in JAX with float64 on JAX's default device: the CPU, or the
+GPU of a CUDA install (`gpu_cuda12`/`gpu_cuda13` extra). There is no NumPy backend and
+no switch to select one; set `JAX_PLATFORMS=cpu` to force the CPU.
 
-```python
-from xraylabtool.backend import set_backend
-
-set_backend("jax")  # JIT-compiled kernels; GPU needs the gpu_cuda12/13 extra
-set_backend("numpy")  # default on CPU-only machines
-```
+- The first compute call compiles a small program (a fraction of a second on CPU); later
+  calls with the same shape buckets compile nothing. `xraylabtool.warm_up()` precompiles
+  explicitly, and the CLI and GUI keep a persistent compile cache
+  (`XRAYLABTOOL_NO_JAX_CACHE=1` opts out).
+- `set_backend("jax")` is kept as a no-op; `set_backend("numpy")` raises `ValueError`.
+- `xraylabtool.calculators.optics.optical_properties` is a pure device function that works
+  under `jax.jit`, `jax.vmap` and `jax.grad`.
+- `import xraylabtool`, `--help` and `--version` do not import JAX.
 
 ## Scientific Background
 

@@ -153,7 +153,11 @@ dmypy.json
 *.npz
 # Vendored kkcalc ASF tables and Kramers-Kronig golden oracles are committed.
 !xraylabtool/data/kkcalc/*.npz
+# Resident scattering tables (generated from the .nff files, checked by gen_scattering_tables.py --check).
+!xraylabtool/data/scattering_tables.npz
 !tests/characterization/kk/golden/*.npz
+# Frozen NumPy-path goldens of the core calculators (oracle of the JAX-first migration).
+!tests/characterization/core/golden.npz
 !tests/unit/kk/data/*.npz
 # Root-level scratch only: the bare names would match tests/data/results/ etc.
 /figures/

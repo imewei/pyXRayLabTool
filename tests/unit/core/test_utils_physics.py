@@ -1,0 +1,428 @@
+"""The ``utils`` physics and signal helpers on the device (spec section 10, plan 4.1).
+
+The Task 0 goldens (``tests/characterization/core``) pin the values; this file
+pins what they cannot: the legacy NumPy formulas as an inline oracle over
+lengths on both sides of the shape buckets, agreement of the same data at two
+pad widths (masked reductions: equal up to summation order, not bitwise), the
+compile and transfer budgets, scalar-in/scalar-out behaviour and the import
+discipline.
+"""
+
+from __future__ import annotations
+
+import functools
+import os
+import subprocess
+import sys
+
+import jax
+import numpy as np
+import pytest
+
+from tests.fixtures.kk_compiles import record_compiles
+from xraylabtool import utils
+from xraylabtool.backend import runtime
+from xraylabtool.calculators import host
+
+PROGRAMS = {
+    "smooth_data",
+    "linear_background",
+    "polynomial_background",
+    "normalize_intensity",
+    "wavelength_to_energy",
+    "energy_to_wavelength",
+    "bragg_angle",
+    "q_from_angle",
+}
+LENGTHS = (1, 2, 3, 17, 63, 64, 65, 200)
+
+
+def _mine(names: list[str]) -> list[str]:
+    return [n for n in names if n in PROGRAMS]
+
+
+def _signal(n: int) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(n)
+    x = np.linspace(10.0, 80.0, n)
+    return x, 5.0 + 0.002 * (x - 45.0) ** 2 + np.exp(
+        -(((x - 40.0) / 3.0) ** 2)
+    ) + 0.05 * rng.random(n)
+
+
+def _smooth_reference(y: np.ndarray, window: int) -> np.ndarray:
+    if window >= y.size:
+        return np.full(y.size, np.mean(y))
+    padded = np.pad(y, window // 2, mode="edge")
+    kernel = np.ones(window) / window
+    return np.convolve(padded, kernel, mode="valid")[: y.size]
+
+
+@pytest.fixture(autouse=True)
+def _x64() -> None:
+    runtime.ensure_x64()
+
+
+@pytest.mark.parametrize("n", LENGTHS)
+@pytest.mark.parametrize("window", [1, 2, 5, 10, 100])
+def test_smooth_data_matches_the_numpy_formula_at_every_length(n, window):
+    _, y = _signal(n)
+    np.testing.assert_allclose(
+        utils.smooth_data(None, y, window), _smooth_reference(y, window), rtol=1e-12
+    )
+
+
+@pytest.mark.parametrize("n", LENGTHS)
+def test_normalize_intensity_matches_the_numpy_formulas(n):
+    _, y = _signal(n)
+    np.testing.assert_allclose(
+        utils.normalize_intensity(y, "max"), y / np.max(y), rtol=1e-12
+    )
+    if n > 1:
+        np.testing.assert_allclose(
+            utils.normalize_intensity(y, "area"), y / np.trapezoid(y), rtol=1e-12
+        )
+        np.testing.assert_allclose(
+            utils.normalize_intensity(y, "standard"),
+            (y - np.mean(y)) / np.std(y),
+            rtol=1e-12,
+            atol=1e-12,  # points at the mean cancel; the sums differ by an ulp
+        )
+
+
+@pytest.mark.parametrize("n", LENGTHS)
+def test_background_subtraction_matches_the_numpy_formulas(n):
+    x, y = _signal(n)
+    np.testing.assert_allclose(
+        utils.background_subtraction(x, y, "linear"),
+        y - np.linspace(y[0], y[-1], n),
+        rtol=1e-12,
+        atol=1e-12,
+    )
+    if n >= 3:
+        low = int(np.argmin(y))
+        fit = np.polyfit([x[0], x[low], x[-1]], [y[0], y[low], y[-1]], 2)
+        np.testing.assert_allclose(
+            utils.background_subtraction(x, y, "polynomial"),
+            y - np.polyval(fit, x),
+            rtol=1e-12,
+            atol=1e-12,
+        )
+
+
+@pytest.mark.parametrize(
+    ("warm", "lengths"), [(40, (1, 7, 40, 64)), (70, (65, 72, 80))]
+)
+def test_series_inside_one_bucket_share_a_compiled_program(warm, lengths):
+    utils.smooth_data(None, _signal(warm)[1], 5)  # warm
+    utils.normalize_intensity(_signal(warm)[1], "area")
+    with record_compiles() as names:
+        for n in lengths:
+            utils.smooth_data(None, _signal(n)[1], 5)
+            utils.normalize_intensity(_signal(n)[1], "area")
+    assert _mine(names) == [], names
+
+
+def test_a_new_window_is_a_new_program_and_a_repeat_is_not():
+    y = _signal(50)[1]
+    with record_compiles() as names:
+        utils.smooth_data(None, y, 7)
+    assert _mine(names) == ["smooth_data"], names
+    with record_compiles() as names:
+        utils.smooth_data(None, y, 7)
+    assert _mine(names) == [], names
+
+
+def test_a_scalar_conversion_is_one_upload_and_one_fetch():
+    utils.energy_to_wavelength(8.0)  # warm
+    runtime.reset_transfer_counts()
+    out = utils.energy_to_wavelength(8.0)
+    assert runtime.transfer_counts() == {"upload": 1, "fetch_status": 0, "fetch": 1}
+    assert type(out) is float
+
+
+def test_a_signal_helper_is_one_upload_and_one_fetch():
+    y = _signal(50)[1]
+    utils.normalize_intensity(y)  # warm
+    runtime.reset_transfer_counts()
+    utils.normalize_intensity(y)
+    assert runtime.transfer_counts() == {"upload": 1, "fetch_status": 0, "fetch": 1}
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda: utils.wavelength_to_energy(1.5406),
+        lambda: utils.energy_to_wavelength(np.float64(8.0), "nm"),
+        lambda: utils.bragg_angle(3.1356, 1.5406, 2),
+        lambda: utils.d_spacing_cubic(1, 1, 1, 5.431),
+        lambda: utils.q_from_angle(30.0, 1.5406),
+        lambda: utils.angle_from_q(2.0, 1.5406),
+    ],
+)
+def test_scalar_in_gives_a_python_float(call):
+    assert type(call()) is float
+
+
+def test_arrays_larger_than_one_element_still_fail_in_float():
+    with pytest.raises(TypeError):
+        utils.energy_to_wavelength(np.array([1.0, 2.0]))
+
+
+def test_one_dimensional_only_helpers_reject_other_ranks():
+    grid = np.ones((3, 3))
+    with pytest.raises(ValueError, match="one-dimensional"):
+        utils.normalize_intensity(grid, "area")
+    with pytest.raises(ValueError, match="one-dimensional"):
+        utils.smooth_data(None, grid)
+    with pytest.raises(ValueError, match="one-dimensional"):
+        utils.background_subtraction(None, np.ones((3, 3, 3)))
+
+
+def test_normalize_max_and_standard_are_global_over_any_shape():
+    grid = np.arange(12.0).reshape(3, 4) + 1.0
+    np.testing.assert_allclose(utils.normalize_intensity(grid), grid / grid.max())
+    np.testing.assert_allclose(
+        utils.normalize_intensity(grid, "standard"),
+        (grid - grid.mean()) / grid.std(),
+        rtol=1e-12,
+    )
+    scalar = utils.normalize_intensity(np.array(2.0))
+    assert type(scalar) is np.float64
+    assert scalar == 1.0
+
+
+def test_linear_background_is_column_wise_on_a_2d_array():
+    x = np.linspace(0.0, 3.0, 4)
+    columns = np.c_[np.arange(4.0), np.arange(4.0) ** 2]
+    got = utils.background_subtraction(x, columns)
+    assert got.shape == (4, 2)
+    for k in range(2):
+        np.testing.assert_allclose(
+            got[:, k], utils.background_subtraction(x, columns[:, k])
+        )
+
+
+def test_importing_utils_does_not_import_jax():
+    code = (
+        "import sys, numpy\n"
+        "from xraylabtool import utils\n"
+        "assert utils.parse_formula('SiO2')\n"
+        "assert 'jax' not in sys.modules and 'xraylabtool._physics' not in sys.modules\n"
+        "utils.energy_to_wavelength(8.0)\n"
+        "assert 'jax' in sys.modules\n"
+        "print('OK')\n"
+    )
+    done = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "XRAYLABTOOL_NO_JAX_CACHE": "1"},
+        timeout=180,
+        check=False,
+    )
+    assert done.stdout.strip().endswith("OK"), done.stderr[-1500:]
+
+
+def _two_widths(name, series, n, extra=(), **static):
+    """The ``_physics`` program on the first ``n`` samples at two pad widths."""
+    from xraylabtool import _physics
+    from xraylabtool.backend.shapes import bucket
+
+    program = jax.jit(functools.partial(getattr(_physics, name), **static))
+    narrow = bucket(n, minimum=64)
+    outs = []
+    for width in (narrow, bucket(narrow + 1, minimum=64)):
+        padded = [np.concatenate([s[:n], np.full(width - n, s[n - 1])]) for s in series]
+        got = host.execute(lambda dev: program(*dev), (*padded, np.int32(n), *extra))
+        outs.append(got[:n])
+    return outs
+
+
+@pytest.mark.parametrize("n", [20, 50, 150])
+@pytest.mark.parametrize(
+    ("name", "static"),
+    [
+        ("smooth_data", {"window_size": 5}),
+        ("smooth_data", {"window_size": 500}),
+        ("normalize_intensity", {"method": "max"}),
+        ("normalize_intensity", {"method": "area"}),
+        ("normalize_intensity", {"method": "standard"}),
+        ("linear_background", {}),
+    ],
+)
+def test_the_same_data_at_two_pad_widths_agrees_up_to_summation_order(n, name, static):
+    """Masked sums reduce a different number of zeros, so XLA may sum in another order.
+
+    The two widths therefore agree to 1e-10 relative, with an absolute floor of
+    1e-12 of the result's scale for points that sit on the mean (``standard``
+    subtracts two nearly equal numbers there); they are not bit-identical.
+    """
+    _, y = _signal(n)
+    a, b = _two_widths(name, [y], n, **static)
+    np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))
+
+
+def test_the_polynomial_background_at_two_pad_widths_agrees():
+    n = 50
+    x, y = _signal(n)
+    low = int(np.argmin(y))
+    fit = np.polyfit([x[0], x[low], x[-1]], [y[0], y[low], y[-1]], 2)
+    a, b = _two_widths("polynomial_background", [x, y], n, extra=(fit,))
+    np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))
+
+
+# --- numerically stable reductions (external review F1) ---------------------
+
+
+def _offset_signal(n: int, seed: int) -> np.ndarray:
+    return 1e6 + 1e-8 * np.random.default_rng(seed).normal(size=n)
+
+
+def test_standard_normalisation_of_offset_data_matches_an_accurate_reference():
+    """A 1e6 offset swamps a 1e-8 spread: one-pass sums lose it, shifted sums do not.
+
+    NumPy itself loses about 1 % here (its mean is rounded at 1e-10), so the
+    reference sums the exact offsets from the first sample with ``math.fsum``.
+    """
+    import math
+
+    y = _offset_signal(17, 1)
+    d = y - y[0]
+    mean = math.fsum(d) / d.size
+    dev = d - mean
+    expected = dev / math.sqrt(math.fsum(dev**2) / d.size)
+    np.testing.assert_allclose(
+        utils.normalize_intensity(y, "standard"), expected, rtol=1e-10, atol=1e-12
+    )
+
+
+def test_standard_normalisation_of_offset_data_agrees_across_pad_widths():
+    y = _offset_signal(50, 0)
+    a, b = _two_widths("normalize_intensity", [y], 50, method="standard")
+    np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))
+
+
+def test_a_constant_series_stays_constant_after_smoothing():
+    y = np.full(30, 0.1)
+    np.testing.assert_array_equal(utils.smooth_data(None, y, 100), y)  # the mean
+    for window in (3, 7):  # local sums: constant to the last ulp
+        np.testing.assert_allclose(utils.smooth_data(None, y, window), y, rtol=2e-16)
+
+
+def _fraction_moving_average(y: np.ndarray, window: int) -> list:
+    from fractions import Fraction
+
+    half = window // 2
+    exact = [Fraction(float(v)) for v in y]
+    padded = [exact[0]] * half + exact + [exact[-1]] * half
+    return [sum(padded[i : i + window]) / window for i in range(len(y))]
+
+
+@pytest.mark.parametrize(
+    "y",
+    [
+        np.linspace(0.01, 1.0, 120) ** -4,  # SAXS-like tail, range 1e8
+        np.exp(-np.linspace(0.0, 70.0, 300)),  # tail down to 1e-30
+        np.r_[1e10, 5.0 + np.random.default_rng(3).normal(size=100)],
+    ],
+    ids=["q-4", "exp-tail", "bright-first-point"],
+)
+def test_windowed_smoothing_keeps_the_relative_accuracy_of_wide_range_data(y):
+    """Local window sums stay on the raw values: a bright first sample must not
+    round the small ones (a shifted sum lost 1e-8 relative on q**-4)."""
+    got = utils.smooth_data(None, y, 5)
+    exact = _fraction_moving_average(y, 5)
+    worst = max(abs(float(g) - float(e)) / float(e) for g, e in zip(got, exact))
+    assert worst < 1e-12, worst
+
+
+def test_smoothing_offset_data_agrees_across_pad_widths():
+    y = _offset_signal(50, 2)
+    a, b = _two_widths("smooth_data", [y], 50, window_size=5)
+    np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12 * np.max(np.abs(a)))
+
+
+# --- complex input is rejected, never cast (external review F2) --------------
+
+_COMPLEX_CALLS = {
+    "energy_to_wavelength": lambda c: utils.energy_to_wavelength(c(10.0)),
+    "wavelength_to_energy": lambda c: utils.wavelength_to_energy(c(1.5)),
+    "bragg_angle_d": lambda c: utils.bragg_angle(c(3.0), 1.54),
+    "bragg_angle_wavelength": lambda c: utils.bragg_angle(3.0, c(1.54)),
+    "d_spacing_cubic": lambda c: utils.d_spacing_cubic(1, 1, 1, c(5.4)),
+    "d_spacing_tetragonal": lambda c: utils.d_spacing_tetragonal(1, 0, 1, 4.0, c(6.0)),
+    "d_spacing_orthorhombic": lambda c: utils.d_spacing_orthorhombic(
+        1, 1, 1, 4.0, 5.0, c(6.0)
+    ),
+    "q_from_angle": lambda c: utils.q_from_angle(c(30.0), 1.54),
+    "angle_from_q": lambda c: utils.angle_from_q(c(2.0), 1.54),
+}
+_COMPLEX_SIGNAL_CALLS = {
+    "smooth_data": lambda z: utils.smooth_data(None, z),
+    "background_subtraction_linear": lambda z: utils.background_subtraction(None, z),
+    "background_subtraction_polynomial": lambda z: utils.background_subtraction(
+        np.arange(z.size, dtype=float), z, "polynomial"
+    ),
+    "background_subtraction_x": lambda z: utils.background_subtraction(
+        z, z.real, "polynomial"
+    ),
+    "normalize_max": utils.normalize_intensity,
+    "normalize_area": lambda z: utils.normalize_intensity(z, "area"),
+    "normalize_standard": lambda z: utils.normalize_intensity(z, "standard"),
+}
+
+
+@pytest.mark.parametrize("name", sorted(_COMPLEX_CALLS))
+@pytest.mark.parametrize(
+    "make", [complex, np.complex128, lambda v: np.array(complex(v))]
+)
+def test_complex_scalars_raise_type_error_without_a_warning(name, make):
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # a ComplexWarning would be a different failure
+        with pytest.raises(TypeError):
+            _COMPLEX_CALLS[name](lambda v: make(v + 1j))
+
+
+@pytest.mark.parametrize("name", sorted(_COMPLEX_SIGNAL_CALLS))
+def test_complex_signals_raise_type_error_without_a_warning(name):
+    import warnings
+
+    z = np.arange(1.0, 9.0) + 1j * np.arange(8.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with pytest.raises(TypeError, match="complex signal data"):
+            _COMPLEX_SIGNAL_CALLS[name](z)
+
+
+# --- multi-column linear background in one call (external review F3) ----------
+
+
+@pytest.mark.parametrize("columns", [1, 3, 5])
+def test_multi_column_background_is_one_upload_and_one_fetch(columns):
+    y = np.arange(40.0)[:, None] ** np.arange(1, columns + 1) + 3.0
+    utils.background_subtraction(None, y)  # warm
+    before = runtime.thread_transfer_counts()
+    got = utils.background_subtraction(None, y)
+    after = runtime.thread_transfer_counts()
+    assert {k: after[k] - before[k] for k in ("upload", "fetch")} == {
+        "upload": 1,
+        "fetch": 1,
+    }
+    assert got.shape == y.shape
+    for k in range(columns):
+        np.testing.assert_allclose(
+            got[:, k], y[:, k] - np.linspace(y[0, k], y[-1, k], 40), atol=1e-9
+        )
+
+
+def test_multi_column_background_compiles_once_per_shape_bucket():
+    def column_stack(rows, columns):
+        return np.arange(float(rows))[:, None] ** np.arange(1, columns + 1) + 1.0
+
+    utils.background_subtraction(None, column_stack(50, 3))  # warm: 64 rows, 4 columns
+    with record_compiles() as names:
+        utils.background_subtraction(None, column_stack(40, 4))
+        utils.background_subtraction(None, column_stack(64, 3))
+    assert not [n for n in names if "background" in n], names

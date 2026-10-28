@@ -33,7 +33,7 @@ COV_MIN ?= 27
 	perf-baseline perf-compare perf-report \
 	test-install-local test-install-testpypi test-install-pypi \
 	build upload-test upload status info quick-test \
-	install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose
+	install-jax-gpu install-jax-gpu-cuda12 install-jax-gpu-cuda13 gpu-check gpu-diagnose core-gpu-check
 
 # Colors for output
 RED=\033[0;31m
@@ -57,7 +57,7 @@ NO_COV := --no-cov
 # GUI/Qt tests segfault when split across xdist workers (native Qt state + worker
 # threads from the threaded smoke test corrupt the process running another GUI
 # test). Like CI, exclude them from the parallel run and execute them serially.
-GUI_TESTS := tests/test_gui_smoke.py tests/test_gui_progress.py tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py tests/test_gui_kk_worker_end_to_end.py
+GUI_TESTS := tests/test_gui_smoke.py tests/test_gui_progress.py tests/unit/test_gui_widgets.py tests/unit/test_calculation_worker.py tests/unit/test_kk_plot.py tests/test_gui_kk_tab.py tests/test_gui_kk_worker_end_to_end.py tests/test_gui_core_warm_up.py
 GUI_IGNORE := $(addprefix --ignore=,$(GUI_TESTS))
 
 # Extra coverage options for the serial GUI run, which closes the combined report.
@@ -82,6 +82,7 @@ help:
 	@echo "  install-jax-gpu-cuda12  Install with system CUDA 12 (SM >= 5.2)"
 	@echo "  gpu-check               Verify GPU backend, devices, SVD"
 	@echo "  gpu-diagnose            Diagnose common GPU issues"
+	@echo "  core-gpu-check          Manual CUDA gate of the core (goldens, P5-P7, P11-P13); refuses without a GPU"
 	@echo ""
 	@echo "$(YELLOW)🧪 Testing:$(NC)"
 	@echo "  test             Run all tests with coverage (GUI tests run serially)"
@@ -749,6 +750,10 @@ endif
 gpu-check:
 	@echo "$(YELLOW)GPU Verification$(NC)"
 	@$(PYTHON) scripts/gpu_check.py
+
+core-gpu-check:
+	@echo "$(YELLOW)Core GPU gate (manual; run on a quiet CUDA host, outside the sandbox)$(NC)"
+	@$(PYTHON) scripts/core_gpu_check.py --repeats 7
 
 gpu-diagnose:
 	@echo "$(YELLOW)GPU Diagnostics$(NC)"

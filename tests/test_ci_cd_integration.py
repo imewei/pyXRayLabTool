@@ -43,7 +43,7 @@ class TestCICDIntegration(BaseUnitTest):
         # Check if ci-test target exists
         makefile_path = self.project_root / "Makefile"
         if makefile_path.exists():
-            with open(makefile_path) as f:
+            with open(makefile_path, encoding="utf-8") as f:
                 makefile_content = f.read()
             assert "ci-test:" in makefile_content, "CI test target should exist"
 

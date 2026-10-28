@@ -3,12 +3,16 @@
 import sys
 from typing import Any
 
-from xraylabtool.utils import bragg_angle, energy_to_wavelength
-
 
 def cmd_bragg(args: Any) -> int:
     """Handle the 'bragg' command."""
     try:
+        # Lazy imports: the angles run on JAX, which other commands never load
+        from xraylabtool.backend.runtime import enable_persistent_cache
+        from xraylabtool.utils import bragg_angle, energy_to_wavelength
+
+        enable_persistent_cache()
+
         # Parse d-spacings
         d_spacings = [float(x.strip()) for x in args.dspacing.split(",")]
 

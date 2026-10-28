@@ -19,10 +19,10 @@ Key Features
 ------------
 
 **Performance**
-   - 150,000+ calculations per second
-   - Preloaded atomic data cache for 10-50x speed improvement
-   - Vectorized calculations and smart memory management
-   - JAX JIT compilation for 5-100x additional speedup (optional)
+   - One JAX float64 implementation (CPU or NVIDIA GPU), no NumPy twin (ADR-006)
+   - Scattering tables resident on the device; one compiled program, one upload and one download per call
+   - Batches run as blocks of materials through the same program, with no worker pools
+   - Measured gates and the accepted single-call latency are in :doc:`architecture/006-adr-core-jax-only`
 
 **X-ray Physics**
    - Complex refractive index calculations
@@ -31,7 +31,7 @@ Key Features
    - Transmission and reflection coefficients
 
 **Architecture (v0.4.0)**
-   - **Backend abstraction**: Runtime switching between NumPy and JAX via ``set_backend()``
+   - **JAX-only core**: ``set_backend("jax")`` is a no-op and ``set_backend("numpy")`` raises ``ValueError``
    - Modular design with focused sub-packages:
 
      - **calculators**: Core X-ray physics calculations
@@ -41,7 +41,7 @@ Key Features
      - **validation**: Input validation and error handling
      - **analysis**: Material comparison and absorption edge detection
      - **export**: CSV/JSON export for downstream analysis
-     - **backend**: NumPy/JAX array backend abstraction
+     - **backend**: JAX runtime helpers, shape buckets and the in-tree PCHIP interpolator
      - **gui**: PySide6 desktop application with PyQtGraph interactive plots
 
    - Type-safe with complete type hints

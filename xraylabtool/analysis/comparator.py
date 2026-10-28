@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 
 from xraylabtool.calculators.core import calculate_xray_properties
+from xraylabtool.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -94,19 +97,40 @@ class MaterialComparator:
     def _calculate_material_data(
         formulas: list[str], densities: list[float], energies: list[float]
     ) -> dict[str, Any]:
-        """Calculate X-ray properties for each material, keyed by "formula (density)"."""
-        material_data = {}
-        for formula, density in zip(formulas, densities, strict=False):
-            try:
-                result_dict = calculate_xray_properties(
-                    formulas=[formula], energies=energies, densities=[density]
-                )
-                xray_result = result_dict[formula]
-                material_key = f"{formula} ({density} g/cm³)"
-                material_data[material_key] = xray_result
-            except Exception as e:
-                raise ValueError(f"Failed to calculate properties for {formula}: {e}")
-        return material_data
+        """Calculate X-ray properties for each material, keyed by "formula (density)".
+
+        All materials come from one ``calculate_xray_properties`` call. If it
+        fails or skips a material, the materials are retried one by one so the
+        error names the first failing formula.
+        """
+        try:
+            results = list(
+                calculate_xray_properties(
+                    formulas=formulas, energies=energies, densities=densities
+                ).values()
+            )
+        except Exception as e:
+            logger.warning("Bulk calculation failed, retrying per formula: %s", e)
+            results = []
+        if len(results) != len(formulas):
+            results = []
+            for formula, density in zip(formulas, densities, strict=False):
+                try:
+                    results.extend(
+                        calculate_xray_properties(
+                            formulas=[formula], energies=energies, densities=[density]
+                        ).values()
+                    )
+                except Exception as e:
+                    raise ValueError(
+                        f"Failed to calculate properties for {formula}: {e}"
+                    ) from e
+        return {
+            f"{formula} ({density} g/cm³)": result
+            for formula, density, result in zip(
+                formulas, densities, results, strict=True
+            )
+        }
 
     @staticmethod
     def _extract_comparison_data(

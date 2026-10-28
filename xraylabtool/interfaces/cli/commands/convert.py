@@ -3,12 +3,16 @@
 import sys
 from typing import Any
 
-from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
-
 
 def cmd_convert(args: Any) -> int:
     """Handle the 'convert' command."""
     try:
+        # Lazy imports: the conversions run on JAX, which other commands never load
+        from xraylabtool.backend.runtime import enable_persistent_cache
+        from xraylabtool.utils import energy_to_wavelength, wavelength_to_energy
+
+        enable_persistent_cache()
+
         # Parse values
         values = [float(x.strip()) for x in args.values.split(",")]
 

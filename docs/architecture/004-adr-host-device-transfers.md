@@ -4,6 +4,7 @@
 **Date:** 2026-04-06
 **Deciders:** Architecture Team
 **Supersedes:** None
+**Updated by:** ADR-006 (the shipped flow below replaces the `ops`-based sketch; the policy is unchanged)
 
 ---
 
@@ -34,14 +35,14 @@ Analyzing the data flow through the codebase:
 With a naive JAX migration, transfers would occur at every boundary:
 
 ```
-[LOAD: numpy] -> HOST-DEVICE -> [CACHE: jax?] -> [INTERPOLATE: interpax on jax]
+[LOAD: numpy] -> HOST-DEVICE -> [CACHE: jax?] -> [INTERPOLATE: JaxPchipInterpolator on jax]
   -> [COMPUTE: jax jit] -> DEVICE-HOST -> [RESULT: XRayResult(numpy)]
   -> [PLOT: pyqtgraph takes numpy] / [EXPORT: pandas takes numpy]
 ```
 
 **Critical transfer points identified:**
 
-1. **Interpolator input:** Energy values (numpy) -> interpolator (scipy/interpax)
+1. **Interpolator input:** Energy values (numpy) -> interpolator (scipy / JaxPchipInterpolator)
 2. **Interpolator output:** f1/f2 values -> scattering factor calculation
 3. **Scattering factors -> derived quantities:** Should be zero-copy within JAX
 4. **Computation result -> XRayResult:** JAX arrays -> numpy for storage
@@ -70,55 +71,40 @@ These are small arrays. The transfer overhead matters not because of data size, 
 | Boundary | Direction | Policy |
 |----------|-----------|--------|
 | File loading (.nff data) | Disk -> Host (numpy) | **Keep as numpy.** File I/O is inherently host-side. |
-| Scattering data cache | Host -> Device | **Convert once at cache time.** `jnp.array(numpy_data)` when caching interpolator inputs. |
-| Interpolator creation | Host -> Device | **Convert interpolator coefficients to JAX at creation time.** interpax stores coefficients as JAX arrays. |
-| Energy input from user | Host -> Device | **Single `jnp.asarray()` at the entry point** of `calculate_single_material_properties()`. |
-| Computation pipeline | Device -> Device | **Zero transfers.** All ops (`calculate_scattering_factors`, `calculate_derived_quantities`) stay in JAX. |
-| XRayResult construction | Device -> Host | **Single bulk transfer.** Convert all result arrays to numpy in `XRayResult.__post_init__()`. |
+| Scattering data cache | Host -> Device | **Upload once.** `load_tables()` reads `scattering_tables.npz` and uploads the stacked tables once; they are a program argument. |
+| Interpolator creation | Host -> Device | **No per-element interpolators.** The PCHIP nodes and slopes of all 92 elements are rows of the resident tables. |
+| Energy input from user | Host -> Device | **One `runtime.upload`** of the encoded formula, density and energies at the entry point of `calculate_single_material_properties()`. |
+| Computation pipeline | Device -> Device | **Zero transfers.** One compiled program (`optics.optical_properties`) covers interpolation, scattering factors and derived quantities. |
+| XRayResult construction | Device -> Host | **One `runtime.fetch`** of the whole result tree; the host slices off padding and builds `XRayResult`. |
 | GUI plotting | Host (numpy) -> Qt | **Zero additional transfers.** PyQtGraph accepts numpy arrays directly. |
 | CLI output | Host (numpy) -> stdout | **Zero additional transfers.** `print()` calls `.item()` or `str()`. |
 | Batch export | Host (numpy) -> pandas | **Zero additional transfers.** pandas accepts numpy arrays. |
 
 ### Implementation Pattern
 
+The shipped flow (ADR-006). Only `runtime.upload`, `runtime.fetch_status` and
+`runtime.fetch` cross the boundary; each opens a narrow
+`jax.transfer_guard("allow")` scope and bumps a counter, and tests run the
+device region under `jax.transfer_guard("disallow_explicit")` and assert the
+counters (at most 1 upload and 1 fetch per device program call).
+
+```
+host:   validate formula, energies, density; encode z_idx, counts, mw, n_electrons
+  |-> runtime.upload  ((z_idx, counts, mw, rho, n_electrons, energies_keV), one call)
+  |-> device: one compiled program
+  |     interpolate f1/f2 from the resident tables -> delta, beta
+  |     -> critical angle, attenuation length, SLD, electron density, ok flag
+  \-> runtime.fetch   ({"out": (F, 9, M), "electron_density": (F,), "ok": (F,)}, one call)
+host:   slice off padding, raise on a failed status, build XRayResult (NumPy)
+```
+
 ```python
-# calculators/core.py (migrated)
-def calculate_single_material_properties(formula, energy_keV, density):
-    from xraylabtool.backend import ops
-
-    # === SINGLE HOST -> DEVICE TRANSFER ===
-    energy_kev = ops.asarray(energy_kev, dtype=ops.float64)
-
-    # ... parse formula (pure Python, no arrays) ...
-
-    # === ALL COMPUTATION ON DEVICE ===
-    wavelength = ENERGY_TO_WAVELENGTH_FACTOR / energy_kev  # JAX scalar / JAX array
-    energy_ev = energy_kev * 1000.0
-
-    # Interpolation (interpax, device-side)
-    f1_values = f1_interp(energy_ev)  # JAX array in, JAX array out
-
-    # Scattering factors (JIT-compiled, all device-side)
-    dispersion, absorption, f1_total, f2_total = _calculate_scattering_factors_jit(
-        energy_ev, wavelength, mass_density, molecular_weight, element_data
-    )
-
-    # Derived quantities (JIT-compiled, all device-side)
-    electron_density, critical_angle, attenuation_length, re_sld, im_sld = (
-        _calculate_derived_quantities_jit(wavelength, dispersion, absorption, ...)
-    )
-
-    # === SINGLE DEVICE -> HOST TRANSFER ===
-    return XRayResult(
-        formula=formula_str,
-        molecular_weight_g_mol=molecular_weight,
-        # ... scalar fields ...
-        energy_kev=np.asarray(energy_kev),  # JAX -> numpy
-        wavelength_angstrom=np.asarray(wavelength * METER_TO_ANGSTROM),
-        dispersion_delta=np.asarray(dispersion),
-        absorption_beta=np.asarray(absorption),
-        # ... etc ...
-    )
+# calculators/host.py (sketch of run_optical)
+def run_optical(batch, energies_kev):
+    tables = device_tables()  # resident, uploaded once
+    device_batch = runtime.upload((*batch, energies_kev))  # SINGLE HOST -> DEVICE
+    out = _optical_program(tables, device_batch)  # ALL COMPUTATION ON DEVICE
+    return runtime.fetch(out)  # SINGLE DEVICE -> HOST
 ```
 
 ### Batch Processing Optimization
@@ -132,10 +118,12 @@ for formula, density in materials:
     result = compute(energy_jax, ...)  # Device computation
     result_np = np.asarray(result)  # Transfer 2
 
-# AFTER (optimized): 1 transfer in + 1 transfer out = 2 transfers total
-energy_jax = jnp.asarray(energy_np)  # Transfer 1 (shared across materials)
-all_results_jax = jax.vmap(compute)(energy_jax, material_params)  # Single vmap call
-all_results_np = jax.tree.map(np.asarray, all_results_jax)  # Transfer 2 (bulk)
+# AFTER (shipped): one upload and one fetch per F-block of materials
+device_batch = runtime.upload(
+    (z_idx, counts, mw, rho, n_electrons, energies)
+)  # Transfer 1
+out = _optical_program(tables, device_batch)  # vmap over materials inside the program
+host_out = runtime.fetch(out)  # Transfer 2 (bulk)
 ```
 
 ## Consequences
@@ -148,17 +136,15 @@ all_results_np = jax.tree.map(np.asarray, all_results_jax)  # Transfer 2 (bulk)
 
 ### Negative
 - **Conversion at XRayResult:** The `XRayResult` dataclass stores numpy arrays, requiring a bulk device-to-host conversion at result creation. This is intentional -- `XRayResult` is the public API boundary, and downstream consumers (GUI, export, CLI) all expect numpy.
-- **Cache storage:** Scattering factor data is cached as JAX arrays, using device memory. For 92 elements x ~12KB each, this is ~1MB -- negligible.
+- **Cache storage:** The scattering tables are resident device arrays: 92 elements padded to 449 knots, five arrays, 1.7 MB in float64 -- negligible.
 - **Cannot mix backends in computation:** Once data enters the JAX pipeline, all intermediate operations must use JAX ops. No falling back to scipy mid-computation.
 
 ### Monitoring
 
-The existing `MemoryMonitor` in `batch_processing.py` will be extended to track:
-- Number of host-device transfers per calculation
-- Total bytes transferred per calculation
-- Transfer time as percentage of total computation time
-
-This data feeds into the `bottleneck_analyzer.py` reporting.
+`xraylabtool.backend.runtime` counts uploads and fetches (`transfer_counts`,
+`thread_transfer_counts`, `reset_transfer_counts`); the transfer-budget tests
+assert them. `MemoryMonitor` in `batch_processing.py` still checks host result
+memory only.
 
 ---
 

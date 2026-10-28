@@ -106,9 +106,12 @@ def _process_batch_materials(
 ) -> list[dict[str, Any]]:
     """Process all materials and return results with progress tracking."""
     # Import required calculation function
+    from xraylabtool.backend.runtime import enable_persistent_cache
     from xraylabtool.calculators.core import calculate_single_material_properties
 
+    enable_persistent_cache()
     results = []
+    failed = 0
 
     # Initialize progress tracking and performance monitoring
     enable_progress = getattr(args, "progress", False) and not getattr(
@@ -145,13 +148,19 @@ def _process_batch_materials(
                     results.append(result_dict)
 
             except Exception as e:
-                if not enable_progress:  # Only print if progress bar isn't showing
-                    print(f"Warning: Failed to process {formula}: {e}")
+                failed += 1
+                print(f"Warning: Failed to process {formula}: {e}", file=sys.stderr)
                 continue
 
             finally:
                 # Update progress
                 progress.update(1)
+    if failed:
+        print(
+            f"Warning: {failed} of {len(formulas)} materials failed and are "
+            "missing from the results",
+            file=sys.stderr,
+        )
     return results
 
 

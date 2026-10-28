@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 from pathlib import Path
 from typing import Any
 
@@ -208,7 +209,45 @@ class AtomicScatteringFactor:
             Array of scattering factor values
         """
         # Placeholder implementation
-        return np.ones_like(q_values)
+        from xraylabtool.calculators import host
+
+        return np.array(host.execute(_ones_like_program(), np.asarray(q_values)))
+
+
+@functools.cache
+def _ones_like_program() -> Any:
+    import jax
+    import jax.numpy as jnp
+
+    return jax.jit(jnp.ones_like)
+
+
+@functools.cache
+def _structure_factor_program() -> Any:
+    """Jitted ``Σ occ·exp(2πi h·x)`` over the atoms, accumulated left to right."""
+    import jax
+    import jax.numpy as jnp
+
+    @jax.jit
+    def program(args: Any) -> Any:
+        position, occupancy, hkl = args
+        phase = (
+            2.0
+            * jnp.pi
+            * (
+                hkl[0] * position[:, 0]
+                + hkl[1] * position[:, 1]
+                + hkl[2] * position[:, 2]
+            )
+        )
+        terms = occupancy * jnp.exp(1j * phase)
+        # A left fold keeps the summation order of the historical host loop.
+        total, _ = jax.lax.scan(
+            lambda acc, term: (acc + term, None), jnp.zeros((), jnp.complex128), terms
+        )
+        return total
+
+    return program
 
 
 class CrystalStructure:
@@ -259,17 +298,20 @@ class CrystalStructure:
         Returns:
             Complex structure factor
         """
-        import cmath
-        import math
+        if not self.atoms:
+            return complex(0.0, 0.0)
 
-        h, k, miller_l = hkl
-        result = complex(0.0, 0.0)
-        for atom in self.atoms:
-            x, y, z = atom["position"]
-            occ = atom["occupancy"]
-            phase = 2.0 * math.pi * (h * x + k * y + miller_l * z)
-            result += occ * cmath.exp(1j * phase)
-        return result
+        from xraylabtool.calculators import host
+
+        position = np.array([atom["position"] for atom in self.atoms], dtype=np.float64)
+        occupancy = np.array(
+            [atom["occupancy"] for atom in self.atoms], dtype=np.float64
+        )
+        total = host.execute(
+            _structure_factor_program(),
+            (position, occupancy, np.asarray(hkl, dtype=np.float64)),
+        )
+        return complex(total)
 
 
 def load_data_file(filename: str) -> Any:

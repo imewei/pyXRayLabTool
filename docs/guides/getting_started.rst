@@ -32,7 +32,7 @@ Install XRayLabTool using pip:
 
 .. code-block:: bash
 
-   # Core package (NumPy + JAX CPU backends, CLI, GUI, matplotlib)
+   # Core package (JAX on CPU, CLI, GUI, matplotlib)
    pip install xraylabtool
 
    # NVIDIA GPU acceleration: pick the CUDA major matching your driver
@@ -302,13 +302,13 @@ Understanding the Architecture
 XRayLabTool uses a modular architecture:
 
 **backend/**
-   NumPy/JAX array backend abstraction. Switch at runtime with ``set_backend("jax")`` for JIT-compiled GPU acceleration.
+   JAX runtime helpers: x64 setup, counted host/device transfers, shape buckets and the in-tree PCHIP interpolator. XRayLabTool runs on JAX only (ADR-006); ``set_backend("jax")`` is a no-op and ``set_backend("numpy")`` raises ``ValueError``.
 
 **calculators/**
-   Core X-ray physics calculations and algorithms. Contains the main calculation functions and ``XRayResult`` data structure.
+   Core X-ray physics calculations and algorithms. Contains the main calculation functions, the ``XRayResult`` data structure, the resident scattering tables and the pure JAX device programs (``optics``).
 
 **data_handling/**
-   Atomic data caching and batch processing. Provides high-performance data management with preloaded elements.
+   Atomic data caching and batch processing. Batches run as blocks of materials through one device program; there are no worker pools.
 
 **interfaces/**
    User interfaces including the complete CLI and shell completion systems.
@@ -332,9 +332,12 @@ This modular design allows you to import only what you need:
    # Import specific utilities
    from xraylabtool.utils import parse_formula, energy_to_wavelength
 
-   # Switch to JAX backend for GPU acceleration
-   from xraylabtool.backend import set_backend
-   set_backend("jax")
+   # Pure device function (jit/vmap/grad-compatible) behind the calculators
+   from xraylabtool.calculators.optics import optical_properties
+
+   # Precompile the default programs once instead of on the first call
+   import xraylabtool
+   xraylabtool.warm_up(("SiO2",))
 
 Next Steps
 ----------

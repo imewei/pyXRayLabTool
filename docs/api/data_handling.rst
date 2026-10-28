@@ -29,7 +29,7 @@ Usage Example
    print(si["atomic_number"], si["atomic_weight"])
 
    print(is_element_preloaded("Si"))        # True; all 92 elements load at import
-   warm_up_cache(["Si", "O", "Al"])          # build interpolators ahead of first use
+   warm_up_cache(["Si", "O", "Al"])          # host atomic metadata only; xraylabtool.warm_up() precompiles
    print(get_cache_stats())
    # {'preloaded_elements': 92, 'runtime_cached_elements': 0, 'total_cached_elements': 92}
 
@@ -77,16 +77,17 @@ Usage Example
    )
 
    formulas, densities, _ = load_batch_input("materials.csv")  # formula,density columns
-   config = BatchConfig(max_workers=4, chunk_size=100, enable_progress=True)
+   config = BatchConfig(chunk_size=100, enable_progress=True)  # max_workers is accepted and ignored
 
    results = calculate_batch_properties(formulas, [5.0, 8.0, 10.0], densities, config=config)
    # dict keyed "formula@density", value XRayResult (or None on failure)
 
    save_batch_results(results, "results.csv")
 
-Chunks of 8 or more materials run in a ``ProcessPoolExecutor``; smaller chunks use a
-``ThreadPoolExecutor``. ``BatchConfig.memory_limit_gb`` triggers garbage collection between
-chunks.
+Each chunk runs as blocks of materials through one JAX device program (one upload and one
+fetch per block); there are no process or thread pools, and ``BatchConfig.max_workers`` is
+accepted and ignored. ``BatchConfig.chunk_size`` bounds the materials per block and
+``BatchConfig.memory_limit_gb`` triggers garbage collection between chunks.
 
 Data Sources
 ------------

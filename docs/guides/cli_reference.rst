@@ -63,7 +63,7 @@ batch - Batch Processing
 
 - ``-o/--output FILE`` (required) — CSV or JSON by extension
 - ``--format {csv,json}`` — override auto-detected format
-- ``--workers N`` — parallel workers (default: auto)
+- ``--workers N`` — accepted for compatibility and ignored (batches run as blocks on the JAX device, not in worker pools)
 - ``--fields FIELDS`` — comma-separated subset of result fields
 - ``--progress`` / ``--no-progress`` — progress bar control
 - ``--debug``
@@ -71,7 +71,7 @@ batch - Batch Processing
 .. code-block:: bash
 
    xraylabtool batch materials.csv -o results.csv
-   xraylabtool batch large_dataset.csv -o results.json --workers 8 --progress
+   xraylabtool batch large_dataset.csv -o results.json --progress
 
 compare - Multi-Material Comparison
 -----------------------------------
@@ -270,4 +270,4 @@ Integration Examples
    )
    data = json.loads(result.stdout)
 
-**Performance Tips:** Use ``batch`` for many materials; tune ``--workers``.
+**Performance Tips:** Use ``batch`` for many materials; it runs them as blocks through one compiled program.
