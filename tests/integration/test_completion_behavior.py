@@ -29,13 +29,12 @@ def _bash_complete(words: list[str]) -> set[str]:
             + f"\nCOMP_WORDS=({shlex.join(words)})\n"
             + f"COMP_CWORD={len(words) - 1}\n"
             + '_xraylabtool_complete\nprintf "%s\\n" "${COMPREPLY[@]}"\n'
-        ),
+        ).encode(),  # bytes: text mode would send \r\n on Windows
         capture_output=True,
-        text=True,
         check=True,
     )
     assert not result.stderr
-    return set(result.stdout.split())
+    return set(result.stdout.decode().split())
 
 
 @pytest.mark.parametrize(

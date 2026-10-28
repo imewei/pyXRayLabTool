@@ -123,14 +123,6 @@ def warm_up_core(formula: str = "SiO2") -> None:
         logger.warning("core warm-up failed", exc_info=True)
 
 
-def linear_absorption_cm(inv_length_cm: float | None) -> float | None:
-    if inv_length_cm is None:
-        return None
-    if inv_length_cm == 0:
-        return 0.0
-    return 1.0 / inv_length_cm
-
-
 @dataclass(frozen=True)
 class KKComputation:
     """Kramers-Kronig result plus the CXRO f1 totals to compare it with."""

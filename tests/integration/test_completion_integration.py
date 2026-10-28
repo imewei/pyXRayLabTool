@@ -139,15 +139,11 @@ class TestInstallCompletionMain:
         # Should be callable with appropriate args
         assert callable(install_completion_main)
 
-    @patch("xraylabtool.interfaces.completion_v2.integration.completion_main")
-    def test_delegates_to_completion_main(self, mock_completion_main):
-        """Test that function delegates to completion_main."""
-        mock_completion_main.return_value = 0
-
+    def test_returns_an_exit_code(self):
+        """The legacy entry point returns an int exit code (or None)."""
         args = argparse.Namespace(shell="bash")  # noqa: S604
         result = install_completion_main(args)
 
-        # Should either call completion_main or return result code
         assert isinstance(result, int) or result is None
 
 
@@ -165,15 +161,11 @@ class TestUninstallCompletionMain:
         # Should be callable with appropriate args
         assert callable(uninstall_completion_main)
 
-    @patch("xraylabtool.interfaces.completion_v2.integration.completion_main")
-    def test_delegates_to_completion_main(self, mock_completion_main):
-        """Test that function delegates to completion_main."""
-        mock_completion_main.return_value = 0
-
+    def test_returns_an_exit_code(self):
+        """The legacy entry point returns an int exit code (or None)."""
         args = argparse.Namespace(shell="bash")  # noqa: S604
         result = uninstall_completion_main(args)
 
-        # Should either call completion_main or return result code
         assert isinstance(result, int) or result is None
 
 

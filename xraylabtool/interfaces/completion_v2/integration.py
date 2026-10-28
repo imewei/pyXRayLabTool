@@ -8,7 +8,6 @@ import argparse
 import os
 from typing import Any
 
-from .cli import completion_main
 from .installer import CompletionInstaller
 
 
@@ -188,15 +187,6 @@ def test_completion_installation() -> int:
         print(f"❌ Completion script not found: {script_path}")
         print("   The completion may not be properly installed.")
         return 1
-
-
-def handle_new_completion_command(args: list[str]) -> int:
-    """Handle new 'completion' subcommand."""
-    # Remove 'completion' from args
-    if args and args[0] == "completion":
-        args = args[1:]
-
-    return completion_main(args)
 
 
 # Backward compatibility exports

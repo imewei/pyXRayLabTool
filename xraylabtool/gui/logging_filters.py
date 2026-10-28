@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Generator
 from contextlib import contextmanager
 import io
-import os
 import sys
 
 
@@ -32,19 +31,3 @@ def suppress_qt_noise() -> Generator[None, None, None]:
         yield
     finally:
         sys.stderr = original
-
-
-def enable_offscreen_quiet_env() -> None:
-    """Set env vars that quiet common Qt offscreen noise without muting real warnings.
-
-    Prefers the quieter "minimal" platform when available, otherwise falls back to
-    "offscreen". Does not override an explicit user choice.
-    """
-
-    os.environ.setdefault(
-        "QT_LOGGING_RULES", "*.debug=false;*.info=false;qt.qpa.*=false"
-    )
-    if "QT_QPA_PLATFORM" not in os.environ:
-        # Try minimal first; if unavailable Qt will fall back automatically or emit once
-        os.environ["QT_QPA_PLATFORM"] = "minimal"
-    # Caller can still override by setting QT_QPA_PLATFORM before import

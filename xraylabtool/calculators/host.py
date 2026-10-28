@@ -27,6 +27,7 @@ from typing import Any
 
 import jax
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
 
 from xraylabtool.backend import runtime
 from xraylabtool.backend.shapes import block_for, bucket_energy, bucket_pow2
@@ -40,7 +41,6 @@ __all__ = [
     "execute",
     "restrict_to",
     "run_columns",
-    "run_derived",
     "run_derived_fields",
     "run_map",
     "run_optical",
@@ -383,47 +383,22 @@ def run_scattering(
     )
 
 
-def run_derived(
-    wavelength: Any,
-    dispersion: Any,
-    absorption: Any,
-    rho: float,
-    mw: float,
-    n_electrons: float,
-) -> tuple[float, np.ndarray]:
-    """Run ``_derived_program`` on equal-length 1-D arrays.
-
-    Returns
-    -------
-    electron_density : float
-        Electrons per Å³.
-    out : ndarray, shape ``(4, M)``
-        Critical angle, attenuation length, real and imaginary SLD.
-    """
-    wl = np.atleast_1d(np.asarray(wavelength, dtype=np.float64))
-    width = _width(wl.size, None)
-    got = execute(
-        optics._derived_program,
-        (
-            _pad_last(wl, width),
-            _pad_last(dispersion, width),
-            _pad_last(absorption, width),
-            np.float64(rho),
-            np.float64(mw),
-            np.float64(n_electrons),
-        ),
-    )
-    return float(got["electron_density"]), np.array(got["out"][:, : wl.size])
-
-
 def run_derived_fields(
-    wavelength: Any,
-    dispersion: Any,
-    absorption: Any,
+    wavelength: ArrayLike,
+    dispersion: ArrayLike,
+    absorption: ArrayLike,
     rho: float,
     mw: float,
     n_electrons: float,
-) -> tuple[float, tuple[Any, ...]]:
+) -> tuple[
+    float,
+    tuple[
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+    ],
+]:
     """Run derived quantities on each field's own broadcast grid in one call.
 
     Critical angle depends only on dispersion; attenuation and imaginary SLD
@@ -449,7 +424,7 @@ def run_derived_fields(
     -------
     electron_density : float
         Electron density in electrons/Å³.
-    fields : tuple of numpy.ndarray or numpy.float64
+    fields : tuple of numpy.ndarray
         Critical angle in degrees, attenuation length in cm, real SLD in Å⁻²,
         and imaginary SLD in Å⁻², in that order. Critical angle has the shape of
         ``dispersion``; attenuation length and imaginary SLD have the broadcast
@@ -469,10 +444,11 @@ def run_derived_fields(
         (*payload, np.float64(rho), np.float64(mw), np.float64(n_electrons)),
     )
     shapes = (delta.shape, wl_beta.shape, wl_delta.shape, wl_beta.shape)
-    return float(ed), tuple(
+    critical, attenuation, re_sld, im_sld = (
         np.array(field[: int(np.prod(shape))]).reshape(shape)[()]
         for field, shape in zip(fields, shapes, strict=True)
     )
+    return float(ed), (critical, attenuation, re_sld, im_sld)
 
 
 @functools.cache
