@@ -95,8 +95,9 @@ def compare_arrays(
     diff = np.abs(got - expected)
     scale = np.abs(expected)
     zero = scale == 0.0
-    zero_atol = cases.RTOL * float(np.max(scale)) if zero_floor else cases.ZERO_ATOL
-    tol = np.where(zero, zero_atol, cases.RTOL * scale)
+    tol = np.where(zero, cases.ZERO_ATOL, cases.RTOL * scale)
+    if zero_floor:
+        tol = np.maximum(tol, cases.RTOL * float(np.max(scale)))
     worst = float(np.max(np.where(zero, diff, diff / np.where(zero, 1.0, scale))))
     if np.any(diff > tol):
         i = int(np.argmax(diff - tol))

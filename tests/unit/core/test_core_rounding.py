@@ -63,8 +63,9 @@ def test_shape_mismatch_and_empty():
 def test_golden_zero_floor_applies_only_to_flagged_arrays():
     from tests.characterization.core.test_core_golden import compare_arrays
 
-    expected = np.array([0.0, 2.0])
-    got = np.array([-4.4e-15, 2.0])
+    expected = np.array([-8.9e-16, 2.0])
+    got = np.array([5.3e-15, 2.0])
     assert compare_arrays(got, expected)[0] is not None
     assert compare_arrays(got, expected, zero_floor=True)[0] is None
     assert compare_arrays(np.array([1e-6, 2.0]), expected, zero_floor=True)[0]
+    assert compare_arrays(np.array([0.0, 2.0 + 1e-6]), expected, zero_floor=True)[0]
