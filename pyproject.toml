@@ -419,7 +419,7 @@ exclude = [
 "scripts/run_type_check.py" = ["PLR0912", "PLR0915"]  # Allow complex functions in type checking script
 "scripts/test_docs.py" = ["PLR0912", "PLR0915", "S112", "S607"]  # Allow complex functions and subprocess calls in documentation testing script
 "scripts/validate_style_guide.py" = ["PLW2901", "SIM102", "S607", "PLR0912", "PLR0915", "PLC0415"]  # Allow style validation patterns
-"benchmarks/*.py" = ["PLC0415", "PLW1510"]  # Lazy imports and subprocess without check are intentional in benchmark scripts
+"benchmarks/*.py" = ["PLC0415", "PLW1510", "S603", "S607"]  # Lazy imports and subprocess calls (git, tar, this interpreter) are intentional in benchmark scripts
 "docs/**" = ["RUF001", "RUF003", "PLC2401"]  # Greek letters and ×, µ, – are intentional in docs/conf.py and the example notebooks
 
 [tool.ruff.lint.isort]
