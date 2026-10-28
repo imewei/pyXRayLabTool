@@ -64,6 +64,7 @@ batch - Batch Processing
 - ``-o/--output FILE`` (required) — CSV or JSON by extension
 - ``--format {csv,json}`` — override auto-detected format
 - ``--workers N`` — accepted for compatibility and ignored (batches run as blocks on the JAX device, not in worker pools)
+- ``--strict`` — exit with status 2 and write no output if any input row is skipped or fails (default: write the valid rows and exit 0)
 - ``--fields FIELDS`` — comma-separated subset of result fields
 - ``--progress`` / ``--no-progress`` — progress bar control
 - ``--debug``

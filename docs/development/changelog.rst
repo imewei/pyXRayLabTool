@@ -26,7 +26,14 @@ Unreleased
 - CSV/NFF loading detects headers and delimiters without discarding the first numeric row. Result formatting avoids deprecated aliases, summary CSV retains every energy point, and wide CSV honors the requested field order.
 - Batch input loading handles empty energy columns, rejects blank or non-finite energy cells, and rejects missing explicitly requested columns. Material comparison handles zero and negative property means when reporting variation.
 - Batch CLI skips truncated rows and preserves verbose summaries when ``--fields`` excludes the formula. GUI material validation displays domain errors in the existing toast.
+- Result export: the default CSV and JSON columns follow the ``XRayResult`` field order (previously alphabetical) and add ``energy_ev``, ``critical_angle_mrad`` and ``linear_absorption_coefficient``; deprecated aliases are not exported. Unknown ``fields`` raise ``ValidationError``.
+- ``xraylabtool batch`` counts rows skipped as invalid in its closing warning (the count previously covered only rows that parsed).
 - Shell completion derives command metadata from the CLI parser, Bash offers each command's supported format choices, and Bash completion works when global flags precede commands.
+- ``xraylabtool batch`` rejects an input file with duplicate column names (the last duplicate used to overwrite the earlier one silently). ``xlt calc`` reports a zero-molecular-weight formula such as ``Si0`` instead of a bare "division by zero". The ``calculate_single_material_properties`` docstring states that the API does not enforce the 0.001-30 g/cm³ density range that the CLI and GUI apply.
+
+**Added**
+
+- ``xraylabtool batch --strict``: exit with status 2 and write no output if any input row is skipped or fails. The default is unchanged (valid rows are written, exit 0).
 
 v0.5.0 (2026-10-28)
 --------------------
@@ -42,7 +49,7 @@ v0.5.0 (2026-10-28)
 - ``xraylabtool.kk`` is JAX-only: one ``jax.numpy`` implementation, a single device-resident pipeline (one upload, one status fetch after assembly and merge, one per refinement pass, one download) over bucketed shapes, so a default refined run compiles five programs and a second call with the same buckets compiles none. See ADR-005.
 - ``xraylabtool.kk.Spectrum`` (padded piecewise-polynomial f2 table, a JAX pytree) and ``xraylabtool.kk.kk_f1``: ``jit``/``vmap``/``grad``-compatible device-level f1.
 - ``xraylabtool.kk.warm_up(formulas=("SiO2",), refine_tolerance=0.01)`` precompiles the default programs. The GUI warms the programs of its own Compute click on an idle worker; the CLI never warms up.
-- The ``xraylabtool kk`` command and the GUI launcher enable JAX's persistent compile cache under the OS user-cache directory (``xraylabtool/jax``, compile-time threshold 0) unless ``jax_compilation_cache_dir`` is already set or ``XRAYLABTOOL_NO_JAX_CACHE=1``; the library never enables it.
+- The ``xraylabtool kk`` command and the GUI launcher enable JAX's persistent compile cache under the OS user-cache directory (``xraylabtool/jax``, compile-time threshold 0) unless ``jax_compilation_cache_dir`` is already set or ``XRAYLABTOOL_NO_JAX_CACHE=1``; the library enables it only when the process sets ``XRAYLABTOOL_JAX_CACHE=1``.
 - ``KKResult.refine_exhausted`` (default ``False``) is ``True`` when adaptive refinement stopped on ``refine_max_passes``, ``refine_max_points`` or float spacing before every interval met the tolerance; the ``kk`` CLI prints a warning then.
 - ``scripts/kk_gpu_check.py``: manual GPU gate (oracle, additivity, transfer budget with the guard live, padding invariance, f2 at the Si edge, benchmark) for the CUDA machine.
 - ``docs/architecture/005-adr-kk-jax-only.md`` (with the section "Known deviations from the acceptance gates": CPU refined run 10-20 % slower than the forced-JAX baseline, GPU small-m overhead of 2-4 ms, bare-library GPU cold start 3.7-4.4 s); ``jax_architecture`` and the kk guide describe the device pipeline.
@@ -65,7 +72,7 @@ v0.5.0 (2026-10-28)
 - Licence expression is ``MIT AND Zlib`` in ``pyproject.toml`` and ``conda-recipe/meta.yaml``; ``LICENSE-kkcalc.txt`` ships in the sdist and wheel.
 - ``calculators.core.calculate_properties_from_factors(formula, energy_kev, density, f1_total, f2_total)``: new public helper computing δ, β and the derived quantities from given f1/f2 totals; the lookup path shares its code.
 - GUI: the main window opens maximized.
-- ``kk_calculate_real(chunk_size=...)``: ``bool``, ``float`` and ``str`` now raise ``ValueError`` (a positive integer, including NumPy integers, is required; it is an upper bound on the energies per block).
+- ``kk_calculate_real(chunk_size=...)``: ``bool``, ``float`` and ``str`` now raise ``ValidationError`` (a positive integer, including NumPy integers, is required; it is an upper bound on the energies per block).
 - ``refine_spectrum`` validates the spectrum table and ``chunk_size`` up front; one-point grids and sliver-only passes no longer skip validation.
 - Near-edge conversion overflow now surfaces after the merge-point validation (precedence deviation from the pre-JAX pipeline: same exception type, different message; also when the data do not overlap the table).
 - ``set_backend()`` has no effect on ``xraylabtool.kk``; ``KKResult.backend`` is always ``"jax"`` from ``kk`` (the legacy value ``"numpy"`` is still accepted when constructing a ``KKResult``).
@@ -80,6 +87,11 @@ v0.5.0 (2026-10-28)
 - ``calculate_scattering_factors(..., element_data)`` accepts ``TableInterpolator`` entries only (anything else raises ``TypeError``); with a tiny molecular weight it returns the finite value (it returned ``inf``). ``calculate_derived_quantities`` accepts plain lists (it raised ``TypeError``).
 - The first public call after ``clear_scattering_factor_cache()`` only loads the tables; the hidden first-call warm-up is gone (use ``warm_up``).
 - Known limitation: a molecular weight above about 4.5e307 g/mol gives ``delta = beta = 0`` with an accepted status (XLA flushes ``1 / mw`` as a subnormal); a device exception such as out-of-memory aborts the whole batch call, skip-and-log stays per formula.
+- Energy validation takes one min/max pass for in-range input (7.8 to 2.4 us per call); invalid input keeps its exact errors.
+- ``ScatteringTables`` carries a seventh array, ``coef`` (``[92, N-1, 9]``: per interval the knot and the power-basis cubics of f1 and f2, derived at load time from the knots, values and slopes), so an energy lookup is one gather instead of about ten; the interpolation is ~25% faster and agrees with the previous evaluation to 3e-16 of the interval's value scale and with SciPy's ``PchipInterpolator`` to 1e-12 of the row's largest |value| (relative error can exceed 1e-12 only where f1 crosses zero, as it did before).
+- ``xraylabtool.warm_up(formulas, energy_counts=(1,))`` also precompiles the energy buckets of ``energy_counts``; a new bucket otherwise costs a 100-300 ms compile.
+- The library enables JAX's persistent compile cache on its first compute call when ``XRAYLABTOOL_JAX_CACHE=1`` is set (opt-in, because it changes global JAX configuration; ``XRAYLABTOOL_NO_JAX_CACHE=1`` still wins). A warm cache cuts a fresh process's first call by about 170 ms.
+- Core calculators pad the energy axis to powers of two up to 4096 points (``backend.shapes.bucket_energy``; the 1.25 ladder above), so 1-4096 energies need 7 compiled programs instead of 21, and upload each call as one flat float64 buffer. A warm 500-point ``calculate_single_material_properties`` call is about 1.5x faster on CPU (0.55 to 0.36 ms), a 5-material batch about 1.3x; GPU timings are within run-to-run noise.
 
 **Removed**
 
@@ -96,6 +108,10 @@ v0.5.0 (2026-10-28)
 - GUI: toast notifications are sized after their stylesheet is applied, so the message is no longer clipped ("calculation do…").
 - GUI: plot legends use the theme text color on a translucent plot-colored box, stay readable over curves and restyle on a live theme switch; the multi-material results table no longer stretches its last column.
 - GUI: plot axis titles use the theme text color instead of pyqtgraph's near-white default, so they stay readable in the Light theme.
+- ``XRayResult`` converts float32 and integer array fields to float64 on construction, as its docstring promises; it previously kept any ndarray unchanged.
+- ``XRayResult`` raises ``TypeError`` for complex array fields instead of discarding the imaginary part; ``warm_up(energy_counts=...)`` raises ``TypeError`` for non-integer counts instead of truncating them.
+- ``BatchConfig`` rejects a non-positive ``chunk_size`` with ``ValueError`` (it used to yield an empty batch); ``xraylabtool batch`` always reports failed materials on stderr, including with the progress display on, and ends with a count; ``MaterialComparator`` keeps the original exception as ``__cause__`` and logs a failed bulk call.
+- ``calculate_multiple_xray_properties`` raises ``EnergyError`` for a 2-D energies list (it returned ``{}``); ``critical_angle`` has finite gradients where delta < 0 (it was NaN).
 
 v0.4.8 (2026-10-24)
 --------------------
