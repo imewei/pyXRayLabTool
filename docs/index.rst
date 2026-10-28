@@ -30,7 +30,7 @@ Key Features
    - Critical angles for total external reflection
    - Transmission and reflection coefficients
 
-**Architecture (v0.4.0)**
+**Architecture (v0.5.0)**
    - **JAX-only core**: ``set_backend("jax")`` is a no-op and ``set_backend("numpy")`` raises ``ValueError``
    - Modular design with focused sub-packages:
 
@@ -45,7 +45,7 @@ Key Features
      - **gui**: PySide6 desktop application with PyQtGraph interactive plots
 
    - Type-safe with complete type hints
-   - 202 characterization tests with golden-value assertions
+   - 252 characterization tests with golden-value assertions
    - Cross-platform compatibility (Linux, macOS, Windows)
 
 **CLI Interface**

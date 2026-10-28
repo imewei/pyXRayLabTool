@@ -337,7 +337,7 @@ This modular design allows you to import only what you need:
 
    # Precompile the default programs once instead of on the first call
    import xraylabtool
-   xraylabtool.warm_up(("SiO2",))
+   xraylabtool.warm_up(("SiO2",), energy_counts=(1, 500))  # also the energy buckets 64 and 512
 
 Next Steps
 ----------

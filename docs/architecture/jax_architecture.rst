@@ -1,7 +1,7 @@
 JAX Architecture & Design
 =========================
 
-**Audience:** Developers and users wanting deep understanding of v0.4.0 design.
+**Audience:** Developers and users wanting deep understanding of the v0.5.0 design.
 
 **Purpose:** Explain why JAX, how it works, and how XRayLabTool uses it.
 
@@ -103,7 +103,7 @@ Design Philosophy
 JAX adoption strategy for XRayLabTool:
 
 1. **Transparent to users** - API stays the same
-2. **Backward compatible** - public names and results are kept (``set_backend("numpy")``, ``ops`` and the worker pools are removed; see the changelog)
+2. **Same public API** - public function names and results are kept; ``set_backend("numpy")``, ``ops`` and the worker pools are removed (see the changelog)
 3. **Gradual adoption** - Don't rewrite everything at once
 4. **Future-proof** - Enable autodiff and hardware acceleration later
 
@@ -294,7 +294,7 @@ Compilation in XRayLabTool
 
    # Subsequent calls in the same shape bucket compile nothing
    result = calculate_single_material_properties("Si", 8.0, 2.33)
-   # about 0.45 ms on a CPU (ADR-006 gate P1)
+   # about 0.3 to 0.45 ms on a CPU (ADR-006 gate P1 limit: 0.5 ms)
 
 **Kramers-Kronig programs and shape buckets:**
 
@@ -317,8 +317,9 @@ after the window is shown (through the public ``kk_calculate_real``, with the
 tab's explicit energy grid); the library never warms up by itself. The ``xraylabtool kk`` command and the GUI launcher also enable JAX's
 persistent compile cache (``xraylabtool/jax`` under the OS user-cache
 directory, compile-time threshold 0) unless ``jax_compilation_cache_dir`` is
-already configured or ``XRAYLABTOOL_NO_JAX_CACHE=1`` is set. The library never
-enables it.
+already configured or ``XRAYLABTOOL_NO_JAX_CACHE=1`` is set. The library itself
+enables it only when the process sets ``XRAYLABTOOL_JAX_CACHE=1`` (checked on the
+first compute call).
 
 
 Data Flow
@@ -710,7 +711,7 @@ Kramers-Kronig package (ADR-005, ADR-006):
 
 - **One implementation**: float64 ``jax.numpy`` on JAX's default device, no NumPy twin
 - **Measured trade-offs** (ADR-006): a small single call is slower than the removed
-  NumPy path (about 0.45 ms against 0.08 ms on a CPU), batches are about 1.8x faster
+  NumPy path (about 0.3 to 0.45 ms against 0.08 ms on a CPU), batches are about 1.8x faster
   on a CPU, and the same code runs on a GPU; first calls compile (about 0.3 s on a CPU)
 - **Same public API**: results equal the NumPy-era results to ``rtol=1e-12``;
   ``set_backend("numpy")`` and the ``ops`` layer are removed (see the changelog)
