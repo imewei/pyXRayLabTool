@@ -80,7 +80,9 @@ def _structure_problem(got: np.ndarray, expected: np.ndarray) -> str | None:
     return None
 
 
-def compare_arrays(actual: Any, expected: np.ndarray) -> tuple[str | None, float]:
+def compare_arrays(
+    actual: Any, expected: np.ndarray, zero_floor: bool = False
+) -> tuple[str | None, float]:
     """Return (problem or None, largest relative error) for one golden array."""
     got = np.asarray(actual)
     problem = _structure_problem(got, expected)
@@ -93,7 +95,8 @@ def compare_arrays(actual: Any, expected: np.ndarray) -> tuple[str | None, float
     diff = np.abs(got - expected)
     scale = np.abs(expected)
     zero = scale == 0.0
-    tol = np.where(zero, cases.ZERO_ATOL, cases.RTOL * scale)
+    zero_atol = cases.RTOL * float(np.max(scale)) if zero_floor else cases.ZERO_ATOL
+    tol = np.where(zero, zero_atol, cases.RTOL * scale)
     worst = float(np.max(np.where(zero, diff, diff / np.where(zero, 1.0, scale))))
     if np.any(diff > tol):
         i = int(np.argmax(diff - tol))
@@ -121,7 +124,9 @@ def check_family(name: str) -> tuple[list[str], float]:
     problems += [f"missing result {k}" for k in sorted(gold_keys - arrays.keys())]
     problems += [f"unexpected result {k}" for k in sorted(arrays.keys() - gold_keys)]
     for key in sorted(gold_keys & arrays.keys()):
-        problem, rel = compare_arrays(arrays[key], npz[key])
+        problem, rel = compare_arrays(
+            arrays[key], npz[key], zero_floor=key in cases.ZERO_FLOOR_KEYS
+        )
         worst = max(worst, rel if np.isfinite(rel) else 0.0)
         if problem:
             problems.append(f"{key}: {problem}")

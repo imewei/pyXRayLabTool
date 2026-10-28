@@ -240,7 +240,11 @@ evidence, belongs to Wei.
 - **One implementation, one set of tests.** The goldens (frozen from the NumPy
   path in Task 0, `rtol=1e-12`, never loosened; worst measured relative error
   4.4e-15 for the core families on CPU, 3.6e-15 on GPU, 2.0e-14 for `utils_signal`
-  on GPU) replace the NumPy/JAX parity tests.
+  on GPU) replace the NumPy/JAX parity tests. The one exact-zero floor is the
+  `background_subtraction|polynomial` residual at its three fit nodes (the host
+  `np.polyfit` of R30 rounds differently per LAPACK build): a golden 0 there allows
+  `1e-12` times the array's largest magnitude (`ZERO_FLOOR_KEYS` in
+  `tests/characterization/core/cases.py`); `rtol` is untouched.
   `scripts/gen_core_golden.py` and `scripts/gen_kk_prejax_baseline.py` need the
   deleted NumPy path; each carries a note naming the commit to check out.
 - **Break for downstream code.** `set_backend("numpy")`, `ops`,

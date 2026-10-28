@@ -83,6 +83,11 @@ from xraylabtool.utils import (
 SEP = "|"
 RTOL = 1e-12
 ZERO_ATOL = 1e-300  # only where the golden value is exactly 0
+# Arrays whose exact zeros are rounding residuals of a host LAPACK solve (R30): the
+# quadratic background passes through its three fit nodes, so the subtraction is 0
+# there mathematically but +-1e-15 on another LAPACK build. For these keys a golden 0
+# allows RTOL times the array's largest golden magnitude; every other entry is unchanged.
+ZERO_FLOOR_KEYS = frozenset({"utils_signal|background_subtraction|polynomial"})
 SEED = 20261026
 
 RESULT_SCALARS = (
