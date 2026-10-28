@@ -839,14 +839,21 @@ def _outcome(name, args, kw):
     return ("ok", type(r).__name__, float(r))
 
 
-def _same(got, want):
+def _same(got, want, floor=False):
+    """Compare outcomes; ``floor`` adds an absolute ``1e-12 * max|want|`` for arrays.
+
+    The polynomial background is exactly 0 at its three fit nodes only
+    mathematically: ``np.polyfit`` (R30) leaves +-1e-15 there, different per LAPACK
+    build, so those entries cannot meet a pure relative test.
+    """
     if got[0] != want[0] or got[1] != want[1]:
         return False
     if got[0] == "err":
         return got[2] == want[2]
     if got[1] == "ndarray":
+        atol = 1e-12 * float(np.nanmax(np.abs(want[4]))) if floor and want[4] else 0.0
         return got[2:4] == want[2:4] and np.allclose(
-            got[4], want[4], rtol=1e-12, atol=0.0, equal_nan=True
+            got[4], want[4], rtol=1e-12, atol=atol, equal_nan=True
         )
     return bool(np.isclose(got[2], want[2], rtol=1e-12, atol=0.0, equal_nan=True))
 
@@ -856,7 +863,8 @@ def test_matches_the_legacy_outcome_or_the_documented_departure(index):
     name, args, kw = CASES[index]
     got = _outcome(name, args, kw)
     want = DEPARTURES.get(index, LEGACY[index])
-    assert _same(got, want), (name, kw, got, want)
+    floor = name == "background_subtraction" and kw.get("method") == "polynomial"
+    assert _same(got, want, floor), (name, kw, got, want)
 
 
 def test_every_departure_is_a_real_difference():
