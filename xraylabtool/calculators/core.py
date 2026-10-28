@@ -663,7 +663,7 @@ def warm_up(
     TypeError
         If an energy count is not an integer.
     ValueError
-        If an energy count is not positive.
+        If ``energy_counts`` is empty or holds a count that is not positive.
 
     References
     ----------
@@ -680,29 +680,31 @@ def warm_up(
     from xraylabtool.calculators.tables import load_tables
 
     counts_requested = tuple(operator.index(n) for n in energy_counts)
+    if not counts_requested:
+        raise ValueError("energy_counts must not be empty")
     if any(n < 1 for n in counts_requested):
         raise ValueError(f"energy_counts must be positive, got {counts_requested}")
     load_tables()
     seen: set[tuple[int, int]] = set()
-    tail_widths: set[int] = set()
     for formula in formulas:
         z, counts, molecular_weight, number_of_electrons = encode_formula(formula)
         k = bucket_pow2(len(z), minimum=2)
         for n in counts_requested:
-            width = bucket_energy(n)
-            if (k, width) in seen:
+            key = (k, bucket_energy(n))
+            if key in seen:
                 continue
-            seen.add((k, width))
-            energies = np.linspace(5.0, 10.0, n)
+            seen.add(key)
             host.run_optical(
-                [(z, counts, molecular_weight, number_of_electrons)], [1.0], energies
+                [(z, counts, molecular_weight, number_of_electrons)],
+                [1.0],
+                np.linspace(5.0, 10.0, n),
             )
-            if width not in tail_widths:
-                tail_widths.add(width)
-                zeros = np.zeros((1, n))
-                host.run_tail([1.0], [1.0], [1.0], zeros, zeros, energies)
-    if not tail_widths:
-        host.run_tail([1.0], [1.0], [1.0], [[0.0]], [[0.0]], [8.0])
+    # The supplied-factor program does not depend on K, so it is warmed once per
+    # energy bucket, also when ``formulas`` is empty.
+    tail_counts = {bucket_energy(n): n for n in counts_requested}
+    for n in tail_counts.values():
+        zeros = np.zeros((1, n))
+        host.run_tail([1.0], [1.0], [1.0], zeros, zeros, np.linspace(5.0, 10.0, n))
 
 
 def calculate_properties_from_factors(

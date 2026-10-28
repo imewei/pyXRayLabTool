@@ -113,12 +113,23 @@ def test_background_subtraction_matches_the_numpy_formulas(n):
     ("warm", "lengths"), [(40, (1, 7, 40, 64)), (70, (65, 72, 80))]
 )
 def test_series_inside_one_bucket_share_a_compiled_program(warm, lengths):
-    utils.smooth_data(None, _signal(warm)[1], 5)  # warm
+    utils.smooth_data(None, _signal(warm)[1], 5)  # warm the window-5 program
+    # A window covering the whole series is a different program (the mean, static
+    # window 64): warm it too, so the test does not depend on which tests ran first.
+    utils.smooth_data(None, _signal(1)[1], 5)
     utils.normalize_intensity(_signal(warm)[1], "area")
     with record_compiles() as names:
         for n in lengths:
             utils.smooth_data(None, _signal(n)[1], 5)
             utils.normalize_intensity(_signal(n)[1], "area")
+    assert _mine(names) == [], names
+
+
+def test_windows_covering_the_series_share_one_mean_program():
+    utils.smooth_data(None, _signal(1)[1], 5)  # warm the mean program
+    with record_compiles() as names:
+        for n in (2, 3, 4, 5):
+            utils.smooth_data(None, _signal(n)[1], 5)
     assert _mine(names) == [], names
 
 

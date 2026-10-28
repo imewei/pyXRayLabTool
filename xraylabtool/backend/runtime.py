@@ -65,10 +65,10 @@ def ensure_x64() -> None:
     global _cache_opt_in_checked  # noqa: PLW0603
     jax.config.update("jax_enable_x64", True)
     if not _cache_opt_in_checked:
-        _cache_opt_in_checked = True
         # Opt-in only: the library never changes global JAX config unasked.
         if os.environ.get("XRAYLABTOOL_JAX_CACHE") == "1":
             enable_persistent_cache()
+        _cache_opt_in_checked = True  # after success: a failure is retried, not hidden
 
 
 _cache_lock = threading.Lock()
@@ -83,7 +83,10 @@ def _user_cache_dir(platform: str | None = None) -> Path:
     elif platform == "darwin":
         base = home / "Library" / "Caches"
     else:
-        base = Path(os.environ.get("XDG_CACHE_HOME") or home / ".cache")
+        xdg = Path(os.environ.get("XDG_CACHE_HOME", ""))
+        # The XDG spec says to ignore a relative value: it would put a cache that
+        # JAX loads compiled programs from under whatever directory we run in.
+        base = xdg if xdg.is_absolute() else home / ".cache"
     return base / "xraylabtool" / "jax"
 
 

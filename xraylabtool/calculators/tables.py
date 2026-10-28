@@ -54,7 +54,10 @@ class ScatteringTables:
         Per interval ``i`` of each row: ``x[i]`` and the power-basis cubic
         ``c0 + c1 t + c2 t² + c3 t³`` (``t = e - x[i]``) of f1 (entries 1-4) and
         f2 (entries 5-8), derived from the knots, values and slopes above so one
-        gather fetches everything an energy needs.
+        gather fetches everything an energy needs. The device programs read only
+        ``x``, ``coef`` and ``n``; ``f1``, ``f2``, ``d1`` and ``d2`` stay as the
+        source of ``coef`` and for the ``TableInterpolator`` shims, so editing
+        them without rebuilding ``coef`` changes nothing on the device.
     symbols : tuple of str
         Element symbols (host metadata, not a pytree leaf).
     """

@@ -110,3 +110,24 @@ def test_warm_up_compiles_one_program_for_counts_sharing_a_bucket():
     with record_compiles() as names:
         core.warm_up(("SiO2",), energy_counts=(3000, 4000))
     assert sum("_optical_program" in n for n in names) == 1, names
+
+
+def test_warm_up_rejects_an_empty_energy_count_sequence():
+    from xraylabtool.calculators import core
+
+    with pytest.raises(ValueError, match="empty"):
+        core.warm_up(("SiO2",), energy_counts=())
+
+
+def test_warm_up_without_formulas_still_warms_the_tail_program_per_bucket():
+    from xraylabtool.calculators import core
+
+    optics._tail_program.clear_cache()
+    with record_compiles() as names:
+        core.warm_up((), energy_counts=(3000,))
+    assert sum("_tail_program" in n for n in names) == 1, names
+    with record_compiles() as names:
+        host.run_tail(
+            [1.0], [1.0], [1.0], np.zeros((1, 4000)), np.zeros((1, 4000)), np.ones(4000)
+        )
+    assert [n for n in names if "_tail_program" in n] == []

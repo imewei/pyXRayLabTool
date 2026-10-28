@@ -1,4 +1,4 @@
-"""Regressions for the energy-validation fast path and the XRayResult dtype rule."""
+"""Energy-validation fast path and the XRayResult dtype rule."""
 
 from __future__ import annotations
 

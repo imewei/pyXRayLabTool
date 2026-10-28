@@ -241,7 +241,7 @@ def test_element_index(tables_mod):
         tables_mod.element_index("Xx")
 
 
-@pytest.mark.parametrize("symbol", ["H", "C", "Si", "Fe", "Au", "U"])
+@pytest.mark.parametrize("symbol", ["H", "C", "Si", "Fe", "Sb", "Au", "U"])
 def test_packed_coefficients_reproduce_scipy_pchip(tables_mod, symbol):
     """The per-interval cubics evaluate like SciPy's PCHIP on the real knots (rtol 1e-12)."""
     from scipy.interpolate import PchipInterpolator

@@ -71,8 +71,8 @@ is JAX-first and this is mandatory.
 4. **Shape buckets and shared runtime.** `backend/runtime.py`
    (`ensure_x64`, `enable_persistent_cache`, `worker_guard`, `upload`,
    `fetch`, `fetch_status`, counters) and `backend/shapes.py` (`bucket`,
-   `bucket_energy`, `bucket_pow2`, `block_for`) are promoted from `kk` and
-   shared; `kk` re-exports them. Energies `M` use `bucket_energy(m)` (powers
+   `bucket_pow2`, `block_for`) are promoted from `kk` and shared; `kk`
+   re-exports them. `bucket_energy` is new in the core (`kk` keeps `bucket`). Energies `M` use `bucket_energy(m)` (powers
    of two from 64 to 4096, the 1.25 ladder above: a compile costs 100-300 ms,
    padding a short axis microseconds, so 7 rungs cover 1-4096 energies instead
    of 21), elements `K` and materials `F` use powers of two. A call uploads
@@ -247,8 +247,8 @@ evidence, belongs to Wei.
 ## Consequences
 
 - **Cold start grows for compute commands.** `import jax` costs about 0.7 s and
-  the first program compiles; the persistent cache (CLI and GUI only, never
-  the library) brings `calc` back to the P9 figures above.
+  the first program compiles; the persistent cache (CLI and GUI by default; the
+  library only with `XRAYLABTOOL_JAX_CACHE=1`) brings `calc` back to the P9 figures above.
 - **One implementation, one set of tests.** The goldens (frozen from the NumPy
   path in Task 0, `rtol=1e-12`, never loosened; worst measured relative error
   4.4e-15 for the core families on CPU, 3.6e-15 on GPU, 2.0e-14 for `utils_signal`
