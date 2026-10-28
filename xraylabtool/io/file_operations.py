@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 
 from xraylabtool.exceptions import DataFileError
+from xraylabtool.io.data_export import require_known_fields
 
 
 def load_data_file(filename: str) -> np.ndarray:
@@ -191,9 +192,7 @@ def export_to_csv(
                 f"CSV (got {n_energies} and {mismatched}); export them separately"
             )
 
-        unknown = [f for f in fields if not hasattr(data[0], f)]
-        if unknown:
-            raise ValueError(f"Unknown result fields: {unknown}")
+        require_known_fields(data[0], fields)
 
         def _is_array(value: Any) -> bool:
             return hasattr(value, "__iter__") and not isinstance(value, str)

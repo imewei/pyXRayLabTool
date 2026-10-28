@@ -12,11 +12,13 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from xraylabtool.exceptions import ValidationError
+
 if TYPE_CHECKING:
     import pandas as pd
 
 
-def _result_fields(result: Any) -> list[str]:
+def _result_fields(result: object) -> list[str]:
     """Select result data without evaluating deprecated dataclass aliases."""
     if is_dataclass(result) and not isinstance(result, type):
         derived = ("energy_ev", "critical_angle_mrad", "linear_absorption_coefficient")
@@ -30,8 +32,15 @@ def _result_fields(result: Any) -> list[str]:
     ]
 
 
+def require_known_fields(result: object, fields: list[str]) -> None:
+    """Raise ``ValidationError`` naming any of ``fields`` that ``result`` lacks."""
+    unknown = [field for field in fields if not hasattr(result, field)]
+    if unknown:
+        raise ValidationError("Unknown result fields", "fields", unknown)
+
+
 def format_xray_result(
-    result: Any,
+    result: object,
     format_type: str = "table",
     fields: list[str] | None = None,
     precision: int = 6,
@@ -56,7 +65,7 @@ def format_xray_result(
         return _format_as_table(result, fields, precision)
 
 
-def _format_as_json(result: Any, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
+def _format_as_json(result: object, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
     """Format result as JSON string."""
     data = {}
 
@@ -78,19 +87,19 @@ def _format_as_json(result: Any, fields: list[str] | None, precision: int) -> st
     return json.dumps(data, indent=2)
 
 
-def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
+def _format_as_csv(result: object, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
     """Format result as CSV string."""
     return _result_dataframe(result, fields).to_csv(index=False)
 
 
-def _result_dataframe(result: Any, fields: list[str] | None = None) -> "pd.DataFrame":
+def _result_dataframe(
+    result: object, fields: list[str] | None = None
+) -> "pd.DataFrame":
     """Build one row per energy, repeating material metadata on each row."""
     if fields is None:
         fields = _result_fields(result)
 
-    unknown = [field for field in fields if not hasattr(result, field)]
-    if unknown:
-        raise ValueError(f"Unknown result fields: {unknown}")
+    require_known_fields(result, fields)
 
     # Create DataFrame for consistent formatting
     data: dict[str, Any] = {}
@@ -120,7 +129,7 @@ def _result_dataframe(result: Any, fields: list[str] | None = None) -> "pd.DataF
     return pd.DataFrame(data)
 
 
-def _format_as_table(result: Any, fields: list[str] | None, precision: int) -> str:
+def _format_as_table(result: object, fields: list[str] | None, precision: int) -> str:
     """Format result as human-readable table."""
     if fields is None:
         fields = _result_fields(result)

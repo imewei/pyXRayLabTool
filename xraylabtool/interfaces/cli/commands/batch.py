@@ -21,6 +21,11 @@ def _validate_batch_input(args: Any) -> list[Any] | None:
         # Read CSV using standard library
         with open(input_path, newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
+            names = reader.fieldnames or []
+            duplicates = sorted({n for n in names if names.count(n) > 1})
+            if duplicates:
+                print(f"Error: Duplicate column names: {duplicates}", file=sys.stderr)
+                return None
             data_rows = list(reader)
 
         if not data_rows:
@@ -217,11 +222,26 @@ def cmd_batch(args: Any) -> int:
         assert (
             formulas is not None and densities is not None and energy_sets is not None
         )
+        skipped = len(df_input) - len(formulas)
+        if skipped:
+            print(
+                f"Warning: {skipped} of {len(df_input)} input rows were skipped as "
+                "invalid and are missing from the results",
+                file=sys.stderr,
+            )
         results = _process_batch_materials(formulas, densities, energy_sets, args)
 
         if not results:
             print("Error: No materials were successfully processed", file=sys.stderr)
             return 1
+
+        if getattr(args, "strict", False) and (
+            skipped or len(results) != sum(len(e) for e in energy_sets)
+        ):
+            print(
+                "Error: --strict: some input rows were not processed", file=sys.stderr
+            )
+            return 2
 
         _save_batch_results(results, args)
 

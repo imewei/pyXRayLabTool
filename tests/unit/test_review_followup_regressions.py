@@ -11,7 +11,7 @@ from xraylabtool.calculators.derived_quantities import calculate_derived_quantit
 from xraylabtool.calculators.xray_result import XRayResult
 from xraylabtool.data_handling.atomic_cache import FastAtomicDataProvider
 from xraylabtool.data_handling.batch_processing import load_batch_input
-from xraylabtool.exceptions import EnergyError, FormulaError
+from xraylabtool.exceptions import EnergyError, FormulaError, ValidationError
 from xraylabtool.kk.spectrum import _atomic_numbers
 
 
@@ -88,9 +88,9 @@ def test_unknown_export_fields_raise_instead_of_writing_a_ragged_csv(tmp_path):
     from xraylabtool.io.data_export import format_xray_result
     from xraylabtool.io.file_operations import export_to_csv
 
-    with pytest.raises(ValueError, match="nope"):
+    with pytest.raises(ValidationError, match="nope"):
         export_to_csv([_result()], str(tmp_path / "o.csv"), fields=["formula", "nope"])
-    with pytest.raises(ValueError, match="nope"):
+    with pytest.raises(ValidationError, match="nope"):
         format_xray_result(_result(), "csv", fields=["nope"])
 
 
@@ -124,3 +124,87 @@ def test_completion_descriptions_are_escaped_for_zsh_and_fish():
     nasty = 'it\'s $(echo PWNED) `x` "q" \\'
     assert _fish_text(nasty) == 'it\\\'s $(echo PWNED) `x` "q" \\\\'
     assert _zsh_text(nasty) == 'it\'s \\$(echo PWNED) \\`x\\` \\"q\\" \\\\'
+
+
+def test_batch_summary_counts_rows_skipped_at_parse_time(tmp_path, capsys):
+    from types import SimpleNamespace
+
+    from xraylabtool.interfaces.cli.commands.batch import cmd_batch
+
+    path = tmp_path / "in.csv"
+    path.write_text("formula,density,energy\nSiO2,2.2,10\nBAD,x,10\nSi,2.33,8,10,12\n")
+    args = SimpleNamespace(
+        input_file=str(path),
+        output=str(tmp_path / "out.csv"),
+        format=None,
+        fields=None,
+        verbose=False,
+        progress=False,
+        no_progress=True,
+        workers=None,
+        debug=False,
+    )
+    assert cmd_batch(args) == 0  # some rows succeeded: warnings, not failure
+    assert "2 of 3 input rows were skipped" in capsys.readouterr().err
+
+
+def _batch_args(tmp_path, **overrides):
+    from types import SimpleNamespace
+
+    base = {
+        "input_file": str(tmp_path / "in.csv"),
+        "output": str(tmp_path / "out.csv"),
+        "format": None,
+        "fields": None,
+        "verbose": False,
+        "progress": False,
+        "no_progress": True,
+        "workers": None,
+        "debug": False,
+    }
+    return SimpleNamespace(**{**base, **overrides})
+
+
+def test_batch_strict_fails_and_writes_nothing_when_a_row_is_dropped(tmp_path):
+    from xraylabtool.interfaces.cli.commands.batch import cmd_batch
+
+    (tmp_path / "in.csv").write_text("formula,density,energy\nSiO2,2.2,10\nBAD,x,10\n")
+    assert cmd_batch(_batch_args(tmp_path, strict=True)) == 2
+    assert not (tmp_path / "out.csv").exists()
+
+
+def test_batch_strict_passes_when_every_row_is_processed(tmp_path):
+    from xraylabtool.interfaces.cli.commands.batch import cmd_batch
+
+    (tmp_path / "in.csv").write_text('formula,density,energy\nSiO2,2.2,"8,10"\n')
+    assert cmd_batch(_batch_args(tmp_path, strict=True)) == 0
+    assert (tmp_path / "out.csv").exists()
+
+
+def test_batch_rejects_duplicate_column_names(tmp_path, capsys):
+    from xraylabtool.interfaces.cli.commands.batch import _validate_batch_input
+
+    path = tmp_path / "in.csv"
+    path.write_text("formula,density,energy,energy\nSi,2.33,8,12\n")
+    assert _validate_batch_input(_batch_args(tmp_path, input_file=str(path))) is None
+    assert "Duplicate column names: ['energy']" in capsys.readouterr().err
+
+
+def test_calc_reports_a_zero_molecular_weight_formula(capsys):
+    from types import SimpleNamespace
+
+    from xraylabtool.interfaces.cli.commands.calc import cmd_calc
+
+    args = SimpleNamespace(
+        formula="Si0",
+        energy="8",
+        density=2.3,
+        output=None,
+        format="table",
+        fields=None,
+        precision=6,
+        verbose=False,
+        debug=False,
+    )
+    assert cmd_calc(args) == 1
+    assert "zero molecular weight" in capsys.readouterr().err

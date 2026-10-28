@@ -233,6 +233,13 @@ def add_batch_command(subparsers: Any) -> None:
     )
 
     parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit with status 2 and write no output if any input row is skipped "
+        "or fails (default: write the valid rows and exit 0)",
+    )
+
+    parser.add_argument(
         "--fields", help="Comma-separated list of fields to include in output"
     )
 
