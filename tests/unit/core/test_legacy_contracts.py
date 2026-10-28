@@ -229,6 +229,38 @@ def test_incompatible_derived_operands_raise_numpys_error():
         )
 
 
+def test_dispersion_and_absorption_need_not_broadcast_with_each_other():
+    delta = np.array([1e-6, 2e-6])
+    beta = np.array([1e-8, 2e-8, 3e-8])
+    _, critical, attenuation, real_sld, imaginary_sld = _derived(WL, delta, beta)
+    np.testing.assert_allclose(critical, np.sqrt(2 * delta) * 180 / np.pi)
+    np.testing.assert_allclose(attenuation, WL / beta / (4 * np.pi) * 100)
+    np.testing.assert_allclose(real_sld, delta * (2 * np.pi / 1e20) / WL**2)
+    np.testing.assert_allclose(imaginary_sld, beta * (2 * np.pi / 1e20) / WL**2)
+
+
+@pytest.mark.parametrize(
+    ("wl", "delta", "beta", "shapes"),
+    [
+        (np.empty(0), 1e-6, 1e-8, [(), (0,), (0,), (0,)]),
+        (WL, np.empty(0), 1e-8, [(0,), (), (0,), ()]),
+        (WL, 1e-6, np.empty(0), [(), (0,), (), (0,)]),
+    ],
+)
+def test_empty_derived_operand_keeps_independent_fields(wl, delta, beta, shapes):
+    out = _derived(wl, delta, beta)
+    assert _shapes(out[1:]) == shapes
+    expected_fields = (
+        np.sqrt(2e-6) * 180 / np.pi,
+        WL / 1e-8 / (4 * np.pi) * 100,
+        1e-6 * (2 * np.pi / 1e20) / WL**2,
+        1e-8 * (2 * np.pi / 1e20) / WL**2,
+    )
+    for value, expected in zip(out[1:], expected_fields, strict=True):
+        if np.size(value):
+            np.testing.assert_allclose(value, expected)
+
+
 # ---- F4: all-zero formulas raise the legacy ZeroDivisionError ---------------------
 
 

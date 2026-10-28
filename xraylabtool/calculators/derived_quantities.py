@@ -273,24 +273,15 @@ def calculate_derived_quantities(
     # Each legacy field had the shape of its own arithmetic: the critical angle
     # follows δ, the attenuation length (λ, β), the real SLD (δ, λ), the imaginary
     # SLD (β, λ). Taking them in kernel order raises NumPy's own mismatch error.
-    shape_att = host.broadcast_shape(wl.shape, beta.shape)
-    shape_re = host.broadcast_shape(delta.shape, wl.shape)
-    shape_im = host.broadcast_shape(beta.shape, wl.shape)
-    wl_b, delta_b, beta_b = np.broadcast_arrays(wl, delta, beta)
-    electron_density, out = host.run_derived(
-        wl_b.ravel(),
-        delta_b.ravel(),
-        beta_b.ravel(),
+    host.broadcast_shape(wl.shape, beta.shape)
+    host.broadcast_shape(delta.shape, wl.shape)
+    electron_density, out = host.run_derived_fields(
+        wl,
+        delta,
+        beta,
         float(mass_density),
         float(molecular_weight),
         float(number_of_electrons),
     )
-    full = wl_b.shape
-    critical_angle, attenuation_length, re_sld, im_sld = (
-        # ``[()]`` turns a 0-d result into a NumPy scalar, as the legacy kernel did.
-        host.restrict_to(row.reshape(full), shape).copy()[()]
-        for row, shape in zip(
-            out, (delta.shape, shape_att, shape_re, shape_im), strict=True
-        )
-    )
+    critical_angle, attenuation_length, re_sld, im_sld = out
     return electron_density, critical_angle, attenuation_length, re_sld, im_sld

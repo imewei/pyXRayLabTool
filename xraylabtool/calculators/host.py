@@ -41,6 +41,7 @@ __all__ = [
     "restrict_to",
     "run_columns",
     "run_derived",
+    "run_derived_fields",
     "run_map",
     "run_optical",
     "run_optical_blocks",
@@ -413,6 +414,65 @@ def run_derived(
         ),
     )
     return float(got["electron_density"]), np.array(got["out"][:, : wl.size])
+
+
+def run_derived_fields(
+    wavelength: Any,
+    dispersion: Any,
+    absorption: Any,
+    rho: float,
+    mw: float,
+    n_electrons: float,
+) -> tuple[float, tuple[Any, ...]]:
+    """Run derived quantities on each field's own broadcast grid in one call.
+
+    Critical angle depends only on dispersion; attenuation and imaginary SLD
+    share the wavelength/absorption grid; real SLD uses wavelength/dispersion.
+    Each grid is flattened and bucketed independently, retaining scalar and
+    empty outputs without requiring dispersion and absorption to broadcast.
+
+    Parameters
+    ----------
+    wavelength : array_like
+        X-ray wavelengths in metres.
+    dispersion, absorption : array_like
+        Dimensionless optical coefficients delta and beta. Each must broadcast
+        with ``wavelength``; they need not broadcast with each other.
+    rho : float
+        Material mass density in g/cm³.
+    mw : float
+        Molecular weight in g/mol.
+    n_electrons : float
+        Number of electrons per formula unit.
+
+    Returns
+    -------
+    electron_density : float
+        Electron density in electrons/Å³.
+    fields : tuple of numpy.ndarray or numpy.float64
+        Critical angle in degrees, attenuation length in cm, real SLD in Å⁻²,
+        and imaginary SLD in Å⁻², in that order. Critical angle has the shape of
+        ``dispersion``; attenuation length and imaginary SLD have the broadcast
+        shape of ``wavelength`` and ``absorption``; real SLD has the broadcast
+        shape of ``wavelength`` and ``dispersion``. Scalar fields are NumPy
+        scalars; empty field shapes are preserved.
+    """
+    delta = np.asarray(dispersion, dtype=np.float64)
+    wl_beta, beta = np.broadcast_arrays(wavelength, absorption)
+    wl_delta, delta_sld = np.broadcast_arrays(wavelength, delta)
+    grids = (delta, wl_beta, beta, wl_delta, delta_sld)
+    # One common width, so the program is compiled per bucket, not per shape mix.
+    width = max(_width(a.size, None) for a in grids)
+    payload = tuple(_pad_last(a.ravel(), width) for a in grids)
+    ed, fields = execute(
+        optics._derived_fields_program,
+        (*payload, np.float64(rho), np.float64(mw), np.float64(n_electrons)),
+    )
+    shapes = (delta.shape, wl_beta.shape, wl_delta.shape, wl_beta.shape)
+    return float(ed), tuple(
+        np.array(field[: int(np.prod(shape))]).reshape(shape)[()]
+        for field, shape in zip(fields, shapes, strict=True)
+    )
 
 
 @functools.cache

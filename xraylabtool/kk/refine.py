@@ -177,6 +177,10 @@ def _checked_inputs(
             "energy_ev",
         )
     seg = _real_float64("seg_ev", seg_ev)
+    if seg.ndim != 1 or seg.size < 2:
+        raise ValueError(
+            f"seg_ev must be 1-D with at least 2 edges, got shape {seg.shape}"
+        )
     if e[0] < seg[0] or e[-1] > seg[-1]:
         raise ValidationError(
             "energy_ev must lie inside the tabulated range",
@@ -184,7 +188,7 @@ def _checked_inputs(
             (float(e[0]), float(e[-1])),
         )
     if isinstance(tolerance, bool) or not isinstance(
-        tolerance, int | float | np.number
+        tolerance, int | float | np.integer | np.floating
     ):
         raise ValidationError("tolerance must be a number", "tolerance", tolerance)
     if not np.isfinite(tolerance) or tolerance <= 0:

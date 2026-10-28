@@ -19,7 +19,7 @@ def _validate_batch_input(args: Any) -> list[Any] | None:
 
     try:
         # Read CSV using standard library
-        with open(input_path, newline="", encoding="utf-8") as f:
+        with open(input_path, newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             data_rows = list(reader)
 
@@ -56,6 +56,8 @@ def _parse_batch_data(
         # only that row (with a warning) instead of aborting the entire batch
         # and discarding every valid material. Keeps the three lists aligned.
         try:
+            if None in row:  # cells beyond the header: an unquoted energy list
+                raise ValueError('extra cells; quote multiple energies, e.g. "8,10"')
             formula = row["formula"]
             density = float(row["density"])
             energy_str = str(row["energy"])
@@ -63,7 +65,7 @@ def _parse_batch_data(
                 energies = [float(x.strip()) for x in energy_str.split(",")]
             else:
                 energies = [float(energy_str)]
-        except (ValueError, KeyError) as exc:
+        except (ValueError, TypeError, KeyError) as exc:
             print(
                 f"Warning: Skipping {row.get('formula', '?')}: invalid row ({exc})",
                 file=sys.stderr,
@@ -166,6 +168,7 @@ def _process_batch_materials(
 
 def _save_batch_results(results: list[dict[str, Any]], args: Any) -> None:
     """Save batch results to output file."""
+    material_count = len({result["formula"] for result in results})
     if args.fields:
         field_list = [field.strip() for field in args.fields.split(",")]
         results = [
@@ -195,7 +198,7 @@ def _save_batch_results(results: list[dict[str, Any]], args: Any) -> None:
         print(f"Results saved to {args.output}")
         print(
             f"Processed {len(results)} data points from "
-            f"{len({r['formula'] for r in results})} unique materials"
+            f"{material_count} unique materials"
         )
 
 

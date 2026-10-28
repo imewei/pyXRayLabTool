@@ -63,7 +63,7 @@ from xraylabtool.kk.refine import (
     _refine_device,
 )
 from xraylabtool.kk.result import KKResult
-from xraylabtool.kk.spectrum import _atomic_numbers, _element_arrays
+from xraylabtool.kk.spectrum import _atomic_numbers, _element_arrays, _real_float64
 from xraylabtool.kk.transform import relativistic_correction
 from xraylabtool.logging_utils import get_logger
 from xraylabtool.utils import parse_formula
@@ -137,7 +137,7 @@ def _merge_points_ev(
     if merge_points_kev is None:
         return None
     try:
-        low, high = merge_points_kev
+        low, high = _real_float64("merge_points_kev", merge_points_kev)
         return float(low) * KEV_TO_EV, float(high) * KEV_TO_EV
     except (TypeError, ValueError) as exc:
         raise NearEdgeDataError(
@@ -169,7 +169,7 @@ def _check_refine_arguments(
     """Raise :class:`ValidationError` for unusable refinement arguments."""
     if tolerance is not None and (
         isinstance(tolerance, bool)
-        or not isinstance(tolerance, int | float | np.number)
+        or not isinstance(tolerance, int | float | np.integer | np.floating)
         or not np.isfinite(tolerance)
         or tolerance <= 0
     ):

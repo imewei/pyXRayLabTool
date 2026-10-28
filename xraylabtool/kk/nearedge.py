@@ -305,7 +305,7 @@ def _check_positive(name: str, value: float | None) -> float | None:
         return None
     if (
         isinstance(value, bool)
-        or not isinstance(value, int | float | np.number)
+        or not isinstance(value, int | float | np.integer | np.floating)
         or not math.isfinite(value)
         or value <= 0
     ):

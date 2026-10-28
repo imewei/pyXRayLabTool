@@ -527,6 +527,8 @@ def load_batch_input(
 
     # Validate required columns
     required_columns = [formula_column, density_column]
+    if energy_column:
+        required_columns.append(energy_column)
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns: {missing_columns}")
@@ -537,16 +539,17 @@ def load_batch_input(
 
     # Extract energies if specified
     energies = None
-    if energy_column and energy_column in df.columns:
+    if energy_column:
         energy_data = df[energy_column].tolist()
         # Handle different energy formats
-        if isinstance(energy_data[0], str):
-            # Parse comma-separated values
-            energies = []
-            for energy_str in energy_data:
-                energy_list = [float(e.strip()) for e in energy_str.split(",")]
-                energies.append(np.array(energy_list))
-        else:
-            energies = [np.array([float(e)]) for e in energy_data]
+        energies = [
+            np.array([float(value.strip()) for value in str(cell).split(",")])
+            for cell in energy_data
+        ]
+        for row, cell_energies in enumerate(energies):
+            if not np.isfinite(cell_energies).all():
+                raise ValueError(
+                    f"Non-finite energy in column {energy_column!r}, row {row}"
+                )
 
     return formulas, densities, energies

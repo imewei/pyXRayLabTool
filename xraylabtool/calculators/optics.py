@@ -522,6 +522,16 @@ def _derived_program(args: Any) -> Any:
     }
 
 
+@jax.jit
+def _derived_fields_program(args: Any) -> Any:
+    """Derived fields on independent padded grids, with no δ/β broadcasting."""
+    delta, wl_beta, beta, wl_delta, delta_sld, rho, mw, n_electrons = args
+    ed, critical, _, _, _ = _derived(1.0, delta, 1.0, rho, mw, n_electrons)
+    _, _, attenuation, _, im_sld = _derived(wl_beta, 0.0, beta, rho, mw, n_electrons)
+    _, _, _, re_sld, _ = _derived(wl_delta, delta_sld, 1.0, rho, mw, n_electrons)
+    return ed, (critical, attenuation, re_sld, im_sld)
+
+
 # ---------------------------------------------------------------------------
 # Standalone primitives (unclamped; they differ from the in-program rules)
 # ---------------------------------------------------------------------------

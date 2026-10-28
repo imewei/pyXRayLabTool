@@ -196,10 +196,8 @@ class XRayResult:
     @property
     def linear_absorption_coefficient(self):  # type: ignore[no-untyped-def]
         # μ = 1 / attenuation length
-        arr = np.where(
-            self.attenuation_length_cm != 0, 1.0 / self.attenuation_length_cm, 0.0
-        )
-        return np.asarray(arr)
+        length = np.asarray(self.attenuation_length_cm, dtype=np.float64)
+        return np.divide(1.0, length, out=np.zeros(length.shape), where=length != 0)
 
     # Legacy property aliases (deprecated) - emit warnings when accessed
     @property

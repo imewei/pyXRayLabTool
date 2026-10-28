@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from xraylabtool.exceptions import UnknownElementError
+from xraylabtool.exceptions import EnergyError, UnknownElementError
 
 # Cache metrics imports are done lazily to avoid circular imports
 
@@ -525,12 +525,24 @@ class FastAtomicDataProvider:
         -------
         ComplexArray
             Complex scattering factors (f1 + if2)
+
+        Raises
+        ------
+        EnergyError
+            If the energy input contains complex values.
         """
         from xraylabtool.calculators import host
         from xraylabtool.calculators.core import create_scattering_factor_interpolators
 
         # Convert to numpy array if needed
-        energies_arr = np.asarray(energies, dtype=np.float64)
+        if np.iscomplexobj(energies):
+            raise EnergyError("Energy values must be real numeric values")
+        try:
+            energies_arr = np.asarray(energies, dtype=np.float64)
+        except (TypeError, ValueError) as exc:
+            raise EnergyError("Energy values must be real numeric values") from exc
+        if not np.isfinite(energies_arr).all():
+            raise EnergyError("Energy values must be finite")
 
         # Convert energy from keV to eV for interpolation
         energies_ev = energies_arr * 1000.0

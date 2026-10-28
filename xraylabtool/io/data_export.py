@@ -5,10 +5,29 @@ This module contains functions for formatting and exporting calculation results
 in various formats suitable for different use cases.
 """
 
+from dataclasses import fields as dataclass_fields
+from dataclasses import is_dataclass
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+
+def _result_fields(result: Any) -> list[str]:
+    """Select result data without evaluating deprecated dataclass aliases."""
+    if is_dataclass(result) and not isinstance(result, type):
+        derived = ("energy_ev", "critical_angle_mrad", "linear_absorption_coefficient")
+        return [field.name for field in dataclass_fields(result)] + [
+            name for name in derived if hasattr(result, name)
+        ]
+    return [
+        attr
+        for attr in dir(result)
+        if not attr.startswith("_") and not callable(getattr(result, attr))
+    ]
 
 
 def format_xray_result(
@@ -44,11 +63,7 @@ def _format_as_json(result: Any, fields: list[str] | None, precision: int) -> st
     # Get all attributes if fields not specified
     # (exclude methods and private attributes)
     if fields is None:
-        fields = [
-            attr
-            for attr in dir(result)
-            if not attr.startswith("_") and not callable(getattr(result, attr))
-        ]
+        fields = _result_fields(result)
 
     for field in fields:
         if hasattr(result, field):
@@ -65,30 +80,33 @@ def _format_as_json(result: Any, fields: list[str] | None, precision: int) -> st
 
 def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
     """Format result as CSV string."""
+    return _result_dataframe(result, fields).to_csv(index=False)
+
+
+def _result_dataframe(result: Any, fields: list[str] | None = None) -> "pd.DataFrame":
+    """Build one row per energy, repeating material metadata on each row."""
     if fields is None:
-        fields = [
-            attr
-            for attr in dir(result)
-            if not attr.startswith("_") and not callable(getattr(result, attr))
-        ]
+        fields = _result_fields(result)
+
+    unknown = [field for field in fields if not hasattr(result, field)]
+    if unknown:
+        raise ValueError(f"Unknown result fields: {unknown}")
 
     # Create DataFrame for consistent formatting
     data: dict[str, Any] = {}
     for field in fields:
-        if hasattr(result, field):
-            value = getattr(result, field)
-            if isinstance(value, np.ndarray):
-                data[field] = value
-            elif isinstance(value, float | np.floating):
-                data[field] = [float(value)]
-            else:
-                data[field] = (
-                    [value] if not isinstance(value, list | np.ndarray) else value
-                )
+        value = getattr(result, field)
+        if isinstance(value, np.ndarray):
+            data[field] = value
+        elif isinstance(value, float | np.floating):
+            data[field] = [float(value)]
+        else:
+            data[field] = [value] if not isinstance(value, list | np.ndarray) else value
 
     # Ensure all arrays have the same length
     max_length = max(
-        len(v) if isinstance(v, list | np.ndarray) else 1 for v in data.values()
+        (len(v) if isinstance(v, list | np.ndarray) else 1 for v in data.values()),
+        default=0,
     )
     for key, value in data.items():
         if not isinstance(value, list | np.ndarray):
@@ -99,18 +117,13 @@ def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str
     # Lazy import pandas only when needed
     import pandas as pd
 
-    df = pd.DataFrame(data)
-    return df.to_csv(index=False)
+    return pd.DataFrame(data)
 
 
 def _format_as_table(result: Any, fields: list[str] | None, precision: int) -> str:
     """Format result as human-readable table."""
     if fields is None:
-        fields = [
-            attr
-            for attr in dir(result)
-            if not attr.startswith("_") and not callable(getattr(result, attr))
-        ]
+        fields = _result_fields(result)
 
     lines = []
     lines.append(f"XRay Properties for {getattr(result, 'formula', 'Unknown')}")
@@ -156,23 +169,12 @@ def format_calculation_summary(results: list[Any], format_type: str = "table") -
             [json.loads(format_xray_result(r, "json")) for r in results], indent=2
         )
     elif format_type.lower() == "csv":
-        # Combine all results into a single CSV
-        all_data = []
-        for result in results:
-            result_dict = {}
-            for attr in dir(result):
-                if not attr.startswith("_"):
-                    value = getattr(result, attr)
-                    if isinstance(value, np.ndarray) and len(value) == 1:
-                        result_dict[attr] = value[0]
-                    elif not isinstance(value, np.ndarray):
-                        result_dict[attr] = value
-            all_data.append(result_dict)
-
         # Lazy import pandas only when needed
         import pandas as pd
 
-        df = pd.DataFrame(all_data)
+        df = pd.concat(
+            [_result_dataframe(result) for result in results], ignore_index=True
+        )
         return df.to_csv(index=False)
     else:
         # Table format - show summary statistics
