@@ -3,140 +3,140 @@
     "environment": {
       "label": "v0.4.8",
       "xraylabtool": "0.4.8",
-      "tree": "/tmp/claude-1000/tmp50dmazrq",
+      "tree": "/tmp/claude-1000/tmpl6d6eowv",
       "python": "3.14.0",
       "numpy": "2.5.4",
       "jax": "0.12.0.1",
       "devices": "cpu:0",
       "platform": "Linux-6.8.0-147-generic-x86_64-with-glibc2.39",
       "cpu_count": 20,
-      "load_avg_1m": 2.03,
-      "date": "2026-10-28 00:44:28"
+      "load_avg_1m": 3.29,
+      "date": "2026-10-28 13:02:01"
     },
     "rows": [
       {
         "label": "Cold start (import + first calc, 500 pts)",
         "iterations": 5,
-        "mean_ms": 547.3540784,
-        "std_ms": 15.079236131591834,
-        "min_ms": 538.15929,
-        "max_ms": 574.126802,
-        "median_ms": 542.425088
+        "mean_ms": 589.3902776,
+        "std_ms": 2.804904589391731,
+        "min_ms": 585.744354,
+        "max_ms": 592.897677,
+        "median_ms": 589.542301
       },
       {
         "label": "Import xraylabtool (fresh process)",
         "iterations": 5,
-        "mean_ms": 528.1455312,
-        "std_ms": 11.609540198145215,
-        "min_ms": 521.308509,
-        "max_ms": 548.740727,
-        "median_ms": 523.403544
+        "mean_ms": 568.3678456,
+        "std_ms": 9.451480699104474,
+        "min_ms": 560.716415,
+        "max_ms": 584.610389,
+        "median_ms": 564.527067
       },
       {
         "label": "Single material SiO2 (500 pts)",
         "iterations": 100,
-        "mean_ms": 0.10418741,
-        "std_ms": 0.027418484542143785,
-        "min_ms": 0.092799,
-        "max_ms": 0.359975,
-        "median_ms": 0.0988745
+        "mean_ms": 0.10883029,
+        "std_ms": 0.02662123051679208,
+        "min_ms": 0.097685,
+        "max_ms": 0.356007,
+        "median_ms": 0.1030315
       },
       {
         "label": "Single material SiO2 (5000 pts)",
         "iterations": 100,
-        "mean_ms": 0.31043219,
-        "std_ms": 0.03851143766315051,
-        "min_ms": 0.285373,
-        "max_ms": 0.593497,
-        "median_ms": 0.2987225
+        "mean_ms": 0.31351002,
+        "std_ms": 0.036424052377177274,
+        "min_ms": 0.291365,
+        "max_ms": 0.608761,
+        "median_ms": 0.302752
       },
       {
         "label": "Multi-material batch (5 materials, 500 pts)",
         "iterations": 50,
-        "mean_ms": 0.566557,
-        "std_ms": 0.06686423979213098,
-        "min_ms": 0.536026,
-        "max_ms": 0.974399,
-        "median_ms": 0.5448599999999999
+        "mean_ms": 0.5753002,
+        "std_ms": 0.0718522427605032,
+        "min_ms": 0.538797,
+        "max_ms": 0.991655,
+        "median_ms": 0.5498479999999999
       },
       {
         "label": "Multi-material batch (20 materials, 500 pts)",
         "iterations": 20,
-        "mean_ms": 2.1316015999999998,
-        "std_ms": 0.17020797099103263,
-        "min_ms": 2.056914,
-        "max_ms": 2.814603,
-        "median_ms": 2.0809565
+        "mean_ms": 2.1659887,
+        "std_ms": 0.18869628831456847,
+        "min_ms": 2.083323,
+        "max_ms": 2.90933,
+        "median_ms": 2.103904
       },
       {
         "label": "Large batch (200 materials, 100 pts)",
         "iterations": 10,
-        "mean_ms": 16.2602687,
-        "std_ms": 0.3795208926481594,
-        "min_ms": 16.090499,
-        "max_ms": 17.334582,
-        "median_ms": 16.14781
+        "mean_ms": 16.6184108,
+        "std_ms": 0.4258474793759432,
+        "min_ms": 16.363333,
+        "max_ms": 17.800307,
+        "median_ms": 16.524133
       },
       {
         "label": "Element data load - warm (Si)",
         "iterations": 1000,
-        "mean_ms": 0.000304583,
-        "std_ms": 0.000198899799500254,
-        "min_ms": 0.000268,
-        "max_ms": 0.005255,
-        "median_ms": 0.000285
+        "mean_ms": 0.000330339,
+        "std_ms": 0.00015515765523162878,
+        "min_ms": 0.000289,
+        "max_ms": 0.004891,
+        "median_ms": 0.00031
       },
       {
         "label": "Element data load - cold (Si)",
         "iterations": 50,
-        "mean_ms": 0.27277432,
-        "std_ms": 0.009329759507454563,
-        "min_ms": 0.262145,
-        "max_ms": 0.308558,
-        "median_ms": 0.27038
+        "mean_ms": 0.28704676,
+        "std_ms": 0.023416213782343383,
+        "min_ms": 0.266949,
+        "max_ms": 0.402009,
+        "median_ms": 0.2803485
       },
       {
         "label": "XRayResult construction (1000 objects, 500 pts each)",
         "iterations": 20,
-        "mean_ms": 1.11173795,
-        "std_ms": 0.06065480180971923,
-        "min_ms": 1.059237,
-        "max_ms": 1.281786,
-        "median_ms": 1.0919794999999999
+        "mean_ms": 1.1316238,
+        "std_ms": 0.06895652845975539,
+        "min_ms": 1.081522,
+        "max_ms": 1.310492,
+        "median_ms": 1.1023114999999999
       },
       {
         "label": "Interpolator creation - warm (Si)",
         "iterations": 1000,
-        "mean_ms": 0.000101103,
-        "std_ms": 4.327353683245674e-05,
-        "min_ms": 9.1e-05,
-        "max_ms": 0.00135,
-        "median_ms": 9.6e-05
+        "mean_ms": 0.000101817,
+        "std_ms": 3.086979843561431e-05,
+        "min_ms": 9.2e-05,
+        "max_ms": 0.000909,
+        "median_ms": 9.8e-05
       },
       {
         "label": "Interpolator creation - cold (Si)",
         "iterations": 50,
-        "mean_ms": 0.27409926,
-        "std_ms": 0.04559050360068063,
-        "min_ms": 0.25203,
-        "max_ms": 0.567588,
-        "median_ms": 0.2637045
+        "mean_ms": 0.27809422,
+        "std_ms": 0.04701292422141566,
+        "min_ms": 0.247868,
+        "max_ms": 0.576213,
+        "median_ms": 0.2674815
       },
       {
         "label": "Atomic data lookup (300 lookups: Si, O, Al)",
         "iterations": 500,
-        "mean_ms": 0.023840626,
-        "std_ms": 0.0016472548616660889,
-        "min_ms": 0.021887,
-        "max_ms": 0.032465,
-        "median_ms": 0.023197500000000003
+        "mean_ms": 0.024446826,
+        "std_ms": 0.0015866697506157475,
+        "min_ms": 0.02249,
+        "max_ms": 0.031385,
+        "median_ms": 0.023927
       }
     ]
   },
   "current": {
     "environment": {
       "label": "current",
-      "xraylabtool": "0.4.8",
+      "xraylabtool": "0.5.0",
       "tree": "/home/wei/Documents/GitHub/pyXRayLabTool",
       "python": "3.14.0",
       "numpy": "2.5.4",
@@ -144,207 +144,207 @@
       "devices": "cpu:0",
       "platform": "Linux-6.8.0-147-generic-x86_64-with-glibc2.39",
       "cpu_count": 20,
-      "load_avg_1m": 2.59,
-      "date": "2026-10-28 00:44:37"
+      "load_avg_1m": 3.27,
+      "date": "2026-10-28 13:02:09"
     },
     "rows": [
       {
         "label": "Cold start (import + first calc, 500 pts)",
         "iterations": 5,
-        "mean_ms": 643.8533596,
-        "std_ms": 8.191588798386682,
-        "min_ms": 635.522783,
-        "max_ms": 654.778007,
-        "median_ms": 641.892502
+        "mean_ms": 664.7371462,
+        "std_ms": 15.713381651252318,
+        "min_ms": 639.447835,
+        "max_ms": 680.627316,
+        "median_ms": 666.69048
       },
       {
         "label": "Import xraylabtool (fresh process)",
         "iterations": 5,
-        "mean_ms": 16.3697664,
-        "std_ms": 2.5600902575107183,
-        "min_ms": 15.150173,
-        "max_ms": 20.946464,
-        "median_ms": 15.190735
+        "mean_ms": 15.9020282,
+        "std_ms": 0.1670407827169759,
+        "min_ms": 15.748421,
+        "max_ms": 16.161285,
+        "median_ms": 15.836155
       },
       {
         "label": "Single material SiO2 (500 pts)",
         "iterations": 100,
-        "mean_ms": 0.57705521,
-        "std_ms": 0.17004824746525898,
-        "min_ms": 0.420212,
-        "max_ms": 1.214575,
-        "median_ms": 0.5148330000000001
+        "mean_ms": 0.30693758,
+        "std_ms": 0.11853054801267669,
+        "min_ms": 0.237302,
+        "max_ms": 0.953075,
+        "median_ms": 0.264402
       },
       {
         "label": "Single material SiO2 (5000 pts)",
         "iterations": 100,
-        "mean_ms": 1.15527463,
-        "std_ms": 0.12229323502740361,
-        "min_ms": 1.033962,
-        "max_ms": 2.052406,
-        "median_ms": 1.132644
+        "mean_ms": 0.5998202499999999,
+        "std_ms": 0.0915723164040505,
+        "min_ms": 0.511368,
+        "max_ms": 1.255055,
+        "median_ms": 0.5834189999999999
       },
       {
         "label": "Multi-material batch (5 materials, 500 pts)",
         "iterations": 50,
-        "mean_ms": 1.4487932,
-        "std_ms": 0.20808267035022796,
-        "min_ms": 1.264031,
-        "max_ms": 2.598367,
-        "median_ms": 1.398005
+        "mean_ms": 1.02356376,
+        "std_ms": 0.28654883768850836,
+        "min_ms": 0.770703,
+        "max_ms": 2.506329,
+        "median_ms": 0.9299379999999999
       },
       {
         "label": "Multi-material batch (20 materials, 500 pts)",
         "iterations": 20,
-        "mean_ms": 2.6160806,
-        "std_ms": 0.45238864035826537,
-        "min_ms": 2.271661,
-        "max_ms": 4.367558,
-        "median_ms": 2.4898585
+        "mean_ms": 2.13700555,
+        "std_ms": 0.4225498655389649,
+        "min_ms": 1.787085,
+        "max_ms": 3.605952,
+        "median_ms": 1.9794874999999998
       },
       {
         "label": "Large batch (200 materials, 100 pts)",
         "iterations": 10,
-        "mean_ms": 7.4186814,
-        "std_ms": 0.9003120080893189,
-        "min_ms": 6.751402,
-        "max_ms": 9.592054,
-        "median_ms": 7.0722135
+        "mean_ms": 6.6378683,
+        "std_ms": 0.8048029595824545,
+        "min_ms": 5.82642,
+        "max_ms": 8.534796,
+        "median_ms": 6.5084345
       },
       {
         "label": "Element data load - warm (Si)",
         "iterations": 1000,
-        "mean_ms": 0.000322891,
-        "std_ms": 0.00043959435200342746,
-        "min_ms": 0.000269,
-        "max_ms": 0.012558,
-        "median_ms": 0.000286
+        "mean_ms": 0.000325795,
+        "std_ms": 0.0001649085862434604,
+        "min_ms": 0.000285,
+        "max_ms": 0.005121,
+        "median_ms": 0.000307
       },
       {
         "label": "Element data load - cold (Si)",
         "iterations": 50,
-        "mean_ms": 0.29593314,
-        "std_ms": 0.013570583495508637,
-        "min_ms": 0.280427,
-        "max_ms": 0.343553,
-        "median_ms": 0.291366
+        "mean_ms": 0.31233974,
+        "std_ms": 0.033845756699528426,
+        "min_ms": 0.289115,
+        "max_ms": 0.504346,
+        "median_ms": 0.3001605
       },
       {
         "label": "XRayResult construction (1000 objects, 500 pts each)",
         "iterations": 20,
-        "mean_ms": 1.1160118,
-        "std_ms": 0.05508091067224842,
-        "min_ms": 1.07304,
-        "max_ms": 1.26513,
-        "median_ms": 1.0909195
+        "mean_ms": 1.6345484,
+        "std_ms": 0.07422709761649328,
+        "min_ms": 1.583708,
+        "max_ms": 1.883584,
+        "median_ms": 1.6053175
       },
       {
         "label": "Interpolator creation - warm (Si)",
         "iterations": 1000,
-        "mean_ms": 9.4313e-05,
-        "std_ms": 4.324316133219219e-05,
-        "min_ms": 8.7e-05,
-        "max_ms": 0.001385,
-        "median_ms": 9.1e-05
+        "mean_ms": 0.000101149,
+        "std_ms": 6.0405228172655644e-05,
+        "min_ms": 9e-05,
+        "max_ms": 0.001891,
+        "median_ms": 9.6e-05
       },
       {
         "label": "Interpolator creation - cold (Si)",
         "iterations": 50,
-        "mean_ms": 0.00116778,
-        "std_ms": 0.0015237160575650678,
-        "min_ms": 0.000859,
-        "max_ms": 0.011605,
-        "median_ms": 0.000893
+        "mean_ms": 0.00123378,
+        "std_ms": 0.0015037882000508733,
+        "min_ms": 0.000911,
+        "max_ms": 0.011509,
+        "median_ms": 0.0009515
       },
       {
         "label": "Atomic data lookup (300 lookups: Si, O, Al)",
         "iterations": 500,
-        "mean_ms": 0.023632154,
-        "std_ms": 0.001479562429994931,
-        "min_ms": 0.021958,
-        "max_ms": 0.030755,
-        "median_ms": 0.023131
+        "mean_ms": 0.023989972,
+        "std_ms": 0.0012092039959509095,
+        "min_ms": 0.022361,
+        "max_ms": 0.032468,
+        "median_ms": 0.023617
       }
     ]
   },
   "comparison": [
     {
       "label": "Cold start (import + first calc, 500 pts)",
-      "base_median_ms": 542.425088,
-      "new_median_ms": 641.892502,
-      "speedup": 0.845040386528771
+      "base_median_ms": 589.542301,
+      "new_median_ms": 666.69048,
+      "speedup": 0.8842818649517838
     },
     {
       "label": "Import xraylabtool (fresh process)",
-      "base_median_ms": 523.403544,
-      "new_median_ms": 15.190735,
-      "speedup": 34.45544563841052
+      "base_median_ms": 564.527067,
+      "new_median_ms": 15.836155,
+      "speedup": 35.647988226940186
     },
     {
       "label": "Single material SiO2 (500 pts)",
-      "base_median_ms": 0.0988745,
-      "new_median_ms": 0.5148330000000001,
-      "speedup": 0.19205159731408045
+      "base_median_ms": 0.1030315,
+      "new_median_ms": 0.264402,
+      "speedup": 0.38967746083615096
     },
     {
       "label": "Single material SiO2 (5000 pts)",
-      "base_median_ms": 0.2987225,
-      "new_median_ms": 1.132644,
-      "speedup": 0.26373909189471717
+      "base_median_ms": 0.302752,
+      "new_median_ms": 0.5834189999999999,
+      "speedup": 0.5189272204024896
     },
     {
       "label": "Multi-material batch (5 materials, 500 pts)",
-      "base_median_ms": 0.5448599999999999,
-      "new_median_ms": 1.398005,
-      "speedup": 0.38974109534658313
+      "base_median_ms": 0.5498479999999999,
+      "new_median_ms": 0.9299379999999999,
+      "speedup": 0.5912738268572743
     },
     {
       "label": "Multi-material batch (20 materials, 500 pts)",
-      "base_median_ms": 2.0809565,
-      "new_median_ms": 2.4898585,
-      "speedup": 0.8357729967385698
+      "base_median_ms": 2.103904,
+      "new_median_ms": 1.9794874999999998,
+      "speedup": 1.0628528849007635
     },
     {
       "label": "Large batch (200 materials, 100 pts)",
-      "base_median_ms": 16.14781,
-      "new_median_ms": 7.0722135,
-      "speedup": 2.2832752433166785
+      "base_median_ms": 16.524133,
+      "new_median_ms": 6.5084345,
+      "speedup": 2.538879818180547
     },
     {
       "label": "Element data load - warm (Si)",
-      "base_median_ms": 0.000285,
-      "new_median_ms": 0.000286,
-      "speedup": 0.9965034965034965
+      "base_median_ms": 0.00031,
+      "new_median_ms": 0.000307,
+      "speedup": 1.009771986970684
     },
     {
       "label": "Element data load - cold (Si)",
-      "base_median_ms": 0.27038,
-      "new_median_ms": 0.291366,
-      "speedup": 0.9279737512269791
+      "base_median_ms": 0.2803485,
+      "new_median_ms": 0.3001605,
+      "speedup": 0.9339953125078083
     },
     {
       "label": "XRayResult construction (1000 objects, 500 pts each)",
-      "base_median_ms": 1.0919794999999999,
-      "new_median_ms": 1.0909195,
-      "speedup": 1.0009716573954355
+      "base_median_ms": 1.1023114999999999,
+      "new_median_ms": 1.6053175,
+      "speedup": 0.6866626072412466
     },
     {
       "label": "Interpolator creation - warm (Si)",
-      "base_median_ms": 9.6e-05,
-      "new_median_ms": 9.1e-05,
-      "speedup": 1.054945054945055
+      "base_median_ms": 9.8e-05,
+      "new_median_ms": 9.6e-05,
+      "speedup": 1.0208333333333333
     },
     {
       "label": "Interpolator creation - cold (Si)",
-      "base_median_ms": 0.2637045,
-      "new_median_ms": 0.000893,
-      "speedup": 295.3017917133259
+      "base_median_ms": 0.2674815,
+      "new_median_ms": 0.0009515,
+      "speedup": 281.11560693641616
     },
     {
       "label": "Atomic data lookup (300 lookups: Si, O, Al)",
-      "base_median_ms": 0.023197500000000003,
-      "new_median_ms": 0.023131,
-      "speedup": 1.0028749297479576
+      "base_median_ms": 0.023927,
+      "new_median_ms": 0.023617,
+      "speedup": 1.0131261379514758
     }
   ]
 }
