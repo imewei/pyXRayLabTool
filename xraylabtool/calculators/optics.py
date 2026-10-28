@@ -20,6 +20,7 @@ Fritsch, F. N. and Carlson, R. E. (1980), SIAM J. Numer. Anal. 17, 238 (PCHIP).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 import dataclasses
 import functools
 from typing import Any
@@ -51,6 +52,8 @@ __all__ = [
     "interpolate_f",
     "load_tables",
     "optical_properties",
+    "pack_materials",
+    "row_width",
     "transmission",
 ]
 
@@ -334,6 +337,38 @@ def _pack(props: OpticalProps) -> Any:
     return jnp.stack([getattr(props, name) for name in OUT_FIELDS])
 
 
+# Packed material row: ``z[K] | counts[K] | mw | rho | n_electrons``. The host
+# writer (:func:`pack_materials`) and the program reader share these offsets.
+_MW, _RHO, _NEL = 0, 1, 2
+
+
+def row_width(k: int) -> int:
+    """Length of one packed material row with ``k`` (padded) elements."""
+    return 2 * k + 3
+
+
+def pack_materials(
+    encoded: Sequence[Any], densities: Sequence[float], f_pad: int, k_pad: int
+) -> np.ndarray:
+    """``[f_pad, row_width(k_pad)]`` float64 rows for ``_optical_program``.
+
+    Padded materials get ``mw = rho = 1`` and no electrons, padded elements
+    ``z = 0`` with zero count. Atomic numbers are exact in float64.
+    """
+    rows = np.zeros((f_pad, row_width(k_pad)))
+    rows[:, 2 * k_pad + _MW] = 1.0
+    rows[:, 2 * k_pad + _RHO] = 1.0
+    for i, ((zi, ci, mwi, nei), density) in enumerate(
+        zip(encoded, densities, strict=True)
+    ):
+        rows[i, : len(zi)] = zi
+        rows[i, k_pad : k_pad + len(ci)] = ci
+        rows[i, 2 * k_pad + _MW] = mwi
+        rows[i, 2 * k_pad + _RHO] = density
+        rows[i, 2 * k_pad + _NEL] = nei
+    return rows
+
+
 @functools.partial(jax.jit, static_argnums=(2, 3))
 def _optical_program(tables: ScatteringTables, packed: Any, f: int, k: int) -> Any:
     """Optical properties of ``F`` materials at ``M`` shared energies.
@@ -355,12 +390,12 @@ def _optical_program(tables: ScatteringTables, packed: Any, f: int, k: int) -> A
         ``{"out": (F, 9, M) rows in OUT_FIELDS order, "electron_density": (F,),
         "ok": (F,)}``.
     """
-    width = 2 * k + 3
+    width = row_width(k)
     rows = packed[: f * width].reshape(f, width)
     energies = packed[f * width :]
     z = rows[:, :k].astype(jnp.int32)
     counts = rows[:, k : 2 * k]
-    mw, rho, n_electrons = rows[:, 2 * k], rows[:, 2 * k + 1], rows[:, 2 * k + 2]
+    mw, rho, n_electrons = (rows[:, 2 * k + c] for c in (_MW, _RHO, _NEL))
 
     def one(zi: Any, ci: Any, mwi: Any, rhoi: Any, nei: Any) -> Any:
         props, ok = optical_properties(tables, zi, ci, rhoi, mwi, nei, energies)

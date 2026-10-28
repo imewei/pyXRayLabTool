@@ -21,7 +21,11 @@ _CODE = textwrap.dedent(
 
 
 def _run(tmp_path, **env_extra: str) -> str:
-    env = {k: v for k, v in os.environ.items() if not k.startswith("XRAYLABTOOL_")}
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if not k.startswith(("XRAYLABTOOL_", "JAX_COMPILATION_CACHE"))
+    }
     env.update(
         XDG_CACHE_HOME=str(tmp_path), LOCALAPPDATA=str(tmp_path), JAX_PLATFORMS="cpu"
     )
@@ -46,10 +50,23 @@ def test_a_core_call_leaves_the_cache_alone_by_default(tmp_path):
 def test_the_opt_in_env_var_enables_the_cache(tmp_path):
     out = _run(tmp_path, XRAYLABTOOL_JAX_CACHE="1")
     assert str(tmp_path) in out
-    assert out.endswith("jax'") or out.endswith('jax"')
+    assert "jax" in out.rsplit(os.sep, 1)[-1]
 
 
 @pytest.mark.unit
 def test_the_opt_out_wins_over_the_opt_in(tmp_path):
     out = _run(tmp_path, XRAYLABTOOL_JAX_CACHE="1", XRAYLABTOOL_NO_JAX_CACHE="1")
     assert out in ("None", "''")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("value", ["", "0", "true"])
+def test_only_the_value_1_opts_in(tmp_path, value):
+    assert _run(tmp_path, XRAYLABTOOL_JAX_CACHE=value) in ("None", "''")
+
+
+@pytest.mark.unit
+def test_a_user_preset_cache_directory_is_respected(tmp_path):
+    mine = tmp_path / "mine"
+    out = _run(tmp_path, XRAYLABTOOL_JAX_CACHE="1", JAX_COMPILATION_CACHE_DIR=str(mine))
+    assert str(mine) in out

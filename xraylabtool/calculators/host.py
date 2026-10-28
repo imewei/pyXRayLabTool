@@ -130,21 +130,11 @@ def run_optical(
     k_pad = max(len(z) for z, *_ in encoded)
     k_pad = bucket_pow2(k_pad, minimum=2) if k_bucket is None else k_bucket
     f_pad = bucket_pow2(f, minimum=1) if f_bucket is None else f_bucket
-    # One flat float64 buffer (rows ``z | counts | mw | rho | n_electrons`` per
-    # material, then the energies): one leaf uploads in ~26 us, six in ~108 us.
-    # Atomic numbers are exact in float64; the program casts them back.
+    # One flat float64 buffer (material rows, then the energies): one leaf
+    # uploads in ~26 us, six in ~108 us. The row layout lives in ``optics``.
     e = np.atleast_1d(np.asarray(energies, dtype=np.float64))
     m = e.size
-    width = 2 * k_pad + 3
-    rows = np.zeros((f_pad, width))
-    rows[:, 2 * k_pad] = 1.0  # padded materials: mw = rho = 1, no electrons
-    rows[:, 2 * k_pad + 1] = 1.0
-    for i, ((zi, ci, mwi, nei), density) in enumerate(
-        zip(encoded, densities, strict=True)
-    ):
-        rows[i, : len(zi)] = zi
-        rows[i, k_pad : k_pad + len(ci)] = ci
-        rows[i, 2 * k_pad : 2 * k_pad + 3] = mwi, density, nei
+    rows = optics.pack_materials(encoded, densities, f_pad, k_pad)
     packed = np.concatenate([rows.ravel(), _pad_last(e, _width(m, m_bucket))])
     tables = device_tables()
     got = execute(

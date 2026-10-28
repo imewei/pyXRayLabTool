@@ -261,3 +261,45 @@ def test_packed_coefficients_reproduce_scipy_pchip(tables_mod, symbol):
         np.testing.assert_allclose(
             got, want, rtol=1e-12, atol=1e-12 * np.max(np.abs(y))
         )
+
+
+def test_resident_coef_has_the_documented_shape_and_is_derived_from_the_tables():
+    import jax
+
+    from xraylabtool.calculators import tables as tables_module
+    from xraylabtool.calculators.tables import load_tables
+
+    tables = load_tables()
+    assert isinstance(tables.coef, jax.Array)
+    assert tables.coef.dtype == np.float64
+    assert tables.coef.shape == (92, tables.x.shape[1] - 1, 9)
+    expected = tables_module._coefficients(
+        *(np.asarray(getattr(tables, k)) for k in ("x", "f1", "f2", "d1", "d2"))
+    )
+    np.testing.assert_array_equal(np.asarray(tables.coef), expected)
+
+
+@pytest.mark.parametrize("z", [0, 13, 91])  # H (short row), Si, U (full row)
+def test_coef_evaluation_at_the_knots_edges_and_just_outside(shipped, z):
+    import jax
+    from scipy.interpolate import PchipInterpolator
+
+    from xraylabtool.calculators import optics
+    from xraylabtool.calculators.tables import load_tables
+
+    n = int(shipped["n"][z])
+    x = shipped["x"][z]
+    inside = np.array([x[0], x[1], x[n - 2], x[n - 1]])
+    outside = np.array([np.nextafter(x[0], -np.inf), np.nextafter(x[n - 1], np.inf)])
+    with jax.enable_x64(True):
+        tables = load_tables()
+        got = np.asarray(optics._row_pair(tables, z, inside))
+        out = np.asarray(optics._row_pair(tables, z, outside))
+        scalar = np.asarray(optics._row_pair(tables, z, float(x[1])))
+    for row, key in enumerate(("f1", "f2")):
+        ref = PchipInterpolator(x[:n], shipped[key][z, :n])(inside)
+        np.testing.assert_allclose(got[row], ref, rtol=1e-12, atol=1e-14)
+        assert got[row, 0] == shipped[key][z, 0]
+        assert got[row, 3] == shipped[key][z, n - 1]
+    assert np.isnan(out).all()
+    assert scalar.shape == (2,)
