@@ -210,7 +210,13 @@ def _derived(
     operation, including the ``max(2δ, 0)`` critical-angle rule and the ``1e-30`` β clamp.
     """
     electron_density = jnp.asarray(1e6 * rho / mw * AVOGADRO * n_electrons / 1e30)
-    critical_angle = jnp.sqrt(jnp.maximum(2.0 * dispersion, 0.0)) * (180.0 / PI)
+    # Double ``where``: sqrt of the clamped 0 has an infinite slope that the clamp's
+    # zero slope turns into a NaN gradient (every energy with delta < 0).
+    two_delta = 2.0 * dispersion
+    positive = two_delta > 0.0
+    critical_angle = jnp.where(
+        positive, jnp.sqrt(jnp.where(positive, two_delta, 1.0)), 0.0
+    ) * (180.0 / PI)
     absorption_safe = jnp.maximum(absorption, 1e-30)
     attenuation_length = wavelength_m / absorption_safe / (4 * PI) * 1e2
     wavelength_sq = jnp.square(wavelength_m)

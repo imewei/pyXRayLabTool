@@ -415,8 +415,9 @@ def kk_real_spectrum(
     once, evaluates with :func:`kk_f1`'s block driver and downloads once. Each
     energy is computed independently, so chunking, order and duplicates change
     results only at the rounding level described in
-    :func:`kk_piecewise_poly`. 64-bit mode is enabled first and inputs are cast
-    to float64.
+    :func:`kk_piecewise_poly`. 64-bit mode is enabled globally first and inputs are
+    cast to float64; an enclosing ``jax.enable_x64(False)`` block still wins and
+    raises ``TypeError`` (ADR-006, known limitations).
 
     Parameters
     ----------

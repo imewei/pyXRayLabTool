@@ -92,7 +92,13 @@ is JAX-first and this is mandatory.
    `ValueError("the NumPy backend was removed; see ADR-006")`;
    `get_backend()` returns `"jax"`. `calculate_scattering_factors(...,
    element_data)` accepts `TableInterpolator` entries only (an arbitrary
-   callable raises `TypeError`).
+   callable raises `TypeError`). The objects from
+   `create_scattering_factor_interpolators` are `TableInterpolator` shims, not
+   SciPy PCHIP objects: calling one returns a read-only device array (item
+   assignment raises `TypeError`) and `.x`, `.c` and `.derivative()` are gone.
+   `calculate_attenuation_length` and `calculate_transmission` return `inf` and
+   `0.0` for a Python-float `beta = 0` or attenuation length 0, where the NumPy
+   path raised `ZeroDivisionError` (arrays already gave `inf` and `0.0`).
 7. **Explicit warm-up.** There is no hidden first-call warm-up.
    `xraylabtool.warm_up(formulas=("SiO2",))` is public and explicit; the first
    public call after `clear_scattering_factor_cache()` only loads the resident
@@ -275,6 +281,15 @@ evidence, belongs to Wei.
 
 ### Known limitations
 
+- `TableInterpolator.__call__` does not use the shape buckets: every distinct host
+  query length compiles one small program (the only host path that does), so a
+  loop over many different lengths grows the compile cache. The shim exists for
+  the legacy `create_scattering_factor_interpolators` API; the calculators never
+  call it. Pad the query to a fixed length to avoid the growth.
+- The `kk` entry points need `jax_enable_x64` in the calling context. Inside an
+  explicit `jax.enable_x64(False)` block they raise `TypeError` (and warn about a
+  float32 truncation); the core wraps its programs in `enable_x64(True)` and is
+  not affected. Never silent float32.
 - A molecular weight above about 4.5e307 g/mol (for example `"H1" + "0" * 308`)
   gives `delta = beta = 0` with an accepted status: XLA rewrites `x / m` as
   `x * (1 / m)` and `1 / m` is flushed as a subnormal. It is physically

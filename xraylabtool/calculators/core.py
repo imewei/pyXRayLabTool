@@ -515,6 +515,11 @@ def calculate_multiple_xray_properties(
     if not formula_list:
         raise ValueError("Formula list must not be empty")
 
+    # The energies are shared by every formula: a 2-D list is a caller error (spec
+    # section 7), not a per-formula failure to log and skip.
+    if np.ndim(energy_kev) > 1:
+        _validate_energies(energy_kev)
+
     # Process all formulas as device F-blocks
     results: dict[str, dict[str, str | float | np.ndarray]] = {}
 

@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `JaxPchipInterpolator` preserves float64 when x64 is disabled after construction or in a thread-local JAX context, and rejects complex tables instead of discarding their imaginary parts.
 - `BatchConfig` rejects a non-positive `chunk_size` with `ValueError` (it used to yield an empty batch); `xraylabtool batch` always reports failed materials on stderr, including with the progress display on, and ends with a count; `MaterialComparator` keeps the original exception as `__cause__` and logs a failed bulk call.
+- `calculate_multiple_xray_properties` raises `EnergyError` for a 2-D energies list (it returned `{}`); `critical_angle` has finite gradients where delta < 0 (it was NaN).
 
 ## [0.4.8] - 2026-10-24
 
