@@ -16,8 +16,8 @@ Version Categories
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
 
-Unreleased
-----------
+v0.5.0 (2026-10-28)
+--------------------
 
 **Added**
 
@@ -60,7 +60,7 @@ Unreleased
 - Minimum JAX is ``>=0.12.0.1`` (``pyproject.toml``, ``uv.lock``): the golden tolerances were measured on it, and releases 0.8.0 to 0.12.0 differ in the last digits of fused XLA expressions.
 - ``tests/test_code_quality.py::test_naming_conventions`` ignores physical unit symbols (``eV``, ``keV``, ...) in its camelCase check; the threshold is unchanged.
 - ``docs/api/kk.rst`` no longer documents ``MergeStatus``, ``MergeResult`` and ``DeviceTables`` fields twice (duplicate-object warnings).
-- **Breaking (suggested release 0.5.0, no version bump here):** the core calculators are one JAX float64 implementation with no NumPy twin (ADR-006). A public call does host validation, one upload, one compiled program and one download; shapes are padded to buckets so a repeat call compiles nothing. Results equal the previous NumPy path to ``rtol=1e-12``. A small single call on CPU is slower than before (about 0.45 ms against 0.08 ms; GPU about 0.6 ms), batches of 200 and 2000 formulas are faster on CPU (about 1.8x against the frozen NumPy-era row, measured on a quiet host; see ADR-006).
+- **Breaking:** the core calculators are one JAX float64 implementation with no NumPy twin (ADR-006). A public call does host validation, one upload, one compiled program and one download; shapes are padded to buckets so a repeat call compiles nothing. Results equal the previous NumPy path to ``rtol=1e-12``. A small single call on CPU is slower than before (about 0.45 ms against 0.08 ms; GPU about 0.6 ms), batches of 200 and 2000 formulas are faster on CPU (about 1.8x against the frozen NumPy-era row, measured on a quiet host; see ADR-006).
 - ``calculate_xray_properties``, ``calculate_multiple_xray_properties``, ``calculate_batch_properties`` and the comparator run materials as blocks through one device program (a ``vmap`` over materials). ``calculate_xray_properties`` no longer sorts and restores the energy order: the output follows the input order. ``BatchConfig.max_workers`` and the CLI ``--workers`` are accepted and ignored.
 - ``set_backend("jax")`` returns ``None``; any other name raises ``ValueError("the NumPy backend was removed; see ADR-006")``; ``get_backend()`` returns ``"jax"``.
 - ``import xraylabtool`` no longer sets ``JAX_ENABLE_X64`` or imports JAX; ``runtime.ensure_x64()`` runs at every compute entry. ``--help``, ``--version``, ``completion``, ``formula``, ``atomic`` and ``list`` never import JAX. The ``calc``, ``batch`` and ``compare`` commands enable the persistent compile cache like ``kk`` (``XRAYLABTOOL_NO_JAX_CACHE=1`` opts out).

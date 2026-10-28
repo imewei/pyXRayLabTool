@@ -56,7 +56,7 @@ if sys.version_info < (3, 12):  # noqa: UP036
         "XRayLabTool requires Python 3.12+; please upgrade your interpreter."
     )
 
-__version__ = "0.4.8"
+__version__ = "0.5.0"
 __author__ = "Wei Chen"
 __email__ = "wchen@anl.gov"
 
