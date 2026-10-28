@@ -21,6 +21,7 @@ v0.5.0 (2026-10-28)
 
 **Added**
 
+- ``benchmarks/perf_benchmarks.py --stat mean`` averages the per-round medians (with their standard deviation) instead of taking the best round; ``benchmarks/RESULTS_cpu.md`` and ``RESULTS_gpu.md`` are the v0.4.8 vs v0.5.0 means of 10 rounds.
 - ``xraylabtool.kk``: Kramers-Kronig transform of the imaginary scattering factor f2 to f1 by the piecewise Laurent polynomial method of Watts (2014), a JAX port of kkcalc's ``KK_PP`` with its tabulated f2 data (10 eV-500 keV, vendored as ``data/kkcalc/asf.npz``), optional merging of measured near-edge spectra (``load_nearedge``, ``to_asf_scale``, ``merge_spectra``), adaptive refinement (``refine_spectrum``) and ``kk_calculate_real`` returning ``KKResult`` (with ``to_xray_result``). Lazily imported; ``import xraylabtool`` does not load it.
 - ``xraylabtool kk FORMULA`` CLI subcommand (``--nearedge``, ``--input-type``, ``--energy-unit``, ``--merge``, ``--density``, ``--refine``, ``--energies``, ``-o``, ``--format``) with shell completion.
 - GUI "Kramers-Kronig" tab: near-edge file, merge points, refinement, plot of measured/spliced f2, KK f1 and CXRO f1, CSV export.

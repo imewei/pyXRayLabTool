@@ -167,15 +167,17 @@ Performance Highlights
    * - Operation
      - Speed
      - Use Case
-   * - Single calculation
-     - < 0.1 ms
+   * - Single calculation (warm, 500 energies, CPU)
+     - about 0.3 ms
      - Interactive analysis
-   * - Batch processing (1000 materials)
-     - < 10 ms
+   * - Batch processing (200 materials, 100 energies, CPU)
+     - about 7 ms (about 6 ms on a GPU)
      - High-throughput screening
-   * - Energy array (100 points)
+   * - Energy array (500 points, CPU)
      - < 1 ms
      - Spectroscopy analysis
+
+Warm timings from ``benchmarks/RESULTS_cpu.md`` and ``RESULTS_gpu.md`` (v0.5.0, mean of 10 rounds); the first call in a process also compiles (see :doc:`development/performance`).
 
 Target Audience
 ---------------

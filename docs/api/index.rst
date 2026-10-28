@@ -118,3 +118,28 @@ Exception Hierarchy
    :members:
    :show-inheritance:
    :no-index:
+
+.. autoclass:: xraylabtool.exceptions.DataFileError
+   :members:
+   :show-inheritance:
+   :no-index:
+
+.. autoclass:: xraylabtool.exceptions.AtomicDataError
+   :members:
+   :show-inheritance:
+   :no-index:
+
+.. autoclass:: xraylabtool.exceptions.UnknownElementError
+   :members:
+   :show-inheritance:
+   :no-index:
+
+.. autoclass:: xraylabtool.exceptions.BatchProcessingError
+   :members:
+   :show-inheritance:
+   :no-index:
+
+.. autoclass:: xraylabtool.exceptions.NearEdgeDataError
+   :members:
+   :show-inheritance:
+   :no-index:
