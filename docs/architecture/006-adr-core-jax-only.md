@@ -109,7 +109,7 @@ is JAX-first and this is mandatory.
    `xraylabtool.warm_up(formulas=("SiO2",))` is public and explicit; the first
    public call after `clear_scattering_factor_cache()` only loads the resident
    tables and compiles the program of its own buckets.
-8. **CLI.** `calc`, `batch`, `compare` and `kk` enable the persistent compile
+8. **CLI.** `calc`, `batch`, `compare`, `kk`, `convert` and `bragg` enable the persistent compile
    cache (`runtime.enable_persistent_cache()`; `XRAYLABTOOL_NO_JAX_CACHE=1`
    opts out); `--help`, `--version`, `completion`, `formula`, `atomic` and
    `list` never import JAX. Per-command subprocess tests enforce both.

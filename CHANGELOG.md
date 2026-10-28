@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The JAX backend's PCHIP interpolation is an in-tree `jax.numpy` implementation, `backend.interpolation.JaxPchipInterpolator` (SciPy's Fritsch-Carlson slopes, jit-compiled evaluation, NaN outside the table), replacing `interpax`; it matches SciPy's `PchipInterpolator` to float64 round-off.
 - Licence expression is `MIT AND Zlib` in `pyproject.toml` and `conda-recipe/meta.yaml`; `LICENSE-kkcalc.txt` ships in the sdist and wheel.
 - `calculators.core.calculate_properties_from_factors(formula, energy_kev, density, f1_total, f2_total)`: new public helper computing δ, β and the derived quantities from given f1/f2 totals; the lookup path shares its code.
-- `kk_calculate_real(chunk_size=...)`: `bool`, `float` and `str` now raise `ValueError` (a positive integer, including NumPy integers, is required; it is an upper bound on the energies per block).
+- `kk_calculate_real(chunk_size=...)`: `bool`, `float` and `str` now raise `ValidationError` (a positive integer, including NumPy integers, is required; it is an upper bound on the energies per block).
 - `refine_spectrum` validates the spectrum table and `chunk_size` up front; one-point grids and sliver-only passes no longer skip validation.
 - Near-edge conversion overflow now surfaces after the merge-point validation (precedence deviation from the pre-JAX pipeline: same exception type, different message; also when the data do not overlap the table).
 - `set_backend()` has no effect on `xraylabtool.kk`; `KKResult.backend` is always `"jax"` from `kk` (the legacy value `"numpy"` is still accepted when constructing a `KKResult`).

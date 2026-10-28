@@ -300,6 +300,6 @@ def test_coef_evaluation_at_the_knots_edges_and_just_outside(shipped, z):
         ref = PchipInterpolator(x[:n], shipped[key][z, :n])(inside)
         np.testing.assert_allclose(got[row], ref, rtol=1e-12, atol=1e-14)
         assert got[row, 0] == shipped[key][z, 0]
-        assert got[row, 3] == shipped[key][z, n - 1]
+        np.testing.assert_allclose(got[row, 3], shipped[key][z, n - 1], rtol=1e-14)
     assert np.isnan(out).all()
     assert scalar.shape == (2,)

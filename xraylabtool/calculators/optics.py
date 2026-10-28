@@ -53,7 +53,6 @@ __all__ = [
     "load_tables",
     "optical_properties",
     "pack_materials",
-    "row_width",
     "transmission",
 ]
 
@@ -354,7 +353,15 @@ def pack_materials(
 
     Padded materials get ``mw = rho = 1`` and no electrons, padded elements
     ``z = 0`` with zero count. Atomic numbers are exact in float64.
+
+    Raises
+    ------
+    ValueError
+        If a material has more than ``k_pad`` elements (it would overwrite its
+        own counts) or there are more than ``f_pad`` materials.
     """
+    if len(encoded) > f_pad or any(len(m[0]) > k_pad for m in encoded):
+        raise ValueError(f"materials do not fit in the padded block ({f_pad}, {k_pad})")
     rows = np.zeros((f_pad, row_width(k_pad)))
     rows[:, 2 * k_pad + _MW] = 1.0
     rows[:, 2 * k_pad + _RHO] = 1.0

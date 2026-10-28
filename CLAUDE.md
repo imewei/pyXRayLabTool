@@ -74,7 +74,7 @@ xraylabtool/
 ├── backend/              # JAX runtime helpers (the NumPy backend and `ops` were removed, ADR-006)
 │   ├── __init__.py       # set_backend()/get_backend() stubs only: "jax" is a no-op, any other name raises ValueError
 │   ├── runtime.py        # ensure_x64(), enable_persistent_cache(), worker_guard(), counted upload()/fetch()/fetch_status()
-│   ├── shapes.py         # bucket(), bucket_energy() (core energy axis: powers of two to 4096), bucket_pow2(), block_for(): static-shape buckets that bound compile counts
+│   ├── shapes.py         # bucket(), bucket_energy() (core energy axis: powers of two from 64 to 4096, then the 1.25 ladder), bucket_pow2(), block_for(): static-shape buckets that bound compile counts
 │   └── interpolation.py  # JaxPchipInterpolator (in-tree jnp PCHIP, pinned to SciPy at 1e-12)
 ├── calculators/          # Core X-ray physics
 │   ├── core.py           # calculate_single_material_properties(), calculate_xray_properties()

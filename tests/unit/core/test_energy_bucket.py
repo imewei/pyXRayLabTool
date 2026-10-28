@@ -80,19 +80,12 @@ def test_warm_up_precompiles_the_requested_energy_buckets():
     assert [n for n in names if "_program" in n] == []
 
 
-@pytest.mark.parametrize("bad", [0, -3])
+@pytest.mark.parametrize("bad", [(0,), (-3,), (1, 0)])
 def test_warm_up_rejects_a_non_positive_energy_count(bad):
     from xraylabtool.calculators import core
 
     with pytest.raises(ValueError, match="energy_counts"):
-        core.warm_up(("SiO2",), energy_counts=(bad,))
-
-
-def test_warm_up_rejects_any_non_positive_count_in_a_sequence():
-    from xraylabtool.calculators import core
-
-    with pytest.raises(ValueError, match="energy_counts"):
-        core.warm_up(("SiO2",), energy_counts=(1, 0))
+        core.warm_up(("SiO2",), energy_counts=bad)
 
 
 @pytest.mark.parametrize("bad", [2.5, 1.9, "5"])

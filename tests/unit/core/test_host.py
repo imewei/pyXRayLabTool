@@ -107,13 +107,24 @@ def test_pack_materials_places_every_column_where_the_program_reads_it():
     assert rows[3].tolist() == [0.0] * (2 * k) + [1.0, 1.0, 0.0]
 
 
-def test_a_batch_of_mixed_materials_equals_each_material_alone_bit_for_bit():
+def test_a_batch_of_mixed_materials_matches_each_material_alone():
     formulas = ["H", "SiO2", "Al2O3", "UO2", "C6H12O6Ca2Fe"]  # K = 1..5, Z up to 92
     densities = [0.07, 2.2, 3.95, 10.9, 1.5]
     encoded = [optics.encode_formula(f) for f in formulas]
     together = host.run_optical(encoded, densities, _ENERGIES)
     for i, (enc, rho) in enumerate(zip(encoded, densities, strict=True)):
         alone = host.run_optical([enc], [rho], _ENERGIES)
-        np.testing.assert_array_equal(together["out"][i], alone["out"][0])
-        assert together["electron_density"][i] == alone["electron_density"][0]
+        # Padding widths differ (K=5 vs K=1); allow last-bit XLA reduction differences.
+        np.testing.assert_allclose(together["out"][i], alone["out"][0], rtol=1e-13)
+        np.testing.assert_allclose(
+            together["electron_density"][i], alone["electron_density"][0], rtol=1e-13
+        )
         assert bool(together["ok"][i]) is bool(alone["ok"][0]) is True
+
+
+def test_pack_materials_rejects_a_block_that_is_too_small():
+    two = optics.encode_formula("SiO2")  # 2 elements
+    with pytest.raises(ValueError, match="padded block"):
+        optics.pack_materials([two], [2.2], f_pad=1, k_pad=1)
+    with pytest.raises(ValueError, match="padded block"):
+        optics.pack_materials([two, two], [2.2, 2.2], f_pad=1, k_pad=2)

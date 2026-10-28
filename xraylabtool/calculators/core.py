@@ -890,7 +890,9 @@ def calculate_xray_properties(
         Dict[str, XRayResult]: Dictionary mapping formula strings to XRayResult objects.
 
     Raises:
-        ValidationError: If inputs don't match
+        ValueError: If formulas or densities are empty or not lists, their lengths
+            differ, a formula is not a non-empty string, or a density is not a
+            positive number.
         RuntimeError: If no formulas were processed successfully
 
     See Also:
