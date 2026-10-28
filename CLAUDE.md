@@ -56,6 +56,7 @@ xraylabtool --version
 xraylabtool calc SiO2 -e 10.0 -d 2.2
 xraylabtool --help
 xraylabtool-gui                   # PySide6 GUI (aliases: xtool-gui, xlt-gui)
+xlt calc SiO2 -e 10.0 -d 2.2      # xlt / xtool are short aliases of xraylabtool
 ```
 
 ## Architecture
@@ -116,10 +117,10 @@ xraylabtool/
 
 ```
 tests/
-├── unit/           # Component tests (core, formula parsing, validation)
+├── unit/           # Component tests; unit/core (JAX core, tables, buckets, cache opt-in), unit/kk
 ├── integration/    # CLI, cross-module, export tests
 ├── performance/    # Benchmarks, memory
-├── characterization/  # Golden-output regression tests
+├── characterization/  # Golden-output regression tests (core/ and kk/ goldens are frozen, rtol=1e-12)
 ├── fixtures/       # Test utilities and configuration
 └── data/           # Test data assets
 ```
@@ -132,7 +133,10 @@ Registered markers (`--strict-markers`; an unregistered one is a collection erro
 - `filterwarnings = error`: a new warning fails the test.
 - GUI tests (`test_gui_smoke.py`, `test_gui_progress.py`, `test_gui_kk_tab.py`, `test_gui_kk_worker_end_to_end.py`, `unit/test_gui_widgets.py`, `unit/test_calculation_worker.py`, `unit/test_kk_plot.py`, `test_gui_core_warm_up.py`) run serially, outside xdist; the Makefile (`GUI_TESTS`) and `.github/workflows/ci.yml` (`IGNORE_GUI`) exclude them from the parallel pass, so add a new GUI test file to both lists.
 - ruff is pinned to the same version in `.pre-commit-config.yaml`, `.github/workflows/{ci,security}.yml` and `uv.lock`; bump all four together.
-- A version bump touches ~10 places; run `python scripts/check_version.py` (also a pre-commit hook; `--expect X.Y.Z` for a release).
+- A version bump touches the 9 sources `scripts/check_version.py` compares (`pyproject.toml`, `xraylabtool/__init__.py`, `uv.lock` root package, `docs/conf.py` x2, the BibTeX in `README.md` and `docs/index.rst`, and the newest heading of both `CHANGELOG.md` and `docs/development/changelog.rst`); also update the `--expect` examples in `scripts/README.md` and `check_version.py`. It is also a pre-commit hook; use `--expect X.Y.Z` for a release.
+- CI runs Linux, macOS and Windows (non-primary legs use `pytest -x`, so one failure hides the rest). Tests must not assume POSIX paths (`/xdg` is relative on Windows), the Linux cache layout (macOS uses `~/Library/Caches`), or exact float equality across different padding shapes.
+- Compile-count tests call `jit.clear_cache()` on the program first (`tests/fixtures/kk_compiles.record_compiles`) so they don't depend on test order.
+- Latency numbers are noisy under host load; compare against `main` with interleaved fresh-process runs (`scripts/core_bench.py`, `benchmarks/perf_benchmarks.py --vs vX.Y.Z`).
 - `mypy --strict` is clean locally (`untyped_calls_exclude = ["jax"]`); CI's mypy step is advisory.
 - `graphify-out/` tracks only `GRAPH_REPORT.md`, `graph.html`, `graph.json`; the other files are ignored.
 
@@ -144,6 +148,8 @@ Registered markers (`--strict-markers`; an unregistered one is a collection erro
 - `scripts/check_version.py` - Cross-file version consistency check
 - `scripts/gpu_check.py` - JAX/CUDA diagnostics behind `make gpu-check` / `gpu-diagnose`
 - `scripts/core_bench.py` (CPU, fresh-process gate rows P1-P10, P12, P13) and `scripts/core_gpu_check.py` (manual CUDA gate, `make core-gpu-check`: goldens, P5-P7, P11-P13; refuses without a CUDA device)
+- `benchmarks/` - `perf_benchmarks.py` plus `RESULTS_{cpu,gpu}.md/json`, the frozen v0.4.8-vs-current comparison (the version strings there are baseline labels, not the package version)
+- `conda-recipe/meta.yaml` - noarch conda recipe; takes its version from `pyproject.toml`
 - `.pre-commit-config.yaml` - Hooks (ruff, gitleaks, version check); ruff rev must match CI
 
 ## Coding Standards
