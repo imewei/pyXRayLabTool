@@ -16,6 +16,18 @@ Version Categories
 - **Fixed**: Bug fixes
 - **Security**: Vulnerability fixes
 
+Unreleased
+----------
+
+**Fixed**
+
+- Derived quantities preserve each field's independent broadcast shape, including scalar and empty inputs, and share one compiled program per size bucket; zero attenuation lengths no longer trigger an eager division-by-zero warning in ``linear_absorption_coefficient``.
+- Public validators reject complex densities and complex, nonnumeric, or empty energies with domain errors; the atomic-data provider also rejects complex, nonnumeric and non-finite energies before conversion. KK merge points, tolerances, densities, formula masses, and stoichiometric counts reject complex values before real conversion (JAX arrays and 0-d arrays are still accepted as counts); refinement validates segment shapes before indexing endpoints.
+- CSV/NFF loading detects headers and delimiters without discarding the first numeric row. Result formatting avoids deprecated aliases, summary CSV retains every energy point, and wide CSV honors the requested field order.
+- Batch input loading handles empty energy columns, rejects blank or non-finite energy cells, and rejects missing explicitly requested columns. Material comparison handles zero and negative property means when reporting variation.
+- Batch CLI skips truncated rows and preserves verbose summaries when ``--fields`` excludes the formula. GUI material validation displays domain errors in the existing toast.
+- Shell completion derives command metadata from the CLI parser, Bash offers each command's supported format choices, and Bash completion works when global flags precede commands.
+
 v0.5.0 (2026-10-28)
 --------------------
 
