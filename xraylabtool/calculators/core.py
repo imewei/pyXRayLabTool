@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache
+import operator
 from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np  # Host-side validation and result containers
@@ -114,6 +115,12 @@ def _validate_energies(energy_kev: FloatLike | ArrayLike) -> EnergyArray:
 
     if energy_kev.size == 0:
         raise EnergyError("Energies array cannot be empty", valid_range="0.03-30 keV")
+
+    # One pass for the common valid input (~2 us instead of ~8 us). NaN propagates
+    # through min/max and fails both tests, so NaN, Inf and out-of-range values
+    # fall through to the full checks below and keep their exact errors.
+    if energy_kev.min() >= 0.03 and energy_kev.max() <= 30:
+        return energy_kev
 
     if np.any(energy_kev <= 0):
         raise EnergyError("All energies must be positive", valid_range="0.03-30 keV")
@@ -625,20 +632,27 @@ def calculate_single_material_properties(
     return _xray_result_from_properties(properties)
 
 
-def warm_up(formulas: Sequence[str] = ("SiO2",)) -> None:
-    """Precompile the default-bucket device programs for ``formulas``.
+def warm_up(
+    formulas: Sequence[str] = ("SiO2",), energy_counts: Sequence[int] = (1,)
+) -> None:
+    """Precompile the device programs for ``formulas`` and energy counts.
 
     Loads the resident scattering tables, then runs the single-material
     program and the supplied-factor program once per distinct element bucket
-    of ``formulas`` at one material and the smallest energy bucket, so a later
-    ``calculate_single_material_properties`` or
-    ``calculate_properties_from_factors`` call with up to 64 energies compiles
-    nothing.
+    of ``formulas`` and energy bucket of ``energy_counts`` at one material, so
+    a later ``calculate_single_material_properties`` or
+    ``calculate_properties_from_factors`` call whose energy count falls in a
+    warmed bucket (up to 64 energies by default) compiles nothing. A new
+    energy bucket costs a compile of 100-300 ms.
 
     Parameters
     ----------
     formulas : sequence of str, default ("SiO2",)
         Chemical formulas whose element counts select the programs to build.
+    energy_counts : sequence of int, default (1,)
+        Numbers of energies you expect to pass; each selects its bucket
+        (:func:`~xraylabtool.backend.shapes.bucket_energy`: powers of two up to
+        4096).
 
     Raises
     ------
@@ -646,6 +660,10 @@ def warm_up(formulas: Sequence[str] = ("SiO2",)) -> None:
         If a formula cannot be parsed.
     UnknownElementError
         If a formula names an element without tabulated data.
+    TypeError
+        If an energy count is not an integer.
+    ValueError
+        If ``energy_counts`` is empty or holds a count that is not positive.
 
     References
     ----------
@@ -654,25 +672,39 @@ def warm_up(formulas: Sequence[str] = ("SiO2",)) -> None:
     Examples
     --------
     >>> import xraylabtool as xlt
-    >>> xlt.warm_up(("SiO2",))
+    >>> xlt.warm_up(("SiO2",), energy_counts=(1, 500))
     """
-    from xraylabtool.backend.shapes import bucket_pow2
+    from xraylabtool.backend.shapes import bucket_energy, bucket_pow2
     from xraylabtool.calculators import host
     from xraylabtool.calculators.optics import encode_formula
     from xraylabtool.calculators.tables import load_tables
 
+    counts_requested = tuple(operator.index(n) for n in energy_counts)
+    if not counts_requested:
+        raise ValueError("energy_counts must not be empty")
+    if any(n < 1 for n in counts_requested):
+        raise ValueError(f"energy_counts must be positive, got {counts_requested}")
     load_tables()
-    seen: set[int] = set()
+    seen: set[tuple[int, int]] = set()
     for formula in formulas:
         z, counts, molecular_weight, number_of_electrons = encode_formula(formula)
         k = bucket_pow2(len(z), minimum=2)
-        if k in seen:
-            continue
-        seen.add(k)
-        host.run_optical(
-            [(z, counts, molecular_weight, number_of_electrons)], [1.0], [8.0]
-        )
-    host.run_tail([1.0], [1.0], [1.0], [[0.0]], [[0.0]], [8.0])
+        for n in counts_requested:
+            key = (k, bucket_energy(n))
+            if key in seen:
+                continue
+            seen.add(key)
+            host.run_optical(
+                [(z, counts, molecular_weight, number_of_electrons)],
+                [1.0],
+                np.linspace(5.0, 10.0, n),
+            )
+    # The supplied-factor program does not depend on K, so it is warmed once per
+    # energy bucket, also when ``formulas`` is empty.
+    tail_counts = {bucket_energy(n): n for n in counts_requested}
+    for n in tail_counts.values():
+        zeros = np.zeros((1, n))
+        host.run_tail([1.0], [1.0], [1.0], zeros, zeros, np.linspace(5.0, 10.0, n))
 
 
 def calculate_properties_from_factors(
@@ -858,7 +890,9 @@ def calculate_xray_properties(
         Dict[str, XRayResult]: Dictionary mapping formula strings to XRayResult objects.
 
     Raises:
-        ValidationError: If inputs don't match
+        ValueError: If formulas or densities are empty or not lists, their lengths
+            differ, a formula is not a non-empty string, or a density is not a
+            positive number.
         RuntimeError: If no formulas were processed successfully
 
     See Also:

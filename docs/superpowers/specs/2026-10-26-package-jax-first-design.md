@@ -125,7 +125,8 @@ Gate revisions (the rest of the table is confirmed unchanged by these baselines)
    types are unchanged except the removals listed in §8.
 7. **Import discipline.** `import xraylabtool` stays JAX-free; JAX is imported and
    x64 enabled at the first compute entry; CLI and GUI enable the persistent compile
-   cache for compute paths (§10).
+   cache for compute paths (§10); the library does so only with
+   `XRAYLABTOOL_JAX_CACHE=1`.
 8. **Measured gates** (§Acceptance gates) with documented deviations, as in kk.
 9. **A written exemption list** (§9): everything that stays on the host, with the
    reason.

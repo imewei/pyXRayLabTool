@@ -280,12 +280,12 @@ def test_padded_rows_are_finite_and_ok():
     assert run["out"].shape == (len(MATERIALS), 9, E37.size)
     # The unpadded outputs of other tests never see the padded rows; check them raw.
     encoded = optics.encode_formula("Si")
-    z = np.zeros((4, 4), dtype=np.int32)
-    counts = np.zeros((4, 4))
-    z[0, :1], counts[0, :1] = encoded[0], encoded[1]
-    batch = (z, counts, np.ones(4), np.ones(4), np.zeros(4))
+    rows = np.zeros((4, 11))  # z[4] | counts[4] | mw | rho | n_electrons
+    rows[:, 8:10] = 1.0
+    rows[0, 0], rows[0, 4] = encoded[0][0], encoded[1][0]
+    packed = np.concatenate([rows.ravel(), E37])
     with jax.enable_x64(True):
-        got = optics._optical_program(load_tables(), batch, jnp.asarray(E37))
+        got = optics._optical_program(load_tables(), jnp.asarray(packed), 4, 4)
     assert bool(np.asarray(got["ok"]).all())
     assert np.isfinite(np.asarray(got["out"])).all()
 
@@ -422,10 +422,11 @@ def test_energy_outside_the_table_sets_ok_false_not_an_error():
 
 def test_program_does_not_embed_the_tables_in_the_hlo():
     tables = load_tables()
-    z = np.zeros((2, 4), dtype=np.int32)
-    batch = (z, np.zeros((2, 4)), np.ones(2), np.ones(2), np.zeros(2))
+    packed = np.ones(
+        2 * (2 * 4 + 3) + 64
+    )  # 2 materials x (z|counts|mw|rho|ne), 64 energies
     with jax.enable_x64(True):
-        text = optics._optical_program.lower(tables, batch, np.ones(64)).as_text()
+        text = optics._optical_program.lower(tables, packed, 2, 4).as_text()
     table_bytes = sum(a.nbytes for a in jax.tree_util.tree_leaves(tables))
     assert table_bytes > 1_500_000
     # A closed-over 1.7 MB table would put megabytes of constants in the text.

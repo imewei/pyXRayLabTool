@@ -15,7 +15,8 @@ Where the time goes
   CUDA install); there is no NumPy path (ADR-006, :doc:`../architecture/006-adr-core-jax-only`).
   A small single call costs a few tenths of a millisecond (launch latency), more than the
   removed NumPy path did, and on CPU NumPy was also faster at 20 000 energies; batches (and, on a GPU, large energy grids) are where the device program pays off.
-- **Compilation**: shapes are padded to buckets, so a program compiled for one energy count
+- **Compilation**: shapes are padded to buckets (the core energy axis to powers of two from 64
+  to 4096, then a 1.25 ladder), so a program compiled for one energy count
   serves every count in the same bucket and a repeat call compiles nothing. The first call
   compiles; ``JAX_PLATFORMS=cpu`` selects the CPU device.
 
@@ -91,9 +92,15 @@ up behind your back):
    import xraylabtool as xrt
 
    xrt.warm_up(("SiO2", "Al2O3"))  # compiles the default programs for these element counts
+   xrt.warm_up(("SiO2",), energy_counts=(1, 500, 2000))  # also the energy buckets 64, 512 and 2048
+
+A new energy bucket costs a 100-300 ms compile, so pass the grid sizes you will use as
+``energy_counts``.
 
 The CLI and GUI also keep JAX's persistent compile cache, so later processes skip the
-compile (``XRAYLABTOOL_NO_JAX_CACHE=1`` opts out). :func:`xraylabtool.calculators.cache.clear_scattering_factor_cache`
+compile (``XRAYLABTOOL_NO_JAX_CACHE=1`` opts out). The library does not touch JAX's global
+configuration unasked; set ``XRAYLABTOOL_JAX_CACHE=1`` to enable the cache for your own
+scripts (a warm cache saves about 170 ms on a fresh process's first call). :func:`xraylabtool.calculators.cache.clear_scattering_factor_cache`
 drops the resident tables and the encoding memo (rarely needed).
 
 **Staying on the device**

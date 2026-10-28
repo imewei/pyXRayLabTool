@@ -113,8 +113,9 @@ no switch to select one; set `JAX_PLATFORMS=cpu` to force the CPU.
 
 - The first compute call compiles a small program (a fraction of a second on CPU); later
   calls with the same shape buckets compile nothing. `xraylabtool.warm_up()` precompiles
-  explicitly, and the CLI and GUI keep a persistent compile cache
-  (`XRAYLABTOOL_NO_JAX_CACHE=1` opts out).
+  explicitly (`energy_counts=` also warms the energy buckets you will use), and the CLI and
+  GUI keep a persistent compile cache (`XRAYLABTOOL_NO_JAX_CACHE=1` opts out; library users
+  opt in with `XRAYLABTOOL_JAX_CACHE=1`).
 - `set_backend("jax")` is kept as a no-op; `set_backend("numpy")` raises `ValueError`.
 - `xraylabtool.calculators.optics.optical_properties` is a pure device function that works
   under `jax.jit`, `jax.vmap` and `jax.grad`.

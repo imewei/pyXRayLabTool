@@ -225,7 +225,7 @@ def test_tables_are_a_pytree_without_symbols_leaf(tables_mod):
 
     t = tables_mod.load_tables()
     leaves = jax.tree_util.tree_leaves(t)
-    assert len(leaves) == 6
+    assert len(leaves) == 7
     assert t.symbols[0] == "H"
     assert t.symbols[91] == "U"
     assert len(t.symbols) == 92
@@ -239,3 +239,67 @@ def test_element_index(tables_mod):
     assert tables_mod.element_index("U") == 91
     with pytest.raises(UnknownElementError, match="Unknown element symbol: 'Xx'"):
         tables_mod.element_index("Xx")
+
+
+@pytest.mark.parametrize("symbol", ["H", "C", "Si", "Fe", "Sb", "Au", "U"])
+def test_packed_coefficients_reproduce_scipy_pchip(tables_mod, symbol):
+    """The per-interval cubics evaluate like SciPy's PCHIP on the real knots (rtol 1e-12)."""
+    from scipy.interpolate import PchipInterpolator
+
+    from xraylabtool.calculators.cache import create_scattering_factor_interpolators
+
+    with np.load(tables_mod._NPZ) as f:
+        z = list(f["symbols"]).index(symbol)
+        n = int(f["n"][z])
+        x, y1, y2 = f["x"][z, :n], f["f1"][z, :n], f["f2"][z, :n]
+    q = np.random.default_rng(0).uniform(x[0], x[-1], 400)
+    got1, got2 = (
+        np.asarray(g(q)) for g in create_scattering_factor_interpolators(symbol)
+    )
+    for got, y in ((got1, y1), (got2, y2)):
+        want = PchipInterpolator(x, y)(q)
+        np.testing.assert_allclose(
+            got, want, rtol=1e-12, atol=1e-12 * np.max(np.abs(y))
+        )
+
+
+def test_resident_coef_has_the_documented_shape_and_is_derived_from_the_tables():
+    import jax
+
+    from xraylabtool.calculators import tables as tables_module
+    from xraylabtool.calculators.tables import load_tables
+
+    tables = load_tables()
+    assert isinstance(tables.coef, jax.Array)
+    assert tables.coef.dtype == np.float64
+    assert tables.coef.shape == (92, tables.x.shape[1] - 1, 9)
+    expected = tables_module._coefficients(
+        *(np.asarray(getattr(tables, k)) for k in ("x", "f1", "f2", "d1", "d2"))
+    )
+    np.testing.assert_array_equal(np.asarray(tables.coef), expected)
+
+
+@pytest.mark.parametrize("z", [0, 13, 91])  # H (short row), Si, U (full row)
+def test_coef_evaluation_at_the_knots_edges_and_just_outside(shipped, z):
+    import jax
+    from scipy.interpolate import PchipInterpolator
+
+    from xraylabtool.calculators import optics
+    from xraylabtool.calculators.tables import load_tables
+
+    n = int(shipped["n"][z])
+    x = shipped["x"][z]
+    inside = np.array([x[0], x[1], x[n - 2], x[n - 1]])
+    outside = np.array([np.nextafter(x[0], -np.inf), np.nextafter(x[n - 1], np.inf)])
+    with jax.enable_x64(True):
+        tables = load_tables()
+        got = np.asarray(optics._row_pair(tables, z, inside))
+        out = np.asarray(optics._row_pair(tables, z, outside))
+        scalar = np.asarray(optics._row_pair(tables, z, float(x[1])))
+    for row, key in enumerate(("f1", "f2")):
+        ref = PchipInterpolator(x[:n], shipped[key][z, :n])(inside)
+        np.testing.assert_allclose(got[row], ref, rtol=1e-12, atol=1e-14)
+        assert got[row, 0] == shipped[key][z, 0]
+        np.testing.assert_allclose(got[row, 3], shipped[key][z, n - 1], rtol=1e-14)
+    assert np.isnan(out).all()
+    assert scalar.shape == (2,)

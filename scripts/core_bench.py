@@ -162,7 +162,7 @@ def _compile_counts(events: list[float]) -> dict[str, int]:
     calc("SiO2", np.linspace(1.0, 29.0, 201), 2.2)
     new_count = len(events) - base
     base = len(events)
-    # 216 is the top of the 200/201 bucket (bucket(m, 64)); 250 would cross into the next one.
+    # 200, 201 and 216 share the 256 bucket (bucket_energy); 300 would cross into the next one.
     calc("SiO2", np.linspace(1.0, 29.0, 216), 2.2)
     new_count_2 = len(events) - base
     base = len(events)

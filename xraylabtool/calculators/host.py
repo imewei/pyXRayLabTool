@@ -29,7 +29,7 @@ import jax
 import numpy as np
 
 from xraylabtool.backend import runtime
-from xraylabtool.backend.shapes import block_for, bucket, bucket_pow2
+from xraylabtool.backend.shapes import block_for, bucket_energy, bucket_pow2
 from xraylabtool.calculators import optics
 from xraylabtool.calculators.tables import ScatteringTables, load_tables
 
@@ -85,7 +85,7 @@ def _pad_last(values: Any, width: int) -> np.ndarray:
 
 
 def _width(m: int, m_bucket: int | None) -> int:
-    return bucket(m, minimum=64) if m_bucket is None else m_bucket
+    return bucket_energy(m) if m_bucket is None else m_bucket
 
 
 def run_optical(
@@ -110,7 +110,7 @@ def run_optical(
     k_bucket, f_bucket, m_bucket : int, optional
         Override the element, material and energy buckets (tests of padding
         invariance); by default ``bucket_pow2(k, 2)``, ``bucket_pow2(f, 1)`` and
-        ``bucket(m, 64)``.
+        ``bucket_energy(m)``.
 
     Returns
     -------
@@ -130,23 +130,15 @@ def run_optical(
     k_pad = max(len(z) for z, *_ in encoded)
     k_pad = bucket_pow2(k_pad, minimum=2) if k_bucket is None else k_bucket
     f_pad = bucket_pow2(f, minimum=1) if f_bucket is None else f_bucket
-    z = np.zeros((f_pad, k_pad), dtype=np.int32)
-    counts = np.zeros((f_pad, k_pad))
-    mw = np.ones(f_pad)
-    rho = np.ones(f_pad)
-    n_electrons = np.zeros(f_pad)
-    for i, ((zi, ci, mwi, nei), density) in enumerate(
-        zip(encoded, densities, strict=True)
-    ):
-        z[i, : len(zi)] = zi
-        counts[i, : len(ci)] = ci
-        mw[i], n_electrons[i], rho[i] = mwi, nei, density
+    # One flat float64 buffer (material rows, then the energies): one leaf
+    # uploads in ~26 us, six in ~108 us. The row layout lives in ``optics``.
     e = np.atleast_1d(np.asarray(energies, dtype=np.float64))
     m = e.size
+    rows = optics.pack_materials(encoded, densities, f_pad, k_pad)
+    packed = np.concatenate([rows.ravel(), _pad_last(e, _width(m, m_bucket))])
     tables = device_tables()
     got = execute(
-        lambda dev: optics._optical_program(tables, dev[:5], dev[5]),
-        (z, counts, mw, rho, n_electrons, _pad_last(e, _width(m, m_bucket))),
+        lambda dev: optics._optical_program(tables, dev, f_pad, k_pad), packed
     )
     return {
         "out": got["out"][:f, :, :m],

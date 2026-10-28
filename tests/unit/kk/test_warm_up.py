@@ -109,7 +109,7 @@ def test_cache_helper_keeps_user_threshold(
 @pytest.mark.parametrize(
     ("platform", "env", "expected"),
     [
-        ("linux", {"XDG_CACHE_HOME": "/xdg"}, "/xdg/xraylabtool/jax"),
+        ("linux", {"XDG_CACHE_HOME": "{root}/xdg"}, "/xdg/xraylabtool/jax"),
         ("darwin", {}, "Library/Caches/xraylabtool/jax"),
         ("win32", {"LOCALAPPDATA": "/local"}, "/local/xraylabtool/jax"),
     ],
@@ -119,11 +119,13 @@ def test_cache_dir_is_os_appropriate(
     platform: str,
     env: dict[str, str],
     expected: str,
+    tmp_path: Path,
 ) -> None:
     for name in ("XDG_CACHE_HOME", "LOCALAPPDATA"):
         monkeypatch.delenv(name, raising=False)
     for name, value in env.items():
-        monkeypatch.setenv(name, value)
+        # XDG_CACHE_HOME must be absolute on the host OS ("/xdg" has no drive on Windows)
+        monkeypatch.setenv(name, value.format(root=tmp_path.as_posix()))
     assert runtime._user_cache_dir(platform).as_posix().endswith(expected)
 
 
