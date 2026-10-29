@@ -30,6 +30,9 @@ Unreleased
 - ``xraylabtool batch`` counts rows skipped as invalid in its closing warning (the count previously covered only rows that parsed).
 - Shell completion derives command metadata from the CLI parser, Bash offers each command's supported format choices, and Bash completion works when global flags precede commands.
 - ``xraylabtool batch`` rejects an input file with duplicate column names (the last duplicate used to overwrite the earlier one silently) and exits 1 on an unknown ``--fields`` name (it used to write empty rows). JSON and table formatting raise ``ValidationError`` for unknown ``fields``, as CSV already did. ``xlt calc`` reports a zero-molecular-weight formula such as ``Si0`` instead of a bare "division by zero". The ``calculate_single_material_properties`` docstring states that the API does not enforce the 0.001-30 g/cm³ density range that the CLI and GUI apply.
+- ``calculate_single_material_properties`` and ``calculate_derived_quantities`` reject complex mass densities and complex or boolean wavelength, dispersion and absorption arrays with ``ValueError`` (a NumPy complex density used to lose its imaginary part with a ``ComplexWarning``). ``xraylabtool batch`` validates ``--fields`` before computing. Zsh and fish completion keep the descriptions of the ``completion`` subcommands.
+- Removed the unreferenced ``calculators.host.run_derived``, ``calculators.optics._derived_program``, ``gui.services.linear_absorption_cm``, ``logging_filters.enable_offscreen_quiet_env`` and ``completion_v2.integration.handle_new_completion_command``; ``host.run_derived_fields`` now returns the electron density with a tuple of the four derived arrays.
+- pytest is capped below 9.2 (``pytest-benchmark`` 5.3.0 reads the private ``_nodeid`` that pytest 9.2.0 removed); ruff is pinned to 0.17.3 in ``.pre-commit-config.yaml``, ``ci.yml`` and ``security.yml`` to match ``uv.lock``.
 
 **Added**
 

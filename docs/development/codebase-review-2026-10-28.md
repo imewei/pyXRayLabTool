@@ -74,14 +74,14 @@ A second, independent read-only review of the fixes above found and corrected:
   input rejects blank or non-finite energy cells.
 - Batch rows with unquoted extra energy cells are skipped with a warning rather
   than truncated; batch input accepts a UTF-8 BOM.
-- CSV export raises `ValueError` for unknown fields instead of writing a ragged
+- Result export raises `ValidationError` for unknown fields instead of writing a ragged
   file; the default CSV/JSON again include `energy_ev`, `critical_angle_mrad`
   and `linear_absorption_coefficient`.
 - Zsh and fish completion descriptions are escaped.
 
 Not changed: `refine_spectrum` keeps its documented `ValueError` for `seg_ev`;
-a data file whose header row is literally `nan` or `inf` is read as data;
-duplicate batch column names keep the last column.
+a data file whose header row is literally `nan` or `inf` is read as data.
+Batch input with duplicate column names is rejected (it used to keep the last column).
 Regressions: `tests/unit/test_review_followup_regressions.py`.
 
 ## Verification
