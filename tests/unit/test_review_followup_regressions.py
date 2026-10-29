@@ -28,7 +28,7 @@ def test_kk_element_counts_reject_invalid_values(count):
         _atomic_numbers(["Si"], [count])
 
 
-@pytest.mark.parametrize("energies", [np.nan, [8.0, np.inf], "abc", None])
+@pytest.mark.parametrize("energies", [np.nan, [8.0, np.inf], "abc", None, 1 + 0j])
 def test_atomic_provider_rejects_non_finite_or_non_numeric_energies(energies):
     with pytest.raises(EnergyError):
         FastAtomicDataProvider().get_scattering_factors("Si", energies)
@@ -208,3 +208,61 @@ def test_calc_reports_a_zero_molecular_weight_formula(capsys):
     )
     assert cmd_calc(args) == 1
     assert "zero molecular weight" in capsys.readouterr().err
+
+
+def test_batch_strict_fails_when_a_row_fails_in_the_calculator(tmp_path):
+    from xraylabtool.interfaces.cli.commands.batch import cmd_batch
+
+    # Xx9 parses as a row but the calculator rejects the unknown element.
+    (tmp_path / "in.csv").write_text(
+        "formula,density,energy\nSiO2,2.2,10\nXx9,2.0,10\n"
+    )
+    assert cmd_batch(_batch_args(tmp_path, strict=True)) == 2
+    assert not (tmp_path / "out.csv").exists()
+    assert cmd_batch(_batch_args(tmp_path)) == 0  # default keeps the valid row
+
+
+def test_batch_strict_flag_is_parsed_from_the_command_line(tmp_path):
+    from xraylabtool.interfaces.cli.commands.batch import cmd_batch
+    from xraylabtool.interfaces.cli.parser import create_parser
+
+    (tmp_path / "in.csv").write_text("formula,density,energy\nSiO2,2.2,10\nBAD,x,10\n")
+    out = str(tmp_path / "out.csv")
+    base = ["batch", str(tmp_path / "in.csv"), "-o", out]
+    parser = create_parser()
+    assert parser.parse_args(base).strict is False
+    args = parser.parse_args([*base, "--strict"])
+    assert args.strict is True
+    assert cmd_batch(args) == 2
+
+
+def test_batch_rejects_unknown_fields(tmp_path, capsys):
+    from xraylabtool.interfaces.cli.commands.batch import cmd_batch
+
+    (tmp_path / "in.csv").write_text("formula,density,energy\nSiO2,2.2,10\n")
+    assert cmd_batch(_batch_args(tmp_path, fields="formula,energy")) == 1
+    assert "Unknown field(s): energy" in capsys.readouterr().err
+    assert not (tmp_path / "out.csv").exists()
+
+
+@pytest.mark.parametrize("format_type", ["json", "table"])
+def test_formatters_reject_unknown_fields(format_type):
+    from xraylabtool.calculators.core import calculate_single_material_properties
+    from xraylabtool.io.data_export import format_xray_result
+
+    result = calculate_single_material_properties("Si", 8.0, 2.33)
+    with pytest.raises(ValidationError):
+        format_xray_result(result, format_type, fields=["formula", "typo"])
+
+
+def test_validators_reject_empty_non_numeric_and_complex_input():
+    from xraylabtool.validation.validators import (
+        validate_density,
+        validate_energy_range,
+    )
+
+    for bad in ([], ["a"], [1 + 0j]):
+        with pytest.raises(EnergyError):
+            validate_energy_range(bad)
+    with pytest.raises(ValidationError):
+        validate_density(1 + 0j)

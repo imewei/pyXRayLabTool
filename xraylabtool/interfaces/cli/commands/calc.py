@@ -99,9 +99,18 @@ def cmd_calc(args: Any) -> int:
         if args.verbose:
             _print_calc_verbose_info(args, energies)
 
-        result = calculate_single_material_properties(
-            args.formula, energies, args.density
-        )
+        try:
+            result = calculate_single_material_properties(
+                args.formula, energies, args.density
+            )
+        except ZeroDivisionError:
+            # The calculator's legacy contract is a bare "division by zero".
+            print(
+                f"Error: formula '{args.formula}' has zero molecular weight "
+                "(every element count is 0)",
+                file=sys.stderr,
+            )
+            return 1
 
         fields = None
         if args.fields:
@@ -127,14 +136,6 @@ def cmd_calc(args: Any) -> int:
         _save_or_print_output(formatted_output, args)
         return 0
 
-    except ZeroDivisionError:
-        # The calculator's legacy contract is a bare "division by zero".
-        print(
-            f"Error: formula '{args.formula}' has zero molecular weight "
-            "(every element count is 0)",
-            file=sys.stderr,
-        )
-        return 1
     except Exception as e:
         debug_mode = getattr(args, "debug", False)
         if debug_mode:

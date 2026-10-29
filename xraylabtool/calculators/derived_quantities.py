@@ -284,4 +284,12 @@ def calculate_derived_quantities(
         float(number_of_electrons),
     )
     critical_angle, attenuation_length, re_sld, im_sld = out
-    return electron_density, critical_angle, attenuation_length, re_sld, im_sld
+    # 0-d inputs yield NumPy scalars (legacy contract); the public alias stays
+    # array-typed because widening it breaks every caller's unpacking.
+    return (  # type: ignore[return-value]
+        electron_density,
+        critical_angle,
+        attenuation_length,
+        re_sld,
+        im_sld,
+    )

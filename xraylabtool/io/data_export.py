@@ -73,16 +73,16 @@ def _format_as_json(result: object, fields: list[str] | None, precision: int) ->
     # (exclude methods and private attributes)
     if fields is None:
         fields = _result_fields(result)
+    require_known_fields(result, fields)
 
     for field in fields:
-        if hasattr(result, field):
-            value = getattr(result, field)
-            if isinstance(value, np.ndarray):
-                data[field] = value.tolist()
-            elif isinstance(value, float | np.floating):
-                data[field] = float(value)
-            else:
-                data[field] = value
+        value = getattr(result, field)
+        if isinstance(value, np.ndarray):
+            data[field] = value.tolist()
+        elif isinstance(value, float | np.floating):
+            data[field] = float(value)
+        else:
+            data[field] = value
 
     return json.dumps(data, indent=2)
 
@@ -133,28 +133,28 @@ def _format_as_table(result: object, fields: list[str] | None, precision: int) -
     """Format result as human-readable table."""
     if fields is None:
         fields = _result_fields(result)
+    require_known_fields(result, fields)
 
     lines = []
     lines.append(f"XRay Properties for {getattr(result, 'formula', 'Unknown')}")
     lines.append("=" * 50)
 
     for field in fields:
-        if hasattr(result, field):
-            value = getattr(result, field)
-            if isinstance(value, np.ndarray):
-                if len(value) == 1:
-                    lines.append(f"{field}: {value[0]:.{precision}f}")
-                else:
-                    lines.append(f"{field}: [{len(value)} values]")
-                    range_str = (
-                        f"  Range: {value.min():.{precision}f} - "
-                        f"{value.max():.{precision}f}"
-                    )
-                    lines.append(range_str)
-            elif isinstance(value, float | np.floating):
-                lines.append(f"{field}: {value:.{precision}f}")
+        value = getattr(result, field)
+        if isinstance(value, np.ndarray):
+            if len(value) == 1:
+                lines.append(f"{field}: {value[0]:.{precision}f}")
             else:
-                lines.append(f"{field}: {value}")
+                lines.append(f"{field}: [{len(value)} values]")
+                range_str = (
+                    f"  Range: {value.min():.{precision}f} - "
+                    f"{value.max():.{precision}f}"
+                )
+                lines.append(range_str)
+        elif isinstance(value, float | np.floating):
+            lines.append(f"{field}: {value:.{precision}f}")
+        else:
+            lines.append(f"{field}: {value}")
 
     return "\n".join(lines)
 

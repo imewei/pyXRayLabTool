@@ -34,6 +34,9 @@ from xraylabtool.backend.shapes import block_for, bucket_energy, bucket_pow2
 from xraylabtool.calculators import optics
 from xraylabtool.calculators.tables import ScatteringTables, load_tables
 
+# A 0-d field comes back as a NumPy scalar, any other shape as an array.
+_Field = NDArray[np.float64] | np.float64
+
 __all__ = [
     "broadcast_shape",
     "check_molecular_weight",
@@ -390,15 +393,7 @@ def run_derived_fields(
     rho: float,
     mw: float,
     n_electrons: float,
-) -> tuple[
-    float,
-    tuple[
-        NDArray[np.float64],
-        NDArray[np.float64],
-        NDArray[np.float64],
-        NDArray[np.float64],
-    ],
-]:
+) -> tuple[float, tuple[_Field, _Field, _Field, _Field]]:
     """Run derived quantities on each field's own broadcast grid in one call.
 
     Critical angle depends only on dispersion; attenuation and imaginary SLD

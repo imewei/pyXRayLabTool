@@ -176,6 +176,9 @@ def _save_batch_results(results: list[dict[str, Any]], args: Any) -> None:
     material_count = len({result["formula"] for result in results})
     if args.fields:
         field_list = [field.strip() for field in args.fields.split(",")]
+        unknown = [f for f in field_list if f not in results[0]]
+        if unknown:
+            raise ValueError(f"Unknown field(s): {', '.join(unknown)}")
         results = [
             {k: v for k, v in result.items() if k in field_list} for result in results
         ]

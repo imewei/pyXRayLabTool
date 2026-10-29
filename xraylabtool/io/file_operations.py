@@ -197,7 +197,7 @@ def export_to_csv(
         def _is_array(value: Any) -> bool:
             return hasattr(value, "__iter__") and not isinstance(value, str)
 
-        array_fields = {f for f in fields if _is_array(getattr(data[0], f, []))}
+        array_fields = {f for f in fields if _is_array(getattr(data[0], f))}
         header: list[str] = []
         for field in fields:
             if field in array_fields:

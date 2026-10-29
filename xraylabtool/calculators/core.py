@@ -588,9 +588,9 @@ def calculate_single_material_properties(
     Args:
         formula: Chemical formula string (e.g., "SiO2", "Al2O3", "CaCO3")
         energy_keV: X-ray energies in keV. Valid range: 0.03-30.0 keV
-        density: Material mass density in g/cm³ (must be positive). The API trusts
-                the caller for the upper bound; the CLI and GUI additionally limit
-                it to 0.001-30 g/cm³ (``validate_density``).
+        density: Material mass density in g/cm³ (must be positive). The API does
+                not apply the 0.001-30 g/cm³ range that the CLI and GUI enforce
+                (``validate_density``).
         energy: Optional backward-compatible alias (eV). If provided, interpreted as
                 electron-volts and converted to keV.
 
@@ -600,7 +600,7 @@ def calculate_single_material_properties(
     Raises:
         FormulaError: If chemical formula cannot be parsed or contains invalid elements
         EnergyError: If energy values are outside valid range (0.03-30.0 keV)
-        ValidationError: If density is not positive or other validation failures
+        ValueError: If density is not positive
 
     Examples:
         >>> import xraylabtool as xlt
