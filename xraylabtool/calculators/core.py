@@ -100,6 +100,10 @@ def _validate_formula_and_density(formula_str: str, mass_density: FloatLike) -> 
     if not formula_str or not isinstance(formula_str, str):
         raise FormulaError("Formula must be a non-empty string", formula_str)
 
+    # float() would drop the imaginary part of a NumPy complex density.
+    if np.iscomplexobj(mass_density):
+        raise ValueError("Mass density must be a real number")
+
     # Plain numbers skip the ndarray round trip (the common batch case).
     if isinstance(mass_density, float | int):
         non_positive = bool(mass_density <= 0)

@@ -38,7 +38,7 @@ def load_data_file(filename: str) -> np.ndarray:
         # Detect the delimiter and optional header from the first content row.
         # Retrying with skiprows=1 would silently discard a numeric first row.
         with file_path.open(encoding="utf-8-sig") as stream:
-            for _line_number, line in enumerate(stream):
+            for line_number, line in enumerate(stream):  # noqa: B007 (read after the loop)
                 content = line.partition("#")[0].strip()
                 if content:
                     break
@@ -53,7 +53,7 @@ def load_data_file(filename: str) -> np.ndarray:
                 numeric_tokens += 1
             except ValueError:
                 pass
-        skiprows = _line_number + 1 if numeric_tokens == 0 else 0
+        skiprows = line_number + 1 if numeric_tokens == 0 else 0
         data = np.loadtxt(
             filename, delimiter=delimiter, skiprows=skiprows, encoding="utf-8-sig"
         )

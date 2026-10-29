@@ -266,3 +266,62 @@ def test_validators_reject_empty_non_numeric_and_complex_input():
             validate_energy_range(bad)
     with pytest.raises(ValidationError):
         validate_density(1 + 0j)
+
+
+def test_batch_rejects_unknown_fields_before_computing(tmp_path, monkeypatch, capsys):
+    from xraylabtool.interfaces.cli.commands import batch
+
+    def fail(*_args, **_kwargs):
+        raise AssertionError("computed before validating --fields")
+
+    monkeypatch.setattr(batch, "_process_batch_materials", fail)
+    (tmp_path / "in.csv").write_text("formula,density,energy\nSiO2,2.2,10\n")
+    assert batch.cmd_batch(_batch_args(tmp_path, fields="formula,bogus")) == 1
+    assert "Unknown field(s): bogus" in capsys.readouterr().err
+
+
+def test_complex_density_is_rejected_by_the_public_calculator():
+    from xraylabtool.calculators.core import calculate_single_material_properties
+
+    with pytest.raises(ValueError, match="real number"):
+        calculate_single_material_properties("SiO2", 10.0, np.complex128(2.2 + 1j))
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [np.array([1e-6 + 1j, 2e-6]), np.array([True, False])],
+    ids=["complex", "bool"],
+)
+def test_derived_quantities_reject_complex_and_bool_fields(bad):
+    wl = np.array([1.0, 1.2])
+    ok = np.array([1e-6, 2e-6])
+    with pytest.raises(ValueError, match="real numbers"):
+        calculate_derived_quantities(wl, bad, ok, 2.2, 1.0, 28.0)
+
+
+def test_derived_quantities_broadcast_each_field_over_its_own_shape():
+    wl = np.full((3, 1), 1.0)
+    delta = np.full(2, 1e-6)
+    beta = np.full((1, 4), 1e-8)
+    out = calculate_derived_quantities(wl, delta, beta, 2.2, 1.0, 28.0)
+    assert [np.shape(field) for field in out[1:]] == [(2,), (3, 4), (3, 2), (3, 4)]
+    with pytest.raises(ValueError):
+        calculate_derived_quantities(
+            np.ones(3), delta, np.full(4, 1e-8), 2.2, 1.0, 28.0
+        )
+
+
+def test_completion_subcommands_keep_their_help_as_description():
+    from xraylabtool.interfaces.completion_v2.shells import (
+        FishCompletionGenerator,
+        ZshCompletionGenerator,
+        get_global_options,
+        get_xraylabtool_commands,
+    )
+
+    commands = get_xraylabtool_commands()
+    assert commands["completion"]["subcommands"]["install"]["description"]
+    for generator in (ZshCompletionGenerator(), FishCompletionGenerator()):
+        script = generator.generate(commands, get_global_options())
+        assert '"install:"' not in script
+        assert "-d ''" not in script

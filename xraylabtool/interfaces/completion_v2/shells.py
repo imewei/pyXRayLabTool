@@ -743,8 +743,15 @@ def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
         }
         for action in parser._actions:
             if isinstance(action, argparse._SubParsersAction):
+                # Subparsers created with ``help=`` only have no description.
+                helps = {ca.dest: ca.help or "" for ca in action._choices_actions}
                 definition["subcommands"] = {
                     name: command_definitions(subparser)
+                    | (
+                        {}
+                        if subparser.description
+                        else {"description": helps.get(name, "")}
+                    )
                     for name, subparser in action.choices.items()
                 }
             elif action.option_strings:

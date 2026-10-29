@@ -262,9 +262,11 @@ def calculate_derived_quantities(
     """
     from xraylabtool.calculators import host
 
-    wl, delta, beta = (
-        np.asarray(a, dtype=np.float64) for a in (wavelength, dispersion, absorption)
-    )
+    raw = [np.asarray(a) for a in (wavelength, dispersion, absorption)]
+    # A float64 cast would drop the imaginary part or read True as 1.0.
+    if any(a.dtype.kind in "cb" for a in raw):
+        raise ValueError("wavelength, dispersion and absorption must be real numbers")
+    wl, delta, beta = (a.astype(np.float64) for a in raw)
     # The finiteness guard branches on concrete values, so it stays on the host.
     if not np.isfinite(delta).all() or not np.isfinite(beta).all():
         raise ValueError(
@@ -272,7 +274,8 @@ def calculate_derived_quantities(
         )
     # Each legacy field had the shape of its own arithmetic: the critical angle
     # follows δ, the attenuation length (λ, β), the real SLD (δ, λ), the imaginary
-    # SLD (β, λ). Taking them in kernel order raises NumPy's own mismatch error.
+    # SLD (β, λ). Taking them in kernel order raises NumPy's own mismatch error;
+    # the two calls below only check that and their shapes are not used.
     host.broadcast_shape(wl.shape, beta.shape)
     host.broadcast_shape(delta.shape, wl.shape)
     electron_density, out = host.run_derived_fields(

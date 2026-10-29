@@ -33,7 +33,21 @@ def _result_fields(result: object) -> list[str]:
 
 
 def require_known_fields(result: object, fields: list[str]) -> None:
-    """Raise ``ValidationError`` naming any of ``fields`` that ``result`` lacks."""
+    """
+    Reject result field names that ``result`` does not have.
+
+    Parameters
+    ----------
+    result : object
+        Result object (normally an ``XRayResult``) to look the fields up on.
+    fields : list[str]
+        Requested field names.
+
+    Raises
+    ------
+    ValidationError
+        If any name in ``fields`` is not an attribute of ``result``.
+    """
     unknown = [field for field in fields if not hasattr(result, field)]
     if unknown:
         raise ValidationError("Unknown result fields", "fields", unknown)
