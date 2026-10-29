@@ -16,10 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Result export: the default CSV and JSON columns follow the `XRayResult` field order (previously alphabetical) and add `energy_ev`, `critical_angle_mrad` and `linear_absorption_coefficient`; deprecated aliases are not exported. Unknown `fields` raise `ValidationError`.
 - `xraylabtool batch` counts rows skipped as invalid in its closing warning (the count previously covered only rows that parsed).
 - Shell completion derives command metadata from the CLI parser, Bash offers each command's supported format choices, and Bash completion works when global flags precede commands.
-- `xraylabtool batch` rejects an input file with duplicate column names (the last duplicate used to overwrite the earlier one silently). `xlt calc` reports a zero-molecular-weight formula such as `Si0` instead of a bare "division by zero". The `calculate_single_material_properties` docstring states that the API does not enforce the 0.001-30 g/cm³ density range that the CLI and GUI apply.
+- `xraylabtool batch` rejects an input file with duplicate column names (the last duplicate used to overwrite the earlier one silently) and exits 1 on an unknown `--fields` name (it used to write empty rows). JSON and table formatting raise `ValidationError` for unknown `fields`, as CSV already did. `xlt calc` reports a zero-molecular-weight formula such as `Si0` instead of a bare "division by zero". The `calculate_single_material_properties` docstring states that the API does not enforce the 0.001-30 g/cm³ density range that the CLI and GUI apply.
 
 ### Added
-- `xraylabtool batch --strict`: exit with status 2 and write no output if any input row is skipped or fails. The default is unchanged (valid rows are written, exit 0).
+- `xraylabtool batch --strict`: exit with status 2 and write no output if any input row is skipped or fails while at least one row succeeds (no successful row still exits 1). The default is unchanged (valid rows are written, exit 0).
 
 ## [0.5.0] - 2026-10-28
 
