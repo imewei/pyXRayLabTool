@@ -184,3 +184,67 @@ def test_reported_merge_points_are_the_ones_used_after_snapping() -> None:
 def test_non_string_formula_raises_formula_error(formula: object) -> None:
     with pytest.raises(FormulaError, match="string"):
         kk_calculate_real(formula, energies_kev=[1.0])  # type: ignore[arg-type]
+
+
+@pytest.mark.unit
+def test_api_rejects_numpy_complex_merge_points() -> None:
+    edge = NearEdgeSpectrum([280.0, 300.0, 320.0], [0.1, 0.4, 0.5])
+    with pytest.raises(NearEdgeDataError, match="real"):
+        kk_calculate_real(
+            "C",
+            energies_kev=[0.3],
+            nearedge=edge,
+            input_type="asf",
+            merge_points_kev=(np.complex128(0.28 + 1j), 0.32),  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.unit
+def test_api_rejects_numpy_complex_refine_tolerance() -> None:
+    with pytest.raises(ValidationError, match="refine_tolerance"):
+        kk_calculate_real(
+            "Si", energies_kev=[1.0], refine_tolerance=np.complex128(0.1 + 1j)
+        )
+
+
+@pytest.mark.unit
+def test_refine_rejects_numpy_complex_tolerance() -> None:
+    with pytest.raises(ValidationError, match="tolerance"):
+        refine_spectrum(
+            [1.5],
+            [1.0],
+            [1.0],
+            SEG,
+            COEFFS,
+            0.0,
+            tolerance=np.complex128(0.1 + 1j),
+        )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("name", ["density", "formula_mass"])
+def test_to_asf_scale_rejects_numpy_complex_scalars(name: str) -> None:
+    spec = NearEdgeSpectrum([280.0, 290.0], [0.1, 0.2])
+    with pytest.raises(ValidationError, match=name):
+        to_asf_scale(spec, "beta", **{name: np.complex128(1.0 + 1j)})
+
+
+@pytest.mark.unit
+def test_compound_spectrum_rejects_numpy_complex_counts() -> None:
+    with pytest.raises(FormulaError, match="count"):
+        compound_spectrum(["Si"], [np.complex128(1.0 + 1j)])
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("seg", [[], 1.0, [[1.0, 2.0]]])
+def test_refine_rejects_malformed_segment_shape_with_value_error(seg: object) -> None:
+    with pytest.raises(ValueError, match="seg_ev"):
+        refine_spectrum(
+            [1.5],
+            [1.0],
+            [1.0],
+            seg,  # type: ignore[arg-type]
+            COEFFS,
+            0.0,
+            tolerance=0.1,
+        )

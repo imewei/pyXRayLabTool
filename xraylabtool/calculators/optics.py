@@ -496,30 +496,13 @@ def _scattering_program(
 
 
 @jax.jit
-def _derived_program(args: Any) -> Any:
-    """Clamped derived quantities for ``calculate_derived_quantities``.
-
-    Run it inside ``jax.enable_x64(True)``.
-
-    Parameters
-    ----------
-    args : tuple
-        ``(wavelength_m[M], dispersion[M], absorption[M], rho, mw, n_electrons)``.
-
-    Returns
-    -------
-    dict
-        ``{"electron_density": scalar, "out": (4, M)}`` with rows critical angle,
-        attenuation length, real and imaginary SLD.
-    """
-    wavelength, dispersion, absorption, rho, mw, n_electrons = args
-    ed, critical, attenuation, re_sld, im_sld = _derived(
-        wavelength, dispersion, absorption, rho, mw, n_electrons
-    )
-    return {
-        "electron_density": ed,
-        "out": jnp.stack([critical, attenuation, re_sld, im_sld]),
-    }
+def _derived_fields_program(args: Any) -> Any:
+    """Derived fields on independent padded grids, with no δ/β broadcasting."""
+    delta, wl_beta, beta, wl_delta, delta_sld, rho, mw, n_electrons = args
+    ed, critical, _, _, _ = _derived(1.0, delta, 1.0, rho, mw, n_electrons)
+    _, _, attenuation, _, im_sld = _derived(wl_beta, 0.0, beta, rho, mw, n_electrons)
+    _, _, _, re_sld, _ = _derived(wl_delta, delta_sld, 1.0, rho, mw, n_electrons)
+    return ed, (critical, attenuation, re_sld, im_sld)
 
 
 # ---------------------------------------------------------------------------

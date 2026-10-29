@@ -19,8 +19,13 @@ def _validate_batch_input(args: Any) -> list[Any] | None:
 
     try:
         # Read CSV using standard library
-        with open(input_path, newline="", encoding="utf-8") as f:
+        with open(input_path, newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
+            names = reader.fieldnames or []
+            duplicates = sorted({n for n in names if names.count(n) > 1})
+            if duplicates:
+                print(f"Error: Duplicate column names: {duplicates}", file=sys.stderr)
+                return None
             data_rows = list(reader)
 
         if not data_rows:
@@ -56,6 +61,8 @@ def _parse_batch_data(
         # only that row (with a warning) instead of aborting the entire batch
         # and discarding every valid material. Keeps the three lists aligned.
         try:
+            if None in row:  # cells beyond the header: an unquoted energy list
+                raise ValueError('extra cells; quote multiple energies, e.g. "8,10"')
             formula = row["formula"]
             density = float(row["density"])
             energy_str = str(row["energy"])
@@ -63,7 +70,7 @@ def _parse_batch_data(
                 energies = [float(x.strip()) for x in energy_str.split(",")]
             else:
                 energies = [float(energy_str)]
-        except (ValueError, KeyError) as exc:
+        except (ValueError, TypeError, KeyError) as exc:
             print(
                 f"Warning: Skipping {row.get('formula', '?')}: invalid row ({exc})",
                 file=sys.stderr,
@@ -77,25 +84,56 @@ def _parse_batch_data(
     return formulas, densities, energy_sets
 
 
+# Output columns in file order; the scalar ones repeat on every energy row.
+_RESULT_FIELDS = (
+    "formula",
+    "density_g_cm3",
+    "energy_kev",
+    "wavelength_angstrom",
+    "molecular_weight_g_mol",
+    "total_electrons",
+    "electron_density_per_ang3",
+    "dispersion_delta",
+    "absorption_beta",
+    "scattering_factor_f1",
+    "scattering_factor_f2",
+    "critical_angle_degrees",
+    "attenuation_length_cm",
+    "real_sld_per_ang2",
+    "imaginary_sld_per_ang2",
+)
+_SCALAR_FIELDS = frozenset(
+    {
+        "formula",
+        "density_g_cm3",
+        "molecular_weight_g_mol",
+        "total_electrons",
+        "electron_density_per_ang3",
+    }
+)
+
+
 def _convert_result_to_dict(result: Any, energy_index: int) -> dict[str, Any]:
     """Convert XRayResult to dictionary for specific energy point."""
     return {
-        "formula": result.formula,
-        "density_g_cm3": result.density_g_cm3,
-        "energy_kev": result.energy_kev[energy_index],
-        "wavelength_angstrom": result.wavelength_angstrom[energy_index],
-        "molecular_weight_g_mol": result.molecular_weight_g_mol,
-        "total_electrons": result.total_electrons,
-        "electron_density_per_ang3": result.electron_density_per_ang3,
-        "dispersion_delta": result.dispersion_delta[energy_index],
-        "absorption_beta": result.absorption_beta[energy_index],
-        "scattering_factor_f1": result.scattering_factor_f1[energy_index],
-        "scattering_factor_f2": result.scattering_factor_f2[energy_index],
-        "critical_angle_degrees": result.critical_angle_degrees[energy_index],
-        "attenuation_length_cm": result.attenuation_length_cm[energy_index],
-        "real_sld_per_ang2": result.real_sld_per_ang2[energy_index],
-        "imaginary_sld_per_ang2": result.imaginary_sld_per_ang2[energy_index],
+        name: (
+            getattr(result, name)
+            if name in _SCALAR_FIELDS
+            else getattr(result, name)[energy_index]
+        )
+        for name in _RESULT_FIELDS
     }
+
+
+def _requested_fields(args: Any) -> list[str] | None:
+    """Return the ``--fields`` names, rejecting any that are not output columns."""
+    if not args.fields:
+        return None
+    names = [field.strip() for field in args.fields.split(",")]
+    unknown = [name for name in names if name not in _RESULT_FIELDS]
+    if unknown:
+        raise ValueError(f"Unknown field(s): {', '.join(unknown)}")
+    return names
 
 
 def _process_batch_materials(
@@ -166,8 +204,9 @@ def _process_batch_materials(
 
 def _save_batch_results(results: list[dict[str, Any]], args: Any) -> None:
     """Save batch results to output file."""
-    if args.fields:
-        field_list = [field.strip() for field in args.fields.split(",")]
+    material_count = len({result["formula"] for result in results})
+    field_list = _requested_fields(args)
+    if field_list is not None:
         results = [
             {k: v for k, v in result.items() if k in field_list} for result in results
         ]
@@ -195,7 +234,7 @@ def _save_batch_results(results: list[dict[str, Any]], args: Any) -> None:
         print(f"Results saved to {args.output}")
         print(
             f"Processed {len(results)} data points from "
-            f"{len({r['formula'] for r in results})} unique materials"
+            f"{material_count} unique materials"
         )
 
 
@@ -214,11 +253,28 @@ def cmd_batch(args: Any) -> int:
         assert (
             formulas is not None and densities is not None and energy_sets is not None
         )
+        # Fail on a bad --fields before any device work is spent on the batch.
+        _requested_fields(args)
+        skipped = len(df_input) - len(formulas)
+        if skipped:
+            print(
+                f"Warning: {skipped} of {len(df_input)} input rows were skipped as "
+                "invalid and are missing from the results",
+                file=sys.stderr,
+            )
         results = _process_batch_materials(formulas, densities, energy_sets, args)
 
         if not results:
             print("Error: No materials were successfully processed", file=sys.stderr)
             return 1
+
+        if getattr(args, "strict", False) and (
+            skipped or len(results) != sum(len(e) for e in energy_sets)
+        ):
+            print(
+                "Error: --strict: some input rows were not processed", file=sys.stderr
+            )
+            return 2
 
         _save_batch_results(results, args)
 

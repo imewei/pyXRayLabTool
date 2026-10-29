@@ -334,9 +334,9 @@ class MaterialComparator:
 
         # Check for significant differences
         for prop, prop_stats in stats.items():
-            if (
-                prop_stats["std"] / prop_stats["mean"] > 0.5
-            ):  # High coefficient of variation
+            # Compare magnitudes without dividing: a zero mean is valid (for
+            # example, clamped critical angles) and dispersion can be negative.
+            if prop_stats["std"] > 0.5 * abs(prop_stats["mean"]):
                 recommendations.append(
                     f"Large variation in {prop.replace('_', ' ')} across materials - "
                     "consider this for material selection"

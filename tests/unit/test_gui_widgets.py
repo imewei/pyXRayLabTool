@@ -199,6 +199,29 @@ class TestFormValues:
         assert config.points == 101
 
 
+@pytest.mark.parametrize(
+    ("formula", "density", "error_text"),
+    [("Xx", 2.2, "Unknown element"), ("Si", 31.0, "maximum allowed")],
+)
+def test_multi_material_validation_shows_error_without_escaping_slot(
+    qt_app: QApplication, formula: str, density: float, error_text: str
+) -> None:
+    from xraylabtool.gui.main_window import MainWindow
+
+    window = MainWindow()
+    try:
+        window.multi_formula.setText(formula)
+        window.multi_density.setValue(density)
+
+        window._add_material()
+
+        assert window.multi_table.rowCount() == 0
+        assert error_text.lower() in window.toast.text().lower()
+        assert window.multi_formula.text() == formula
+    finally:
+        window.close()
+
+
 class TestPlotAxisLabelTheming:
     def test_recolor_keeps_axis_title_and_follows_palette(
         self, qt_app: QApplication

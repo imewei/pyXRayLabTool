@@ -60,7 +60,11 @@ def _atomic_numbers(symbols: Sequence[str], counts: Sequence[float]) -> list[int
     for symbol, count in zip(symbols, counts, strict=True):
         if symbol not in db.symbols:
             raise FormulaError(f"Unsupported element {symbol!r} (Z = 1..92 only)")
-        if not (math.isfinite(count) and count > 0):
+        try:
+            valid = not np.iscomplexobj(count) and math.isfinite(count) and count > 0
+        except (TypeError, ValueError):  # not a real number at all (str, None, ...)
+            valid = False
+        if not valid:
             raise FormulaError(
                 f"Element count must be finite and positive, got {count!r} "
                 f"for {symbol!r}"

@@ -39,7 +39,7 @@ jobs:
       uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
 
     - name: Install ruff
-      run: uv pip install --system ruff==0.17.2
+      run: uv pip install --system ruff==0.17.3
 
     - name: Run Bandit security rules (ruff S-series)
       run: |

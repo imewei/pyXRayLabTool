@@ -35,7 +35,14 @@ def validate_energy_range(
     Raises:
         EnergyError: If energies are invalid
     """
-    energy_array = np.asarray(energies)
+    try:
+        energy_array = np.asarray(energies)
+    except (TypeError, ValueError) as exc:
+        raise EnergyError("Energy values must be real numeric values") from exc
+    if energy_array.dtype.kind not in "fiu":
+        raise EnergyError("Energy values must be real numeric values")
+    if energy_array.size == 0:
+        raise EnergyError("At least one energy value is required")
 
     # Check for NaN or infinite values
     if np.any(~np.isfinite(energy_array)):
@@ -139,6 +146,11 @@ def validate_density(
     if not isinstance(density, int | float | numbers.Number):
         raise ValidationError(
             "Density must be a numeric value", parameter="density", value=density
+        )
+
+    if np.iscomplexobj(density):
+        raise ValidationError(
+            "Density must be a real numeric value", parameter="density", value=density
         )
 
     if not math.isfinite(density):

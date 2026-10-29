@@ -418,6 +418,52 @@ class TestBatchRowResilience:
         assert "SiO2" in content and "Fe" in content
         assert "Al2O3" not in content  # the bad row was skipped
 
+    def test_truncated_row_preserves_other_materials(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        in_csv = tmp_path / "in.csv"
+        out_csv = tmp_path / "out.csv"
+        in_csv.write_text("formula,density,energy\nSi,2.33,8\nAl\nFe,7.87,10\n")
+        args = cli.create_parser().parse_args(
+            ["batch", str(in_csv), "-o", str(out_csv)]
+        )
+
+        assert cli.cmd_batch(args) == 0
+
+        rows = pd.read_csv(out_csv)
+        assert rows["formula"].tolist() == ["Si", "Fe"]
+        assert "Skipping Al" in capsys.readouterr().err
+
+    @pytest.mark.parametrize("output_format", ["csv", "json"])
+    def test_verbose_field_filter_can_exclude_formula(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], output_format: str
+    ) -> None:
+        in_csv = tmp_path / "in.csv"
+        out_path = tmp_path / f"out.{output_format}"
+        in_csv.write_text("formula,density,energy\nSi,2.33,8\nAl,2.7,10\n")
+        args = cli.create_parser().parse_args(
+            [
+                "--verbose",
+                "batch",
+                str(in_csv),
+                "-o",
+                str(out_path),
+                "--fields",
+                "energy_kev,dispersion_delta",
+            ]
+        )
+
+        assert cli.cmd_batch(args) == 0
+
+        rows = (
+            json.loads(out_path.read_text())
+            if output_format == "json"
+            else pd.read_csv(out_path).to_dict("records")
+        )
+        assert [row["energy_kev"] for row in rows] == [8, 10]
+        assert all(set(row) == {"energy_kev", "dispersion_delta"} for row in rows)
+        assert "2 unique materials" in capsys.readouterr().out
+
 
 class TestFieldNameValidation:
     """Regression: unknown --fields must error consistently across formats."""

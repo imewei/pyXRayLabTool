@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import warnings
 
 import numpy as np
 import pytest
@@ -88,3 +89,11 @@ def test_xray_result_keeps_float64_arrays_and_converts_lists():
     assert rebuilt.energy_kev is original  # float64 ndarray: no copy
     assert isinstance(rebuilt.dispersion_delta, np.ndarray)
     assert rebuilt.dispersion_delta.dtype == np.float64
+
+
+def test_linear_absorption_coefficient_handles_zero_lengths_without_a_warning():
+    result = core.calculate_single_material_properties("Si", [8.0, 9.0], 2.33)
+    result = dataclasses.replace(result, attenuation_length_cm=np.array([0.0, 2.0]))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        np.testing.assert_array_equal(result.linear_absorption_coefficient, [0.0, 0.5])

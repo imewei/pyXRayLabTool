@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 
 from xraylabtool.exceptions import DataFileError
+from xraylabtool.io.data_export import require_known_fields
 
 
 def load_data_file(filename: str) -> np.ndarray:
@@ -34,21 +35,28 @@ def load_data_file(filename: str) -> np.ndarray:
         raise FileNotFoundError(f"Data file not found: {filename}")
 
     try:
-        # Try to load as space-separated values (common for .nff files)
-        if file_path.suffix == ".nff":
-            # .nff files may have a CSV header row; try skipping it first
+        # Detect the delimiter and optional header from the first content row.
+        # Retrying with skiprows=1 would silently discard a numeric first row.
+        with file_path.open(encoding="utf-8-sig") as stream:
+            for line_number, line in enumerate(stream):  # noqa: B007 (read after the loop)
+                content = line.partition("#")[0].strip()
+                if content:
+                    break
+            else:
+                raise ValueError("File contains no data")
+        delimiter = "," if "," in content else None
+        tokens = content.split(delimiter)
+        numeric_tokens = 0
+        for token in tokens:
             try:
-                data = np.loadtxt(filename, delimiter=",", skiprows=1)
+                float(token)
+                numeric_tokens += 1
             except ValueError:
-                # Fall back to space-separated without a header
-                data = np.loadtxt(filename, comments="#")
-        else:
-            # For CSV files, use numpy's CSV loader
-            try:
-                data = np.loadtxt(filename, delimiter=",", skiprows=1)  # Skip header
-            except ValueError:
-                # If CSV loading fails, try space-separated
-                data = np.loadtxt(filename, comments="#")
+                pass
+        skiprows = line_number + 1 if numeric_tokens == 0 else 0
+        data = np.loadtxt(
+            filename, delimiter=delimiter, skiprows=skiprows, encoding="utf-8-sig"
+        )
 
         if data.size == 0:
             raise ValueError("File contains no data")
@@ -184,20 +192,22 @@ def export_to_csv(
                 f"CSV (got {n_energies} and {mismatched}); export them separately"
             )
 
+        require_known_fields(data[0], fields)
+
         def _is_array(value: Any) -> bool:
             return hasattr(value, "__iter__") and not isinstance(value, str)
 
-        array_fields = {f for f in fields[1:] if _is_array(getattr(data[0], f, []))}
-        header = ["formula"]
-        for field in fields[1:]:
+        array_fields = {f for f in fields if _is_array(getattr(data[0], f))}
+        header: list[str] = []
+        for field in fields:
             if field in array_fields:
                 header.extend(f"{field}_energy_{i}" for i in range(n_energies))
             else:
                 header.append(field)
         rows = []
         for result in data:
-            row: list[Any] = [result.formula]
-            for field in fields[1:]:
+            row: list[Any] = []
+            for field in fields:
                 values = getattr(result, field, [])
                 if field in array_fields:
                     row.extend(values)

@@ -5,7 +5,20 @@ replacing the large hardcoded strings with template-based generation.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+import argparse
+from typing import Any, cast
+
+
+def _zsh_text(text: str) -> str:
+    """``text`` made inert inside a double-quoted zsh string."""
+    for ch in ("\\", '"', "$", "`"):
+        text = text.replace(ch, "\\" + ch)
+    return text
+
+
+def _fish_text(text: str) -> str:
+    """``text`` made inert inside a single-quoted fish string."""
+    return text.replace("\\", "\\\\").replace("'", "\\'")
 
 
 class CompletionGenerator(ABC):
@@ -101,16 +114,20 @@ _{command_name}_complete() {{
     # Global options
     local global_opts="{global_options}"
 
-    # If we're at the first argument level (command selection)
-    if [[ ${{COMP_CWORD}} -eq 1 ]]; then
+    # Global flags can precede the command, so locate it among completed words.
+    local command="" command_index=1
+    while [[ ${{command_index}} -lt ${{COMP_CWORD}} ]]; do
+        if [[ " ${{commands}} " == *" ${{COMP_WORDS[command_index]}} "* ]]; then
+            command="${{COMP_WORDS[command_index]}}"
+            break
+        fi
+        ((command_index++))
+    done
+
+    # No completed command yet: offer commands and global options.
+    if [[ -z "${{command}}" ]]; then
         COMPREPLY=( $(compgen -W "${{commands}} ${{global_opts}}" -- "${{cur}}") )
         return 0
-    fi
-
-    # Get the command
-    local command=""
-    if [[ ${{#COMP_WORDS[@]}} -gt 1 ]]; then
-        command="${{COMP_WORDS[1]}}"
     fi
 
 {command_completions}
@@ -130,6 +147,7 @@ complete -F _{command_name}_complete {command_name}
         for cmd_name, cmd_info in commands.items():
             options = cmd_info.get("options", [])
             cmd_info.get("arguments", [])
+            option_var = cmd_name.replace("-", "_")
 
             if "subcommands" in cmd_info:
                 # Handle commands with subcommands (like completion)
@@ -142,8 +160,8 @@ complete -F _{command_name}_complete {command_name}
         local {cmd_name}_subcommands="{subcmd_list}"
 
         # If we have 3+ words, check for subcommand completion
-        if [[ ${{#COMP_WORDS[@]}} -gt 2 ]]; then
-            local subcommand="${{COMP_WORDS[2]}}"
+        if [[ ${{COMP_CWORD}} -gt $((command_index + 1)) ]]; then
+            local subcommand="${{COMP_WORDS[command_index+1]}}"
             case "${{subcommand}}" in"""
 
                 for subcmd_name, subcmd_info in subcommands.items():
@@ -160,7 +178,7 @@ complete -F _{command_name}_complete {command_name}
         fi
 
         # Complete subcommands if at the right position
-        if [[ ${{COMP_CWORD}} -eq 2 ]]; then
+        if [[ ${{COMP_CWORD}} -eq $((command_index + 1)) ]]; then
             COMPREPLY=( $(compgen -W "${{{cmd_name}_subcommands}} ${{{cmd_name}_opts}}" -- "${{cur}}") )
         else
             COMPREPLY=( $(compgen -W "${{{cmd_name}_opts}}" -- "${{cur}}") )
@@ -170,9 +188,16 @@ complete -F _{command_name}_complete {command_name}
 """
             else:
                 # Handle regular commands
+                choice_cases = ""
+                for option, choices in cmd_info.get("option_choices", {}).items():
+                    choice_cases += f"""
+            {option})
+                COMPREPLY=( $(compgen -W "{" ".join(choices)}" -- "${{cur}}") )
+                return 0
+                ;;"""
                 completion_logic = f"""    # {cmd_name} command
     if [[ "${{command}}" == "{cmd_name}" ]]; then
-        local {cmd_name}_opts="{" ".join(options)}"
+        local {option_var}_opts="{" ".join(options)}"
 
         # Handle file completions for specific options
         case "${{prev}}" in
@@ -180,13 +205,10 @@ complete -F _{command_name}_complete {command_name}
                 COMPREPLY=( $(compgen -f -- "${{cur}}") )
                 return 0
                 ;;
-            --format)
-                COMPREPLY=( $(compgen -W "json yaml csv excel html pdf" -- "${{cur}}") )
-                return 0
-                ;;
+{choice_cases}
         esac
 
-        COMPREPLY=( $(compgen -W "${{{cmd_name}_opts}} ${{global_opts}}" -- "${{cur}}") )
+        COMPREPLY=( $(compgen -W "${{{option_var}_opts}}" -- "${{cur}}") )
         return 0
     fi
 """
@@ -301,7 +323,7 @@ compdef _{command_name} {command_name}
         for subcmd_name, subcmd_info in subcommands.items():
             subcmd_desc = subcmd_info.get("description", f"{subcmd_name} subcommand")
             cmd_args += f"""
-                                "{subcmd_name}:{subcmd_desc}\""""
+                                "{subcmd_name}:{_zsh_text(subcmd_desc)}\""""
 
         cmd_args += """
                             )
@@ -377,7 +399,7 @@ compdef _{command_name} {command_name}
 
         for cmd_name, cmd_info in commands.items():
             description = cmd_info.get("description", f"Run {cmd_name} command")
-            definitions.append(f'                "{cmd_name}:{description}"')
+            definitions.append(f'                "{cmd_name}:{_zsh_text(description)}"')
 
             if "subcommands" in cmd_info:
                 cmd_args = self._zsh_command_with_subcommands(cmd_name, cmd_info)
@@ -480,7 +502,7 @@ class FishCompletionGenerator(CompletionGenerator):
             completions.append(
                 f"complete -c {self.command_name} -f -n"
                 f" '__fish_seen_subcommand_from {cmd_name}' -a"
-                f" '{subcmd_name}' -d '{subcmd_desc}'"
+                f" '{subcmd_name}' -d '{_fish_text(subcmd_desc)}'"
             )
 
             # Add subcommand options
@@ -535,7 +557,7 @@ class FishCompletionGenerator(CompletionGenerator):
             description = cmd_info.get("description", f"Run {cmd_name} command")
             completions.append(
                 f"complete -c {self.command_name} -f -n '__fish_use_subcommand' -a"
-                f" '{cmd_name}' -d '{description}'"
+                f" '{cmd_name}' -d '{_fish_text(description)}'"
             )
 
             if "subcommands" in cmd_info:
@@ -709,205 +731,52 @@ class CompletionManager:
 
 
 def get_xraylabtool_commands() -> dict[str, dict[str, Any]]:
-    """Get the XRayLabTool command definitions for completion."""
-    return {
-        "calc": {
-            "description": "Calculate X-ray properties for a single material",
-            "options": [
-                "--energy",
-                "-e",
-                "--density",
-                "-d",
-                "--output",
-                "-o",
-                "--format",
-                "--wavelength",
-                "-w",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["material"],
-        },
-        "batch": {
-            "description": "Process multiple materials from CSV file",
-            "options": [
-                "--input",
-                "-i",
-                "--output",
-                "-o",
-                "--format",
-                "--parallel",
-                "-p",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["input_file"],
-        },
-        "compare": {
-            "description": "Compare X-ray properties between multiple materials",
-            "options": [
-                "--energy",
-                "-e",
-                "--properties",
-                "--output",
-                "-o",
-                "--format",
-                "--report",
-                "--precision",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["materials"],
-        },
-        "convert": {
-            "description": "Convert between energy and wavelength units",
-            "options": [
-                "--to",
-                "--from",
-                "--unit",
-                "--precision",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["value", "unit"],
-        },
-        "kk": {
-            "description": "Kramers-Kronig f1 from tabulated f2 and near-edge data",
-            "options": [
-                "--nearedge",
-                "--input-type",
-                "--energy-unit",
-                "--merge",
-                "--density",
-                "-d",
-                "--refine",
-                "--energies",
-                "--output",
-                "-o",
-                "--format",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["formula"],
-        },
-        "formula": {
-            "description": "Parse and analyze chemical formulas",
-            "options": [
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["formula"],
-        },
-        "atomic": {
-            "description": "Look up atomic data for elements",
-            "options": [
-                "--property",
-                "-p",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["element"],
-        },
-        "bragg": {
-            "description": "Calculate Bragg angles for diffraction",
-            "options": [
-                "--energy",
-                "-e",
-                "--wavelength",
-                "-w",
-                "--crystal",
-                "--hkl",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["crystal_structure"],
-        },
-        "list": {
-            "description": "List available data and information",
-            "options": [
-                "--type",
-                "-t",
-                "--filter",
-                "--verbose",
-                "-v",
-                "--help",
-                "-h",
-            ],
-            "arguments": ["list_type"],
-        },
-        "completion": {
-            "description": "Manage virtual environment-centric shell completion",
-            "options": [
-                "--help",
-                "-h",
-            ],
-            "subcommands": {
-                "install": {
-                    "description": "Install completion in virtual environment",
-                    "options": [
-                        "--shell",
-                        "-s",
-                        "--env",
-                        "-e",
-                        "--force",
-                        "-f",
-                        "--help",
-                        "-h",
-                    ],
-                },
-                "uninstall": {
-                    "description": "Remove completion from environment(s)",
-                    "options": [
-                        "--env",
-                        "-e",
-                        "--all",
-                        "--help",
-                        "-h",
-                    ],
-                },
-                "list": {
-                    "description": "List environments with completion status",
-                    "options": [
-                        "--help",
-                        "-h",
-                    ],
-                },
-                "status": {
-                    "description": "Show completion status for current environment",
-                    "options": [
-                        "--help",
-                        "-h",
-                    ],
-                },
-                "info": {
-                    "description": "Show information about the completion system",
-                    "options": [
-                        "--help",
-                        "-h",
-                    ],
-                },
-            },
-            "arguments": ["action"],
-        },
-    }
+    """Get completion definitions from the CLI's current argument parser."""
+    from xraylabtool.interfaces.cli.parser import create_parser
+
+    def command_definitions(parser: argparse.ArgumentParser) -> dict[str, Any]:
+        definition: dict[str, Any] = {
+            "description": parser.description or "",
+            "options": [],
+            "arguments": [],
+            "option_choices": {},
+        }
+        for action in parser._actions:
+            if isinstance(action, argparse._SubParsersAction):
+                # Subparsers created with ``help=`` only have no description.
+                helps = {ca.dest: ca.help or "" for ca in action._choices_actions}
+                definition["subcommands"] = {
+                    name: command_definitions(subparser)
+                    | (
+                        {}
+                        if subparser.description
+                        else {"description": helps.get(name, "")}
+                    )
+                    for name, subparser in action.choices.items()
+                }
+            elif action.option_strings:
+                definition["options"].extend(action.option_strings)
+                if action.choices is not None:
+                    for option in action.option_strings:
+                        definition["option_choices"][option] = [
+                            str(choice) for choice in action.choices
+                        ]
+            else:
+                definition["arguments"].append(action.dest)
+        return definition
+
+    return cast(
+        "dict[str, dict[str, Any]]",
+        command_definitions(create_parser())["subcommands"],
+    )
 
 
 def get_global_options() -> list[str]:
-    """Get global options available for all commands."""
-    return ["--help", "-h", "--version", "--verbose", "-v", "--config", "--log-level"]
+    """Get options accepted before the CLI subcommand."""
+    from xraylabtool.interfaces.cli.parser import create_parser
+
+    return [
+        option
+        for action in create_parser()._actions
+        for option in action.option_strings
+    ]

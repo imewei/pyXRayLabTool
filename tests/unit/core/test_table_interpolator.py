@@ -302,14 +302,15 @@ def test_padding_does_not_change_a_bit_of_the_pchip_programs():
         host.run_rows(13, e65)[:, :64], host.run_rows(13, e64)
     )
 
-    ed64, out64 = host.run_derived(
+    ed64, out64 = host.run_derived_fields(
         wl64, np.full(64, 1e-6), np.full(64, 1e-8), 2.2, 60.0, 30.0
     )
-    ed65, out65 = host.run_derived(
+    ed65, out65 = host.run_derived_fields(
         wl65, np.full(65, 1e-6), np.full(65, 1e-8), 2.2, 60.0, 30.0
     )
     assert ed64 == ed65
-    np.testing.assert_array_equal(out65[:, :64], out64)
+    for field64, field65 in zip(out64, out65, strict=True):
+        np.testing.assert_array_equal(field65[:64], field64)
 
     mapped64 = host.run_map(
         optics.critical_angle_from_delta, 1e-6 * np.arange(1.0, 65.0)

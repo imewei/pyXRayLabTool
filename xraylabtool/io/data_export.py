@@ -5,14 +5,56 @@ This module contains functions for formatting and exporting calculation results
 in various formats suitable for different use cases.
 """
 
+from dataclasses import fields as dataclass_fields
+from dataclasses import is_dataclass
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from xraylabtool.exceptions import ValidationError
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+
+def _result_fields(result: object) -> list[str]:
+    """Select result data without evaluating deprecated dataclass aliases."""
+    if is_dataclass(result) and not isinstance(result, type):
+        derived = ("energy_ev", "critical_angle_mrad", "linear_absorption_coefficient")
+        return [field.name for field in dataclass_fields(result)] + [
+            name for name in derived if hasattr(result, name)
+        ]
+    return [
+        attr
+        for attr in dir(result)
+        if not attr.startswith("_") and not callable(getattr(result, attr))
+    ]
+
+
+def require_known_fields(result: object, fields: list[str]) -> None:
+    """
+    Reject result field names that ``result`` does not have.
+
+    Parameters
+    ----------
+    result : object
+        Result object (normally an ``XRayResult``) to look the fields up on.
+    fields : list[str]
+        Requested field names.
+
+    Raises
+    ------
+    ValidationError
+        If any name in ``fields`` is not an attribute of ``result``.
+    """
+    unknown = [field for field in fields if not hasattr(result, field)]
+    if unknown:
+        raise ValidationError("Unknown result fields", "fields", unknown)
+
 
 def format_xray_result(
-    result: Any,
+    result: object,
     format_type: str = "table",
     fields: list[str] | None = None,
     precision: int = 6,
@@ -37,58 +79,57 @@ def format_xray_result(
         return _format_as_table(result, fields, precision)
 
 
-def _format_as_json(result: Any, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
+def _format_as_json(result: object, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
     """Format result as JSON string."""
     data = {}
 
     # Get all attributes if fields not specified
     # (exclude methods and private attributes)
     if fields is None:
-        fields = [
-            attr
-            for attr in dir(result)
-            if not attr.startswith("_") and not callable(getattr(result, attr))
-        ]
+        fields = _result_fields(result)
+    require_known_fields(result, fields)
 
     for field in fields:
-        if hasattr(result, field):
-            value = getattr(result, field)
-            if isinstance(value, np.ndarray):
-                data[field] = value.tolist()
-            elif isinstance(value, float | np.floating):
-                data[field] = float(value)
-            else:
-                data[field] = value
+        value = getattr(result, field)
+        if isinstance(value, np.ndarray):
+            data[field] = value.tolist()
+        elif isinstance(value, float | np.floating):
+            data[field] = float(value)
+        else:
+            data[field] = value
 
     return json.dumps(data, indent=2)
 
 
-def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
+def _format_as_csv(result: object, fields: list[str] | None, precision: int) -> str:  # noqa: ARG001  (precision applies to tables only)
     """Format result as CSV string."""
+    return _result_dataframe(result, fields).to_csv(index=False)
+
+
+def _result_dataframe(
+    result: object, fields: list[str] | None = None
+) -> "pd.DataFrame":
+    """Build one row per energy, repeating material metadata on each row."""
     if fields is None:
-        fields = [
-            attr
-            for attr in dir(result)
-            if not attr.startswith("_") and not callable(getattr(result, attr))
-        ]
+        fields = _result_fields(result)
+
+    require_known_fields(result, fields)
 
     # Create DataFrame for consistent formatting
     data: dict[str, Any] = {}
     for field in fields:
-        if hasattr(result, field):
-            value = getattr(result, field)
-            if isinstance(value, np.ndarray):
-                data[field] = value
-            elif isinstance(value, float | np.floating):
-                data[field] = [float(value)]
-            else:
-                data[field] = (
-                    [value] if not isinstance(value, list | np.ndarray) else value
-                )
+        value = getattr(result, field)
+        if isinstance(value, np.ndarray):
+            data[field] = value
+        elif isinstance(value, float | np.floating):
+            data[field] = [float(value)]
+        else:
+            data[field] = [value] if not isinstance(value, list | np.ndarray) else value
 
     # Ensure all arrays have the same length
     max_length = max(
-        len(v) if isinstance(v, list | np.ndarray) else 1 for v in data.values()
+        (len(v) if isinstance(v, list | np.ndarray) else 1 for v in data.values()),
+        default=0,
     )
     for key, value in data.items():
         if not isinstance(value, list | np.ndarray):
@@ -99,40 +140,35 @@ def _format_as_csv(result: Any, fields: list[str] | None, precision: int) -> str
     # Lazy import pandas only when needed
     import pandas as pd
 
-    df = pd.DataFrame(data)
-    return df.to_csv(index=False)
+    return pd.DataFrame(data)
 
 
-def _format_as_table(result: Any, fields: list[str] | None, precision: int) -> str:
+def _format_as_table(result: object, fields: list[str] | None, precision: int) -> str:
     """Format result as human-readable table."""
     if fields is None:
-        fields = [
-            attr
-            for attr in dir(result)
-            if not attr.startswith("_") and not callable(getattr(result, attr))
-        ]
+        fields = _result_fields(result)
+    require_known_fields(result, fields)
 
     lines = []
     lines.append(f"XRay Properties for {getattr(result, 'formula', 'Unknown')}")
     lines.append("=" * 50)
 
     for field in fields:
-        if hasattr(result, field):
-            value = getattr(result, field)
-            if isinstance(value, np.ndarray):
-                if len(value) == 1:
-                    lines.append(f"{field}: {value[0]:.{precision}f}")
-                else:
-                    lines.append(f"{field}: [{len(value)} values]")
-                    range_str = (
-                        f"  Range: {value.min():.{precision}f} - "
-                        f"{value.max():.{precision}f}"
-                    )
-                    lines.append(range_str)
-            elif isinstance(value, float | np.floating):
-                lines.append(f"{field}: {value:.{precision}f}")
+        value = getattr(result, field)
+        if isinstance(value, np.ndarray):
+            if len(value) == 1:
+                lines.append(f"{field}: {value[0]:.{precision}f}")
             else:
-                lines.append(f"{field}: {value}")
+                lines.append(f"{field}: [{len(value)} values]")
+                range_str = (
+                    f"  Range: {value.min():.{precision}f} - "
+                    f"{value.max():.{precision}f}"
+                )
+                lines.append(range_str)
+        elif isinstance(value, float | np.floating):
+            lines.append(f"{field}: {value:.{precision}f}")
+        else:
+            lines.append(f"{field}: {value}")
 
     return "\n".join(lines)
 
@@ -156,23 +192,12 @@ def format_calculation_summary(results: list[Any], format_type: str = "table") -
             [json.loads(format_xray_result(r, "json")) for r in results], indent=2
         )
     elif format_type.lower() == "csv":
-        # Combine all results into a single CSV
-        all_data = []
-        for result in results:
-            result_dict = {}
-            for attr in dir(result):
-                if not attr.startswith("_"):
-                    value = getattr(result, attr)
-                    if isinstance(value, np.ndarray) and len(value) == 1:
-                        result_dict[attr] = value[0]
-                    elif not isinstance(value, np.ndarray):
-                        result_dict[attr] = value
-            all_data.append(result_dict)
-
         # Lazy import pandas only when needed
         import pandas as pd
 
-        df = pd.DataFrame(all_data)
+        df = pd.concat(
+            [_result_dataframe(result) for result in results], ignore_index=True
+        )
         return df.to_csv(index=False)
     else:
         # Table format - show summary statistics

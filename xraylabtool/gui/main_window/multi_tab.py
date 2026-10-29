@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from xraylabtool.exceptions import XRayLabToolError
 from xraylabtool.logging_utils import get_logger
 
 from ..services import EnergyConfig, compute_multiple
@@ -273,7 +274,7 @@ class MultiTabMixin:
             logger.info(
                 "multi_add_material", extra={"formula": formula, "density": density}
             )
-        except ValueError as exc:
+        except (ValueError, XRayLabToolError) as exc:
             self.toast.show_toast(str(exc), "error")
 
     def _add_multi_preset(self: MainWindowProtocol, name: str) -> None:

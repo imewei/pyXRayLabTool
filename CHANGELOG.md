@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Derived quantities preserve each field's independent broadcast shape, including scalar and empty inputs, and share one compiled program per size bucket; zero attenuation lengths no longer trigger an eager division-by-zero warning in `linear_absorption_coefficient`.
+- Public validators reject complex densities and complex, nonnumeric, or empty energies with domain errors; the atomic-data provider also rejects complex, nonnumeric and non-finite energies before conversion. KK merge points, tolerances, densities, formula masses, and stoichiometric counts reject complex values before real conversion (JAX arrays and 0-d arrays are still accepted as counts); refinement validates segment shapes before indexing endpoints.
+- CSV/NFF loading detects headers and delimiters without discarding the first numeric row. Result formatting avoids deprecated aliases, summary CSV retains every energy point, and wide CSV honors the requested field order.
+- Batch input loading handles empty energy columns, rejects blank or non-finite energy cells, and rejects missing explicitly requested columns. Material comparison handles zero and negative property means when reporting variation.
+- Batch CLI skips truncated rows and preserves verbose summaries when `--fields` excludes the formula. GUI material validation displays domain errors in the existing toast.
+- Result export: the default CSV and JSON columns follow the `XRayResult` field order (previously alphabetical) and add `energy_ev`, `critical_angle_mrad` and `linear_absorption_coefficient`; deprecated aliases are not exported. Unknown `fields` raise `ValidationError`.
+- `xraylabtool batch` counts rows skipped as invalid in its closing warning (the count previously covered only rows that parsed).
+- Shell completion derives command metadata from the CLI parser, Bash offers each command's supported format choices, and Bash completion works when global flags precede commands.
+- `xraylabtool batch` rejects an input file with duplicate column names (the last duplicate used to overwrite the earlier one silently) and exits 1 on an unknown `--fields` name (it used to write empty rows). JSON and table formatting raise `ValidationError` for unknown `fields`, as CSV already did. `xlt calc` reports a zero-molecular-weight formula such as `Si0` instead of a bare "division by zero". The `calculate_single_material_properties` docstring states that the API does not enforce the 0.001-30 g/cm³ density range that the CLI and GUI apply.
+
+- `calculate_single_material_properties` and `calculate_derived_quantities` reject complex mass densities and complex or boolean wavelength, dispersion and absorption arrays with `ValueError` (a NumPy complex density used to lose its imaginary part with a `ComplexWarning`). `xraylabtool batch` validates `--fields` before computing. Zsh and fish completion keep the descriptions of the `completion` subcommands.
+- Removed the unreferenced `calculators.host.run_derived`, `calculators.optics._derived_program`, `gui.services.linear_absorption_cm`, `logging_filters.enable_offscreen_quiet_env` and `completion_v2.integration.handle_new_completion_command`; `host.run_derived_fields` now returns the electron density with a tuple of the four derived arrays.
+- pytest is capped below 9.2 (`pytest-benchmark` 5.3.0 reads the private `_nodeid` that pytest 9.2.0 removed); ruff is pinned to 0.17.3 in `.pre-commit-config.yaml`, `ci.yml` and `security.yml` to match `uv.lock`.
+
+### Added
+- `xraylabtool batch --strict`: exit with status 2 and write no output if any input row is skipped or fails while at least one row succeeds (no successful row still exits 1). The default is unchanged (valid rows are written, exit 0).
+
 ## [0.5.0] - 2026-10-28
 
 ### Added
@@ -36,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `xraylabtool.calculators` re-exports `OpticalProps`, `ScatteringTables`, `encode_formula`, `load_tables` and `optical_properties` lazily (importing the package still does not load JAX).
 
 ### Changed
+- GUI: the main window opens maximized.
 - Energy validation takes one min/max pass for in-range input (7.8 to 2.4 us per call); invalid input keeps its exact errors.
 - `ScatteringTables` carries a seventh array, `coef` (`[92, N-1, 9]`: per interval the knot and the power-basis cubics of f1 and f2, derived at load time from the knots, values and slopes), so an energy lookup is one gather instead of about ten; the interpolation is ~25% faster and agrees with the previous evaluation to 3e-16 of the interval's value scale and with SciPy's `PchipInterpolator` to 1e-12 of the row's largest |value| (relative error can exceed 1e-12 only where f1 crosses zero, as it did before).
 - `xraylabtool.warm_up(formulas, energy_counts=(1,))` also precompiles the energy buckets of `energy_counts`; a new bucket otherwise costs a 100-300 ms compile.
@@ -73,6 +92,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `JaxPchipInterpolator` preserves float64 when x64 is disabled after construction or in a thread-local JAX context, and rejects complex tables instead of discarding their imaginary parts.
 - `BatchConfig` rejects a non-positive `chunk_size` with `ValueError` (it used to yield an empty batch); `xraylabtool batch` always reports failed materials on stderr, including with the progress display on, and ends with a count; `MaterialComparator` keeps the original exception as `__cause__` and logs a failed bulk call.
 - `calculate_multiple_xray_properties` raises `EnergyError` for a 2-D energies list (it returned `{}`); `critical_angle` has finite gradients where delta < 0 (it was NaN).
+- GUI: table headers no longer render uppercase, which turned δ, β and μ into Δ, B and M.
+- GUI: the single-material plot now spans the energy-wavelength converter row and, with the multi-material plot, resizes to fit its panel instead of being forced to 720 px; the scrollbar remains for windows too short to fit it.
+- GUI: toast notifications are sized after their stylesheet is applied, so the message is no longer clipped ("calculation do…").
+- GUI: plot legends use the theme text color on a translucent plot-colored box, stay readable over curves and restyle on a live theme switch; the multi-material results table no longer stretches its last column.
+- GUI: plot axis titles use the theme text color instead of pyqtgraph's near-white default, so they stay readable in the Light theme.
 
 ## [0.4.8] - 2026-10-24
 
