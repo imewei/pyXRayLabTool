@@ -7,25 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- Derived quantities preserve each field's independent broadcast shape, including scalar and empty inputs, and share one compiled program per size bucket; zero attenuation lengths no longer trigger an eager division-by-zero warning in `linear_absorption_coefficient`.
-- Public validators reject complex densities and complex, nonnumeric, or empty energies with domain errors; the atomic-data provider also rejects complex, nonnumeric and non-finite energies before conversion. KK merge points, tolerances, densities, formula masses, and stoichiometric counts reject complex values before real conversion (JAX arrays and 0-d arrays are still accepted as counts); refinement validates segment shapes before indexing endpoints.
-- CSV/NFF loading detects headers and delimiters without discarding the first numeric row. Result formatting avoids deprecated aliases, summary CSV retains every energy point, and wide CSV honors the requested field order.
-- Batch input loading handles empty energy columns, rejects blank or non-finite energy cells, and rejects missing explicitly requested columns. Material comparison handles zero and negative property means when reporting variation.
-- Batch CLI skips truncated rows and preserves verbose summaries when `--fields` excludes the formula. GUI material validation displays domain errors in the existing toast.
-- Result export: the default CSV and JSON columns follow the `XRayResult` field order (previously alphabetical) and add `energy_ev`, `critical_angle_mrad` and `linear_absorption_coefficient`; deprecated aliases are not exported. Unknown `fields` raise `ValidationError`.
-- `xraylabtool batch` counts rows skipped as invalid in its closing warning (the count previously covered only rows that parsed).
-- Shell completion derives command metadata from the CLI parser, Bash offers each command's supported format choices, and Bash completion works when global flags precede commands.
-- `xraylabtool batch` rejects an input file with duplicate column names (the last duplicate used to overwrite the earlier one silently) and exits 1 on an unknown `--fields` name (it used to write empty rows). JSON and table formatting raise `ValidationError` for unknown `fields`, as CSV already did. `xlt calc` reports a zero-molecular-weight formula such as `Si0` instead of a bare "division by zero". The `calculate_single_material_properties` docstring states that the API does not enforce the 0.001-30 g/cm³ density range that the CLI and GUI apply.
-
-- `calculate_single_material_properties` and `calculate_derived_quantities` reject complex mass densities and complex or boolean wavelength, dispersion and absorption arrays with `ValueError` (a NumPy complex density used to lose its imaginary part with a `ComplexWarning`). `xraylabtool batch` validates `--fields` before computing. Zsh and fish completion keep the descriptions of the `completion` subcommands.
-- Removed the unreferenced `calculators.host.run_derived`, `calculators.optics._derived_program`, `gui.services.linear_absorption_cm`, `logging_filters.enable_offscreen_quiet_env` and `completion_v2.integration.handle_new_completion_command`; `host.run_derived_fields` now returns the electron density with a tuple of the four derived arrays.
-- pytest is capped below 9.2 (`pytest-benchmark` 5.3.0 reads the private `_nodeid` that pytest 9.2.0 removed); ruff is pinned to 0.17.3 in `.pre-commit-config.yaml`, `ci.yml` and `security.yml` to match `uv.lock`.
-
-### Added
-- `xraylabtool batch --strict`: exit with status 2 and write no output if any input row is skipped or fails while at least one row succeeds (no successful row still exits 1). The default is unchanged (valid rows are written, exit 0).
-
-## [0.5.0] - 2026-10-28
+## [0.5.0] - 2026-10-29
 
 ### Added
 - `benchmarks/perf_benchmarks.py --stat mean` averages the per-round medians (with their standard deviation) instead of taking the best round; `benchmarks/RESULTS_cpu.md` and `RESULTS_gpu.md` are the v0.4.8 vs v0.5.0 means of 10 rounds.
@@ -52,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `xraylabtool convert` and `bragg` enable the persistent compile cache like `calc` (`XRAYLABTOOL_NO_JAX_CACHE=1` opts out); with a warm cache they take about 0.5 s on the CPU host and 1.0 s on the GPU host. `--help`, `--version`, `formula`, `atomic`, `list` and `completion` still import no JAX.
 - GUI: the launcher warms the core programs (`gui.services.warm_up_core`) on an idle worker next to the Kramers-Kronig warm-up; the Compute services run under `runtime.worker_guard()`.
 - `xraylabtool.calculators` re-exports `OpticalProps`, `ScatteringTables`, `encode_formula`, `load_tables` and `optical_properties` lazily (importing the package still does not load JAX).
+- `xraylabtool batch --strict`: exit with status 2 and write no output if any input row is skipped or fails while at least one row succeeds (no successful row still exits 1). The default is unchanged (valid rows are written, exit 0).
 
 ### Changed
 - GUI: the main window opens maximized.
@@ -97,6 +80,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GUI: toast notifications are sized after their stylesheet is applied, so the message is no longer clipped ("calculation do…").
 - GUI: plot legends use the theme text color on a translucent plot-colored box, stay readable over curves and restyle on a live theme switch; the multi-material results table no longer stretches its last column.
 - GUI: plot axis titles use the theme text color instead of pyqtgraph's near-white default, so they stay readable in the Light theme.
+- Derived quantities preserve each field's independent broadcast shape, including scalar and empty inputs, and share one compiled program per size bucket; zero attenuation lengths no longer trigger an eager division-by-zero warning in `linear_absorption_coefficient`.
+- Public validators reject complex densities and complex, nonnumeric, or empty energies with domain errors; the atomic-data provider also rejects complex, nonnumeric and non-finite energies before conversion. KK merge points, tolerances, densities, formula masses, and stoichiometric counts reject complex values before real conversion (JAX arrays and 0-d arrays are still accepted as counts); refinement validates segment shapes before indexing endpoints.
+- CSV/NFF loading detects headers and delimiters without discarding the first numeric row. Result formatting avoids deprecated aliases, summary CSV retains every energy point, and wide CSV honors the requested field order.
+- Batch input loading handles empty energy columns, rejects blank or non-finite energy cells, and rejects missing explicitly requested columns. Material comparison handles zero and negative property means when reporting variation.
+- Batch CLI skips truncated rows and preserves verbose summaries when `--fields` excludes the formula. GUI material validation displays domain errors in the existing toast.
+- Result export: the default CSV and JSON columns follow the `XRayResult` field order (previously alphabetical) and add `energy_ev`, `critical_angle_mrad` and `linear_absorption_coefficient`; deprecated aliases are not exported. Unknown `fields` raise `ValidationError`.
+- `xraylabtool batch` counts rows skipped as invalid in its closing warning (the count previously covered only rows that parsed).
+- Shell completion derives command metadata from the CLI parser, Bash offers each command's supported format choices, and Bash completion works when global flags precede commands.
+- `xraylabtool batch` rejects an input file with duplicate column names (the last duplicate used to overwrite the earlier one silently) and exits 1 on an unknown `--fields` name (it used to write empty rows). JSON and table formatting raise `ValidationError` for unknown `fields`, as CSV already did. `xlt calc` reports a zero-molecular-weight formula such as `Si0` instead of a bare "division by zero". The `calculate_single_material_properties` docstring states that the API does not enforce the 0.001-30 g/cm³ density range that the CLI and GUI apply.
+
+- `calculate_single_material_properties` and `calculate_derived_quantities` reject complex mass densities and complex or boolean wavelength, dispersion and absorption arrays with `ValueError` (a NumPy complex density used to lose its imaginary part with a `ComplexWarning`). `xraylabtool batch` validates `--fields` before computing. Zsh and fish completion keep the descriptions of the `completion` subcommands.
+- Removed the unreferenced `calculators.host.run_derived`, `calculators.optics._derived_program`, `gui.services.linear_absorption_cm`, `logging_filters.enable_offscreen_quiet_env` and `completion_v2.integration.handle_new_completion_command`; `host.run_derived_fields` now returns the electron density with a tuple of the four derived arrays.
+- pytest is capped below 9.2 (`pytest-benchmark` 5.3.0 reads the private `_nodeid` that pytest 9.2.0 removed); ruff is pinned to 0.17.3 in `.pre-commit-config.yaml`, `ci.yml` and `security.yml` to match `uv.lock`.
 
 ## [0.4.8] - 2026-10-24
 

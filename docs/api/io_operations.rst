@@ -34,7 +34,10 @@ File Loading and Saving
 
 .. autofunction:: xraylabtool.io.file_operations.load_data_file
 
-   Load data file with error handling.
+   Load a delimited numeric data file (``.nff``, CSV or whitespace separated) into a
+   NumPy array. ``#`` comments, blank lines and a UTF-8 byte-order mark are skipped; a
+   header row is detected from the first content row, and a numeric first row is kept
+   as data.
 
    **Example:**
 
@@ -43,7 +46,7 @@ File Loading and Saving
       from xraylabtool.io.file_operations import load_data_file
 
       data = load_data_file("atomic_data.nff")
-      print(data.head())
+      print(data.shape)  # (n_rows, n_columns) NumPy array
 
 .. autofunction:: xraylabtool.io.file_operations.save_calculation_results
 
@@ -66,7 +69,10 @@ Export Functions
 
 .. autofunction:: xraylabtool.io.file_operations.export_to_csv
 
-   Export data to CSV format.
+   Export data to CSV format. ``fields`` selects and orders the columns; a name the
+   result does not have raises ``ValidationError`` instead of writing a ragged file.
+   The default columns follow the ``XRayResult`` field order and include
+   ``energy_ev``, ``critical_angle_mrad`` and ``linear_absorption_coefficient``.
 
    **Example:**
 
@@ -93,7 +99,8 @@ Data Formatting
 
 .. autofunction:: xraylabtool.io.data_export.format_xray_result
 
-   Format XRayResult for display or export.
+   Format XRayResult for display or export. ``fields`` restricts the output; unknown
+   names raise ``ValidationError`` for every format (table, CSV and JSON).
 
    **Example:**
 

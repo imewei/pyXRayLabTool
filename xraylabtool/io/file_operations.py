@@ -27,7 +27,7 @@ def load_data_file(filename: str) -> np.ndarray:
         Numpy array containing the loaded data
 
     Raises:
-        ~xraylabtool.validation.exceptions.DataFileError: If file cannot be loaded or parsed
+        ~xraylabtool.exceptions.DataFileError: If file cannot be loaded or parsed
     """
     file_path = Path(filename)
 
