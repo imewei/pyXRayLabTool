@@ -188,7 +188,10 @@ Validation Functions
    - ``float``: Validated density value
 
    **Raises:**
-   - ``ValidationError``: If density is invalid
+   - ``ValidationError``: If density is not a real finite number (complex, non-numeric and NaN/Inf are rejected, not converted) or lies outside ``min_density``-``max_density``
+
+   The CLI and GUI apply this 0.001-30 g/cm³ range; the Python calculators
+   (``calculate_single_material_properties``) only require a positive, real density.
 
    **Example:**
 

@@ -665,9 +665,9 @@ def get_atomic_number(element_symbol: str) -> int:
         Atomic number as integer
 
     Raises:
-        ~xraylabtool.validation.exceptions.UnknownElementError: If element
+        ~xraylabtool.exceptions.UnknownElementError: If element
             symbol is not recognized
-        ~xraylabtool.validation.exceptions.AtomicDataError: If there's an
+        ~xraylabtool.exceptions.AtomicDataError: If there's an
             issue loading atomic data
 
     Examples:
@@ -709,9 +709,9 @@ def get_atomic_weight(element_symbol: str) -> float:
         Atomic weight in u (atomic mass units)
 
     Raises:
-        ~xraylabtool.validation.exceptions.UnknownElementError: If element
+        ~xraylabtool.exceptions.UnknownElementError: If element
             symbol is not recognized
-        ~xraylabtool.validation.exceptions.AtomicDataError: If there's an
+        ~xraylabtool.exceptions.AtomicDataError: If there's an
             issue loading atomic data
 
     Examples:
@@ -780,9 +780,9 @@ def get_atomic_data(element_symbol: str) -> dict[str, Any]:
         - density: Density in g/cm³ (if available)
 
     Raises:
-        ~xraylabtool.validation.exceptions.UnknownElementError: If element
+        ~xraylabtool.exceptions.UnknownElementError: If element
             symbol is not recognized
-        ~xraylabtool.validation.exceptions.AtomicDataError: If there's an
+        ~xraylabtool.exceptions.AtomicDataError: If there's an
             issue loading atomic data
 
     Examples:

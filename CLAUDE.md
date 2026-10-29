@@ -137,6 +137,7 @@ Registered markers (`--strict-markers`; an unregistered one is a collection erro
 - CI runs Linux, macOS and Windows (non-primary legs use `pytest -x`, so one failure hides the rest). Tests must not assume POSIX paths (`/xdg` is relative on Windows), the Linux cache layout (macOS uses `~/Library/Caches`), or exact float equality across different padding shapes.
 - Compile-count tests call `jit.clear_cache()` on the program first (`tests/fixtures/kk_compiles.record_compiles`) so they don't depend on test order.
 - Latency numbers are noisy under host load; compare against `main` with interleaved fresh-process runs (`scripts/core_bench.py`, `benchmarks/perf_benchmarks.py --vs vX.Y.Z --rounds 10 --stat mean`).
+- `pytest` is capped `<9.2` in `pyproject.toml`: pytest-benchmark 5.3.0 reads the private `_nodeid` that pytest 9.2.0 removed, which errors every benchmark fixture; drop the cap once pytest-benchmark ships a fix.
 - `mypy --strict` is clean locally (`untyped_calls_exclude = ["jax"]`); CI's mypy step is advisory.
 - `graphify-out/` tracks only `GRAPH_REPORT.md`, `graph.html`, `graph.json`; the other files are ignored.
 

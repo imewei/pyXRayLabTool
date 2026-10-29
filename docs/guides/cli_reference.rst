@@ -42,9 +42,14 @@ calc - Single Material Calculation
 - ``-d/--density DENSITY`` (required) — g/cm³
 - ``-o/--output FILE`` — save to CSV or JSON (format inferred from extension)
 - ``--format {table,csv,json}`` — stdout format (default: table)
-- ``--fields FIELDS`` — comma-separated subset of result fields
+- ``--fields FIELDS`` — comma-separated subset of result fields; an unknown name prints
+  ``Unknown field(s): ...`` and exits 1 for every output format (``xraylabtool list fields``
+  shows the valid names)
 - ``--precision N`` — decimal places
 - ``--debug``
+
+A formula whose element counts are all zero (for example ``Si0``) has no molecular
+weight and exits 1 with ``formula 'Si0' has zero molecular weight``.
 
 .. code-block:: bash
 
@@ -57,7 +62,12 @@ batch - Batch Processing
 
 **Usage:** ``xraylabtool batch INPUT_FILE -o OUTPUT [OPTIONS]``
 
-**CSV Format:** ``formula,density,energy`` columns
+**CSV Format:** ``formula,density,energy`` columns (a UTF-8 BOM is accepted; duplicate
+column names are rejected). Give several energies for one material as a quoted,
+comma-separated cell, e.g. ``SiO2,2.2,"8,10"``. A blank energy cell, a truncated row, an unquoted extra energy cell or an unparsable
+value skips that row with a warning on stderr. A formula the calculator rejects, or a
+non-finite or out-of-range energy (outside 0.03-30 keV), is logged as a failed material
+and left out. Valid rows are still written unless ``--strict`` is set.
 
 **Options:**
 
@@ -65,7 +75,8 @@ batch - Batch Processing
 - ``--format {csv,json}`` — override auto-detected format
 - ``--workers N`` — accepted for compatibility and ignored (batches run as blocks on the JAX device, not in worker pools)
 - ``--strict`` — exit with status 2 and write no output if any input row is skipped or fails while at least one row succeeds; with no successful row it exits 1 (default: write the valid rows and exit 0)
-- ``--fields FIELDS`` — comma-separated subset of result fields
+- ``--fields FIELDS`` — comma-separated subset of result fields; an unknown name exits 1
+  before any material is computed and writes nothing
 - ``--progress`` / ``--no-progress`` — progress bar control
 - ``--debug``
 

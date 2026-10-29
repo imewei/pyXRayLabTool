@@ -242,7 +242,11 @@ Force Reinstallation
 Completion Features
 -------------------
 
-The completion system provides intelligent suggestions for:
+The completion scripts are generated from the argparse parser
+(``xraylabtool.interfaces.cli.parser.create_parser``), so command names, options and
+option choices always match the installed CLI. Zsh and fish show each command's help
+text as its description (escaped for the shell); the ``completion`` subcommands
+(``install``, ``uninstall``, ``status``, ...) use their ``help`` text.
 
 Command Completion
 ~~~~~~~~~~~~~~~~~~
@@ -250,7 +254,7 @@ Command Completion
 .. code-block:: bash
 
    xraylabtool <TAB>
-   # Suggests: calc, batch, convert, formula, atomic, bragg, list, completion
+   # Suggests: calc, batch, compare, convert, kk, formula, atomic, bragg, list, completion
 
 Option Completion
 ~~~~~~~~~~~~~~~~~
@@ -258,7 +262,7 @@ Option Completion
 .. code-block:: bash
 
    xraylabtool calc --<TAB>
-   # Suggests: --material, --energy, --density, --output, --format, --help
+   # Suggests: --help, --energy, --density, --output, --format, --fields, --precision, --debug
 
 File Path Completion
 ~~~~~~~~~~~~~~~~~~~~
@@ -274,13 +278,16 @@ File Path Completion
 Value Completion
 ~~~~~~~~~~~~~~~~
 
+Bash completes the fixed choices of options (the argparse ``choices``):
+
 .. code-block:: bash
 
-   xraylabtool convert energy 8.0 --to <TAB>
-   # Suggests common energies: 8.048, 10.0, 12.4
+   xraylabtool calc Si -e 8.0 -d 2.33 --format <TAB>
+   # Suggests: table, csv, json
 
-   xraylabtool calc <TAB>
-   # Suggests common formulas: Si, SiO2, Al2O3, etc.
+Energies, densities and formulas are free-form and are not completed.
+Option values of the ``completion`` subcommands (such as ``--shell``) are not
+completed yet.
 
 Migration from Legacy System
 -----------------------------
